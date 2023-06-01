@@ -1,6 +1,8 @@
 use std::{
     collections::HashMap,
-    io::{BufRead, BufReader},
+    fs::{create_dir_all, OpenOptions},
+    io::{BufRead, BufReader, BufWriter, Write},
+    path::Path,
     process::{Child, Command, Stdio},
 };
 
@@ -101,6 +103,34 @@ impl Runner {
             }
         }
     }
+
+    fn save_log(path_s: String, log: &Vec<String>) -> Result<(), std::io::Error> {
+        let path = Path::new(&path_s);
+        match path.parent() {
+            Some(parent) => {
+                if !parent.is_dir() {
+                    create_dir_all(parent).expect("Could not create dir")
+                }
+            }
+            None => {}
+        };
+        let file = OpenOptions::new()
+            .write(true)
+            .create(true)
+            .open(path)
+            .expect("Could not open file");
+        let mut writer = BufWriter::new(file);
+        let log_s = log.concat();
+        writer.write_all(log_s.as_ref())
+    }
+
+    pub fn save_stdout(&mut self, base_path: String) -> Result<(), std::io::Error> {
+        Runner::save_log(base_path + ".stdout", &self.stdout)
+    }
+
+    pub fn save_stderr(&mut self, base_path: String) -> Result<(), std::io::Error> {
+        Runner::save_log(base_path + ".stderr", &self.stderr)
+    }
 }
 
 #[cfg(test)]
@@ -129,5 +159,22 @@ mod tests {
             runner.stdout.get(0).unwrap(),
             "REX2TEST: Lorem ipsum dolor\n"
         );
+    }
+
+    #[test]
+    fn can_save_log() {
+        let mut runner = Runner::new(
+            HashMap::new(),
+            "bash".into(),
+            vec!["-c".into(), "echo \"Lorem ipsum dolor sit amet\"".into()],
+        );
+        runner.start();
+        while runner.status() == RunnerStatus::Running {
+            sleep(time::Duration::from_millis(10));
+        }
+        runner.flush_out();
+
+        runner.save_stdout("./target/testout/testlog".into());
+        runner.save_stderr("./target/testout/testlog".into());
     }
 }
