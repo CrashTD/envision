@@ -1,0 +1,10 @@
+{
+    "monado_path": "/home/user/monado",
+    "openovr_path": "/home/user/openovr",
+    "libsurvive_path": "/home/user/libsurvive",
+    "basalt_path": null,
+    "mercury_path": null,
+    "libsurvive_enabled": true,
+    "basalt_enabled": false,
+    "mercury_enabled": false
+}
