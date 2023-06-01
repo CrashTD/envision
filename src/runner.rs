@@ -32,15 +32,20 @@ impl Runner {
     }
 
     pub fn start(&mut self) {
-        self.process = Some(
-            Command::new(&self.command)
-                .args(&self.args)
-                .envs(self.environment.clone())
-                .stdout(Stdio::piped())
-                .stderr(Stdio::piped())
-                .spawn()
-                .expect("Failed to execute runner"),
-        );
+        match self.process {
+            Some(_) => panic!("Cannot reuse existing Runner"),
+            None => {
+                self.process = Some(
+                    Command::new(&self.command)
+                        .args(&self.args)
+                        .envs(self.environment.clone())
+                        .stdout(Stdio::piped())
+                        .stderr(Stdio::piped())
+                        .spawn()
+                        .expect("Failed to execute runner"),
+                );
+            }
+        };
     }
 
     pub fn terminate(&mut self) {
@@ -51,7 +56,6 @@ impl Runner {
             Some(proc) => {
                 proc.kill().expect("Failed to kill process");
                 proc.wait().expect("Failed to wait for process");
-                self.process = None
             }
         }
     }
@@ -109,7 +113,11 @@ mod tests {
     fn can_run_command_and_read_env() {
         let mut env = HashMap::new();
         env.insert("REX2TEST".to_string(), "Lorem ipsum dolor".to_string());
-        let mut runner = Runner::new(env, "bash".into(), vec!["-c".into(), "echo \"REX2TEST: $REX2TEST\"".into()]);
+        let mut runner = Runner::new(
+            env,
+            "bash".into(),
+            vec!["-c".into(), "echo \"REX2TEST: $REX2TEST\"".into()],
+        );
         runner.start();
         while runner.status() == RunnerStatus::Running {
             sleep(time::Duration::from_millis(10));
@@ -117,6 +125,9 @@ mod tests {
         runner.flush_out();
         assert_eq!(runner.status(), RunnerStatus::Stopped);
         assert_eq!(runner.stdout.len(), 2);
-        assert_eq!(runner.stdout.get(0).unwrap(), "REX2TEST: Lorem ipsum dolor\n");
+        assert_eq!(
+            runner.stdout.get(0).unwrap(),
+            "REX2TEST: Lorem ipsum dolor\n"
+        );
     }
 }
