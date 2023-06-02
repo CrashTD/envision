@@ -8,15 +8,15 @@ use std::{
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Profile {
-    monado_path: String,
-    openovr_path: String,
-    libsurvive_path: Option<String>,
-    basalt_path: Option<String>,
-    mercury_path: Option<String>,
-    libsurvive_enabled: bool,
-    basalt_enabled: bool,
-    mercury_enabled: bool,
-    environment: HashMap<String, String>,
+    pub monado_path: String,
+    pub openovr_path: String,
+    pub libsurvive_path: Option<String>,
+    pub basalt_path: Option<String>,
+    pub mercury_path: Option<String>,
+    pub libsurvive_enabled: bool,
+    pub basalt_enabled: bool,
+    pub mercury_enabled: bool,
+    pub environment: HashMap<String, String>,
 }
 
 pub fn load_profile(path: &String) -> Result<Profile, serde_json::Error> {
