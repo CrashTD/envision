@@ -6,7 +6,7 @@ use std::{
     process::{Child, Command, Stdio},
 };
 
-use crate::profile::Profile;
+use crate::{profile::Profile, file_utils::get_writer};
 
 pub struct Runner {
     environment: HashMap<String, String>,
@@ -118,21 +118,7 @@ impl Runner {
     }
 
     fn save_log(path_s: String, log: &Vec<String>) -> Result<(), std::io::Error> {
-        let path = Path::new(&path_s);
-        match path.parent() {
-            Some(parent) => {
-                if !parent.is_dir() {
-                    create_dir_all(parent).expect("Could not create dir")
-                }
-            }
-            None => {}
-        };
-        let file = OpenOptions::new()
-            .write(true)
-            .create(true)
-            .open(path)
-            .expect("Could not open file");
-        let mut writer = BufWriter::new(file);
+        let mut writer = get_writer(&path_s);
         let log_s = log.concat();
         writer.write_all(log_s.as_ref())
     }

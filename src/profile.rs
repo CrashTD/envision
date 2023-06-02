@@ -3,10 +3,12 @@ use std::{
     collections::HashMap,
     fs::{create_dir_all, File, OpenOptions},
     io::{BufReader, BufWriter},
-    path::Path,
+    path::Path, fmt::Display,
 };
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+use crate::file_utils::get_writer;
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Profile {
     pub name: String,
     pub monado_path: String,
@@ -20,6 +22,12 @@ pub struct Profile {
     pub environment: HashMap<String, String>,
 }
 
+impl Display for Profile {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.name.to_string())
+    }
+}
+
 pub fn load_profile(path: &String) -> Result<Profile, serde_json::Error> {
     let file = File::open(path).unwrap();
     let reader = BufReader::new(file);
@@ -27,21 +35,7 @@ pub fn load_profile(path: &String) -> Result<Profile, serde_json::Error> {
 }
 
 pub fn dump_profile(profile: Profile, path_s: &String) -> () {
-    let path = Path::new(path_s);
-    match path.parent() {
-        Some(parent) => {
-            if !parent.is_dir() {
-                create_dir_all(parent).expect("Could not create dir")
-            }
-        }
-        None => {}
-    };
-    let file = OpenOptions::new()
-        .write(true)
-        .create(true)
-        .open(path)
-        .expect("Could not open file");
-    let writer = BufWriter::new(file);
+    let writer = get_writer(path_s);
     serde_json::to_writer_pretty(writer, &profile).expect("Could not write profile")
 }
 
