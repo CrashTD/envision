@@ -24,16 +24,35 @@ pub fn get_writer(path_s: &String) -> BufWriter<std::fs::File> {
     BufWriter::new(file)
 }
 
+pub fn get_home_dir() -> String {
+    env::var("HOME").expect("HOME env var not defined")
+}
+
 pub fn get_config_dir() -> String {
     match env::var("XDG_CONFIG_HOME") {
         Ok(conf_home) => format!(
-            "{chome}/{name}",
-            chome = conf_home,
+            "{conf_home}/{name}",
+            conf_home = conf_home,
             name = CMD_NAME
         ),
         Err(_) => format!(
             "{home}/.config/{name}",
-            home = env::var("HOME").expect("HOME env var not defined"),
+            home = get_home_dir(),
+            name = CMD_NAME
+        ),
+    }
+}
+
+pub fn get_data_dir() -> String {
+    match env::var("XDG_DATA_HOME") {
+        Ok(data_home) => format!(
+            "{data_home}/{name}",
+            data_home = data_home,
+            name = CMD_NAME
+        ),
+        Err(_) => format!(
+            "{home}/.local/share/{name}",
+            home = get_home_dir(),
             name = CMD_NAME
         ),
     }
