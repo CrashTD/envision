@@ -6,6 +6,10 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+iced = "0.9.0"
+iced_aw = { version = "0.5.2", default-features = false, features = [
+    "tab_bar", "tabs"
+] }
 serde = { version = "1.0.163", features = [
     "derive"
 ] }

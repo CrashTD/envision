@@ -1,0 +1,23 @@
+use crate::{constants::APP_NAME, file_utils::get_data_dir, profile::Profile};
+use std::collections::HashMap;
+
+pub fn valve_index_profile() -> Profile {
+    let data_dir = get_data_dir();
+    let mut environment: HashMap<String, String> = HashMap::new();
+    environment.insert("XRT_COMPOSITOR_SCALE_PERCENTAGE".into(), "140".into());
+    environment.insert("XRT_COMPOSITOR_COMPUTE".into(), "1".into());
+    environment.insert("SURVIVE_GLOBALSCENESOLVER".into(), "0".into());
+    environment.insert("SURVIVE_TIMECODE_OFFSET_MS".into(), "-6.94".into());
+    Profile {
+        name: format!("Valve Index - {name} Default", name = APP_NAME),
+        monado_path: format!("{data}/monado", data = data_dir),
+        openovr_path: format!("{data}/openovr", data = data_dir),
+        libsurvive_path: Some(format!("{data}/libsurvive", data = data_dir)),
+        basalt_path: None,
+        mercury_path: None,
+        libsurvive_enabled: true,
+        basalt_enabled: false,
+        mercury_enabled: false,
+        environment,
+    }
+}

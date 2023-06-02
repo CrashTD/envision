@@ -1,6 +1,14 @@
+use iced::{Application, Settings};
+use ui::main_win::MainWin;
+
 pub mod profile;
 pub mod runner;
+pub mod ui;
+pub mod config;
+pub mod constants;
+pub mod file_utils;
+pub mod profiles;
 
 fn main() {
-    println!("Hello, world!");
+    MainWin::run(Settings::default());
 }
