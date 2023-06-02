@@ -6,7 +6,7 @@ use std::{
     path::Path,
 };
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Profile {
     monado_path: String,
     openovr_path: String,
