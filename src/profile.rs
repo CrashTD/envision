@@ -8,6 +8,7 @@ use std::{
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Profile {
+    pub name: String,
     pub monado_path: String,
     pub openovr_path: String,
     pub libsurvive_path: Option<String>,
@@ -55,6 +56,7 @@ mod tests {
         let profile = load_profile(&"./test/files/profile.json".to_string());
         match profile {
             Ok(profile) => {
+                assert_eq!(profile.name, "Demo profile");
                 assert_eq!(profile.monado_path, "/home/user/monado");
                 assert_eq!(profile.openovr_path, "/home/user/openovr");
                 assert_eq!(
@@ -82,11 +84,12 @@ mod tests {
     fn profile_can_be_dumped() {
         let mut env = HashMap::new();
         env.insert(
-            "XRT_COMPOSITOR_SCALE_PERCENTAGE".to_string(),
-            "140".to_string(),
+            "XRT_COMPOSITOR_SCALE_PERCENTAGE".into(),
+            "140".into(),
         );
-        env.insert("XRT_COMPOSITOR_COMPUTE".to_string(), "1".to_string());
+        env.insert("XRT_COMPOSITOR_COMPUTE".into(), "1".into());
         let p = Profile {
+            name: "Demo profile".into(),
             monado_path: String::from("/home/user/monado"),
             openovr_path: String::from("/home/user/openovr"),
             libsurvive_path: Some(String::from("/home/user/libsurvive")),
@@ -100,6 +103,7 @@ mod tests {
         let fpath = String::from("./target/testout/testprofile.json");
         dump_profile(p, &fpath);
         let loaded = load_profile(&fpath).unwrap();
+        assert_eq!(loaded.name, "Demo profile");
         assert_eq!(
             loaded.libsurvive_path,
             Some(String::from("/home/user/libsurvive"))

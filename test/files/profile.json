@@ -1,4 +1,5 @@
 {
+    "name": "Demo profile",
     "monado_path": "/home/user/monado",
     "openovr_path": "/home/user/openovr",
     "libsurvive_path": "/home/user/libsurvive",
