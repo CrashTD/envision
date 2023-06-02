@@ -6,6 +6,8 @@ use std::{
     process::{Child, Command, Stdio},
 };
 
+use crate::profile::Profile;
+
 pub struct Runner {
     environment: HashMap<String, String>,
     command: String,
@@ -22,11 +24,22 @@ pub enum RunnerStatus {
 }
 
 impl Runner {
-    pub fn new(environment: HashMap<String, String>, command: String, args: Vec<String>) -> Runner {
-        Runner {
+    pub fn new(environment: HashMap<String, String>, command: String, args: Vec<String>) -> Self {
+        Self {
             environment,
             command,
             args,
+            stdout: Vec::new(),
+            stderr: Vec::new(),
+            process: None,
+        }
+    }
+
+    pub fn monado_runner_from_profile(profile: Profile) -> Self {
+        Self {
+            environment: profile.environment,
+            command: profile.monado_path,
+            args: vec![],
             stdout: Vec::new(),
             stderr: Vec::new(),
             process: None,
@@ -135,6 +148,8 @@ impl Runner {
 
 #[cfg(test)]
 mod tests {
+    use crate::profile::load_profile;
+
     use super::{Runner, RunnerStatus};
     use core::time;
     use std::{collections::HashMap, thread::sleep};
@@ -176,5 +191,12 @@ mod tests {
 
         runner.save_stdout("./target/testout/testlog".into());
         runner.save_stderr("./target/testout/testlog".into());
+    }
+
+    #[test]
+    fn can_create_from_profile() {
+        Runner::monado_runner_from_profile(
+            load_profile(&"./test/files/profile.json".to_string()).unwrap(),
+        );
     }
 }
