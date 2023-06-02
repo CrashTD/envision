@@ -19,6 +19,7 @@ pub fn get_writer(path_s: &String) -> BufWriter<std::fs::File> {
     let file = OpenOptions::new()
         .write(true)
         .create(true)
+        .truncate(true)
         .open(path)
         .expect("Could not open file");
     BufWriter::new(file)
