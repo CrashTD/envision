@@ -8,6 +8,7 @@ pub mod config;
 pub mod constants;
 pub mod file_utils;
 pub mod profiles;
+pub mod depcheck;
 
 fn main() {
     MainWin::run(Settings::default());
