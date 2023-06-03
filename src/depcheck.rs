@@ -1,7 +1,8 @@
-use std::path::Path;
+use std::{env, path::Path};
 
 pub enum DepType {
     SharedObject(String),
+    Executable(String),
 }
 
 pub struct Dependency {
@@ -22,6 +23,14 @@ fn shared_obj_paths() -> Vec<String> {
     ]
 }
 
+macro_rules! executable_paths {
+    () => {
+        env::var("PATH")
+            .expect("PATH environment variable not defined")
+            .split(':')
+    };
+}
+
 pub fn check_dependency(dep: Dependency) -> bool {
     match dep.dep_type {
         DepType::SharedObject(filename) => {
@@ -34,18 +43,38 @@ pub fn check_dependency(dep: Dependency) -> bool {
             }
             return false;
         }
+        DepType::Executable(exec) => {
+            for path in executable_paths!() {
+                let path_s = &format!("{p}/{ex}", p=path, ex=exec);
+                let path = Path::new(path_s);
+                if path.is_file() {
+                    return true;
+                }
+            }
+            return false;
+        },
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{Dependency, DepType, check_dependency};
+    use super::{check_dependency, DepType, Dependency};
 
     #[test]
     fn can_find_libc() {
         let libc_dep = Dependency {
             name: "libc".into(),
             dep_type: DepType::SharedObject("libc.so".into()),
+        };
+
+        assert!(check_dependency(libc_dep));
+    }
+
+    #[test]
+    fn can_find_ls() {
+        let libc_dep = Dependency {
+            name: "ls".into(),
+            dep_type: DepType::Executable("ls".into()),
         };
 
         assert!(check_dependency(libc_dep));
