@@ -117,6 +117,11 @@ impl Runner {
         }
     }
 
+    pub fn get_stdout(&mut self) -> String {
+        self.flush_out();
+        self.stdout.concat()
+    }
+
     fn save_log(path_s: String, log: &Vec<String>) -> Result<(), std::io::Error> {
         let mut writer = get_writer(&path_s);
         let log_s = log.concat();
