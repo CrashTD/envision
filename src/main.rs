@@ -9,6 +9,7 @@ pub mod constants;
 pub mod file_utils;
 pub mod profiles;
 pub mod depcheck;
+pub mod dependencies;
 
 fn main() {
     MainWin::run(Settings::default());
