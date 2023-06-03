@@ -1,19 +1,26 @@
+use std::{borrow::BorrowMut, time::{Duration, Instant}};
+
 use crate::{
     config::{get_config, save_config, Config},
     constants::APP_NAME,
     profile::{load_profile, Profile},
+    runner::{Runner, RunnerStatus},
 };
 use iced::{
     executor,
     widget::{button, checkbox, column, pick_list, row, scrollable, text, text_input},
-    Alignment, Application, Command, Element, Length, Padding, Theme,
+    Alignment, Application, Command, Element, Length, Padding, Theme, Subscription, time,
 };
+
+use super::widgets::widgets::hspacer;
 
 pub struct MainWin {
     profiles: Vec<Profile>,
-    monado_active: bool,
     config: Config,
     debug_search_term: String,
+    monado_runner: Option<Runner>,
+    monado_active: bool,
+    monado_log: String,
 }
 
 #[derive(Debug, Clone)]
@@ -26,6 +33,7 @@ pub enum Message {
     DebugViewChanged(bool),
     LogLevelChanged(String),
     DebugSearchChanged(String),
+    LogUpdate(Instant),
 }
 
 impl MainWin {
@@ -41,6 +49,35 @@ impl MainWin {
     fn get_selected_profile(&self) -> Option<&Profile> {
         self.get_profile_by_name(&self.config.selected_profile_name)
     }
+
+    fn start_monado(&mut self) {
+        match self.monado_runner.borrow_mut() {
+            None => {}
+            Some(existing_runner) => {
+                existing_runner.terminate();
+            }
+        };
+
+        let profile = self.get_selected_profile().unwrap();
+
+        self.monado_runner = Some(Runner::new(
+            profile.environment.clone(),
+            profile.monado_path.clone(),
+            vec![],
+        ));
+
+        self.monado_runner.as_mut().unwrap().start()
+    }
+
+    fn get_monado_log(&mut self) {
+        self.monado_log = match self.monado_runner.as_mut() {
+            Some(runner) => match runner.status() {
+                RunnerStatus::Running => runner.get_stdout(),
+                RunnerStatus::Stopped => "Monado service inactive".into(),
+            },
+            None => "Monado service inactive".into(),
+        }
+    }
 }
 
 impl Application for MainWin {
@@ -54,9 +91,11 @@ impl Application for MainWin {
             Self {
                 // TODO: load profiles from disk somehow
                 profiles: vec![load_profile(&"./test/files/profile.json".to_string()).unwrap()],
-                monado_active: false,
                 config: get_config(),
                 debug_search_term: "".into(),
+                monado_runner: None,
+                monado_active: false,
+                monado_log: "".into()
             },
             Command::none(),
         )
@@ -68,8 +107,12 @@ impl Application for MainWin {
 
     fn update(&mut self, msg: Message) -> Command<Message> {
         match msg {
-            Message::Start => self.monado_active = true,
-            Message::Stop => self.monado_active = false,
+            Message::Start => {
+                self.start_monado();
+            }
+            Message::Stop => {
+                self.monado_runner.as_mut().unwrap().terminate();
+            }
             Message::ProfileChanged(profile) => {
                 if self.config.selected_profile_name != profile.name {
                     self.config.selected_profile_name = profile.name;
@@ -84,68 +127,90 @@ impl Application for MainWin {
                 save_config(&self.config);
             }
             Message::DebugSearchChanged(term) => self.debug_search_term = term,
+            Message::LogUpdate(_) => {
+                self.monado_active = match self.monado_runner.as_mut() {
+                    None => false,
+                    Some(runner) => match runner.status() {
+                        RunnerStatus::Running => true,
+                        RunnerStatus::Stopped => false,
+                    }
+                };
+                self.get_monado_log();
+            },
             _ => println!("unhandled"),
         };
         Command::none()
     }
 
+    fn subscription(&self) -> Subscription<Self::Message> {
+        time::every(Duration::from_millis(500)).map(Message::LogUpdate)
+    }
+
     fn view(&self) -> Element<Message> {
-        row![
-            column![
-                column![match self.monado_active {
-                    true => button("Stop").on_press(Message::Stop),
-                    false => button("Start").on_press(Message::Start),
-                }
-                .padding(Padding::from([6, 24])),]
-                .height(Length::Fill),
-                row![
+        let debug_view = match self.config.debug_view_enabled {
+            false => column![],
+            true => {
+                let debug_toolbar = row![
                     pick_list(
-                        self.profiles.to_vec(),
-                        self.get_selected_profile().cloned(),
-                        Message::ProfileChanged
+                        vec![
+                            "Debug".to_string(),
+                            "Info".into(),
+                            "Warning".into(),
+                            "Error".into(),
+                        ],
+                        Some("Debug".into()),
+                        Message::LogLevelChanged
                     ),
-                    button("Edit").on_press(Message::EditProfile),
-                    row![].width(Length::Fill),
-                    checkbox(
-                        "Debug View",
-                        self.config.debug_view_enabled,
-                        Message::DebugViewChanged
-                    ),
+                    hspacer!(),
+                    text_input("Search...", self.debug_search_term.as_str())
+                        .on_input(Message::DebugSearchChanged),
                 ]
-                .width(Length::Fill),
-            ]
+                .padding(12);
+
+                column![
+                    // TODO: tab bar
+                    scrollable(text(self.monado_log.clone()))
+                    .width(Length::Fill)
+                    .height(Length::Fill),
+                    debug_toolbar,
+                ]
+                .width(Length::Fill)
+            }
+        };
+
+        let toolbar = row![
+            pick_list(
+                self.profiles.to_vec(),
+                self.get_selected_profile().cloned(),
+                Message::ProfileChanged
+            ),
+            button("Edit").on_press(Message::EditProfile),
+            hspacer!(),
+            checkbox(
+                "Debug View",
+                self.config.debug_view_enabled,
+                Message::DebugViewChanged
+            ),
+        ]
+        .width(Length::Fill);
+
+        let monado_view = column![
+            match self.monado_active {
+                true => button("Stop").on_press(Message::Stop),
+                false => button("Start").on_press(Message::Start),
+            }
+            .padding(Padding::from([6, 24])),
+            scrollable(column![])
+        ]
+        .height(Length::Fill)
+        .align_items(Alignment::Center);
+
+        let main_view = column![monado_view, toolbar,]
             .width(Length::Fill)
             .height(Length::Fill)
-            .padding(12)
-            .align_items(Alignment::Center),
-            match self.config.debug_view_enabled {
-                true => column![
-                    // TODO: tab bar
-                    scrollable(text("Foo bar baz"))
-                        .width(Length::Fill)
-                        .height(Length::Fill),
-                    row![
-                        pick_list(
-                            vec![
-                                "Debug".to_string(),
-                                "Info".into(),
-                                "Warning".into(),
-                                "Error".into(),
-                            ],
-                            Some("Debug".into()),
-                            Message::LogLevelChanged
-                        ),
-                        row![].width(Length::Fill),
-                        text_input("Search...", self.debug_search_term.as_str())
-                            .on_input(Message::DebugSearchChanged),
-                    ]
-                    .padding(12)
-                ]
-                .width(Length::Fill),
-                false => column![],
-            }
-        ]
-        .into()
+            .padding(12);
+
+        row![main_view, debug_view,].into()
     }
 
     fn theme(&self) -> Self::Theme {
