@@ -1,13 +1,15 @@
 use std::{env, path::Path};
 
 pub enum DepType {
-    SharedObject(String),
-    Executable(String),
+    SharedObject,
+    Executable,
+    Include,
 }
 
 pub struct Dependency {
     pub name: String,
     pub dep_type: DepType,
+    pub filename: String,
 }
 
 fn shared_obj_paths() -> Vec<String> {
@@ -23,37 +25,27 @@ fn shared_obj_paths() -> Vec<String> {
     ]
 }
 
-macro_rules! executable_paths {
-    () => {
-        env::var("PATH")
-            .expect("PATH environment variable not defined")
-            .split(':')
-    };
+fn include_paths() -> Vec<String> {
+    vec!["/usr/include".to_string()]
 }
 
 pub fn check_dependency(dep: Dependency) -> bool {
-    match dep.dep_type {
-        DepType::SharedObject(filename) => {
-            for lib_path in shared_obj_paths() {
-                let path_s = &format!("{lp}/{fn}", lp=lib_path, fn=filename);
-                let path = Path::new(&path_s);
-                if path.is_file() {
-                    return true;
-                }
-            }
-            return false;
+    for dir in match dep.dep_type {
+        DepType::SharedObject => shared_obj_paths(),
+        DepType::Executable => env::var("PATH")
+            .expect("PATH environment variable not defined")
+            .split(':')
+            .map(str::to_string)
+            .collect(),
+        DepType::Include => include_paths(),
+    } {
+        let path_s = &format!("{dir}/{fname}", dir = dir, fname = dep.filename);
+        let path = Path::new(&path_s);
+        if path.is_file() {
+            return true;
         }
-        DepType::Executable(exec) => {
-            for path in executable_paths!() {
-                let path_s = &format!("{p}/{ex}", p=path, ex=exec);
-                let path = Path::new(path_s);
-                if path.is_file() {
-                    return true;
-                }
-            }
-            return false;
-        },
     }
+    return false;
 }
 
 #[cfg(test)]
@@ -64,7 +56,8 @@ mod tests {
     fn can_find_libc() {
         let libc_dep = Dependency {
             name: "libc".into(),
-            dep_type: DepType::SharedObject("libc.so".into()),
+            dep_type: DepType::SharedObject,
+            filename: "libc.so".into(),
         };
 
         assert!(check_dependency(libc_dep));
@@ -74,7 +67,8 @@ mod tests {
     fn can_find_ls() {
         let libc_dep = Dependency {
             name: "ls".into(),
-            dep_type: DepType::Executable("ls".into()),
+            dep_type: DepType::Executable,
+            filename: ("ls".into()),
         };
 
         assert!(check_dependency(libc_dep));
@@ -84,7 +78,8 @@ mod tests {
     fn cannot_find_fake_lib() {
         let fake_dep = Dependency {
             name: "fakedep".into(),
-            dep_type: DepType::SharedObject("fakedep.so".into()),
+            dep_type: DepType::SharedObject,
+            filename: "fakedep.so".into(),
         };
 
         assert!(!check_dependency(fake_dep));
