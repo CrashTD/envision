@@ -1,15 +1,23 @@
 use std::{env, path::Path};
 
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum DepType {
     SharedObject,
     Executable,
     Include,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Dependency {
     pub name: String,
     pub dep_type: DepType,
     pub filename: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DependencyCheckResult {
+    pub dependency: Dependency,
+    pub found: bool,
 }
 
 fn shared_obj_paths() -> Vec<String> {
@@ -46,6 +54,15 @@ pub fn check_dependency(dep: Dependency) -> bool {
         }
     }
     return false;
+}
+
+pub fn check_dependencies(deps: Vec<Dependency>) -> Vec<DependencyCheckResult> {
+    deps.iter()
+        .map(|dep| DependencyCheckResult {
+            dependency: dep.clone(),
+            found: check_dependency(dep.clone()),
+        })
+        .collect()
 }
 
 #[cfg(test)]
