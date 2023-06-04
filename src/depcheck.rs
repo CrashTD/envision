@@ -47,7 +47,10 @@ fn shared_obj_paths() -> Vec<String> {
 }
 
 fn include_paths() -> Vec<String> {
-    vec!["/usr/include".to_string()]
+    vec![
+        "/usr/include".to_string(),
+        "/usr/local/include".to_string(),
+    ]
 }
 
 pub fn check_dependency(dep: Dependency) -> bool {
