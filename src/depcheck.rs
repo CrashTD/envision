@@ -1,4 +1,4 @@
-use std::{env, path::Path};
+use std::{env, fmt::Display, path::Path};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum DepType {
@@ -18,6 +18,19 @@ pub struct Dependency {
 pub struct DependencyCheckResult {
     pub dependency: Dependency,
     pub found: bool,
+}
+
+impl Display for DependencyCheckResult {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_fmt(format_args!(
+            "{name} {result}",
+            name = self.dependency.name,
+            result = match self.found {
+                true => "Found",
+                false => "Not found",
+            }
+        ))
+    }
 }
 
 fn shared_obj_paths() -> Vec<String> {
