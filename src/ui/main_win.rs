@@ -1,18 +1,25 @@
-use std::{borrow::BorrowMut, time::{Duration, Instant}};
-
+use super::{
+    styles::bordered_container::{BorderedContainer, RoundedBorderedContainer},
+    widgets::widgets::hspacer,
+};
 use crate::{
     config::{get_config, save_config, Config},
     constants::APP_NAME,
     profile::{load_profile, Profile},
     runner::{Runner, RunnerStatus},
+    ui::widgets::widgets::vseparator,
 };
 use iced::{
     executor,
-    widget::{button, checkbox, column, pick_list, row, scrollable, text, text_input},
-    Alignment, Application, Command, Element, Length, Padding, Theme, Subscription, time,
+    theme::{Container, Button},
+    time,
+    widget::{button, checkbox, column, container, pick_list, row, scrollable, text, text_input},
+    Alignment, Application, Command, Element, Length, Padding, Subscription, Theme,
 };
-
-use super::widgets::widgets::hspacer;
+use std::{
+    borrow::BorrowMut,
+    time::{Duration, Instant},
+};
 
 pub struct MainWin {
     profiles: Vec<Profile>,
@@ -95,7 +102,7 @@ impl Application for MainWin {
                 debug_search_term: "".into(),
                 monado_runner: None,
                 monado_active: false,
-                monado_log: "".into()
+                monado_log: "".into(),
             },
             Command::none(),
         )
@@ -133,10 +140,10 @@ impl Application for MainWin {
                     Some(runner) => match runner.status() {
                         RunnerStatus::Running => true,
                         RunnerStatus::Stopped => false,
-                    }
+                    },
                 };
                 self.get_monado_log();
-            },
+            }
             _ => println!("unhandled"),
         };
         Command::none()
@@ -147,10 +154,10 @@ impl Application for MainWin {
     }
 
     fn view(&self) -> Element<Message> {
-        let debug_view = match self.config.debug_view_enabled {
-            false => column![],
+        let debug_view: Element<Message> = match self.config.debug_view_enabled {
+            false => row![].into(),
             true => {
-                let debug_toolbar = row![
+                let debug_toolbar = container(row![
                     pick_list(
                         vec![
                             "Debug".to_string(),
@@ -164,21 +171,30 @@ impl Application for MainWin {
                     hspacer!(),
                     text_input("Search...", self.debug_search_term.as_str())
                         .on_input(Message::DebugSearchChanged),
-                ]
+                ])
+                .style(Container::Custom(Box::new(BorderedContainer)))
                 .padding(12);
 
-                column![
+                let view = column![
                     // TODO: tab bar
-                    scrollable(text(self.monado_log.clone()))
-                    .width(Length::Fill)
+                    container(
+                        scrollable(text(self.monado_log.clone()))
+                            .height(Length::Fill)
+                            .width(Length::Fill)
+                    )
+                    // .style(Container::Custom(Box::new(RoundedBorderedContainer)))
+                    .padding(6)
                     .height(Length::Fill),
                     debug_toolbar,
-                ]
-                .width(Length::Fill)
+                ];
+
+                row![vseparator(), view]
+                    .width(Length::FillPortion(2))
+                    .into()
             }
         };
 
-        let toolbar = row![
+        let toolbar = container(row![
             pick_list(
                 self.profiles.to_vec(),
                 self.get_selected_profile().cloned(),
@@ -191,24 +207,25 @@ impl Application for MainWin {
                 self.config.debug_view_enabled,
                 Message::DebugViewChanged
             ),
-        ]
-        .width(Length::Fill);
+        ])
+        .padding(12)
+        .style(Container::Custom(Box::new(BorderedContainer)));
 
         let monado_view = column![
             match self.monado_active {
-                true => button("Stop").on_press(Message::Stop),
+                true => button("Stop").on_press(Message::Stop).style(Button::Destructive),
                 false => button("Start").on_press(Message::Start),
             }
             .padding(Padding::from([6, 24])),
-            scrollable(column![])
+            scrollable(column![]) // device info goes here
         ]
         .height(Length::Fill)
+        .padding(12)
         .align_items(Alignment::Center);
 
         let main_view = column![monado_view, toolbar,]
-            .width(Length::Fill)
-            .height(Length::Fill)
-            .padding(12);
+            .width(Length::FillPortion(1))
+            .height(Length::Fill);
 
         row![main_view, debug_view,].into()
     }
