@@ -1,6 +1,6 @@
-use crate::depcheck::{check_dependency, DepType, Dependency, DependencyCheckResult, check_dependencies};
+use crate::depcheck::{check_dependencies, DepType, Dependency, DependencyCheckResult};
 
-pub fn monado_deps() -> Vec<Dependency> {
+fn monado_deps() -> Vec<Dependency> {
     vec![
         Dependency {
             name: "libdrm".into(),
