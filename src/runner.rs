@@ -1,20 +1,18 @@
 use std::{
     collections::HashMap,
-    fs::{create_dir_all, OpenOptions},
-    io::{BufRead, BufReader, BufWriter, Write},
-    path::Path,
+    io::{BufRead, BufReader, Write},
     process::{Child, Command, Stdio},
 };
 
 use crate::{profile::Profile, file_utils::get_writer};
 
 pub struct Runner {
-    environment: HashMap<String, String>,
-    command: String,
-    args: Vec<String>,
-    stdout: Vec<String>,
-    stderr: Vec<String>,
-    process: Option<Child>,
+    pub environment: HashMap<String, String>,
+    pub command: String,
+    pub args: Vec<String>,
+    pub stdout: Vec<String>,
+    pub stderr: Vec<String>,
+    pub process: Option<Child>,
 }
 
 #[derive(PartialEq, Eq, Debug)]
