@@ -1,7 +1,4 @@
-use super::{
-    styles::bordered_container::{BorderedContainer, RoundedBorderedContainer},
-    widgets::widgets::hspacer,
-};
+use super::{styles::bordered_container::BorderedContainer, widgets::widgets::hspacer};
 use crate::{
     config::{get_config, save_config, Config},
     constants::APP_NAME,
@@ -11,13 +8,13 @@ use crate::{
 };
 use iced::{
     executor,
-    theme::{Container, Button},
+    theme::{Button, Container},
     time,
     widget::{button, checkbox, column, container, pick_list, row, scrollable, text, text_input},
     Alignment, Application, Command, Element, Length, Padding, Subscription, Theme,
 };
 use std::{
-    borrow::BorrowMut,
+    cell::Cell,
     time::{Duration, Instant},
 };
 
@@ -25,7 +22,7 @@ pub struct MainWin {
     profiles: Vec<Profile>,
     config: Config,
     debug_search_term: String,
-    monado_runner: Option<Runner>,
+    monado_runner: Cell<Runner>,
     monado_active: bool,
     monado_log: String,
 }
@@ -58,31 +55,20 @@ impl MainWin {
     }
 
     fn start_monado(&mut self) {
-        match self.monado_runner.borrow_mut() {
-            None => {}
-            Some(existing_runner) => {
-                existing_runner.terminate();
-            }
-        };
+        self.monado_runner.get_mut().terminate();
 
         let profile = self.get_selected_profile().unwrap();
 
-        self.monado_runner = Some(Runner::new(
-            profile.environment.clone(),
-            profile.monado_path.clone(),
-            vec![],
-        ));
+        self.monado_runner
+            .set(Runner::monado_runner_from_profile(profile.clone()));
 
-        self.monado_runner.as_mut().unwrap().start()
+        self.monado_runner.get_mut().start();
     }
 
     fn get_monado_log(&mut self) {
-        self.monado_log = match self.monado_runner.as_mut() {
-            Some(runner) => match runner.status() {
-                RunnerStatus::Running => runner.get_stdout(),
-                RunnerStatus::Stopped => "Monado service inactive".into(),
-            },
-            None => "Monado service inactive".into(),
+        self.monado_log = match self.monado_runner.get_mut().status() {
+            RunnerStatus::Running => self.monado_runner.get_mut().get_output(),
+            RunnerStatus::Stopped => "Monado service inactive".into(),
         }
     }
 }
@@ -94,13 +80,17 @@ impl Application for MainWin {
     type Theme = Theme;
 
     fn new(_flags: Self::Flags) -> (Self, Command<Message>) {
+        let profiles = vec![load_profile(&"./test/files/profile.json".to_string()).unwrap()];
+        let monado_runner = Cell::new(Runner::monado_runner_from_profile(
+            profiles.get(0).cloned().unwrap(),
+        ));
         (
             Self {
                 // TODO: load profiles from disk somehow
-                profiles: vec![load_profile(&"./test/files/profile.json".to_string()).unwrap()],
+                profiles,
                 config: get_config(),
                 debug_search_term: "".into(),
-                monado_runner: None,
+                monado_runner,
                 monado_active: false,
                 monado_log: "".into(),
             },
@@ -118,7 +108,7 @@ impl Application for MainWin {
                 self.start_monado();
             }
             Message::Stop => {
-                self.monado_runner.as_mut().unwrap().terminate();
+                self.monado_runner.get_mut().terminate();
             }
             Message::ProfileChanged(profile) => {
                 if self.config.selected_profile_name != profile.name {
@@ -135,13 +125,10 @@ impl Application for MainWin {
             }
             Message::DebugSearchChanged(term) => self.debug_search_term = term,
             Message::LogUpdate(_) => {
-                self.monado_active = match self.monado_runner.as_mut() {
-                    None => false,
-                    Some(runner) => match runner.status() {
-                        RunnerStatus::Running => true,
-                        RunnerStatus::Stopped => false,
-                    },
-                };
+                self.monado_active = match self.monado_runner.get_mut().status() {
+                    RunnerStatus::Running => true,
+                    RunnerStatus::Stopped => false,
+                }; 
                 self.get_monado_log();
             }
             _ => println!("unhandled"),
@@ -213,7 +200,9 @@ impl Application for MainWin {
 
         let monado_view = column![
             match self.monado_active {
-                true => button("Stop").on_press(Message::Stop).style(Button::Destructive),
+                true => button("Stop")
+                    .on_press(Message::Stop)
+                    .style(Button::Destructive),
                 false => button("Start").on_press(Message::Start),
             }
             .padding(Padding::from([6, 24])),

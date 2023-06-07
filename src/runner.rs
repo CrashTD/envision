@@ -2,17 +2,30 @@ use std::{
     collections::HashMap,
     io::{BufRead, BufReader, Write},
     process::{Child, Command, Stdio},
+    sync::{
+        mpsc::{sync_channel, Receiver, SyncSender},
+        Arc, Mutex,
+    },
+    thread::{self, JoinHandle},
+    vec,
 };
 
-use crate::{profile::Profile, file_utils::get_writer};
+use nix::{
+    sys::signal::{kill, Signal::SIGTERM},
+    unistd::Pid,
+};
+
+use crate::{file_utils::get_writer, profile::Profile};
 
 pub struct Runner {
     pub environment: HashMap<String, String>,
     pub command: String,
     pub args: Vec<String>,
-    pub stdout: Vec<String>,
-    pub stderr: Vec<String>,
-    pub process: Option<Child>,
+    pub output: Vec<String>,
+    sender: Arc<Mutex<SyncSender<String>>>,
+    receiver: Receiver<String>,
+    threads: Vec<JoinHandle<()>>,
+    process: Option<Child>,
 }
 
 #[derive(PartialEq, Eq, Debug)]
@@ -21,103 +34,110 @@ pub enum RunnerStatus {
     Stopped,
 }
 
+macro_rules! logger_thread {
+    ($buf_fd: expr, $sender: expr) => {
+        thread::spawn(move || {
+            let mut reader = BufReader::new($buf_fd);
+            loop {
+                let mut buf = String::new();
+                match reader.read_line(&mut buf) {
+                    Err(_) => return,
+                    Ok(bytes_read) => {
+                        println!("{}", bytes_read);
+                        if bytes_read == 0 {
+                            return;
+                        }
+                        if buf.is_empty() {
+                            continue;
+                        }
+                        match $sender.clone().lock().expect("Could not lock sender").send(buf) {
+                            Ok(_) => {}
+                            Err(_) => return,
+                        };
+                    }
+                };
+            }
+        })
+    }
+}
+
 impl Runner {
     pub fn new(environment: HashMap<String, String>, command: String, args: Vec<String>) -> Self {
+        let (sender, receiver) = sync_channel(64000);
         Self {
             environment,
             command,
             args,
-            stdout: Vec::new(),
-            stderr: Vec::new(),
+            output: Vec::new(),
             process: None,
+            sender: Arc::new(Mutex::new(sender)),
+            threads: Vec::new(),
+            receiver,
         }
     }
 
     pub fn monado_runner_from_profile(profile: Profile) -> Self {
-        Self {
-            environment: profile.environment,
-            command: profile.monado_path,
-            args: vec![],
-            stdout: Vec::new(),
-            stderr: Vec::new(),
-            process: None,
-        }
+        Self::new(profile.environment, profile.monado_path, vec![])
     }
 
     pub fn start(&mut self) {
-        match self.process {
-            Some(_) => panic!("Cannot reuse existing Runner"),
-            None => {
-                self.process = Some(
-                    Command::new(&self.command)
-                        .args(&self.args)
-                        .envs(self.environment.clone())
-                        .stdout(Stdio::piped())
-                        .stderr(Stdio::piped())
-                        .spawn()
-                        .expect("Failed to execute runner"),
-                );
-            }
-        };
+        self.threads = Vec::new();
+        self.process = Some(
+            Command::new(self.command.clone())
+                .args(self.args.clone())
+                .envs(self.environment.clone())
+                .stderr(Stdio::piped())
+                .stdout(Stdio::piped())
+                .spawn()
+                .expect("Failed to execute runner"),
+        );
+        let stdout = self.process.as_mut().unwrap().stdout.take().unwrap();
+        let stderr = self.process.as_mut().unwrap().stderr.take().unwrap();
+        let stdout_sender = self.sender.clone();
+        let stderr_sender = self.sender.clone();
+        self.threads.push(logger_thread!(stdout, stdout_sender));
+        self.threads.push(logger_thread!(stderr, stderr_sender));
     }
 
     pub fn terminate(&mut self) {
-        match self.process.as_mut() {
-            None => {
-                println!("Runner already stopped")
-            }
-            Some(proc) => {
-                proc.kill().expect("Failed to kill process");
-                proc.wait().expect("Failed to wait for process");
+        if self.status() != RunnerStatus::Running {
+            return;
+        }
+        let process = self.process.take();
+        if process.is_none() {
+            return;
+        }
+        let mut proc = process.unwrap();
+        let child_pid = Pid::from_raw(proc.id().try_into().expect("Could not convert pid to u32"));
+        kill(child_pid, SIGTERM).expect("Could not send sigterm to process");
+        loop {
+            match self.threads.pop() {
+                None => break,
+                Some(thread) => thread.join().expect("Failed to join reader thread"),
             }
         }
+        proc.wait().expect("Failed to wait for process");
     }
 
     pub fn status(&mut self) -> RunnerStatus {
-        match self.process.as_mut() {
+        match &mut self.process {
             None => RunnerStatus::Stopped,
             Some(proc) => match proc.try_wait() {
-                Ok(_) => RunnerStatus::Stopped,
                 Err(_) => RunnerStatus::Running,
+                Ok(Some(_)) => RunnerStatus::Stopped,
+                Ok(None) => RunnerStatus::Running,
             },
         }
     }
 
-    pub fn flush_out(&mut self) {
-        match self.process.as_mut() {
-            None => (),
-            Some(proc) => {
-                let out = proc.stdout.take().expect("Unable to read stout");
-                let mut reader = BufReader::new(out);
-                let mut bytes_read = 1;
-                let mut buf = "".to_string();
-                while bytes_read != 0 {
-                    bytes_read = match reader.read_line(&mut buf) {
-                        Ok(bytes) => bytes,
-                        Err(_) => 0,
-                    };
-                    self.stdout.push(buf.clone());
-                    buf.clear();
-                }
-
-                let err = proc.stderr.take().expect("Unable to read stderr");
-                let mut err_reader = BufReader::new(err);
-                bytes_read = 1;
-                while bytes_read != 0 {
-                    bytes_read = match err_reader.read_line(&mut buf) {
-                        Ok(bytes) => bytes,
-                        Err(_) => 0,
-                    };
-                    self.stderr.push(buf.clone());
-                    buf.clear();
-                }
-            }
+    pub fn get_output(&mut self) -> String {
+        loop {
+            match self.receiver.try_recv() {
+                Ok(data) => self.output.push(data),
+                Err(_) => break,
+            };
         }
-    }
-
-    pub fn get_stdout(&mut self) -> String {
-        self.flush_out();
-        self.stdout.concat()
+        self.output.concat()
     }
 
     fn save_log(path_s: String, log: &Vec<String>) -> Result<(), std::io::Error> {
@@ -126,12 +146,8 @@ impl Runner {
         writer.write_all(log_s.as_ref())
     }
 
-    pub fn save_stdout(&mut self, base_path: String) -> Result<(), std::io::Error> {
-        Runner::save_log(base_path + ".stdout", &self.stdout)
-    }
-
-    pub fn save_stderr(&mut self, base_path: String) -> Result<(), std::io::Error> {
-        Runner::save_log(base_path + ".stderr", &self.stderr)
+    pub fn save_output(&mut self, path: String) -> Result<(), std::io::Error> {
+        Runner::save_log(path, &self.output)
     }
 }
 
@@ -153,14 +169,12 @@ mod tests {
             vec!["-c".into(), "echo \"REX2TEST: $REX2TEST\"".into()],
         );
         runner.start();
-        while runner.status() == RunnerStatus::Running {
-            sleep(time::Duration::from_millis(10));
-        }
-        runner.flush_out();
+        sleep(time::Duration::from_millis(10));
+        runner.terminate();
         assert_eq!(runner.status(), RunnerStatus::Stopped);
-        assert_eq!(runner.stdout.len(), 2);
+        let out = runner.get_output();
         assert_eq!(
-            runner.stdout.get(0).unwrap(),
+            out,
             "REX2TEST: Lorem ipsum dolor\n"
         );
     }
@@ -176,10 +190,8 @@ mod tests {
         while runner.status() == RunnerStatus::Running {
             sleep(time::Duration::from_millis(10));
         }
-        runner.flush_out();
 
-        runner.save_stdout("./target/testout/testlog".into());
-        runner.save_stderr("./target/testout/testlog".into());
+        runner.save_output("./target/testout/testlog".into());
     }
 
     #[test]
