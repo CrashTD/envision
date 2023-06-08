@@ -10,7 +10,7 @@ iced = { version = "0.9.0", features = [
     "smol"
 ] }
 iced_aw = { version = "0.5.2", default-features = false, features = [
-    "tab_bar", "tabs", "quad"
+    "tab_bar", "tabs", "quad", "modal", "card"
 ] }
 nix = "0.26.2"
 serde = { version = "1.0.163", features = [

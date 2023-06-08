@@ -1,8 +1,10 @@
 use super::{styles::bordered_container::BorderedContainer, widgets::widgets::hspacer};
 use crate::{
+    builders::build_monado::get_build_monado_runner,
     config::{get_config, save_config, Config},
     constants::APP_NAME,
-    profile::{load_profile, Profile},
+    profile::{self, load_profile, Profile},
+    profiles::valve_index::valve_index_profile,
     runner::{Runner, RunnerStatus},
     ui::widgets::widgets::vseparator,
 };
@@ -13,6 +15,7 @@ use iced::{
     widget::{button, checkbox, column, container, pick_list, row, scrollable, text, text_input},
     Alignment, Application, Command, Element, Length, Padding, Subscription, Theme,
 };
+use iced_aw::{Card, Modal};
 use std::{
     cell::Cell,
     time::{Duration, Instant},
@@ -25,6 +28,9 @@ pub struct MainWin {
     monado_runner: Cell<Runner>,
     monado_active: bool,
     monado_log: String,
+    build_monado_runner: Option<Runner>,
+    show_build_monado_modal: bool,
+    build_monado_log: String,
 }
 
 #[derive(Debug, Clone)]
@@ -38,6 +44,8 @@ pub enum Message {
     LogLevelChanged(String),
     DebugSearchChanged(String),
     LogUpdate(Instant),
+    InstallMonado,
+    CloseBuildMonadoModal,
 }
 
 impl MainWin {
@@ -71,6 +79,20 @@ impl MainWin {
             RunnerStatus::Stopped => "Monado service inactive".into(),
         }
     }
+
+    fn install_monado(&mut self) {
+        self.build_monado_log = String::new();
+        let profile = match self.get_selected_profile() {
+            None => {
+                return;
+            }
+            Some(p) => p,
+        };
+        self.build_monado_runner = Some(get_build_monado_runner(profile.clone()));
+        self.build_monado_runner.as_mut().unwrap().start();
+        self.show_build_monado_modal = true;
+        self.build_monado_log = self.build_monado_runner.as_mut().unwrap().get_output();
+    }
 }
 
 impl Application for MainWin {
@@ -80,7 +102,7 @@ impl Application for MainWin {
     type Theme = Theme;
 
     fn new(_flags: Self::Flags) -> (Self, Command<Message>) {
-        let profiles = vec![load_profile(&"./test/files/profile.json".to_string()).unwrap()];
+        let profiles = vec![valve_index_profile()];
         let monado_runner = Cell::new(Runner::monado_runner_from_profile(
             profiles.get(0).cloned().unwrap(),
         ));
@@ -93,6 +115,9 @@ impl Application for MainWin {
                 monado_runner,
                 monado_active: false,
                 monado_log: "".into(),
+                build_monado_runner: None,
+                show_build_monado_modal: false,
+                build_monado_log: String::new(),
             },
             Command::none(),
         )
@@ -124,12 +149,37 @@ impl Application for MainWin {
                 save_config(&self.config);
             }
             Message::DebugSearchChanged(term) => self.debug_search_term = term,
+            Message::InstallMonado => {
+                self.install_monado();
+            }
+            Message::CloseBuildMonadoModal => match &mut self.build_monado_runner {
+                None => {
+                    self.show_build_monado_modal = false;
+                }
+                Some(runner) => match runner.status() {
+                    RunnerStatus::Running => {}
+                    RunnerStatus::Stopped => {
+                        self.show_build_monado_modal = false;
+                    }
+                },
+            },
             Message::LogUpdate(_) => {
                 self.monado_active = match self.monado_runner.get_mut().status() {
                     RunnerStatus::Running => true,
                     RunnerStatus::Stopped => false,
-                }; 
+                };
                 self.get_monado_log();
+                if self.show_build_monado_modal {
+                    match &mut self.build_monado_runner {
+                        None => {}
+                        Some(runner) => match runner.status() {
+                            RunnerStatus::Running => {
+                                self.build_monado_log = runner.get_output();
+                            }
+                            RunnerStatus::Stopped => {}
+                        },
+                    }
+                }
             }
             _ => println!("unhandled"),
         };
@@ -206,7 +256,9 @@ impl Application for MainWin {
                 false => button("Start").on_press(Message::Start),
             }
             .padding(Padding::from([6, 24])),
-            scrollable(column![]) // device info goes here
+            scrollable(column![
+                button("DEBUG: install monado").on_press(Message::InstallMonado),
+            ]) // device info goes here
         ]
         .height(Length::Fill)
         .padding(12)
@@ -216,7 +268,23 @@ impl Application for MainWin {
             .width(Length::FillPortion(1))
             .height(Length::Fill);
 
-        row![main_view, debug_view,].into()
+        let win_content = row![main_view, debug_view,];
+
+        Modal::new(self.show_build_monado_modal, win_content, || {
+            Card::new(
+                text("Installing Monado..."),
+                column![
+                    scrollable(text(self.build_monado_log.clone())),
+                ]
+                .spacing(12),
+            ).foot(row![
+                button("Close").on_press(Message::CloseBuildMonadoModal),
+            ])
+            .max_width(600.0)
+            .max_height(400.0)
+            .into()
+        })
+        .into()
     }
 
     fn theme(&self) -> Self::Theme {

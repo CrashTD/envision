@@ -10,6 +10,7 @@ pub mod file_utils;
 pub mod profiles;
 pub mod depcheck;
 pub mod dependencies;
+pub mod builders;
 
 fn main() {
     MainWin::run(Settings::default());

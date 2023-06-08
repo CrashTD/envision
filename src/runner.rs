@@ -43,7 +43,6 @@ macro_rules! logger_thread {
                 match reader.read_line(&mut buf) {
                     Err(_) => return,
                     Ok(bytes_read) => {
-                        println!("{}", bytes_read);
                         if bytes_read == 0 {
                             return;
                         }
@@ -62,10 +61,13 @@ macro_rules! logger_thread {
 }
 
 impl Runner {
-    pub fn new(environment: HashMap<String, String>, command: String, args: Vec<String>) -> Self {
+    pub fn new(environment: Option<HashMap<String, String>>, command: String, args: Vec<String>) -> Self {
         let (sender, receiver) = sync_channel(64000);
         Self {
-            environment,
+            environment: match environment {
+                None => HashMap::new(),
+                Some(e) => e.clone(),
+            },
             command,
             args,
             output: Vec::new(),
@@ -77,7 +79,11 @@ impl Runner {
     }
 
     pub fn monado_runner_from_profile(profile: Profile) -> Self {
-        Self::new(profile.environment, profile.monado_path, vec![])
+        let mut path = profile.monado_path;
+        if !path.starts_with("/usr") {
+            path += "/build/src/xrt/targets/service/monado-service";
+        }
+        Self::new(Some(profile.environment), path, vec![])
     }
 
     pub fn start(&mut self) {
@@ -164,7 +170,7 @@ mod tests {
         let mut env = HashMap::new();
         env.insert("REX2TEST".to_string(), "Lorem ipsum dolor".to_string());
         let mut runner = Runner::new(
-            env,
+            Some(env),
             "bash".into(),
             vec!["-c".into(), "echo \"REX2TEST: $REX2TEST\"".into()],
         );
@@ -182,7 +188,7 @@ mod tests {
     #[test]
     fn can_save_log() {
         let mut runner = Runner::new(
-            HashMap::new(),
+            None,
             "bash".into(),
             vec!["-c".into(), "echo \"Lorem ipsum dolor sit amet\"".into()],
         );
