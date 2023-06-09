@@ -1,7 +1,7 @@
 use crate::{runner::Runner, profile::Profile};
 
 pub fn get_build_monado_runner(profile: Profile) -> Runner {
-    let mut runner = Runner::new(
+    let runner = Runner::new(
         None,
         "./scripts/build_monado.sh".into(),
         vec![
