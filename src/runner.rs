@@ -49,7 +49,12 @@ macro_rules! logger_thread {
                         if buf.is_empty() {
                             continue;
                         }
-                        match $sender.clone().lock().expect("Could not lock sender").send(buf) {
+                        match $sender
+                            .clone()
+                            .lock()
+                            .expect("Could not lock sender")
+                            .send(buf)
+                        {
                             Ok(_) => {}
                             Err(_) => return,
                         };
@@ -57,11 +62,15 @@ macro_rules! logger_thread {
                 };
             }
         })
-    }
+    };
 }
 
 impl Runner {
-    pub fn new(environment: Option<HashMap<String, String>>, command: String, args: Vec<String>) -> Self {
+    pub fn new(
+        environment: Option<HashMap<String, String>>,
+        command: String,
+        args: Vec<String>,
+    ) -> Self {
         let (sender, receiver) = sync_channel(64000);
         Self {
             environment: match environment {
@@ -179,10 +188,7 @@ mod tests {
         runner.terminate();
         assert_eq!(runner.status(), RunnerStatus::Stopped);
         let out = runner.get_output();
-        assert_eq!(
-            out,
-            "REX2TEST: Lorem ipsum dolor\n"
-        );
+        assert_eq!(out, "REX2TEST: Lorem ipsum dolor\n");
     }
 
     #[test]
@@ -197,7 +203,9 @@ mod tests {
             sleep(time::Duration::from_millis(10));
         }
 
-        runner.save_output("./target/testout/testlog".into());
+        runner
+            .save_output("./target/testout/testlog".into())
+            .expect("Failed to save output file");
     }
 
     #[test]
