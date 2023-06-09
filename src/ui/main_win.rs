@@ -1,9 +1,9 @@
-use super::{styles::bordered_container::BorderedContainer, widgets::widgets::hspacer};
+use super::styles::bordered_container::BorderedContainer;
 use crate::{
     builders::build_monado::get_build_monado_runner,
     config::{get_config, save_config, Config},
     constants::APP_NAME,
-    profile::{self, load_profile, Profile},
+    profile::Profile,
     profiles::valve_index::valve_index_profile,
     runner::{Runner, RunnerStatus},
     ui::widgets::widgets::vseparator,
@@ -12,7 +12,9 @@ use iced::{
     executor,
     theme::{Button, Container},
     time,
-    widget::{button, checkbox, column, container, pick_list, row, scrollable, text, text_input},
+    widget::{
+        button, checkbox, column, container, pick_list, row, scrollable, text, text_input, Space,
+    },
     Alignment, Application, Command, Element, Length, Padding, Subscription, Theme,
 };
 use iced_aw::{Card, Modal};
@@ -138,7 +140,7 @@ impl Application for MainWin {
             Message::ProfileChanged(profile) => {
                 if self.config.selected_profile_name != profile.name {
                     self.config.selected_profile_name = profile.name;
-                    save_config(&self.config);
+                    save_config(&self.config).expect("Failed to save config");
                 }
             }
             Message::EditProfile => {
@@ -146,7 +148,7 @@ impl Application for MainWin {
             }
             Message::DebugViewChanged(nval) => {
                 self.config.debug_view_enabled = nval;
-                save_config(&self.config);
+                save_config(&self.config).expect("Failed to save config");
             }
             Message::DebugSearchChanged(term) => self.debug_search_term = term,
             Message::InstallMonado => {
@@ -192,7 +194,7 @@ impl Application for MainWin {
 
     fn view(&self) -> Element<Message> {
         let debug_view: Element<Message> = match self.config.debug_view_enabled {
-            false => row![].into(),
+            false => Space::new(Length::Shrink, Length::Shrink).into(),
             true => {
                 let debug_toolbar = container(row![
                     pick_list(
@@ -205,7 +207,7 @@ impl Application for MainWin {
                         Some("Debug".into()),
                         Message::LogLevelChanged
                     ),
-                    hspacer!(),
+                    Space::new(Length::Fill, Length::Shrink),
                     text_input("Search...", self.debug_search_term.as_str())
                         .on_input(Message::DebugSearchChanged),
                 ])
@@ -226,25 +228,29 @@ impl Application for MainWin {
                 ];
 
                 row![vseparator(), view]
-                    .width(Length::FillPortion(2))
+                    .width(Length::FillPortion(3))
                     .into()
             }
         };
 
-        let toolbar = container(row![
-            pick_list(
-                self.profiles.to_vec(),
-                self.get_selected_profile().cloned(),
-                Message::ProfileChanged
-            ),
-            button("Edit").on_press(Message::EditProfile),
-            hspacer!(),
-            checkbox(
-                "Debug View",
-                self.config.debug_view_enabled,
-                Message::DebugViewChanged
-            ),
-        ])
+        let toolbar = container(
+            row![
+                pick_list(
+                    self.profiles.to_vec(),
+                    self.get_selected_profile().cloned(),
+                    Message::ProfileChanged
+                ),
+                button("Edit").on_press(Message::EditProfile),
+                Space::new(Length::Fill, Length::Shrink),
+                checkbox(
+                    "Debug View",
+                    self.config.debug_view_enabled,
+                    Message::DebugViewChanged
+                ),
+            ]
+            .align_items(Alignment::Center)
+            .spacing(3),
+        )
         .padding(12)
         .style(Container::Custom(Box::new(BorderedContainer)));
 
@@ -256,16 +262,18 @@ impl Application for MainWin {
                 false => button("Start").on_press(Message::Start),
             }
             .padding(Padding::from([6, 24])),
-            scrollable(column![
-                button("DEBUG: install monado").on_press(Message::InstallMonado),
-            ]) // device info goes here
+            scrollable(
+                column![button("DEBUG: install monado").on_press(Message::InstallMonado),]
+                    .spacing(6)
+            ) // device info goes here
         ]
+        .spacing(12)
         .height(Length::Fill)
         .padding(12)
         .align_items(Alignment::Center);
 
         let main_view = column![monado_view, toolbar,]
-            .width(Length::FillPortion(1))
+            .width(Length::FillPortion(2))
             .height(Length::Fill);
 
         let win_content = row![main_view, debug_view,];
@@ -273,11 +281,9 @@ impl Application for MainWin {
         Modal::new(self.show_build_monado_modal, win_content, || {
             Card::new(
                 text("Installing Monado..."),
-                column![
-                    scrollable(text(self.build_monado_log.clone())),
-                ]
-                .spacing(12),
-            ).foot(row![
+                column![scrollable(text(self.build_monado_log.clone())),].spacing(12),
+            )
+            .foot(row![
                 button("Close").on_press(Message::CloseBuildMonadoModal),
             ])
             .max_width(600.0)

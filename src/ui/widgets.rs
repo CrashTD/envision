@@ -1,22 +1,7 @@
 #[macro_use]
 pub mod widgets {
-    macro_rules! vspacer {
-        () => {
-            column![].height(Length::Fill)
-        };
-    }
-
-    macro_rules! hspacer {
-        () => {
-            row![].width(Length::Fill)
-        };
-    }
-
     use iced::Length;
     use iced_aw::quad::{Quad, InnerBounds};
-    pub(crate) use vspacer;
-    pub(crate) use hspacer;
-
     pub fn vseparator() -> Quad {
         Quad {
             width: Length::Fixed(1.0),
