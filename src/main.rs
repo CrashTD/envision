@@ -11,6 +11,7 @@ pub mod profile;
 pub mod profiles;
 pub mod runner;
 pub mod ui;
+pub mod file_builders;
 
 fn main() {
     MainWin::run(Settings::default()).expect("Application encountered an error");

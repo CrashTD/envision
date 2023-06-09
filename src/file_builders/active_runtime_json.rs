@@ -1,0 +1,92 @@
+use std::{fs::File, io::BufReader, path::Path};
+
+use serde::{Deserialize, Serialize};
+
+use crate::file_utils::{get_config_dir, get_writer};
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ActiveRuntimeInnerRuntime {
+    #[serde(rename = "VALVE_runtime_is_steamvr")]
+    pub valve_runtime_is_steamvr: Option<bool>,
+    pub library_path: String,
+    pub name: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ActiveRuntime {
+    pub file_format_version: String,
+    pub runtime: ActiveRuntimeInnerRuntime,
+}
+
+fn get_active_runtime_json_path() -> String {
+    format!(
+        "{config}/openxr/1/active_runtime.json",
+        config = get_config_dir()
+    )
+}
+
+pub fn is_steam(active_runtime: ActiveRuntime) -> bool {
+    match active_runtime.runtime.valve_runtime_is_steamvr {
+        Some(true) => true,
+        _ => false,
+    }
+}
+
+fn get_active_runtime_from_path(path_s: String) -> Option<ActiveRuntime> {
+    let path = Path::new(&path_s);
+    if !(path.is_file() || path.is_symlink()) {
+        return None;
+    }
+    let fd = File::open(path).expect("Unable to open active_runtime.json");
+    let reader = BufReader::new(fd);
+    Some(serde_json::from_reader(reader).expect("Failed to deserialize active_runtime.json"))
+}
+
+pub fn get_current_active_runtime() -> Option<ActiveRuntime> {
+    get_active_runtime_from_path(get_active_runtime_json_path())
+}
+
+fn dump_active_runtime_to_path(active_runtime: ActiveRuntime, path_s: String) {
+    let writer = get_writer(&path_s);
+    // TODO: deal with write protection
+    serde_json::to_writer_pretty(writer, &active_runtime).expect("Unable to save active runtime");
+}
+
+pub fn dump_current_active_runtime(active_runtime: ActiveRuntime) {
+    dump_active_runtime_to_path(active_runtime, get_active_runtime_json_path());
+}
+
+// TODO: make library_path relative when dumping
+
+#[cfg(test)]
+mod tests {
+    use super::{get_active_runtime_from_path, ActiveRuntime, ActiveRuntimeInnerRuntime, dump_active_runtime_to_path};
+
+    #[test]
+    fn can_read_active_runtime_json_steamvr() {
+        let ar = get_active_runtime_from_path("./test/files/active_runtime.json.steamvr".into())
+            .unwrap();
+        assert_eq!(ar.file_format_version, "1.0.0");
+        assert!(ar.runtime.valve_runtime_is_steamvr.unwrap());
+        assert_eq!(
+            ar.runtime.library_path,
+            "/home/user/.local/share/Steam/steamapps/common/SteamVR/bin/linux64/vrclient.so"
+        );
+        assert_eq!(ar.runtime.name.unwrap(), "SteamVR");
+    }
+
+    #[test]
+    fn can_dump_active_runtime_json() {
+        let ar = ActiveRuntime {
+            file_format_version: "1.0.0".into(),
+            runtime: ActiveRuntimeInnerRuntime {
+                valve_runtime_is_steamvr: Some(true),
+                library_path:
+                    "/home/user/.local/share/Steam/steamapps/common/SteamVR/bin/linux64/vrclient.so"
+                        .into(),
+                name: Some("SteamVR".into()),
+            },
+        };
+        dump_active_runtime_to_path(ar, "./target/testout/active_runtime.json.steamvr".into());
+    }
+}
