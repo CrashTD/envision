@@ -1,5 +1,6 @@
 use std::{fs::File, io::BufReader, path::Path};
 
+use expect_dialog::ExpectDialog;
 use serde::{Deserialize, Serialize};
 
 use crate::file_utils::{get_config_dir, get_writer};
@@ -37,9 +38,9 @@ fn get_openvrpaths_from_path(path_s: String) -> Option<OpenVrPaths> {
     if !(path.is_file() || path.is_symlink()) {
         return None;
     }
-    let fd = File::open(path).expect("Unable to open openvrpaths.vrpath");
+    let fd = File::open(path).expect_dialog("Unable to open openvrpaths.vrpath");
     let reader = BufReader::new(fd);
-    Some(serde_json::from_reader(reader).expect("Failed to deserialize openvrpaths.vrpath"))
+    Some(serde_json::from_reader(reader).expect_dialog("Failed to deserialize openvrpaths.vrpath"))
 }
 
 pub fn get_current_openvrpaths() -> Option<OpenVrPaths> {
@@ -48,7 +49,7 @@ pub fn get_current_openvrpaths() -> Option<OpenVrPaths> {
 
 fn dump_openvrpaths_to_path(ovr_paths: OpenVrPaths, path_s: String) {
     let writer = get_writer(&path_s);
-    serde_json::to_writer_pretty(writer, &ovr_paths).expect("Unable to save openvrpaths");
+    serde_json::to_writer_pretty(writer, &ovr_paths).expect_dialog("Unable to save openvrpaths");
 }
 
 pub fn dump_current_openvrpaths(ovr_paths: OpenVrPaths) {

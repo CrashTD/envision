@@ -8,6 +8,7 @@ use crate::{
     runner::{Runner, RunnerStatus},
     ui::widgets::widgets::vseparator,
 };
+use expect_dialog::ExpectDialog;
 use iced::{
     executor,
     theme::{Button, Container},
@@ -140,7 +141,7 @@ impl Application for MainWin {
             Message::ProfileChanged(profile) => {
                 if self.config.selected_profile_name != profile.name {
                     self.config.selected_profile_name = profile.name;
-                    save_config(&self.config).expect("Failed to save config");
+                    save_config(&self.config).expect_dialog("Failed to save config");
                 }
             }
             Message::EditProfile => {
@@ -148,7 +149,7 @@ impl Application for MainWin {
             }
             Message::DebugViewChanged(nval) => {
                 self.config.debug_view_enabled = nval;
-                save_config(&self.config).expect("Failed to save config");
+                save_config(&self.config).expect_dialog("Failed to save config");
             }
             Message::DebugSearchChanged(term) => self.debug_search_term = term,
             Message::InstallMonado => {

@@ -1,10 +1,6 @@
+use expect_dialog::ExpectDialog;
 use serde::{Deserialize, Serialize};
-use std::{
-    collections::HashMap,
-    fs::File,
-    io::BufReader,
-    fmt::Display,
-};
+use std::{collections::HashMap, fmt::Display, fs::File, io::BufReader};
 
 use crate::file_utils::get_writer;
 
@@ -28,15 +24,15 @@ impl Display for Profile {
     }
 }
 
-pub fn load_profile(path: &String) -> Result<Profile, serde_json::Error> {
-    let file = File::open(path).unwrap();
+pub fn load_profile(path: &String) -> Profile {
+    let file = File::open(path).expect_dialog("Unable to open profile");
     let reader = BufReader::new(file);
-    serde_json::from_reader(reader)
+    serde_json::from_reader(reader).expect_dialog("Faiuled to deserialize profile")
 }
 
 pub fn dump_profile(profile: Profile, path_s: &String) -> () {
     let writer = get_writer(path_s);
-    serde_json::to_writer_pretty(writer, &profile).expect("Could not write profile")
+    serde_json::to_writer_pretty(writer, &profile).expect_dialog("Could not write profile")
 }
 
 #[cfg(test)]
@@ -48,39 +44,31 @@ mod tests {
     #[test]
     fn profile_can_be_loaded() {
         let profile = load_profile(&"./test/files/profile.json".to_string());
-        match profile {
-            Ok(profile) => {
-                assert_eq!(profile.name, "Demo profile");
-                assert_eq!(profile.monado_path, "/home/user/monado");
-                assert_eq!(profile.openovr_path, "/home/user/openovr");
-                assert_eq!(
-                    profile.libsurvive_path.as_deref(),
-                    Some("/home/user/libsurvive")
-                );
-                assert_eq!(profile.mercury_path, None);
-                assert_eq!(profile.basalt_path, None);
-                assert_eq!(profile.libsurvive_enabled, true);
-                assert_eq!(profile.basalt_enabled, false);
-                assert_eq!(profile.mercury_enabled, false);
-                assert!(profile
-                    .environment
-                    .contains_key("XRT_COMPOSITOR_SCALE_PERCENTAGE"));
-                assert!(profile.environment.contains_key("XRT_COMPOSITOR_COMPUTE"));
-                assert!(profile
-                    .environment
-                    .contains_key("SURVIVE_GLOBALSCENESOLVER"));
-            }
-            Err(_) => assert!(false),
-        }
+        assert_eq!(profile.name, "Demo profile");
+        assert_eq!(profile.monado_path, "/home/user/monado");
+        assert_eq!(profile.openovr_path, "/home/user/openovr");
+        assert_eq!(
+            profile.libsurvive_path.as_deref(),
+            Some("/home/user/libsurvive")
+        );
+        assert_eq!(profile.mercury_path, None);
+        assert_eq!(profile.basalt_path, None);
+        assert_eq!(profile.libsurvive_enabled, true);
+        assert_eq!(profile.basalt_enabled, false);
+        assert_eq!(profile.mercury_enabled, false);
+        assert!(profile
+            .environment
+            .contains_key("XRT_COMPOSITOR_SCALE_PERCENTAGE"));
+        assert!(profile.environment.contains_key("XRT_COMPOSITOR_COMPUTE"));
+        assert!(profile
+            .environment
+            .contains_key("SURVIVE_GLOBALSCENESOLVER"));
     }
 
     #[test]
     fn profile_can_be_dumped() {
         let mut env = HashMap::new();
-        env.insert(
-            "XRT_COMPOSITOR_SCALE_PERCENTAGE".into(),
-            "140".into(),
-        );
+        env.insert("XRT_COMPOSITOR_SCALE_PERCENTAGE".into(), "140".into());
         env.insert("XRT_COMPOSITOR_COMPUTE".into(), "1".into());
         let p = Profile {
             name: "Demo profile".into(),
@@ -96,7 +84,7 @@ mod tests {
         };
         let fpath = String::from("./target/testout/testprofile.json");
         dump_profile(p, &fpath);
-        let loaded = load_profile(&fpath).unwrap();
+        let loaded = load_profile(&fpath);
         assert_eq!(loaded.name, "Demo profile");
         assert_eq!(
             loaded.libsurvive_path,

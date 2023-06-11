@@ -1,8 +1,11 @@
 use std::{
+    env,
     fs::{create_dir_all, OpenOptions},
     io::BufWriter,
-    path::Path, env,
+    path::Path,
 };
+
+use expect_dialog::ExpectDialog;
 
 use crate::constants::CMD_NAME;
 
@@ -11,7 +14,7 @@ pub fn get_writer(path_s: &String) -> BufWriter<std::fs::File> {
     match path.parent() {
         Some(parent) => {
             if !parent.is_dir() {
-                create_dir_all(parent).expect("Could not create dir")
+                create_dir_all(parent).expect_dialog("Could not create dir")
             }
         }
         None => {}
@@ -21,21 +24,17 @@ pub fn get_writer(path_s: &String) -> BufWriter<std::fs::File> {
         .create(true)
         .truncate(true)
         .open(path)
-        .expect("Could not open file");
+        .expect_dialog("Could not open file");
     BufWriter::new(file)
 }
 
 pub fn get_home_dir() -> String {
-    env::var("HOME").expect("HOME env var not defined")
+    env::var("HOME").expect_dialog("HOME env var not defined")
 }
 
 pub fn get_config_dir() -> String {
     match env::var("XDG_CONFIG_HOME") {
-        Ok(conf_home) => format!(
-            "{conf_home}/{name}",
-            conf_home = conf_home,
-            name = CMD_NAME
-        ),
+        Ok(conf_home) => format!("{conf_home}/{name}", conf_home = conf_home, name = CMD_NAME),
         Err(_) => format!(
             "{home}/.config/{name}",
             home = get_home_dir(),
@@ -46,11 +45,7 @@ pub fn get_config_dir() -> String {
 
 pub fn get_data_dir() -> String {
     match env::var("XDG_DATA_HOME") {
-        Ok(data_home) => format!(
-            "{data_home}/{name}",
-            data_home = data_home,
-            name = CMD_NAME
-        ),
+        Ok(data_home) => format!("{data_home}/{name}", data_home = data_home, name = CMD_NAME),
         Err(_) => format!(
             "{home}/.local/share/{name}",
             home = get_home_dir(),

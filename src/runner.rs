@@ -1,3 +1,9 @@
+use crate::{file_utils::get_writer, profile::Profile};
+use expect_dialog::ExpectDialog;
+use nix::{
+    sys::signal::{kill, Signal::SIGTERM},
+    unistd::Pid,
+};
 use std::{
     collections::HashMap,
     io::{BufRead, BufReader, Write},
@@ -9,13 +15,6 @@ use std::{
     thread::{self, JoinHandle},
     vec,
 };
-
-use nix::{
-    sys::signal::{kill, Signal::SIGTERM},
-    unistd::Pid,
-};
-
-use crate::{file_utils::get_writer, profile::Profile};
 
 pub struct Runner {
     pub environment: HashMap<String, String>,
@@ -52,7 +51,7 @@ macro_rules! logger_thread {
                         match $sender
                             .clone()
                             .lock()
-                            .expect("Could not lock sender")
+                            .expect_dialog("Could not lock sender")
                             .send(buf)
                         {
                             Ok(_) => {}
@@ -104,7 +103,7 @@ impl Runner {
                 .stderr(Stdio::piped())
                 .stdout(Stdio::piped())
                 .spawn()
-                .expect("Failed to execute runner"),
+                .expect_dialog("Failed to execute runner"),
         );
         let stdout = self.process.as_mut().unwrap().stdout.take().unwrap();
         let stderr = self.process.as_mut().unwrap().stderr.take().unwrap();
@@ -123,15 +122,19 @@ impl Runner {
             return;
         }
         let mut proc = process.unwrap();
-        let child_pid = Pid::from_raw(proc.id().try_into().expect("Could not convert pid to u32"));
-        kill(child_pid, SIGTERM).expect("Could not send sigterm to process");
+        let child_pid = Pid::from_raw(
+            proc.id()
+                .try_into()
+                .expect_dialog("Could not convert pid to u32"),
+        );
+        kill(child_pid, SIGTERM).expect_dialog("Could not send sigterm to process");
         loop {
             match self.threads.pop() {
                 None => break,
-                Some(thread) => thread.join().expect("Failed to join reader thread"),
+                Some(thread) => thread.join().expect_dialog("Failed to join reader thread"),
             }
         }
-        proc.wait().expect("Failed to wait for process");
+        proc.wait().expect_dialog("Failed to wait for process");
     }
 
     pub fn status(&mut self) -> RunnerStatus {
@@ -211,7 +214,7 @@ mod tests {
     #[test]
     fn can_create_from_profile() {
         Runner::monado_runner_from_profile(
-            load_profile(&"./test/files/profile.json".to_string()).unwrap(),
+            load_profile(&"./test/files/profile.json".to_string()),
         );
     }
 }

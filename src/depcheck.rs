@@ -1,3 +1,4 @@
+use expect_dialog::ExpectDialog;
 use std::{env, fmt::Display, path::Path};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -47,17 +48,14 @@ fn shared_obj_paths() -> Vec<String> {
 }
 
 fn include_paths() -> Vec<String> {
-    vec![
-        "/usr/include".to_string(),
-        "/usr/local/include".to_string(),
-    ]
+    vec!["/usr/include".to_string(), "/usr/local/include".to_string()]
 }
 
 pub fn check_dependency(dep: Dependency) -> bool {
     for dir in match dep.dep_type {
         DepType::SharedObject => shared_obj_paths(),
         DepType::Executable => env::var("PATH")
-            .expect("PATH environment variable not defined")
+            .expect_dialog("PATH environment variable not defined")
             .split(':')
             .map(str::to_string)
             .collect(),
