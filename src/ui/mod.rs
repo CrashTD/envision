@@ -1,3 +1,5 @@
-pub mod main_win;
-pub mod widgets;
-pub mod styles;
+pub mod app;
+pub mod main_view;
+pub mod about_dialog;
+pub mod debug_view;
+pub mod build_window;

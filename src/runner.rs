@@ -148,14 +148,23 @@ impl Runner {
         }
     }
 
-    pub fn get_output(&mut self) -> String {
+    fn receive_output(&mut self) {
         loop {
             match self.receiver.try_recv() {
                 Ok(data) => self.output.push(data),
                 Err(_) => break,
             };
         }
+    }
+
+    pub fn get_output(&mut self) -> String {
+        self.receive_output();
         self.output.concat()
+    }
+
+    pub fn get_rows(&mut self) -> Vec<String> {
+        self.receive_output();
+        self.output.clone()
     }
 
     fn save_log(path_s: String, log: &Vec<String>) -> Result<(), std::io::Error> {

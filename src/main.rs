@@ -1,6 +1,6 @@
-use expect_dialog::ExpectDialog;
-use iced::{Application, Settings};
-use ui::main_win::MainWin;
+use constants::APP_ID;
+use relm4::RelmApp;
+use ui::app::App;
 
 pub mod builders;
 pub mod config;
@@ -15,5 +15,7 @@ pub mod runner;
 pub mod ui;
 
 fn main() {
-    MainWin::run(Settings::default()).expect_dialog("Application encountered an error");
+    let app = RelmApp::new(APP_ID);
+    relm4_icons::initialize_icons();
+    app.run::<App>(())
 }

@@ -2,6 +2,7 @@ use crate::{
     constants::CMD_NAME,
     file_utils::{get_config_dir, get_writer},
 };
+use expect_dialog::ExpectDialog;
 use serde::{Deserialize, Serialize};
 use std::{fs::File, io::BufReader};
 
@@ -49,8 +50,8 @@ fn save_config_to_path(config: &Config, path_s: &String) -> Result<(), serde_jso
     serde_json::to_writer_pretty(writer, config)
 }
 
-pub fn save_config(config: &Config) -> Result<(), serde_json::Error> {
-    save_config_to_path(config, &config_file_path())
+pub fn save_config(config: &Config) {
+    save_config_to_path(config, &config_file_path()).expect_dialog("Failed to save config");
 }
 
 #[cfg(test)]
