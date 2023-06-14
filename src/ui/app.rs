@@ -3,6 +3,8 @@ use std::time::Duration;
 use crate::builders::build_monado::get_build_monado_runner;
 use crate::config::{get_config, save_config, Config};
 use crate::constants::APP_NAME;
+use crate::dependencies::libsurvive_deps::get_missing_libsurvive_deps;
+use crate::dependencies::monado_deps::{check_monado_deps, get_missing_monado_deps};
 use crate::profile::Profile;
 use crate::profiles::valve_index::valve_index_profile;
 use crate::runner::{Runner, RunnerStatus};
@@ -12,9 +14,11 @@ use crate::ui::main_view::{MainView, MainViewInit, MainViewOutMsg};
 use expect_dialog::ExpectDialog;
 use gtk::prelude::*;
 use relm4::actions::{ActionGroupName, RelmAction, RelmActionGroup};
+use relm4::adw::traits::MessageDialogExt;
 use relm4::gtk::glib;
 use relm4::{new_action_group, new_stateful_action, new_stateless_action, prelude::*};
 use relm4::{ComponentParts, ComponentSender, SimpleComponent};
+use relm4_components::alert::{Alert, AlertSettings};
 
 use super::about_dialog::AboutDialog;
 use super::build_window::BuildWindow;
@@ -33,6 +37,8 @@ pub struct App {
     about_dialog: Controller<AboutDialog>,
     #[tracker::do_not_track]
     build_window: Controller<BuildWindow>,
+    #[tracker::do_not_track]
+    dependencies_dialog: adw::MessageDialog,
 
     #[tracker::do_not_track]
     config: Config,
@@ -63,16 +69,13 @@ impl App {
         return None;
     }
 
-    pub fn get_selected_profile(&self) -> Option<&Profile> {
+    pub fn get_selected_profile(&self) -> &Profile {
         self.get_profile_by_name(&self.config.selected_profile_name)
+            .expect_dialog("Could not find selected profile")
     }
 
     pub fn start_monado(&mut self) {
-        let mut runner = Runner::monado_runner_from_profile(
-            self.get_selected_profile()
-                .expect_dialog("Could not find selected profile")
-                .clone(),
-        );
+        let mut runner = Runner::monado_runner_from_profile(self.get_selected_profile().clone());
         runner.start();
         self.monado_runner = Some(runner);
     }
@@ -139,12 +142,16 @@ impl SimpleComponent for App {
                     None => {}
                     Some(runner) => match runner.status() {
                         RunnerStatus::Running => {
-                            self.build_window.sender().emit(BuildWindowMsg::UpdateContent(runner.get_output()));
+                            self.build_window
+                                .sender()
+                                .emit(BuildWindowMsg::UpdateContent(runner.get_output()));
                         }
                         RunnerStatus::Stopped => {
-                            self.build_window.sender().emit(BuildWindowMsg::UpdateCanClose(true));
+                            self.build_window
+                                .sender()
+                                .emit(BuildWindowMsg::UpdateCanClose(true));
                         }
-                    }
+                    },
                 };
             }
             Msg::EnableDebugViewChanged(val) => {
@@ -187,15 +194,43 @@ impl SimpleComponent for App {
                 },
             },
             Msg::BuildProfile => {
-                let profile = self
-                    .get_selected_profile()
-                    .expect_dialog("Could not find selected profile");
+                let profile = self.get_selected_profile();
+                let mut missing_deps = get_missing_monado_deps();
+                if profile.libsurvive_enabled {
+                    missing_deps.extend(get_missing_libsurvive_deps());
+                }
+                // if profile.basalt_enabled {
+                //     missing_deps.extend(get_missing_basalt_deps());
+                // }
+                // if profile.mercury_enabled {
+                //     missing_deps.extend(get_missing_mercury_deps());
+                // }
+                if !missing_deps.is_empty() {
+                    self.dependencies_dialog.set_body(
+                        missing_deps
+                            .iter()
+                            .map(|dep| dep.name.clone())
+                            .collect::<Vec<String>>()
+                            .join(", ")
+                            .as_str(),
+                    );
+                    self.dependencies_dialog.present();
+                    return;
+                }
+                self.build_window
+                    .sender()
+                    .send(BuildWindowMsg::Present)
+                    .unwrap();
                 let mut runner = get_build_monado_runner(profile.clone());
                 runner.start();
-                self.build_window.sender().emit(BuildWindowMsg::UpdateTitle("Building Monado".into()));
-                self.build_window.sender().emit(BuildWindowMsg::UpdateCanClose(false));
+                self.build_window
+                    .sender()
+                    .emit(BuildWindowMsg::UpdateTitle("Building Monado".into()));
+                self.build_window
+                    .sender()
+                    .emit(BuildWindowMsg::UpdateCanClose(false));
                 self.build_runner = Some(runner);
-            },
+            }
             Msg::ProfileSelected(prof_name) => {
                 self.config.selected_profile_name = prof_name;
                 save_config(&self.config);
@@ -210,6 +245,13 @@ impl SimpleComponent for App {
     ) -> ComponentParts<Self> {
         let config = get_config();
         let profiles = vec![valve_index_profile()];
+        let dependencies_dialog = adw::MessageDialog::builder()
+            .modal(true)
+            .transient_for(root)
+            .heading("Missing dependencies:")
+            .hide_on_close(true)
+            .build();
+        dependencies_dialog.add_response("ok", "_Ok");
         let model = App {
             main_view: MainView::builder()
                 .launch(MainViewInit {
@@ -236,6 +278,7 @@ impl SimpleComponent for App {
                 .transient_for(root)
                 .launch(())
                 .detach(),
+            dependencies_dialog,
             enable_debug_view: config.debug_view_enabled,
             config,
             tracker: 0,
@@ -248,10 +291,8 @@ impl SimpleComponent for App {
         let mut actions = RelmActionGroup::<AppActionGroup>::new();
 
         let buildprofile_action = {
-            let buildprofile_sender = model.build_window.sender().clone();
             let this_sender = sender.clone();
             RelmAction::<BuildProfileAction>::new_stateless(move |_| {
-                buildprofile_sender.send(BuildWindowMsg::Present).unwrap();
                 this_sender.input_sender().emit(Msg::BuildProfile);
             })
         };
@@ -281,7 +322,12 @@ impl SimpleComponent for App {
 
         root.insert_action_group(AppActionGroup::NAME, Some(&actions.into_action_group()));
 
-        model.main_view.sender().emit(MainViewMsg::UpdateProfileNames(model.profiles.iter().map(|p| p.clone().name).collect()));
+        model
+            .main_view
+            .sender()
+            .emit(MainViewMsg::UpdateProfileNames(
+                model.profiles.iter().map(|p| p.clone().name).collect(),
+            ));
 
         let timer_sender = sender.clone();
         glib::timeout_add_local(Duration::from_millis(1000), move || {

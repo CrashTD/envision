@@ -68,3 +68,11 @@ fn monado_deps() -> Vec<Dependency> {
 pub fn check_monado_deps() -> Vec<DependencyCheckResult> {
     check_dependencies(monado_deps())
 }
+
+pub fn get_missing_monado_deps() -> Vec<Dependency> {
+    check_monado_deps()
+        .iter()
+        .filter(|res| !res.found)
+        .map(|res| res.dependency.clone())
+        .collect()
+}
