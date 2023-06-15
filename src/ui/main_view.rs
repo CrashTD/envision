@@ -171,6 +171,7 @@ impl SimpleComponent for MainView {
                             gtk::Button {
                                 add_css_class: "flat",
                                 add_css_class: "circular",
+                                set_tooltip_text: Some("Copy"),
                                 set_icon_name: icon_name::COPY,
                                 set_vexpand: false,
                                 set_valign: gtk::Align::Center,
