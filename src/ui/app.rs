@@ -141,15 +141,21 @@ impl SimpleComponent for App {
             Msg::UpdateView => {
                 match &mut self.monado_runner {
                     None => {}
-                    Some(runner) => match runner.status() {
-                        RunnerStatus::Running => {
-                            self.monado_log.extend(runner.consume_rows());
+                    Some(runner) => {
+                        let n_rows = runner.consume_rows();
+                        if !n_rows.is_empty() {
+                            self.monado_log.extend(n_rows);
                             self.debug_view
                                 .sender()
                                 .emit(DebugViewMsg::LogUpdated(self.monado_log.clone()));
                         }
-                        _ => {}
-                    },
+                        match runner.status() {
+                            RunnerStatus::Running => {},
+                            RunnerStatus::Stopped => {
+                                self.main_view.sender().emit(MainViewMsg::MonadoActiveChanged(false));
+                            }
+                        };
+                    }
                 };
                 match &mut self.build_pipeline {
                     None => {}
