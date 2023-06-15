@@ -3,7 +3,7 @@ use std::{fs::File, io::BufReader, path::Path};
 use expect_dialog::ExpectDialog;
 use serde::{Deserialize, Serialize};
 
-use crate::file_utils::{get_config_dir, get_writer};
+use crate::{file_utils::{get_config_dir, get_data_dir, get_writer, set_file_radonly}, profile::Profile};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct OpenVrPaths {
@@ -48,12 +48,46 @@ pub fn get_current_openvrpaths() -> Option<OpenVrPaths> {
 }
 
 fn dump_openvrpaths_to_path(ovr_paths: OpenVrPaths, path_s: String) {
+    set_file_radonly(&path_s, false);
     let writer = get_writer(&path_s);
     serde_json::to_writer_pretty(writer, &ovr_paths).expect_dialog("Unable to save openvrpaths");
+    set_file_radonly(&path_s, true);
 }
 
 pub fn dump_current_openvrpaths(ovr_paths: OpenVrPaths) {
     dump_openvrpaths_to_path(ovr_paths, get_openvrpaths_vrpath_path())
+}
+
+fn build_steam_openvrpaths() -> OpenVrPaths {
+    let datadir = get_data_dir();
+    OpenVrPaths {
+        config: vec![format!("{data}/Steam/config", data = datadir)],
+        external_drivers: None,
+        jsonid: "vrpathreg".into(),
+        log: vec![format!("{data}/Steam/logs", data = datadir)],
+        runtime: vec![format!("{data}/Steam/steamapps/common/SteamVR", data = datadir)],
+        version: 1,
+    }
+}
+
+pub fn set_current_openvrpaths_to_steam() {
+    dump_current_openvrpaths(build_steam_openvrpaths())
+}
+
+fn build_profile_openvrpaths(profile: Profile) -> OpenVrPaths {
+    let datadir = get_data_dir();
+    OpenVrPaths {
+        config: vec![format!("{data}/Steam/config", data = datadir)],
+        external_drivers: None,
+        jsonid: "vrpathreg".into(),
+        log: vec![format!("{data}/Steam/logs", data = datadir)],
+        runtime: vec![format!("{opencomp_dir}/build", opencomp_dir = profile.opencomposite_path)],
+        version: 1,
+    }
+}
+
+pub fn set_current_openvrpaths_to_profile(profile: Profile) {
+    dump_current_openvrpaths(build_profile_openvrpaths(profile))
 }
 
 #[cfg(test)]
