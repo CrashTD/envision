@@ -38,7 +38,9 @@ fn shared_obj_paths() -> Vec<String> {
     vec![
         "/lib".to_string(),
         "/usr/lib".to_string(),
+        "/usr/lib64".to_string(),
         "/usr/local/lib".to_string(),
+        "/usr/local/lib64".to_string(),
         "/usr/lib/x86_64-linux-gnu".to_string(),
         "/usr/lib/aarch64-linux-gnu".to_string(),
         "/lib/x86_64-linux-gnu".to_string(),
