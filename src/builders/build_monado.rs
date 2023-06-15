@@ -6,7 +6,8 @@ pub fn get_build_monado_runner(profile: Profile) -> Runner {
         None,
         "./scripts/build_monado.sh".into(),
         vec![
-            profile.monado_path
+            profile.monado_path,
+            profile.prefix,
         ]
     );
     runner

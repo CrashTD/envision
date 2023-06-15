@@ -16,6 +16,8 @@ pub struct Profile {
     pub basalt_enabled: bool,
     pub mercury_enabled: bool,
     pub environment: HashMap<String, String>,
+    /** Install prefix */
+    pub prefix: String,
 }
 
 impl Display for Profile {
@@ -47,6 +49,7 @@ mod tests {
         assert_eq!(profile.name, "Demo profile");
         assert_eq!(profile.monado_path, "/home/user/monado");
         assert_eq!(profile.openovr_path, "/home/user/openovr");
+        assert_eq!(profile.prefix, "/home/user/rex2prefix");
         assert_eq!(
             profile.libsurvive_path.as_deref(),
             Some("/home/user/libsurvive")
@@ -81,6 +84,7 @@ mod tests {
             basalt_enabled: false,
             mercury_enabled: false,
             environment: env,
+            prefix: String::from("/home/user/rex2prefix")
         };
         let fpath = String::from("./target/testout/testprofile.json");
         dump_profile(p, &fpath);

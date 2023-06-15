@@ -13,6 +13,7 @@ pub mod profile;
 pub mod profiles;
 pub mod runner;
 pub mod ui;
+pub mod runner_pipeline;
 
 fn main() {
     let app = RelmApp::new(APP_ID);

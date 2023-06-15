@@ -87,11 +87,11 @@ impl Runner {
     }
 
     pub fn monado_runner_from_profile(profile: Profile) -> Self {
-        let mut path = profile.monado_path;
-        if !path.starts_with("/usr") {
-            path += "/build/src/xrt/targets/service/monado-service";
-        }
-        Self::new(Some(profile.environment), path, vec![])
+        Self::new(
+            Some(profile.environment),
+            format!("{pfx}/bin/monado-service", pfx = profile.prefix),
+            vec![],
+        )
     }
 
     pub fn start(&mut self) {
@@ -157,14 +157,18 @@ impl Runner {
         }
     }
 
-    pub fn get_output(&mut self) -> String {
+    pub fn consume_output(&mut self) -> String {
         self.receive_output();
-        self.output.concat()
+        let res = self.output.concat();
+        self.output.clear();
+        res
     }
 
-    pub fn get_rows(&mut self) -> Vec<String> {
+    pub fn consume_rows(&mut self) -> Vec<String> {
         self.receive_output();
-        self.output.clone()
+        let res = self.output.clone();
+        self.output.clear();
+        res
     }
 
     fn save_log(path_s: String, log: &Vec<String>) -> Result<(), std::io::Error> {
@@ -199,7 +203,7 @@ mod tests {
         sleep(time::Duration::from_millis(10));
         runner.terminate();
         assert_eq!(runner.status(), RunnerStatus::Stopped);
-        let out = runner.get_output();
+        let out = runner.consume_output();
         assert_eq!(out, "REX2TEST: Lorem ipsum dolor\n");
     }
 
@@ -222,8 +226,6 @@ mod tests {
 
     #[test]
     fn can_create_from_profile() {
-        Runner::monado_runner_from_profile(
-            load_profile(&"./test/files/profile.json".to_string()),
-        );
+        Runner::monado_runner_from_profile(load_profile(&"./test/files/profile.json".to_string()));
     }
 }

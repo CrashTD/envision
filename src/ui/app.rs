@@ -1,5 +1,6 @@
 use std::time::Duration;
 
+use crate::builders::build_libsurvive::get_build_libsurvive_runner;
 use crate::builders::build_monado::get_build_monado_runner;
 use crate::config::{get_config, save_config, Config};
 use crate::constants::APP_NAME;
@@ -8,6 +9,7 @@ use crate::dependencies::monado_deps::{check_monado_deps, get_missing_monado_dep
 use crate::profile::Profile;
 use crate::profiles::valve_index::valve_index_profile;
 use crate::runner::{Runner, RunnerStatus};
+use crate::runner_pipeline::RunnerPipeline;
 use crate::ui::build_window::BuildWindowMsg;
 use crate::ui::debug_view::DebugViewInit;
 use crate::ui::main_view::{MainView, MainViewInit, MainViewOutMsg};
@@ -45,7 +47,9 @@ pub struct App {
     #[tracker::do_not_track]
     monado_runner: Option<Runner>,
     #[tracker::do_not_track]
-    build_runner: Option<Runner>,
+    monado_log: Vec<String>,
+    #[tracker::do_not_track]
+    build_pipeline: Option<RunnerPipeline>,
     #[tracker::do_not_track]
     profiles: Vec<Profile>,
 }
@@ -75,6 +79,7 @@ impl App {
     }
 
     pub fn start_monado(&mut self) {
+        self.monado_log.clear();
         let mut runner = Runner::monado_runner_from_profile(self.get_selected_profile().clone());
         runner.start();
         self.monado_runner = Some(runner);
@@ -131,22 +136,24 @@ impl SimpleComponent for App {
                     None => {}
                     Some(runner) => match runner.status() {
                         RunnerStatus::Running => {
+                            self.monado_log.extend(runner.consume_rows());
                             self.debug_view
                                 .sender()
-                                .emit(DebugViewMsg::LogUpdated(runner.get_rows()));
+                                .emit(DebugViewMsg::LogUpdated(self.monado_log.clone()));
                         }
                         _ => {}
                     },
                 };
-                match &mut self.build_runner {
+                match &mut self.build_pipeline {
                     None => {}
-                    Some(runner) => match runner.status() {
-                        RunnerStatus::Running => {
+                    Some(pipeline) => match pipeline.is_running() {
+                        true => {
+                            pipeline.update();
                             self.build_window
                                 .sender()
-                                .emit(BuildWindowMsg::UpdateContent(runner.get_output()));
-                        }
-                        RunnerStatus::Stopped => {
+                                .emit(BuildWindowMsg::UpdateContent(pipeline.get_log()));
+                        },
+                        false => {
                             self.build_window
                                 .sender()
                                 .emit(BuildWindowMsg::UpdateCanClose(true));
@@ -196,15 +203,20 @@ impl SimpleComponent for App {
             Msg::BuildProfile => {
                 let profile = self.get_selected_profile();
                 let mut missing_deps = get_missing_monado_deps();
+                let mut runners: Vec<Runner> = vec![];
                 if profile.libsurvive_enabled {
                     missing_deps.extend(get_missing_libsurvive_deps());
+                    runners.push(get_build_libsurvive_runner(profile.clone()));
                 }
                 // if profile.basalt_enabled {
                 //     missing_deps.extend(get_missing_basalt_deps());
+                //     runners.push(get_build_basalt_runner(profile.clone()));
                 // }
                 // if profile.mercury_enabled {
                 //     missing_deps.extend(get_missing_mercury_deps());
+                //     runners.push(get_build_mercury_runner(profile.clone()));
                 // }
+                runners.push(get_build_monado_runner(profile.clone()));
                 if !missing_deps.is_empty() {
                     self.dependencies_dialog.set_body(
                         missing_deps
@@ -221,15 +233,15 @@ impl SimpleComponent for App {
                     .sender()
                     .send(BuildWindowMsg::Present)
                     .unwrap();
-                let mut runner = get_build_monado_runner(profile.clone());
-                runner.start();
+                let mut pipeline = RunnerPipeline::new(runners);
+                pipeline.start();
                 self.build_window
                     .sender()
                     .emit(BuildWindowMsg::UpdateTitle("Building Monado".into()));
                 self.build_window
                     .sender()
                     .emit(BuildWindowMsg::UpdateCanClose(false));
-                self.build_runner = Some(runner);
+                self.build_pipeline = Some(pipeline);
             }
             Msg::ProfileSelected(prof_name) => {
                 self.config.selected_profile_name = prof_name;
@@ -284,7 +296,8 @@ impl SimpleComponent for App {
             tracker: 0,
             profiles,
             monado_runner: None,
-            build_runner: None,
+            monado_log: vec![],
+            build_pipeline: None,
         };
         let widgets = view_output!();
 
