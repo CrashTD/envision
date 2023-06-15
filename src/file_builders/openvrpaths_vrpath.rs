@@ -3,7 +3,7 @@ use std::{fs::File, io::BufReader, path::Path};
 use expect_dialog::ExpectDialog;
 use serde::{Deserialize, Serialize};
 
-use crate::{file_utils::{get_config_dir, get_data_dir, get_writer, set_file_radonly}, profile::Profile};
+use crate::{file_utils::{get_xdg_config_dir, get_xdg_data_dir, get_writer, set_file_radonly}, profile::Profile};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct OpenVrPaths {
@@ -18,7 +18,7 @@ pub struct OpenVrPaths {
 fn get_openvrpaths_vrpath_path() -> String {
     format!(
         "{config}/openvr/openvrpaths.vrpath",
-        config = get_config_dir()
+        config = get_xdg_config_dir()
     )
 }
 
@@ -59,7 +59,7 @@ pub fn dump_current_openvrpaths(ovr_paths: OpenVrPaths) {
 }
 
 fn build_steam_openvrpaths() -> OpenVrPaths {
-    let datadir = get_data_dir();
+    let datadir = get_xdg_data_dir();
     OpenVrPaths {
         config: vec![format!("{data}/Steam/config", data = datadir)],
         external_drivers: None,
@@ -75,7 +75,7 @@ pub fn set_current_openvrpaths_to_steam() {
 }
 
 fn build_profile_openvrpaths(profile: Profile) -> OpenVrPaths {
-    let datadir = get_data_dir();
+    let datadir = get_xdg_data_dir();
     OpenVrPaths {
         config: vec![format!("{data}/Steam/config", data = datadir)],
         external_drivers: None,

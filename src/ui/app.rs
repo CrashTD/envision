@@ -9,6 +9,8 @@ use crate::config::{get_config, save_config, Config};
 use crate::constants::APP_NAME;
 use crate::dependencies::libsurvive_deps::get_missing_libsurvive_deps;
 use crate::dependencies::monado_deps::get_missing_monado_deps;
+use crate::file_builders::active_runtime_json::{set_current_active_runtime_to_profile, set_current_active_runtime_to_steam};
+use crate::file_builders::openvrpaths_vrpath::{set_current_openvrpaths_to_profile, set_current_openvrpaths_to_steam};
 use crate::profile::Profile;
 use crate::profiles::valve_index::valve_index_profile;
 use crate::runner::{Runner, RunnerStatus};
@@ -59,6 +61,7 @@ pub enum Msg {
     EnableDebugViewChanged(bool),
     DoStartStopMonado,
     ProfileSelected(String),
+    SetMonadoRuntime(bool),
 }
 
 impl App {
@@ -254,6 +257,17 @@ impl SimpleComponent for App {
                 self.config.selected_profile_name = prof_name;
                 save_config(&self.config);
             }
+            Msg::SetMonadoRuntime(monado) => {
+                if monado {
+                    let profile = self.get_selected_profile();
+                    set_current_active_runtime_to_profile(profile.clone());
+                    set_current_openvrpaths_to_profile(profile.clone());
+                }
+                else {
+                    set_current_active_runtime_to_steam();
+                    set_current_openvrpaths_to_steam();
+                }
+            }
         }
     }
 
@@ -281,6 +295,7 @@ impl SimpleComponent for App {
                     MainViewOutMsg::EnableDebugViewChanged(val) => Msg::EnableDebugViewChanged(val),
                     MainViewOutMsg::DoStartStopMonado => Msg::DoStartStopMonado,
                     MainViewOutMsg::ProfileSelected(name) => Msg::ProfileSelected(name),
+                    MainViewOutMsg::SetMonadoRuntime(monado) => Msg::SetMonadoRuntime(monado),
                 }),
             debug_view: DebugView::builder()
                 .launch(DebugViewInit {

@@ -1,5 +1,6 @@
 use crate::config::Config;
 use crate::constants::APP_NAME;
+use crate::file_builders::active_runtime_json::{self, get_current_active_runtime};
 use crate::ui::app::{AboutAction, BuildProfileAction, DebugViewToggleAction};
 use expect_dialog::ExpectDialog;
 use gtk::prelude::*;
@@ -31,6 +32,7 @@ pub enum MainViewOutMsg {
     EnableDebugViewChanged(bool),
     DoStartStopMonado,
     ProfileSelected(String),
+    SetMonadoRuntime(bool),
 }
 
 pub struct MainViewInit {
@@ -112,6 +114,37 @@ impl SimpleComponent for MainView {
                         },
                         connect_clicked[sender] => move |_| {
                             sender.input(MainViewMsg::StartStopClicked)
+                        },
+                    },
+                    gtk::Separator {
+                        set_orientation: gtk::Orientation::Horizontal,
+                        set_hexpand: true,
+                    },
+                    gtk::Label {
+                        add_css_class: "heading",
+                        set_hexpand: true,
+                        set_xalign: 0.0,
+                        set_margin_start: 12,
+                        set_margin_end: 12,
+                        set_label: "OpenXR/OpenVR Runtime",
+                        set_wrap: true,
+                        set_wrap_mode: gtk::pango::WrapMode::Word,
+                    },
+                    gtk::Box {
+                        set_orientation: gtk::Orientation::Horizontal,
+                        set_hexpand: true,
+                        set_halign: gtk::Align::Start,
+                        set_margin_start: 12,
+                        set_margin_end: 12,
+                        set_spacing: 12,
+                        gtk::Label {
+                            set_label: "Steam",
+                        },
+                        #[name(runtime_switch)]
+                        gtk::Switch {
+                        },
+                        gtk::Label {
+                            set_label: "Monado"
                         },
                     },
                     gtk::Box {
@@ -225,6 +258,21 @@ impl SimpleComponent for MainView {
             tracker: 0,
         };
         let widgets = view_output!();
+
+        {
+            match get_current_active_runtime() {
+                None => {}
+                Some(runtime) => {
+                    widgets
+                        .runtime_switch
+                        .set_active(!active_runtime_json::is_steam(runtime));
+                }
+            }
+            widgets.runtime_switch.connect_state_set(move |_, state| {
+                sender.output(MainViewOutMsg::SetMonadoRuntime(state));
+                gtk::Inhibit(false)
+            });
+        }
 
         ComponentParts { model, widgets }
     }

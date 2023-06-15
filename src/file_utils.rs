@@ -1,6 +1,6 @@
 use std::{
     env,
-    fs::{self, create_dir_all, OpenOptions},
+    fs::{self, create_dir_all, OpenOptions, remove_file},
     io::BufWriter,
     path::Path,
 };
@@ -32,26 +32,32 @@ pub fn get_home_dir() -> String {
     env::var("HOME").expect_dialog("HOME env var not defined")
 }
 
-pub fn get_config_dir() -> String {
+pub fn get_xdg_config_dir() -> String {
     match env::var("XDG_CONFIG_HOME") {
-        Ok(conf_home) => format!("{conf_home}/{name}", conf_home = conf_home, name = CMD_NAME),
+        Ok(conf_home) => conf_home,
         Err(_) => format!(
-            "{home}/.config/{name}",
-            home = get_home_dir(),
-            name = CMD_NAME
+            "{home}/.config",
+            home = get_home_dir()
         ),
     }
 }
 
-pub fn get_data_dir() -> String {
+pub fn get_xdg_data_dir() -> String {
     match env::var("XDG_DATA_HOME") {
-        Ok(data_home) => format!("{data_home}/{name}", data_home = data_home, name = CMD_NAME),
+        Ok(data_home) => data_home,
         Err(_) => format!(
-            "{home}/.local/share/{name}",
-            home = get_home_dir(),
-            name = CMD_NAME
+            "{home}/.local/share",
+            home = get_home_dir()
         ),
     }
+}
+
+pub fn get_config_dir() -> String {
+    format!("{config}/{name}", config = get_xdg_config_dir(), name = CMD_NAME)
+}
+
+pub fn get_data_dir() -> String {
+    format!("{data}/{name}", data = get_xdg_data_dir(), name = CMD_NAME)
 }
 
 pub fn set_file_radonly(path_s: &String, readonly: bool) {
