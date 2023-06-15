@@ -7,7 +7,7 @@ use std::{
 
 use expect_dialog::ExpectDialog;
 
-use crate::constants::CMD_NAME;
+use crate::{constants::CMD_NAME, runner::Runner};
 
 pub fn get_writer(path_s: &String) -> BufWriter<std::fs::File> {
     let path = Path::new(path_s);
@@ -71,4 +71,14 @@ pub fn set_file_radonly(path_s: &String, readonly: bool) {
         .permissions();
     perms.set_readonly(readonly);
     fs::set_permissions(path, perms).expect_dialog("Could not set permissions for file")
+}
+
+pub fn setcap_cap_sys_nice_eip(file: String) {
+    let mut runner = Runner::new(None, "pkexec".into(), vec![
+        "setcap".into(),
+        "CAP_SYS_NICE=eip".into(),
+        file
+    ]);
+    runner.start();
+    runner.join();
 }
