@@ -1,6 +1,6 @@
 use std::{
     env,
-    fs::{create_dir_all, OpenOptions},
+    fs::{self, create_dir_all, OpenOptions},
     io::BufWriter,
     path::Path,
 };
@@ -52,4 +52,17 @@ pub fn get_data_dir() -> String {
             name = CMD_NAME
         ),
     }
+}
+
+pub fn set_file_radonly(path_s: &String, readonly: bool) {
+    let path = Path::new(&path_s);
+    if !path.is_file() {
+        println!("WARN: trying to set readonly on a file that does not exist");
+        return;
+    }
+    let mut perms = fs::metadata(path)
+        .expect_dialog("Could not get metadata for file")
+        .permissions();
+    perms.set_readonly(readonly);
+    fs::set_permissions(path, perms).expect_dialog("Could not set permissions for file")
 }
