@@ -1,16 +1,17 @@
-use gtk::prelude::*;
-use relm4::prelude::*;
-use relm4::{SimpleComponent, ComponentSender, ComponentParts};
-use relm4_icons::icon_name;
 use crate::config::Config;
 use crate::constants::APP_NAME;
-use crate::ui::app::{AboutAction, DebugViewToggleAction, BuildProfileAction};
+use crate::ui::app::{AboutAction, BuildProfileAction, DebugViewToggleAction};
+use gtk::prelude::*;
+use relm4::prelude::*;
+use relm4::{ComponentParts, ComponentSender, SimpleComponent};
+use relm4_icons::icon_name;
 
 #[tracker::track]
 pub struct MainView {
     monado_active: bool,
     enable_debug_view: bool,
     profile_names: Vec<String>,
+    steam_launch_options: String,
 }
 
 #[derive(Debug)]
@@ -19,6 +20,7 @@ pub enum MainViewMsg {
     MonadoActiveChanged(bool),
     EnableDebugViewChanged(bool),
     UpdateProfileNames(Vec<String>),
+    SteamLaunchOptionsChanged(String),
 }
 
 #[derive(Debug)]
@@ -84,26 +86,98 @@ impl SimpleComponent for MainView {
                     set_show_end_title_buttons: !model.enable_debug_view,
                 },
             },
-            gtk::Box {
-                set_spacing: 12,
-                set_margin_all: 12,
-                gtk::Button {
-                    add_css_class: "pill",
-                    add_css_class: "suggested-action",
-                    add_css_class: "destructive-action",
-                    set_hexpand: true,
-                    set_halign: gtk::Align::Center,
-                    #[track = "model.changed(MainView::monado_active())"]
-                    set_class_active: ("suggested-action", !model.monado_active),
-                    #[track = "model.changed(MainView::monado_active())"]
-                    set_label: match model.monado_active {
-                        true => "Stop",
-                        false => "Start",
+            gtk::ScrolledWindow {
+                set_hscrollbar_policy: gtk::PolicyType::Never,
+                set_hexpand: true,
+                set_vexpand: true,
+                gtk::Box {
+                    set_spacing: 12,
+                    set_margin_top: 12,
+                    set_margin_bottom: 12,
+                    set_orientation: gtk::Orientation::Vertical,
+                    gtk::Button {
+                        add_css_class: "pill",
+                        add_css_class: "suggested-action",
+                        add_css_class: "destructive-action",
+                        set_hexpand: true,
+                        set_halign: gtk::Align::Center,
+                        #[track = "model.changed(MainView::monado_active())"]
+                        set_class_active: ("suggested-action", !model.monado_active),
+                        #[track = "model.changed(MainView::monado_active())"]
+                        set_label: match model.monado_active {
+                            true => "Stop",
+                            false => "Start",
+                        },
+                        connect_clicked[sender] => move |_| {
+                            sender.input(MainViewMsg::StartStopClicked)
+                        },
                     },
-                    connect_clicked[sender] => move |_| {
-                        sender.input(MainViewMsg::StartStopClicked)
+                    gtk::Box {
+                        set_orientation: gtk::Orientation::Vertical,
+                        set_hexpand: true,
+                        set_vexpand: false,
+                        set_spacing: 12,
+                        set_margin_top: 12,
+                        set_margin_bottom: 12,
+                        #[track = "model.changed(MainView::monado_active())"]
+                        set_visible: model.monado_active,
+                        gtk::Separator {
+                            set_orientation: gtk::Orientation::Horizontal,
+                            set_hexpand: true,
+                        },
+                        gtk::Label {
+                            add_css_class: "heading",
+                            set_hexpand: true,
+                            set_xalign: 0.0,
+                            set_margin_start: 12,
+                            set_margin_end: 12,
+                            set_label: "Steam Launch Options",
+                            set_wrap: true,
+                            set_wrap_mode: gtk::pango::WrapMode::Word,
+                        },
+                        gtk::Label {
+                            add_css_class: "dim-label",
+                            set_hexpand: true,
+                            set_xalign: 0.0,
+                            set_margin_start: 12,
+                            set_margin_end: 12,
+                            set_label: "Set this string in the launch options of Steam games, so that they can pick up Monado and OpenOVR correctly",
+                            set_wrap: true,
+                            set_wrap_mode: gtk::pango::WrapMode::Word,
+                        },
+                        gtk::Box {
+                            set_margin_start: 12,
+                            set_margin_end: 12,
+                            set_orientation: gtk::Orientation::Horizontal,
+                            set_spacing: 6,
+                            gtk::TextView {
+                                add_css_class: "card",
+                                set_hexpand: true,
+                                set_vexpand: false,
+                                set_monospace: true,
+                                set_editable: false,
+                                set_wrap_mode: gtk::WrapMode::Word,
+                                set_left_margin: 6,
+                                set_right_margin: 6,
+                                set_top_margin: 6,
+                                set_bottom_margin: 6,
+                                set_size_request: (-1, 150),
+                                #[wrap(Some)]
+                                set_buffer: cmdbuf = &gtk::TextBuffer {
+                                    #[track = "model.changed(MainView::steam_launch_options())"]
+                                    set_text: model.steam_launch_options.as_str(),
+                                }
+                            },
+                            gtk::Button {
+                                add_css_class: "flat",
+                                add_css_class: "circular",
+                                set_icon_name: icon_name::COPY,
+                                set_vexpand: false,
+                                set_valign: gtk::Align::Center,
+                            },
+                        },
                     }
-                },
+                }
             }
         }
     }
@@ -114,7 +188,7 @@ impl SimpleComponent for MainView {
         match message {
             MainViewMsg::StartStopClicked => {
                 sender.output(MainViewOutMsg::DoStartStopMonado);
-            },
+            }
             MainViewMsg::MonadoActiveChanged(active) => {
                 self.set_monado_active(active);
             }
@@ -124,14 +198,20 @@ impl SimpleComponent for MainView {
             MainViewMsg::UpdateProfileNames(names) => {
                 self.set_profile_names(names);
             }
+            MainViewMsg::SteamLaunchOptionsChanged(lo) => self.set_steam_launch_options(lo),
         }
     }
 
-    fn init(init: Self::Init, root: &Self::Root, sender: ComponentSender<Self>) -> ComponentParts<Self> {
+    fn init(
+        init: Self::Init,
+        root: &Self::Root,
+        sender: ComponentSender<Self>,
+    ) -> ComponentParts<Self> {
         let model = MainView {
             monado_active: false,
             enable_debug_view: init.config.debug_view_enabled,
             profile_names: vec![],
+            steam_launch_options: "".into(),
             tracker: 0,
         };
         let widgets = view_output!();

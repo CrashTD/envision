@@ -1,7 +1,7 @@
 {
     "name": "Demo profile",
     "monado_path": "/home/user/monado",
-    "openovr_path": "/home/user/openovr",
+    "opencomposite_path": "/home/user/opencomposite",
     "libsurvive_path": "/home/user/libsurvive",
     "basalt_path": null,
     "mercury_path": null,

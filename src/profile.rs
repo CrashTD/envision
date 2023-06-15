@@ -8,7 +8,7 @@ use crate::file_utils::get_writer;
 pub struct Profile {
     pub name: String,
     pub monado_path: String,
-    pub openovr_path: String,
+    pub opencomposite_path: String,
     pub libsurvive_path: Option<String>,
     pub basalt_path: Option<String>,
     pub mercury_path: Option<String>,
@@ -23,6 +23,16 @@ pub struct Profile {
 impl Display for Profile {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(&self.name.to_string())
+    }
+}
+
+impl Profile {
+    pub fn get_steam_launch_options(&self) -> String {
+        let mut opts = vec![];
+        opts.push(format!("XR_RUNTIME_JSON={prefix}/share/openxr/1/openxr_monado.json", prefix = self.prefix));
+        opts.push(format!("PRESSURE_VESSEL_FILESYSTEMS_RW=$XDG_RUNTIME_DIR/monado_comp_ipc"));
+        opts.push("%command%".into());
+        opts.join(" ")
     }
 }
 
@@ -48,7 +58,7 @@ mod tests {
         let profile = load_profile(&"./test/files/profile.json".to_string());
         assert_eq!(profile.name, "Demo profile");
         assert_eq!(profile.monado_path, "/home/user/monado");
-        assert_eq!(profile.openovr_path, "/home/user/openovr");
+        assert_eq!(profile.opencomposite_path, "/home/user/opencomposite");
         assert_eq!(profile.prefix, "/home/user/rex2prefix");
         assert_eq!(
             profile.libsurvive_path.as_deref(),
@@ -76,7 +86,7 @@ mod tests {
         let p = Profile {
             name: "Demo profile".into(),
             monado_path: String::from("/home/user/monado"),
-            openovr_path: String::from("/home/user/openovr"),
+            opencomposite_path: String::from("/home/user/opencomposite"),
             libsurvive_path: Some(String::from("/home/user/libsurvive")),
             basalt_path: None,
             mercury_path: None,

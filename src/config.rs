@@ -23,7 +23,7 @@ fn config_file_path() -> String {
 fn default_config() -> Config {
     Config {
         // TODO: handle first start with no profile selected
-        selected_profile_name: "Demo profile".to_string(),
+        selected_profile_name: "".to_string(),
         debug_view_enabled: false,
     }
 }

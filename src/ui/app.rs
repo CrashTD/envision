@@ -1,11 +1,14 @@
-use std::time::Duration;
-
+use super::about_dialog::AboutDialog;
+use super::build_window::BuildWindow;
+use super::debug_view::{DebugView, DebugViewMsg};
+use super::main_view::MainViewMsg;
 use crate::builders::build_libsurvive::get_build_libsurvive_runner;
 use crate::builders::build_monado::get_build_monado_runner;
+use crate::builders::build_opencomposite::get_build_opencomposite_runner;
 use crate::config::{get_config, save_config, Config};
 use crate::constants::APP_NAME;
 use crate::dependencies::libsurvive_deps::get_missing_libsurvive_deps;
-use crate::dependencies::monado_deps::{check_monado_deps, get_missing_monado_deps};
+use crate::dependencies::monado_deps::get_missing_monado_deps;
 use crate::profile::Profile;
 use crate::profiles::valve_index::valve_index_profile;
 use crate::runner::{Runner, RunnerStatus};
@@ -20,12 +23,7 @@ use relm4::adw::traits::MessageDialogExt;
 use relm4::gtk::glib;
 use relm4::{new_action_group, new_stateful_action, new_stateless_action, prelude::*};
 use relm4::{ComponentParts, ComponentSender, SimpleComponent};
-use relm4_components::alert::{Alert, AlertSettings};
-
-use super::about_dialog::AboutDialog;
-use super::build_window::BuildWindow;
-use super::debug_view::{DebugView, DebugViewMsg};
-use super::main_view::MainViewMsg;
+use std::time::Duration;
 
 #[tracker::track]
 pub struct App {
@@ -74,8 +72,10 @@ impl App {
     }
 
     pub fn get_selected_profile(&self) -> &Profile {
-        self.get_profile_by_name(&self.config.selected_profile_name)
-            .expect_dialog("Could not find selected profile")
+        match self.get_profile_by_name(&self.config.selected_profile_name) {
+            Some(profile) => profile,
+            None => self.profiles.get(0).expect_dialog("No profiles found"),
+        }
     }
 
     pub fn start_monado(&mut self) {
@@ -152,7 +152,7 @@ impl SimpleComponent for App {
                             self.build_window
                                 .sender()
                                 .emit(BuildWindowMsg::UpdateContent(pipeline.get_log()));
-                        },
+                        }
                         false => {
                             self.build_window
                                 .sender()
@@ -181,6 +181,11 @@ impl SimpleComponent for App {
                     self.main_view
                         .sender()
                         .emit(MainViewMsg::MonadoActiveChanged(true));
+                    self.main_view
+                        .sender()
+                        .emit(MainViewMsg::SteamLaunchOptionsChanged(
+                            self.get_selected_profile().get_steam_launch_options(),
+                        ));
                 }
                 Some(runner) => match runner.status() {
                     RunnerStatus::Running => {
@@ -217,6 +222,8 @@ impl SimpleComponent for App {
                 //     runners.push(get_build_mercury_runner(profile.clone()));
                 // }
                 runners.push(get_build_monado_runner(profile.clone()));
+                // no listed deps for opencomp
+                runners.push(get_build_opencomposite_runner(profile.clone()));
                 if !missing_deps.is_empty() {
                     self.dependencies_dialog.set_body(
                         missing_deps

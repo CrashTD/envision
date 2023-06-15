@@ -13,7 +13,7 @@ pub fn valve_index_profile() -> Profile {
     Profile {
         name: format!("Valve Index - {name} Default", name = APP_NAME),
         monado_path: format!("{data}/monado", data = data_dir),
-        openovr_path: format!("{data}/openovr", data = data_dir),
+        opencomposite_path: format!("{data}/opencomposite", data = data_dir),
         libsurvive_path: Some(format!("{data}/libsurvive", data = data_dir)),
         basalt_path: None,
         mercury_path: None,

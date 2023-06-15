@@ -13,7 +13,7 @@ relm4 = { version = "0.6.0", features = [
 ] }
 relm4-components = "0.6.0"
 relm4-icons = { version = "0.6.0", features = [
-    "menu", "loupe"
+    "menu", "loupe", "copy"
 ] }
 serde = { version = "1.0.163", features = [
     "derive"
