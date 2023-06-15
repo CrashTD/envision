@@ -1,6 +1,7 @@
 use crate::config::Config;
 use crate::constants::APP_NAME;
 use crate::ui::app::{AboutAction, BuildProfileAction, DebugViewToggleAction};
+use expect_dialog::ExpectDialog;
 use gtk::prelude::*;
 use relm4::prelude::*;
 use relm4::{ComponentParts, ComponentSender, SimpleComponent};
@@ -21,6 +22,7 @@ pub enum MainViewMsg {
     EnableDebugViewChanged(bool),
     UpdateProfileNames(Vec<String>),
     SteamLaunchOptionsChanged(String),
+    CopySteamLaunchOptions,
 }
 
 #[derive(Debug)]
@@ -175,6 +177,9 @@ impl SimpleComponent for MainView {
                                 set_icon_name: icon_name::COPY,
                                 set_vexpand: false,
                                 set_valign: gtk::Align::Center,
+                                connect_clicked[sender] => move |_| {
+                                    sender.input(MainViewMsg::CopySteamLaunchOptions)
+                                }
                             },
                         },
                     }
@@ -200,6 +205,10 @@ impl SimpleComponent for MainView {
                 self.set_profile_names(names);
             }
             MainViewMsg::SteamLaunchOptionsChanged(lo) => self.set_steam_launch_options(lo),
+            MainViewMsg::CopySteamLaunchOptions => gtk::gdk::Display::default()
+                .expect_dialog("Could not find default display")
+                .clipboard()
+                .set_text(self.steam_launch_options.as_str()),
         }
     }
 
