@@ -113,6 +113,15 @@ impl Runner {
         self.threads.push(logger_thread!(stderr, stderr_sender));
     }
 
+    fn join_threads(&mut self) {
+        loop {
+            match self.threads.pop() {
+                None => break,
+                Some(thread) => thread.join().expect_dialog("Failed to join reader thread"),
+            }
+        }
+    }
+
     pub fn terminate(&mut self) {
         if self.status() != RunnerStatus::Running {
             return;
@@ -128,13 +137,18 @@ impl Runner {
                 .expect_dialog("Could not convert pid to u32"),
         );
         kill(child_pid, SIGTERM).expect_dialog("Could not send sigterm to process");
-        loop {
-            match self.threads.pop() {
-                None => break,
-                Some(thread) => thread.join().expect_dialog("Failed to join reader thread"),
-            }
-        }
+        self.join_threads();
         proc.wait().expect_dialog("Failed to wait for process");
+    }
+
+    pub fn join(&mut self) {
+        let process = self.process.take();
+        if process.is_none() {
+            return;
+        }
+        let mut proc = process.unwrap();
+        proc.wait().expect_dialog("Failed to wait for process");
+        self.join_threads();
     }
 
     pub fn status(&mut self) -> RunnerStatus {
