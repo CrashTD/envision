@@ -1,8 +1,7 @@
+use crate::constants::{get_developers, APP_NAME, REPO_URL, SINGLE_DEVELOPER, VERSION};
 use relm4::gtk::traits::GtkWindowExt;
 use relm4::prelude::*;
 use relm4::{ComponentParts, SimpleComponent};
-
-use crate::constants::{APP_NAME, REPO_URL, SINGLE_DEVELOPER, VERSION, get_developers};
 
 pub struct AboutDialog {}
 

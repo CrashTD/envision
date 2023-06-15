@@ -1,8 +1,7 @@
+use crate::file_utils::get_writer;
 use expect_dialog::ExpectDialog;
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, fmt::Display, fs::File, io::BufReader};
-
-use crate::file_utils::get_writer;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Profile {
@@ -29,8 +28,13 @@ impl Display for Profile {
 impl Profile {
     pub fn get_steam_launch_options(&self) -> String {
         let mut opts = vec![];
-        opts.push(format!("XR_RUNTIME_JSON={prefix}/share/openxr/1/openxr_monado.json", prefix = self.prefix));
-        opts.push(format!("PRESSURE_VESSEL_FILESYSTEMS_RW=$XDG_RUNTIME_DIR/monado_comp_ipc"));
+        opts.push(format!(
+            "XR_RUNTIME_JSON={prefix}/share/openxr/1/openxr_monado.json",
+            prefix = self.prefix
+        ));
+        opts.push(format!(
+            "PRESSURE_VESSEL_FILESYSTEMS_RW=$XDG_RUNTIME_DIR/monado_comp_ipc"
+        ));
         opts.push("%command%".into());
         opts.join(" ")
     }
@@ -94,7 +98,7 @@ mod tests {
             basalt_enabled: false,
             mercury_enabled: false,
             environment: env,
-            prefix: String::from("/home/user/rex2prefix")
+            prefix: String::from("/home/user/rex2prefix"),
         };
         let fpath = String::from("./target/testout/testprofile.json");
         dump_profile(p, &fpath);

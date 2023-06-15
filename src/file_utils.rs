@@ -1,13 +1,11 @@
+use crate::{constants::CMD_NAME, runner::Runner};
+use expect_dialog::ExpectDialog;
 use std::{
     env,
-    fs::{self, create_dir_all, OpenOptions, remove_file},
+    fs::{self, create_dir_all, OpenOptions},
     io::BufWriter,
     path::Path,
 };
-
-use expect_dialog::ExpectDialog;
-
-use crate::{constants::CMD_NAME, runner::Runner};
 
 pub fn get_writer(path_s: &String) -> BufWriter<std::fs::File> {
     let path = Path::new(path_s);
@@ -35,25 +33,23 @@ pub fn get_home_dir() -> String {
 pub fn get_xdg_config_dir() -> String {
     match env::var("XDG_CONFIG_HOME") {
         Ok(conf_home) => conf_home,
-        Err(_) => format!(
-            "{home}/.config",
-            home = get_home_dir()
-        ),
+        Err(_) => format!("{home}/.config", home = get_home_dir()),
     }
 }
 
 pub fn get_xdg_data_dir() -> String {
     match env::var("XDG_DATA_HOME") {
         Ok(data_home) => data_home,
-        Err(_) => format!(
-            "{home}/.local/share",
-            home = get_home_dir()
-        ),
+        Err(_) => format!("{home}/.local/share", home = get_home_dir()),
     }
 }
 
 pub fn get_config_dir() -> String {
-    format!("{config}/{name}", config = get_xdg_config_dir(), name = CMD_NAME)
+    format!(
+        "{config}/{name}",
+        config = get_xdg_config_dir(),
+        name = CMD_NAME
+    )
 }
 
 pub fn get_data_dir() -> String {
@@ -74,11 +70,11 @@ pub fn set_file_radonly(path_s: &String, readonly: bool) {
 }
 
 pub fn setcap_cap_sys_nice_eip(file: String) {
-    let mut runner = Runner::new(None, "pkexec".into(), vec![
-        "setcap".into(),
-        "CAP_SYS_NICE=eip".into(),
-        file
-    ]);
+    let mut runner = Runner::new(
+        None,
+        "pkexec".into(),
+        vec!["setcap".into(), "CAP_SYS_NICE=eip".into(), file],
+    );
     runner.start();
     runner.join();
 }
