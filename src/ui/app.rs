@@ -15,6 +15,7 @@ use crate::file_builders::active_runtime_json::{
 use crate::file_builders::openvrpaths_vrpath::{
     set_current_openvrpaths_to_profile, set_current_openvrpaths_to_steam,
 };
+use crate::file_utils::setcap_cap_sys_nice_eip;
 use crate::profile::Profile;
 use crate::profiles::valve_index::valve_index_profile;
 use crate::runner::{Runner, RunnerStatus};
@@ -25,6 +26,7 @@ use crate::ui::main_view::{MainView, MainViewInit, MainViewOutMsg};
 use expect_dialog::ExpectDialog;
 use gtk::prelude::*;
 use relm4::actions::{ActionGroupName, RelmAction, RelmActionGroup};
+use relm4::adw::ResponseAppearance;
 use relm4::adw::traits::MessageDialogExt;
 use relm4::gtk::glib;
 use relm4::{new_action_group, new_stateful_action, new_stateless_action, prelude::*};
@@ -45,6 +47,8 @@ pub struct App {
     build_window: Controller<BuildWindow>,
     #[tracker::do_not_track]
     dependencies_dialog: adw::MessageDialog,
+    #[tracker::do_not_track]
+    setcap_confirm_dialog: adw::MessageDialog,
 
     #[tracker::do_not_track]
     config: Config,
@@ -66,6 +70,7 @@ pub enum Msg {
     DoStartStopMonado,
     ProfileSelected(String),
     SetMonadoRuntime(bool),
+    RunSetCap,
 }
 
 impl App {
@@ -150,28 +155,30 @@ impl SimpleComponent for App {
                                 .emit(DebugViewMsg::LogUpdated(self.monado_log.clone()));
                         }
                         match runner.status() {
-                            RunnerStatus::Running => {},
+                            RunnerStatus::Running => {}
                             RunnerStatus::Stopped => {
-                                self.main_view.sender().emit(MainViewMsg::MonadoActiveChanged(false));
+                                self.main_view
+                                    .sender()
+                                    .emit(MainViewMsg::MonadoActiveChanged(false));
                             }
                         };
                     }
                 };
                 match &mut self.build_pipeline {
                     None => {}
-                    Some(pipeline) => match pipeline.is_running() {
-                        true => {
-                            pipeline.update();
-                            self.build_window
-                                .sender()
-                                .emit(BuildWindowMsg::UpdateContent(pipeline.get_log()));
-                        }
-                        false => {
+                    Some(pipeline) => {
+                        pipeline.update();
+                        self.build_window
+                            .sender()
+                            .emit(BuildWindowMsg::UpdateContent(pipeline.get_log()));
+                        if !pipeline.is_running() {
+                            self.setcap_confirm_dialog.present();
                             self.build_window
                                 .sender()
                                 .emit(BuildWindowMsg::UpdateCanClose(true));
+                            self.build_pipeline.take();
                         }
-                    },
+                    }
                 };
             }
             Msg::EnableDebugViewChanged(val) => {
@@ -257,11 +264,15 @@ impl SimpleComponent for App {
                 pipeline.start();
                 self.build_window
                     .sender()
-                    .emit(BuildWindowMsg::UpdateTitle("Building Monado".into()));
+                    .emit(BuildWindowMsg::UpdateTitle(format!("Building Profile {}", profile.name)));
                 self.build_window
                     .sender()
                     .emit(BuildWindowMsg::UpdateCanClose(false));
                 self.build_pipeline = Some(pipeline);
+            }
+            Msg::RunSetCap => {
+                let profile = self.get_selected_profile();
+                setcap_cap_sys_nice_eip(format!("{pfx}/bin/monado-service", pfx = profile.prefix));
             }
             Msg::ProfileSelected(prof_name) => {
                 self.config.selected_profile_name = prof_name;
@@ -294,6 +305,31 @@ impl SimpleComponent for App {
             .hide_on_close(true)
             .build();
         dependencies_dialog.add_response("ok", "_Ok");
+        let setcap_confirm_dialog = adw::MessageDialog::builder()
+            .modal(true)
+            .transient_for(root)
+            .heading("Set monado-service Capabilities")
+            .body(concat!(
+                "We need to set certain capabilities (CAP_SYS_NICE=eip) on the ",
+                "monado-service executable. This requires your superuser password.\n\n",
+                "Do you want to continue?",
+            ))
+            .hide_on_close(true)
+            .build();
+        setcap_confirm_dialog.add_response("no", "_No");
+        setcap_confirm_dialog.add_response("yes", "_Yes");
+        setcap_confirm_dialog.set_response_appearance("no", ResponseAppearance::Destructive);
+        setcap_confirm_dialog.set_response_appearance("yes", ResponseAppearance::Suggested);
+
+        {
+            let setcap_sender = sender.clone();
+            setcap_confirm_dialog.connect_response(None, move |_, res| {
+                if res == "yes" {
+                    setcap_sender.input(Msg::RunSetCap);
+                }
+            });
+        }
+
         let model = App {
             main_view: MainView::builder()
                 .launch(MainViewInit {
@@ -322,6 +358,7 @@ impl SimpleComponent for App {
                 .launch(())
                 .detach(),
             dependencies_dialog,
+            setcap_confirm_dialog,
             enable_debug_view: config.debug_view_enabled,
             config,
             tracker: 0,

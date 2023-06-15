@@ -94,13 +94,15 @@ impl SimpleComponent for BuildWindow {
                 self.set_title(t);
             },
             BuildWindowMsg::UpdateContent(c) => {
-                self.set_content(c);
-                self.textbuf.set_text(&self.content);
-                let sw = self.scrolled_win.as_ref().unwrap().clone();
-                let adj = sw.vadjustment();
-                // upper means highest value = lowest point in the sw
-                adj.set_value(adj.upper());
-                sw.set_vadjustment(Some(&adj));
+                if self.content != c {
+                    self.set_content(c);
+                    self.textbuf.set_text(&self.content);
+                    let sw = self.scrolled_win.as_ref().unwrap().clone();
+                    let adj = sw.vadjustment();
+                    // upper means highest value = lowest point in the sw
+                    adj.set_value(adj.upper());
+                    sw.set_vadjustment(Some(&adj));
+                }
             },
             BuildWindowMsg::UpdateCanClose(val) => {
                 self.set_can_close(val);
