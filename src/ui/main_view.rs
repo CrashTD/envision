@@ -1,7 +1,7 @@
 use crate::config::Config;
 use crate::constants::APP_NAME;
 use crate::file_builders::active_runtime_json::{self, get_current_active_runtime};
-use crate::ui::app::{AboutAction, BuildProfileAction, DebugViewToggleAction};
+use crate::ui::app::{AboutAction, BuildProfileAction, DebugViewToggleAction, LibsurviveSetupAction};
 use expect_dialog::ExpectDialog;
 use gtk::prelude::*;
 use relm4::prelude::*;
@@ -51,6 +51,7 @@ impl SimpleComponent for MainView {
                 // value inside action is ignored
                 "_Debug View" => DebugViewToggleAction,
                 "_Build Profile" => BuildProfileAction,
+                "_Calibrate Lighthouses" => LibsurviveSetupAction,
             },
             section! {
                 "_About" => AboutAction,

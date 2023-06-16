@@ -1,6 +1,7 @@
 use super::about_dialog::AboutDialog;
 use super::build_window::BuildWindow;
 use super::debug_view::{DebugView, DebugViewMsg};
+use super::libsurvive_setup_window::LibsurviveSetupWindow;
 use super::main_view::MainViewMsg;
 use crate::builders::build_libsurvive::get_build_libsurvive_runner;
 use crate::builders::build_monado::get_build_monado_runner;
@@ -22,12 +23,13 @@ use crate::runner::{Runner, RunnerStatus};
 use crate::runner_pipeline::RunnerPipeline;
 use crate::ui::build_window::BuildWindowMsg;
 use crate::ui::debug_view::DebugViewInit;
+use crate::ui::libsurvive_setup_window::LibsurviveSetupMsg;
 use crate::ui::main_view::{MainView, MainViewInit, MainViewOutMsg};
 use expect_dialog::ExpectDialog;
 use gtk::prelude::*;
 use relm4::actions::{ActionGroupName, RelmAction, RelmActionGroup};
-use relm4::adw::ResponseAppearance;
 use relm4::adw::traits::MessageDialogExt;
+use relm4::adw::ResponseAppearance;
 use relm4::gtk::glib;
 use relm4::{new_action_group, new_stateful_action, new_stateless_action, prelude::*};
 use relm4::{ComponentParts, ComponentSender, SimpleComponent};
@@ -49,6 +51,8 @@ pub struct App {
     dependencies_dialog: adw::MessageDialog,
     #[tracker::do_not_track]
     setcap_confirm_dialog: adw::MessageDialog,
+    #[tracker::do_not_track]
+    libsurvive_setup_window: Controller<LibsurviveSetupWindow>,
 
     #[tracker::do_not_track]
     config: Config,
@@ -71,6 +75,7 @@ pub enum Msg {
     ProfileSelected(String),
     SetMonadoRuntime(bool),
     RunSetCap,
+    OpenLibsurviveSetup,
 }
 
 impl App {
@@ -264,7 +269,10 @@ impl SimpleComponent for App {
                 pipeline.start();
                 self.build_window
                     .sender()
-                    .emit(BuildWindowMsg::UpdateTitle(format!("Building Profile {}", profile.name)));
+                    .emit(BuildWindowMsg::UpdateTitle(format!(
+                        "Building Profile {}",
+                        profile.name
+                    )));
                 self.build_window
                     .sender()
                     .emit(BuildWindowMsg::UpdateCanClose(false));
@@ -287,6 +295,13 @@ impl SimpleComponent for App {
                     set_current_active_runtime_to_steam();
                     set_current_openvrpaths_to_steam();
                 }
+            }
+            Msg::OpenLibsurviveSetup => {
+                self.libsurvive_setup_window
+                    .sender()
+                    .send(LibsurviveSetupMsg::Present(
+                        self.get_selected_profile().clone(),
+                    ));
             }
         }
     }
@@ -357,6 +372,10 @@ impl SimpleComponent for App {
                 .transient_for(root)
                 .launch(())
                 .detach(),
+            libsurvive_setup_window: LibsurviveSetupWindow::builder()
+                .transient_for(root)
+                .launch(())
+                .detach(),
             dependencies_dialog,
             setcap_confirm_dialog,
             enable_debug_view: config.debug_view_enabled,
@@ -385,6 +404,13 @@ impl SimpleComponent for App {
             })
         };
 
+        let libsurvive_setup_action = {
+            let lss_sender = sender.clone();
+            RelmAction::<LibsurviveSetupAction>::new_stateless(move |_| {
+                lss_sender.input(Msg::OpenLibsurviveSetup);
+            })
+        };
+
         let debug_view_toggle_action: RelmAction<DebugViewToggleAction> = {
             let debugtoggle_sender = sender.clone();
             RelmAction::<DebugViewToggleAction>::new_stateful(
@@ -400,6 +426,7 @@ impl SimpleComponent for App {
         actions.add_action(about_action);
         actions.add_action(buildprofile_action);
         actions.add_action(debug_view_toggle_action);
+        actions.add_action(libsurvive_setup_action);
 
         root.insert_action_group(AppActionGroup::NAME, Some(&actions.into_action_group()));
 
@@ -423,4 +450,5 @@ impl SimpleComponent for App {
 new_action_group!(pub AppActionGroup, "win");
 new_stateless_action!(pub AboutAction, AppActionGroup, "about");
 new_stateless_action!(pub BuildProfileAction, AppActionGroup, "buildprofile");
+new_stateless_action!(pub LibsurviveSetupAction, AppActionGroup, "libsurvivesetup");
 new_stateful_action!(pub DebugViewToggleAction, AppActionGroup, "debugviewtoggle", (), bool);

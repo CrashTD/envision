@@ -1119,6 +1119,7 @@ name = "rex2"
 version = "0.1.0"
 dependencies = [
  "expect-dialog",
+ "gtk4",
  "nix",
  "relm4",
  "relm4-components",
