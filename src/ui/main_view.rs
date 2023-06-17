@@ -246,6 +246,10 @@ impl SimpleComponent for MainView {
             }
             MainViewMsg::UpdateProfileNames(names, config) => {
                 self.set_profile_names(names);
+                // why send another message to set the dropdown selection?
+                // set_* from tracker likely updates the view obj in the next
+                // draw, so selecting here will result in nothing cause the
+                // dropdown is effectively empty
                 sender.input(MainViewMsg::SetSelectedProfile({
                     let pos = self.profile_names.iter()
                         .position(|p| p.clone() == config.selected_profile_name);
