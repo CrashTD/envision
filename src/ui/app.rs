@@ -19,6 +19,7 @@ use crate::file_builders::openvrpaths_vrpath::{
 use crate::file_utils::setcap_cap_sys_nice_eip;
 use crate::profile::Profile;
 use crate::profiles::valve_index::valve_index_profile;
+use crate::profiles::system_valve_index::system_valve_index_profile;
 use crate::runner::{Runner, RunnerStatus};
 use crate::runner_pipeline::RunnerPipeline;
 use crate::ui::build_window::BuildWindowMsg;
@@ -335,7 +336,10 @@ impl SimpleComponent for App {
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
         let config = get_config();
-        let profiles = vec![valve_index_profile()];
+        let profiles = vec![
+            valve_index_profile(),
+            system_valve_index_profile(),
+        ];
         let dependencies_dialog = adw::MessageDialog::builder()
             .modal(true)
             .transient_for(root)
