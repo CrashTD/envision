@@ -1,10 +1,7 @@
 use crate::{profile::Profile, runner::Runner};
-use gtk::{
-    glib::{self, ffi::gboolean},
-    prelude::*,
-};
+use gtk::{glib, prelude::*};
 use relm4::prelude::*;
-use std::{cell::Cell, collections::HashMap, path::Path, time::Duration};
+use std::{cell::Cell, collections::HashMap, path::Path, rc::Rc, time::Duration};
 
 const NO_FILE_MSG: &str = "(No file selected)";
 const CALIBRATION_RUN_TIME_SECONDS: f64 = 30.0;
@@ -29,7 +26,7 @@ pub struct LibsurviveSetupWindow {
     filefilter_listmodel: gtk::gio::ListStore,
 
     #[tracker::do_not_track]
-    calibration_running: Cell<bool>,
+    calibration_running: Rc<Cell<bool>>,
     #[tracker::do_not_track]
     first_run_done: bool,
     #[tracker::do_not_track]
@@ -71,7 +68,7 @@ impl LibsurviveSetupWindow {
     fn on_close_request(
         sender: &relm4::ComponentSender<Self>,
         carousel: &adw::Carousel,
-        calibration_running: &Cell<bool>,
+        calibration_running: &Rc<Cell<bool>>,
         progressbar: &gtk::ProgressBar,
         page1: &adw::StatusPage,
     ) -> gtk::Inhibit {
@@ -97,12 +94,6 @@ impl SimpleComponent for LibsurviveSetupWindow {
             set_modal: true,
             set_default_size: (520, 400),
             set_hide_on_close: true,
-            // connect_close_request[sender, carousel, page1, progressbar] => move |_| {
-            //     carousel.scroll_to(&page1, true);
-            //     progressbar.set_fraction(0.0);
-            //     sender.input(LibsurviveSetupMsg::SetSteamLighthousePath(None));
-            //     gtk::Inhibit(false)
-            // },
             gtk::Box {
                 set_orientation: gtk::Orientation::Vertical,
                 set_hexpand: true,
@@ -347,10 +338,10 @@ impl SimpleComponent for LibsurviveSetupWindow {
                     runner.start();
                     {
                         let timer_sender = sender.clone();
-                        let continue_watching = self.calibration_running.clone();
+                        let cont = self.calibration_running.clone();
                         glib::timeout_add_local(Duration::from_millis(1000), move || {
                             timer_sender.input(LibsurviveSetupMsg::TickCalibrationRunner);
-                            return glib::Continue(continue_watching.get());
+                            return glib::Continue(cont.get());
                         });
                     }
                     self.calibration_runner = Some(runner);
@@ -422,7 +413,7 @@ impl SimpleComponent for LibsurviveSetupWindow {
     }
 
     fn init(
-        init: Self::Init,
+        _init: Self::Init,
         root: &Self::Root,
         sender: relm4::ComponentSender<Self>,
     ) -> relm4::ComponentParts<Self> {
@@ -441,7 +432,7 @@ impl SimpleComponent for LibsurviveSetupWindow {
                 .build(),
             profile: None,
             calibration_runner: None,
-            calibration_running: Cell::new(false),
+            calibration_running: Rc::new(Cell::new(false)),
             first_run_done: false,
             calibration_seconds_elapsed: 0.0,
             tracker: 0,
