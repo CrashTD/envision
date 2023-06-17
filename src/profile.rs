@@ -1,4 +1,4 @@
-use crate::file_utils::get_writer;
+use crate::{file_utils::get_writer, paths::{SYSTEM_PREFIX, BWRAP_SYSTEM_PREFIX}};
 use expect_dialog::ExpectDialog;
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, fmt::Display, fs::File, io::BufReader};
@@ -31,7 +31,10 @@ impl Profile {
         let mut opts = vec![];
         opts.push(format!(
             "XR_RUNTIME_JSON={prefix}/share/openxr/1/openxr_monado.json",
-            prefix = self.prefix
+            prefix = match self.prefix.as_str() {
+                SYSTEM_PREFIX => BWRAP_SYSTEM_PREFIX,
+                other => other,
+            }
         ));
         opts.push(format!(
             "PRESSURE_VESSEL_FILESYSTEMS_RW=$XDG_RUNTIME_DIR/monado_comp_ipc"

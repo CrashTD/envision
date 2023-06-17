@@ -1,4 +1,4 @@
-use crate::{constants::APP_NAME, paths::data_opencomposite_path, profile::Profile};
+use crate::{constants::APP_NAME, paths::{data_opencomposite_path, SYSTEM_PREFIX}, profile::Profile};
 use std::collections::HashMap;
 
 pub fn system_valve_index_profile() -> Profile {
@@ -18,7 +18,7 @@ pub fn system_valve_index_profile() -> Profile {
         mercury_enabled: false,
         basalt_enabled: false,
         environment,
-        prefix: "/usr".into(),
+        prefix: SYSTEM_PREFIX.into(),
         can_be_built: false,
     }
 }
