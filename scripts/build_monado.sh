@@ -22,6 +22,8 @@ export PKG_CONFIG_PATH="${PREFIX}/lib/pkgconfig"
 cmake -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_LIBDIR="${PREFIX}/lib" \
     -DCMAKE_INSTALL_PREFIX="${PREFIX}" \
+    -DCMAKE_C_FLAGS="-Wl,-rpath ${PREFIX}/lib" \
+    -DCMAKE_CXX_FLAGS="-Wl,-rpath ${PREFIX}/lib" \
     ..
 make clean
 make -j$(nproc)
