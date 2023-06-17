@@ -17,6 +17,7 @@ pub struct Profile {
     pub environment: HashMap<String, String>,
     /** Install prefix */
     pub prefix: String,
+    pub can_be_built: bool,
 }
 
 impl Display for Profile {
@@ -99,6 +100,7 @@ mod tests {
             mercury_enabled: false,
             environment: env,
             prefix: String::from("/home/user/rex2prefix"),
+            can_be_built: true,
         };
         let fpath = String::from("./target/testout/testprofile.json");
         dump_profile(p, &fpath);

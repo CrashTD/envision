@@ -14,6 +14,7 @@ pub mod profiles;
 pub mod runner;
 pub mod ui;
 pub mod runner_pipeline;
+pub mod paths;
 
 fn main() {
     let app = RelmApp::new(APP_ID);

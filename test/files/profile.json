@@ -13,5 +13,6 @@
         "XRT_COMPOSITOR_COMPUTE": "1",
         "SURVIVE_GLOBALSCENESOLVER": "0"
     },
-    "prefix": "/home/user/rex2prefix"
+    "prefix": "/home/user/rex2prefix",
+    "can_be_built": true
 }

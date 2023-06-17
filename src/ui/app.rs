@@ -250,22 +250,26 @@ impl SimpleComponent for App {
             },
             Msg::BuildProfile => {
                 let profile = self.get_selected_profile();
-                let mut missing_deps = get_missing_monado_deps();
+                let mut missing_deps = vec![];
                 let mut runners: Vec<Runner> = vec![];
-                if profile.libsurvive_enabled {
-                    missing_deps.extend(get_missing_libsurvive_deps());
-                    runners.push(get_build_libsurvive_runner(profile.clone()));
+                // profile per se can't be built, but we still need opencomp
+                if profile.can_be_built {
+                    missing_deps.extend(get_missing_monado_deps());
+                    if profile.libsurvive_enabled {
+                        missing_deps.extend(get_missing_libsurvive_deps());
+                        runners.push(get_build_libsurvive_runner(profile.clone()));
+                    }
+                    // if profile.basalt_enabled {
+                    //     missing_deps.extend(get_missing_basalt_deps());
+                    //     runners.push(get_build_basalt_runner(profile.clone()));
+                    // }
+                    // if profile.mercury_enabled {
+                    //     missing_deps.extend(get_missing_mercury_deps());
+                    //     runners.push(get_build_mercury_runner(profile.clone()));
+                    // }
+                    runners.push(get_build_monado_runner(profile.clone()));
+                    // no listed deps for opencomp
                 }
-                // if profile.basalt_enabled {
-                //     missing_deps.extend(get_missing_basalt_deps());
-                //     runners.push(get_build_basalt_runner(profile.clone()));
-                // }
-                // if profile.mercury_enabled {
-                //     missing_deps.extend(get_missing_mercury_deps());
-                //     runners.push(get_build_mercury_runner(profile.clone()));
-                // }
-                runners.push(get_build_monado_runner(profile.clone()));
-                // no listed deps for opencomp
                 runners.push(get_build_opencomposite_runner(profile.clone()));
                 if !missing_deps.is_empty() {
                     self.dependencies_dialog.set_body(
