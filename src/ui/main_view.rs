@@ -26,6 +26,7 @@ pub enum MainViewMsg {
     MonadoActiveChanged(bool),
     EnableDebugViewChanged(bool),
     UpdateProfileNames(Vec<String>, Config),
+    SetSelectedProfile(u32),
     ProfileSelected(u32),
     SteamLaunchOptionsChanged(String),
     CopySteamLaunchOptions,
@@ -245,14 +246,17 @@ impl SimpleComponent for MainView {
             }
             MainViewMsg::UpdateProfileNames(names, config) => {
                 self.set_profile_names(names);
-                self.profiles_dropdown.as_ref().unwrap().clone().set_selected({
+                sender.input(MainViewMsg::SetSelectedProfile({
                     let pos = self.profile_names.iter()
                         .position(|p| p.clone() == config.selected_profile_name);
                     match pos {
                         Some(idx) => idx as u32,
                         None => 0,
                     }
-                });
+                }));
+            }
+            MainViewMsg::SetSelectedProfile(index) => {
+                self.profiles_dropdown.as_ref().unwrap().clone().set_selected(index);
             }
             MainViewMsg::SteamLaunchOptionsChanged(lo) => self.set_steam_launch_options(lo),
             MainViewMsg::CopySteamLaunchOptions => gtk::gdk::Display::default()
