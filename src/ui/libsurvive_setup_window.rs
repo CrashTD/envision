@@ -313,8 +313,7 @@ impl SimpleComponent for LibsurviveSetupWindow {
                             add_css_class: "suggested-action",
                             set_label: "I Understand",
                             connect_clicked[win] => move |_| {
-                                win.emit_by_name::<gboolean>("close-request", &[]);
-                                // win.close();
+                                win.close();
                             },
                         }
                     }
