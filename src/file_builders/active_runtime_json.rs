@@ -1,9 +1,7 @@
 use std::{fs::File, io::BufReader, path::Path};
-
 use expect_dialog::ExpectDialog;
 use serde::{Deserialize, Serialize};
-
-use crate::{file_utils::{get_xdg_config_dir, get_xdg_data_dir, get_writer, set_file_radonly}, profile::Profile};
+use crate::{file_utils::{get_xdg_config_dir, get_xdg_data_dir, get_writer, set_file_radonly}, profile::Profile, paths::SYSTEM_PREFIX};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ActiveRuntimeInnerRuntime {
@@ -92,7 +90,18 @@ fn build_profile_active_runtime(profile: Profile) -> ActiveRuntime {
 }
 
 pub fn set_current_active_runtime_to_profile(profile: Profile) {
-    dump_current_active_runtime(build_profile_active_runtime(profile))
+    let pfx = profile.clone().prefix;
+    let mut ar = build_profile_active_runtime(profile);
+    // hack: relativize libopenxr_monado.so path for system installs
+    if pfx == SYSTEM_PREFIX {
+        let path_s = get_active_runtime_json_path();
+        let path = Path::new(&path_s);
+        let mut rel_chain = path.components().map(|c| String::from("..")).collect::<Vec<String>>();
+        rel_chain.pop();
+        rel_chain.pop();
+        ar.runtime.library_path = format!("{rels}/usr/lib/libopenxr_monado.so", rels = rel_chain.join("/"));
+    }
+    dump_current_active_runtime(ar);
 }
 
 #[cfg(test)]
