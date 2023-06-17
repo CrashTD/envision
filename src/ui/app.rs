@@ -1,5 +1,5 @@
 use super::about_dialog::AboutDialog;
-use super::build_window::BuildWindow;
+use super::build_window::{BuildStatus, BuildWindow};
 use super::debug_view::{DebugView, DebugViewMsg};
 use super::libsurvive_setup_window::LibsurviveSetupWindow;
 use super::main_view::MainViewMsg;
@@ -161,7 +161,7 @@ impl SimpleComponent for App {
                         }
                         match runner.status() {
                             RunnerStatus::Running => {}
-                            RunnerStatus::Stopped => {
+                            RunnerStatus::Stopped(_) => {
                                 self.main_view
                                     .sender()
                                     .emit(MainViewMsg::MonadoActiveChanged(false));
@@ -176,12 +176,30 @@ impl SimpleComponent for App {
                         self.build_window
                             .sender()
                             .emit(BuildWindowMsg::UpdateContent(pipeline.get_log()));
-                        if !pipeline.is_running() {
-                            self.setcap_confirm_dialog.present();
-                            self.build_window
-                                .sender()
-                                .emit(BuildWindowMsg::UpdateCanClose(true));
-                            self.build_pipeline.take();
+                        match pipeline.status() {
+                            RunnerStatus::Running | RunnerStatus::Stopped(None) => {}
+                            RunnerStatus::Stopped(Some(code)) => {
+                                self.build_window
+                                    .sender()
+                                    .emit(BuildWindowMsg::UpdateCanClose(true));
+                                self.build_pipeline.take();
+                                match code {
+                                    0 => {
+                                        self.build_window.sender().emit(
+                                            BuildWindowMsg::UpdateBuildStatus(BuildStatus::Done)
+                                        );
+                                        self.setcap_confirm_dialog.present();
+                                        self.build_window
+                                            .sender()
+                                            .emit(BuildWindowMsg::UpdateCanClose(true));
+                                    }
+                                    errcode => self.build_window.sender().emit(
+                                        BuildWindowMsg::UpdateBuildStatus(BuildStatus::Error(
+                                            format!("Exit status {}", errcode),
+                                        )),
+                                    ),
+                                }
+                            }
                         }
                     }
                 };
@@ -219,7 +237,7 @@ impl SimpleComponent for App {
                             .sender()
                             .emit(MainViewMsg::MonadoActiveChanged(false));
                     }
-                    RunnerStatus::Stopped => {
+                    RunnerStatus::Stopped(_) => {
                         self.debug_view
                             .sender()
                             .emit(DebugViewMsg::LogUpdated(vec![]));
@@ -301,7 +319,8 @@ impl SimpleComponent for App {
                     .sender()
                     .send(LibsurviveSetupMsg::Present(
                         self.get_selected_profile().clone(),
-                    ));
+                    ))
+                    .expect_dialog("Failed to present Libsurvive Setup Window");
             }
         }
     }

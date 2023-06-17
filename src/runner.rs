@@ -30,7 +30,7 @@ pub struct Runner {
 #[derive(PartialEq, Eq, Debug)]
 pub enum RunnerStatus {
     Running,
-    Stopped,
+    Stopped(Option<i32>),
 }
 
 macro_rules! logger_thread {
@@ -154,10 +154,10 @@ impl Runner {
 
     pub fn status(&mut self) -> RunnerStatus {
         match &mut self.process {
-            None => RunnerStatus::Stopped,
+            None => RunnerStatus::Stopped(None),
             Some(proc) => match proc.try_wait() {
                 Err(_) => RunnerStatus::Running,
-                Ok(Some(_)) => RunnerStatus::Stopped,
+                Ok(Some(code)) => RunnerStatus::Stopped(code.code()),
                 Ok(None) => RunnerStatus::Running,
             },
         }
@@ -217,7 +217,7 @@ mod tests {
         runner.start();
         sleep(time::Duration::from_millis(10));
         runner.terminate();
-        assert_eq!(runner.status(), RunnerStatus::Stopped);
+        assert_eq!(runner.status(), RunnerStatus::Stopped(Some(0)));
         let out = runner.consume_output();
         assert_eq!(out, "REX2TEST: Lorem ipsum dolor\n");
     }

@@ -5,6 +5,7 @@ use crate::runner::{Runner, RunnerStatus};
 pub struct RunnerPipeline {
     runners: Vec<RefCell<Runner>>,
     current_index: usize,
+    last_exit_status: Option<i32>,
     has_started: bool,
     pub log: Vec<String>,
 }
@@ -19,6 +20,7 @@ impl RunnerPipeline {
             runners: c_runners,
             current_index: 0,
             has_started: false,
+            last_exit_status: None,
             log: vec![],
         }
     }
@@ -55,12 +57,23 @@ impl RunnerPipeline {
                 self.log.extend(log);
                 match status {
                     RunnerStatus::Running => {},
-                    RunnerStatus::Stopped => {
-                        self.current_index += 1;
-                        match self.get_current_runner() {
-                            None => {},
-                            Some(c_runner) => {
-                                c_runner.borrow_mut().start();
+                    RunnerStatus::Stopped(ecode) => {
+                        match ecode {
+                            None => {} // should never get here
+                            Some(0) => {
+                                self.last_exit_status = Some(0);
+                                self.current_index += 1;
+                                match self.get_current_runner() {
+                                    None => {},
+                                    Some(c_runner) => {
+                                        c_runner.borrow_mut().start();
+                                    }
+                                }
+                            }
+                            Some(nonzero) => {
+                                self.last_exit_status = Some(nonzero);
+                                // interrupting pipeline by going past last runner
+                                self.current_index = self.runners.len();
                             }
                         }
                     }
@@ -73,7 +86,10 @@ impl RunnerPipeline {
         self.log.concat()
     }
 
-    pub fn is_running(&self) -> bool {
-        self.get_current_runner().is_some()
+    pub fn status(&self) -> RunnerStatus {
+        match self.get_current_runner() {
+            None => RunnerStatus::Stopped(self.last_exit_status),
+            Some(_) => RunnerStatus::Running
+        }
     }
 }
