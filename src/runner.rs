@@ -48,6 +48,7 @@ macro_rules! logger_thread {
                         if buf.is_empty() {
                             continue;
                         }
+                        print!("{}", buf);
                         match $sender
                             .clone()
                             .lock()
