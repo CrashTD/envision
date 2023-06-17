@@ -1,9 +1,14 @@
 use crate::{profile::Profile, runner::Runner};
-use gtk::prelude::*;
+use expect_dialog::ExpectDialog;
+use gtk::{
+    glib::{self, ffi::gboolean},
+    prelude::*,
+};
 use relm4::prelude::*;
-use std::path::Path;
+use std::{cell::Cell, collections::HashMap, path::Path, time::Duration};
 
 const NO_FILE_MSG: &str = "(No file selected)";
+const CALIBRATION_RUN_TIME_SECONDS: f64 = 30.0;
 
 #[tracker::track]
 pub struct LibsurviveSetupWindow {
@@ -18,7 +23,18 @@ pub struct LibsurviveSetupWindow {
     #[tracker::do_not_track]
     loading_page: Option<adw::StatusPage>,
     #[tracker::do_not_track]
+    calibration_done_page: Option<adw::StatusPage>,
+    #[tracker::do_not_track]
+    page1: Option<adw::StatusPage>,
+    #[tracker::do_not_track]
     filefilter_listmodel: gtk::gio::ListStore,
+
+    #[tracker::do_not_track]
+    calibration_running: Cell<bool>,
+    #[tracker::do_not_track]
+    first_run_done: bool,
+    #[tracker::do_not_track]
+    calibration_seconds_elapsed: f64,
 
     #[tracker::do_not_track]
     profile: Option<Profile>,
@@ -32,6 +48,42 @@ pub enum LibsurviveSetupMsg {
     CalibrateLibsurvive,
     SetSteamLighthousePath(Option<String>),
     ChooseFileDialog,
+    TickCalibrationRunner,
+}
+
+impl LibsurviveSetupWindow {
+    fn create_calibration_runner(&mut self) -> Runner {
+        let lh_path = self.steam_lighthouse_path.clone();
+        let mut env = HashMap::new();
+        env.insert(
+            "LD_LIBRARY_PATH".to_string(),
+            format!("{pfx}/lib", pfx = self.profile.as_ref().unwrap().prefix),
+        );
+        Runner::new(
+            Some(env),
+            format!(
+                "{pfx}/bin/survive-cli",
+                pfx = self.profile.as_ref().unwrap().prefix
+            ),
+            vec!["--steamvr-calibration".into(), lh_path],
+        )
+    }
+
+    fn on_close_request(
+        sender: &relm4::ComponentSender<Self>,
+        carousel: &adw::Carousel,
+        calibration_running: &Cell<bool>,
+        progressbar: &gtk::ProgressBar,
+        page1: &adw::StatusPage,
+    ) -> gtk::Inhibit {
+        if calibration_running.get() {
+            return gtk::Inhibit(true);
+        }
+        carousel.scroll_to(page1, true);
+        progressbar.set_fraction(0.0);
+        sender.input(LibsurviveSetupMsg::SetSteamLighthousePath(None));
+        gtk::Inhibit(false)
+    }
 }
 
 #[relm4::component(pub)]
@@ -46,12 +98,12 @@ impl SimpleComponent for LibsurviveSetupWindow {
             set_modal: true,
             set_default_size: (520, 400),
             set_hide_on_close: true,
-            connect_close_request[sender, carousel, page1, progressbar] => move |_| {
-                carousel.scroll_to(&page1, true);
-                progressbar.set_fraction(0.0);
-                sender.input(LibsurviveSetupMsg::SetSteamLighthousePath(None));
-                gtk::Inhibit(false)
-            },
+            // connect_close_request[sender, carousel, page1, progressbar] => move |_| {
+            //     carousel.scroll_to(&page1, true);
+            //     progressbar.set_fraction(0.0);
+            //     sender.input(LibsurviveSetupMsg::SetSteamLighthousePath(None));
+            //     gtk::Inhibit(false)
+            // },
             gtk::Box {
                 set_orientation: gtk::Orientation::Vertical,
                 set_hexpand: true,
@@ -243,6 +295,29 @@ impl SimpleComponent for LibsurviveSetupWindow {
                             set_fraction: 0.0,
                             set_hexpand: true,
                         }
+                    },
+                    #[name(calibration_done_page)]
+                    adw::StatusPage {
+                        set_hexpand: true,
+                        set_vexpand: true,
+                        set_title: "Calibration Imported",
+                        set_description: Some(concat!(
+                            "If you experience bad quality tracking in the form ",
+                            "of jittering or general floatiness, you probably ",
+                            "need to refine your SteamVR calibration, then ",
+                            "import it again into Libsurvive.",
+                        )),
+                        gtk::Button {
+                            set_hexpand: true,
+                            set_halign: gtk::Align::Center,
+                            add_css_class: "pill",
+                            add_css_class: "suggested-action",
+                            set_label: "I Understand",
+                            connect_clicked[win] => move |_| {
+                                win.emit_by_name::<gboolean>("close-request", &[]);
+                                // win.close();
+                            },
+                        }
                     }
                 },
                 adw::CarouselIndicatorDots {
@@ -264,19 +339,23 @@ impl SimpleComponent for LibsurviveSetupWindow {
                 if self.steam_lighthouse_path == NO_FILE_MSG {
                     return;
                 }
-                let lh_path = Path::new(&self.steam_lighthouse_path);
+                let path_s = self.steam_lighthouse_path.clone();
+                let lh_path = Path::new(&path_s);
                 if lh_path.is_file() {
-                    self.calibration_runner = Some(Runner::new(
-                        None,
-                        format!(
-                            "{pfx}/bin/survive-cli",
-                            pfx = self.profile.as_ref().unwrap().prefix
-                        ),
-                        vec![
-                            "--steamvr-calibration".into(),
-                            lh_path.to_str().unwrap().to_string(),
-                        ],
-                    ));
+                    let mut runner = self.create_calibration_runner();
+                    self.calibration_running.set(true);
+                    self.first_run_done = false;
+                    self.calibration_seconds_elapsed = 0.0;
+                    runner.start();
+                    {
+                        let timer_sender = sender.clone();
+                        let continue_watching = self.calibration_running.clone();
+                        glib::timeout_add_local(Duration::from_millis(1000), move || {
+                            timer_sender.input(LibsurviveSetupMsg::TickCalibrationRunner);
+                            return glib::Continue(continue_watching.get());
+                        });
+                    }
+                    self.calibration_runner = Some(runner);
                     self.carousel
                         .as_ref()
                         .unwrap()
@@ -312,6 +391,35 @@ impl SimpleComponent for LibsurviveSetupWindow {
                     },
                 );
             }
+            LibsurviveSetupMsg::TickCalibrationRunner => {
+                self.calibration_seconds_elapsed += 1.0;
+                self.progressbar.as_ref().unwrap().set_fraction(
+                    (self.calibration_seconds_elapsed / (CALIBRATION_RUN_TIME_SECONDS * 2.0))
+                        .min(1.0),
+                );
+                if !self.first_run_done {
+                    if self.calibration_seconds_elapsed >= CALIBRATION_RUN_TIME_SECONDS {
+                        if self.calibration_runner.is_some() {
+                            self.first_run_done = true;
+                            let runner = self.calibration_runner.as_mut().unwrap();
+                            runner.terminate();
+                            let mut n_runner = self.create_calibration_runner();
+                            n_runner.start();
+                            self.calibration_runner = Some(n_runner);
+                        }
+                    }
+                } else {
+                    if self.calibration_seconds_elapsed >= (CALIBRATION_RUN_TIME_SECONDS * 2.0) {
+                        let runner = self.calibration_runner.as_mut().unwrap();
+                        runner.terminate();
+                        self.calibration_running.set(false);
+                        self.carousel
+                            .as_ref()
+                            .unwrap()
+                            .scroll_to(self.calibration_done_page.as_ref().unwrap(), true)
+                    }
+                }
+            }
         }
     }
 
@@ -326,13 +434,18 @@ impl SimpleComponent for LibsurviveSetupWindow {
             win: None,
             progressbar: None,
             carousel: None,
+            page1: None,
             loading_page: None,
+            calibration_done_page: None,
             steam_lighthouse_path: NO_FILE_MSG.into(),
             filefilter_listmodel: gtk4::gio::ListStore::builder()
                 .item_type(gtk::FileFilter::static_type())
                 .build(),
             profile: None,
             calibration_runner: None,
+            calibration_running: Cell::new(false),
+            first_run_done: false,
+            calibration_seconds_elapsed: 0.0,
             tracker: 0,
         };
 
@@ -344,6 +457,25 @@ impl SimpleComponent for LibsurviveSetupWindow {
         model.progressbar = Some(widgets.progressbar.clone());
         model.carousel = Some(widgets.carousel.clone());
         model.loading_page = Some(widgets.loading_page.clone());
+        model.calibration_done_page = Some(widgets.calibration_done_page.clone());
+        model.page1 = Some(widgets.page1.clone());
+
+        {
+            let cr_sender = sender.clone();
+            let cr_carousel = widgets.carousel.clone();
+            let cr_calibration_running = model.calibration_running.clone();
+            let cr_progressbar = widgets.progressbar.clone();
+            let cr_page1 = widgets.page1.clone();
+            model.win.as_ref().unwrap().connect_close_request(move |_| {
+                Self::on_close_request(
+                    &cr_sender,
+                    &cr_carousel,
+                    &cr_calibration_running,
+                    &cr_progressbar,
+                    &cr_page1,
+                )
+            });
+        };
 
         ComponentParts { model, widgets }
     }
