@@ -1,7 +1,9 @@
 use crate::config::Config;
 use crate::constants::APP_NAME;
 use crate::file_builders::active_runtime_json::{self, get_current_active_runtime};
-use crate::ui::app::{AboutAction, BuildProfileAction, DebugViewToggleAction, LibsurviveSetupAction};
+use crate::ui::app::{
+    AboutAction, BuildProfileAction, DebugViewToggleAction, LibsurviveSetupAction,
+};
 use expect_dialog::ExpectDialog;
 use gtk::prelude::*;
 use relm4::prelude::*;
@@ -14,6 +16,8 @@ pub struct MainView {
     enable_debug_view: bool,
     profile_names: Vec<String>,
     steam_launch_options: String,
+    #[tracker::do_not_track]
+    profiles_dropdown: Option<gtk::DropDown>,
 }
 
 #[derive(Debug)]
@@ -21,7 +25,8 @@ pub enum MainViewMsg {
     StartStopClicked,
     MonadoActiveChanged(bool),
     EnableDebugViewChanged(bool),
-    UpdateProfileNames(Vec<String>),
+    UpdateProfileNames(Vec<String>, Config),
+    ProfileSelected(u32),
     SteamLaunchOptionsChanged(String),
     CopySteamLaunchOptions,
 }
@@ -86,6 +91,9 @@ impl SimpleComponent for MainView {
                             let names: Vec<_> = model.profile_names.iter().map(String::as_str).collect();
                             gtk::StringList::new(&names)
                         }),
+                        connect_selected_item_notify[sender] => move |this| {
+                            sender.input(MainViewMsg::ProfileSelected(this.selected()));
+                        },
                     },
                     #[track = "model.changed(MainView::enable_debug_view())"]
                     set_show_end_title_buttons: !model.enable_debug_view,
@@ -235,14 +243,27 @@ impl SimpleComponent for MainView {
             MainViewMsg::EnableDebugViewChanged(val) => {
                 self.set_enable_debug_view(val);
             }
-            MainViewMsg::UpdateProfileNames(names) => {
+            MainViewMsg::UpdateProfileNames(names, config) => {
                 self.set_profile_names(names);
+                self.profiles_dropdown.as_ref().unwrap().clone().set_selected({
+                    let pos = self.profile_names.iter()
+                        .position(|p| p.clone() == config.selected_profile_name);
+                    match pos {
+                        Some(idx) => idx as u32,
+                        None => 0,
+                    }
+                });
             }
             MainViewMsg::SteamLaunchOptionsChanged(lo) => self.set_steam_launch_options(lo),
             MainViewMsg::CopySteamLaunchOptions => gtk::gdk::Display::default()
                 .expect_dialog("Could not find default display")
                 .clipboard()
                 .set_text(self.steam_launch_options.as_str()),
+            MainViewMsg::ProfileSelected(position) => {
+                sender.output(MainViewOutMsg::ProfileSelected(
+                    self.profile_names.get(position as usize).unwrap().clone(),
+                ));
+            }
         }
     }
 
@@ -251,9 +272,10 @@ impl SimpleComponent for MainView {
         root: &Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
-        let model = MainView {
+        let mut model = MainView {
             monado_active: false,
             enable_debug_view: init.config.debug_view_enabled,
+            profiles_dropdown: None,
             profile_names: vec![],
             steam_launch_options: "".into(),
             tracker: 0,
@@ -274,6 +296,8 @@ impl SimpleComponent for MainView {
                 gtk::Inhibit(false)
             });
         }
+
+        model.profiles_dropdown = Some(widgets.profiles_dropdown.clone());
 
         ComponentParts { model, widgets }
     }

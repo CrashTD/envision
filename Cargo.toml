@@ -8,6 +8,7 @@ edition = "2021"
 [dependencies]
 expect-dialog = "1.0.0"
 gtk4 = { version = "0.6.6", features = [
+    "v4_6",
     "v4_10"
 ] }
 nix = "0.26.2"

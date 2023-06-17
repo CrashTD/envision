@@ -18,8 +18,8 @@ use crate::file_builders::openvrpaths_vrpath::{
 };
 use crate::file_utils::setcap_cap_sys_nice_eip;
 use crate::profile::Profile;
-use crate::profiles::valve_index::valve_index_profile;
 use crate::profiles::system_valve_index::system_valve_index_profile;
+use crate::profiles::valve_index::valve_index_profile;
 use crate::runner::{Runner, RunnerStatus};
 use crate::runner_pipeline::RunnerPipeline;
 use crate::ui::build_window::BuildWindowMsg;
@@ -187,7 +187,7 @@ impl SimpleComponent for App {
                                 match code {
                                     0 => {
                                         self.build_window.sender().emit(
-                                            BuildWindowMsg::UpdateBuildStatus(BuildStatus::Done)
+                                            BuildWindowMsg::UpdateBuildStatus(BuildStatus::Done),
                                         );
                                         self.setcap_confirm_dialog.present();
                                         self.build_window
@@ -306,6 +306,9 @@ impl SimpleComponent for App {
                 setcap_cap_sys_nice_eip(format!("{pfx}/bin/monado-service", pfx = profile.prefix));
             }
             Msg::ProfileSelected(prof_name) => {
+                if prof_name == self.config.selected_profile_name {
+                    return;
+                }
                 self.config.selected_profile_name = prof_name;
                 save_config(&self.config);
             }
@@ -336,10 +339,7 @@ impl SimpleComponent for App {
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
         let config = get_config();
-        let profiles = vec![
-            valve_index_profile(),
-            system_valve_index_profile(),
-        ];
+        let profiles = vec![valve_index_profile(), system_valve_index_profile()];
         let dependencies_dialog = adw::MessageDialog::builder()
             .modal(true)
             .transient_for(root)
@@ -462,6 +462,7 @@ impl SimpleComponent for App {
             .sender()
             .emit(MainViewMsg::UpdateProfileNames(
                 model.profiles.iter().map(|p| p.clone().name).collect(),
+                model.config.clone()
             ));
 
         let timer_sender = sender.clone();
