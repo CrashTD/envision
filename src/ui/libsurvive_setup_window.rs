@@ -1,5 +1,4 @@
 use crate::{profile::Profile, runner::Runner};
-use expect_dialog::ExpectDialog;
 use gtk::{
     glib::{self, ffi::gboolean},
     prelude::*,
