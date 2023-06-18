@@ -73,6 +73,7 @@ global_conf.set('REPO_URL', upstream_repo)
 subdir('data')
 subdir('po')
 subdir('src')
+subdir('scripts')
 
 gnome.post_install(
   gtk_update_icon_cache: true,
