@@ -1,4 +1,4 @@
-use crate::constants::{get_developers, APP_NAME, REPO_URL, SINGLE_DEVELOPER, VERSION};
+use crate::constants::{get_developers, APP_NAME, REPO_URL, SINGLE_DEVELOPER, VERSION, APP_ID};
 use relm4::gtk::traits::GtkWindowExt;
 use relm4::prelude::*;
 use relm4::{ComponentParts, SimpleComponent};
@@ -15,6 +15,7 @@ impl SimpleComponent for AboutDialog {
     fn init_root() -> Self::Root {
         adw::AboutWindow::builder()
             .application_name(APP_NAME)
+            .application_icon(APP_ID)
             .license_type(gtk::License::Agpl30)
             .version(VERSION)
             .website(REPO_URL)

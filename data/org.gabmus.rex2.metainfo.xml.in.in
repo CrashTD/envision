@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>@APP_ID@</id>
+  <metadata_license>CC0</metadata_license>
+  <project_license>AGPL-3.0</project_license>
+  <name translatable="no">@PRETTY_NAME@</name>
+  <summary>GUI for Monado</summary>
+  <description>
+    <p>GUI for Monado</p> <!-- temporary -->
+  </description>
+  <!--screenshots>
+    <screenshot type="default">
+      <image>https://gitlab.com/gabmus/rex2/raw/main/misc/screenshots/screenshot1.png</image>
+      <caption>Main window</caption>
+    </screenshot>
+  </screenshots-->
+  <url type="homepage">@REPO_URL@</url>
+  <url type="bugtracker">@REPO_URL@/issues</url>
+  <content_rating type="oars-1.0" />
+  <releases>
+    <release version="0.1.0" date="2032-06-18" />
+  </releases>
+  <kudos>
+     <!--
+       GNOME Software kudos:
+       https://gitlab.gnome.org/GNOME/gnome-software/-/blob/main/doc/kudos.md
+     -->
+     <kudo>ModernToolkit</kudo>
+     <kudo>HiDpiIcon</kudo>
+  </kudos>
+  <developer_name translatable="no">Gabriele Musco</developer_name>
+  <update_contact>gabmus@disroot.org</update_contact>
+  <translation type="gettext">@GETTEXT_PACKAGE@</translation>
+  <launchable type="desktop-id">@APP_ID@.desktop</launchable>
+</component>

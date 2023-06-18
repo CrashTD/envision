@@ -1,1 +1,10 @@
 /target
+build/
+_build/
+builddir/
+build-aux/app
+build-aux/.flatpak-builder/
+src/constants.rs
+.flatpak/
+vendor
+*.mo

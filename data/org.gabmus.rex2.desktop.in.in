@@ -1,0 +1,13 @@
+[Desktop Entry]
+# Translators: Do NOT translate or transliterate this text
+Name=@PRETTY_NAME@
+Comment=GUI for Monado
+Type=Application
+Exec=@CMD_NAME@
+Terminal=false
+Categories=GNOME;GTK;Game;
+# Translators: Search terms to find this application. Do NOT translate or localize the semicolons! The list MUST also end with a semicolon!
+Keywords=vr;virtual;reality;monado;
+# Translators: Do NOT translate or transliterate this text (this is an icon file name)!
+Icon=@APP_ID@
+StartupNotify=true
