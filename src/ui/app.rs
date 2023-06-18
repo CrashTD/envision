@@ -3,11 +3,13 @@ use super::build_window::{BuildStatus, BuildWindow};
 use super::debug_view::{DebugView, DebugViewMsg};
 use super::libsurvive_setup_window::LibsurviveSetupWindow;
 use super::main_view::MainViewMsg;
+use crate::builders::build_basalt::get_build_basalt_runner;
 use crate::builders::build_libsurvive::get_build_libsurvive_runner;
 use crate::builders::build_monado::get_build_monado_runner;
 use crate::builders::build_opencomposite::get_build_opencomposite_runner;
 use crate::config::{get_config, save_config, Config};
 use crate::constants::APP_NAME;
+use crate::dependencies::basalt_deps::get_missing_basalt_deps;
 use crate::dependencies::libsurvive_deps::get_missing_libsurvive_deps;
 use crate::dependencies::monado_deps::get_missing_monado_deps;
 use crate::file_builders::active_runtime_json::{
@@ -260,10 +262,10 @@ impl SimpleComponent for App {
                         missing_deps.extend(get_missing_libsurvive_deps());
                         runners.push(get_build_libsurvive_runner(profile.clone()));
                     }
-                    // if profile.basalt_enabled {
-                    //     missing_deps.extend(get_missing_basalt_deps());
-                    //     runners.push(get_build_basalt_runner(profile.clone()));
-                    // }
+                    if profile.basalt_enabled {
+                        missing_deps.extend(get_missing_basalt_deps());
+                        runners.push(get_build_basalt_runner(profile.clone()));
+                    }
                     // if profile.mercury_enabled {
                     //     missing_deps.extend(get_missing_mercury_deps());
                     //     runners.push(get_build_mercury_runner(profile.clone()));

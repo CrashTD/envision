@@ -1,4 +1,5 @@
 install_data('_clone_or_pull.sh', install_dir: pkgdatadir / 'scripts')
+install_data('build_basalt.sh', install_dir: pkgdatadir / 'scripts')
 install_data('build_libsurvive.sh', install_dir: pkgdatadir / 'scripts')
 install_data('build_monado.sh', install_dir: pkgdatadir / 'scripts')
 install_data('build_opencomposite.sh', install_dir: pkgdatadir / 'scripts')
