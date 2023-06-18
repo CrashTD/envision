@@ -1,0 +1,54 @@
+# Maintainer: Gabriele Musco <gabmus@disroot.org>
+
+pkgname=rex2-git
+pkgver=r80.35b0ab9
+pkgrel=1
+pkgdesc='GUI for Monado'
+arch=(x86_64 aarch64)
+url='https://gitlab.com/gabmus/rex2'
+license=(GPL)
+depends=(
+    gtk4
+    libadwaita
+    openxr
+    libgl
+    libdrm
+    vulkan-icd-loader
+    wayland
+    xr-hardware
+    cmake
+    eigen
+    git
+    ninja
+    shaderc
+    vulkan-headers
+)
+makedepends=(
+    meson
+    rust
+)
+provides=(rex2)
+conflicts=(rex2)
+source=("git+${url}.git")
+b2sums=('SKIP')
+
+pkgver() {
+    cd rex2
+    ( set -o pipefail
+        git describe --long 2>/dev/null | sed 's/\([^-]*-g\)/r\1/;s/-/./g' ||
+        printf "r%s.%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
+    )
+}
+
+build() {
+    arch-meson rex2 build
+    meson compile -C build
+}
+
+# check() {
+#     meson test -C build --print-errorlogs
+# }
+
+package() {
+    meson install -C build --destdir "${pkgdir}"
+}
