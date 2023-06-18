@@ -15,6 +15,18 @@ pub struct Dependency {
     pub filename: String,
 }
 
+impl Ord for Dependency {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.name.cmp(&other.name)
+    }
+}
+
+impl PartialOrd for Dependency {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DependencyCheckResult {
     pub dependency: Dependency,

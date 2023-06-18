@@ -273,6 +273,8 @@ impl SimpleComponent for App {
                 }
                 runners.push(get_build_opencomposite_runner(profile.clone()));
                 if !missing_deps.is_empty() {
+                    missing_deps.sort_unstable();
+                    missing_deps.dedup(); // dedup only works if sorted, hence the above
                     self.dependencies_dialog.set_body(
                         missing_deps
                             .iter()
@@ -462,7 +464,7 @@ impl SimpleComponent for App {
             .sender()
             .emit(MainViewMsg::UpdateProfileNames(
                 model.profiles.iter().map(|p| p.clone().name).collect(),
-                model.config.clone()
+                model.config.clone(),
             ));
 
         let timer_sender = sender.clone();
