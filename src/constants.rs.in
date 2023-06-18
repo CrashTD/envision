@@ -1,6 +1,7 @@
 pub const APP_NAME: &str = "@PRETTY_NAME@";
 pub const APP_ID: &str = "@APP_ID@";
 pub const PKG_DATA_DIR: &str = "@PKGDATADIR@";
+pub const RESOURCES: &str = concat!("@PKGDATADIR@", "/resources.gresource");
 pub const CMD_NAME: &str = "@CMD_NAME@";
 pub const VERSION: &str = "@VERSION@";
 pub const REPO_URL: &str = "@UPSTREAM_REPO_URL@";
