@@ -7,11 +7,13 @@ use crate::builders::build_basalt::get_build_basalt_runner;
 use crate::builders::build_libsurvive::get_build_libsurvive_runner;
 use crate::builders::build_monado::get_build_monado_runner;
 use crate::builders::build_opencomposite::get_build_opencomposite_runner;
+use crate::builders::build_wivrn::get_build_wivrn_runner;
 use crate::config::{get_config, save_config, Config};
 use crate::constants::APP_NAME;
 use crate::dependencies::basalt_deps::get_missing_basalt_deps;
 use crate::dependencies::libsurvive_deps::get_missing_libsurvive_deps;
 use crate::dependencies::monado_deps::get_missing_monado_deps;
+use crate::dependencies::wivrn_deps::get_missing_wivrn_deps;
 use crate::file_builders::active_runtime_json::{
     set_current_active_runtime_to_profile, set_current_active_runtime_to_steam,
 };
@@ -19,7 +21,7 @@ use crate::file_builders::openvrpaths_vrpath::{
     set_current_openvrpaths_to_profile, set_current_openvrpaths_to_steam,
 };
 use crate::file_utils::setcap_cap_sys_nice_eip;
-use crate::profile::Profile;
+use crate::profile::{Profile, XRServiceType};
 use crate::profiles::system_valve_index::system_valve_index_profile;
 use crate::profiles::valve_index::valve_index_profile;
 use crate::runner::{Runner, RunnerStatus};
@@ -60,9 +62,9 @@ pub struct App {
     #[tracker::do_not_track]
     config: Config,
     #[tracker::do_not_track]
-    monado_runner: Option<Runner>,
+    xrservice_runner: Option<Runner>,
     #[tracker::do_not_track]
-    monado_log: Vec<String>,
+    xrservice_log: Vec<String>,
     #[tracker::do_not_track]
     build_pipeline: Option<RunnerPipeline>,
     #[tracker::do_not_track]
@@ -74,9 +76,9 @@ pub enum Msg {
     UpdateView,
     BuildProfile,
     EnableDebugViewChanged(bool),
-    DoStartStopMonado,
+    DoStartStopXRService,
     ProfileSelected(String),
-    SetMonadoRuntime(bool),
+    SetXRServiceRuntime(bool),
     RunSetCap,
     OpenLibsurviveSetup,
 }
@@ -98,11 +100,11 @@ impl App {
         }
     }
 
-    pub fn start_monado(&mut self) {
-        self.monado_log.clear();
-        let mut runner = Runner::monado_runner_from_profile(self.get_selected_profile().clone());
+    pub fn start_xrservice(&mut self) {
+        self.xrservice_log.clear();
+        let mut runner = Runner::xrservice_runner_from_profile(self.get_selected_profile().clone());
         runner.start();
-        self.monado_runner = Some(runner);
+        self.xrservice_runner = Some(runner);
     }
 }
 
@@ -139,7 +141,7 @@ impl SimpleComponent for App {
     }
 
     fn shutdown(&mut self, widgets: &mut Self::Widgets, output: relm4::Sender<Self::Output>) {
-        match &mut self.monado_runner {
+        match &mut self.xrservice_runner {
             None => {}
             Some(runner) => {
                 runner.terminate();
@@ -152,22 +154,22 @@ impl SimpleComponent for App {
 
         match message {
             Msg::UpdateView => {
-                match &mut self.monado_runner {
+                match &mut self.xrservice_runner {
                     None => {}
                     Some(runner) => {
                         let n_rows = runner.consume_rows();
                         if !n_rows.is_empty() {
-                            self.monado_log.extend(n_rows);
+                            self.xrservice_log.extend(n_rows);
                             self.debug_view
                                 .sender()
-                                .emit(DebugViewMsg::LogUpdated(self.monado_log.clone()));
+                                .emit(DebugViewMsg::LogUpdated(self.xrservice_log.clone()));
                         }
                         match runner.status() {
                             RunnerStatus::Running => {}
                             RunnerStatus::Stopped(_) => {
                                 self.main_view
                                     .sender()
-                                    .emit(MainViewMsg::MonadoActiveChanged(false));
+                                    .emit(MainViewMsg::XRServiceActiveChanged(false));
                             }
                         };
                     }
@@ -218,15 +220,15 @@ impl SimpleComponent for App {
                     .sender()
                     .emit(MainViewMsg::EnableDebugViewChanged(val));
             }
-            Msg::DoStartStopMonado => match &mut self.monado_runner {
+            Msg::DoStartStopXRService => match &mut self.xrservice_runner {
                 None => {
                     self.debug_view
                         .sender()
                         .emit(DebugViewMsg::LogUpdated(vec![]));
-                    self.start_monado();
+                    self.start_xrservice();
                     self.main_view
                         .sender()
-                        .emit(MainViewMsg::MonadoActiveChanged(true));
+                        .emit(MainViewMsg::XRServiceActiveChanged(true));
                     self.main_view
                         .sender()
                         .emit(MainViewMsg::SteamLaunchOptionsChanged(
@@ -238,16 +240,16 @@ impl SimpleComponent for App {
                         runner.terminate();
                         self.main_view
                             .sender()
-                            .emit(MainViewMsg::MonadoActiveChanged(false));
+                            .emit(MainViewMsg::XRServiceActiveChanged(false));
                     }
                     RunnerStatus::Stopped(_) => {
                         self.debug_view
                             .sender()
                             .emit(DebugViewMsg::LogUpdated(vec![]));
-                        self.start_monado();
+                        self.start_xrservice();
                         self.main_view
                             .sender()
-                            .emit(MainViewMsg::MonadoActiveChanged(true));
+                            .emit(MainViewMsg::XRServiceActiveChanged(true));
                     }
                 },
             },
@@ -257,7 +259,10 @@ impl SimpleComponent for App {
                 let mut runners: Vec<Runner> = vec![];
                 // profile per se can't be built, but we still need opencomp
                 if profile.can_be_built {
-                    missing_deps.extend(get_missing_monado_deps());
+                    missing_deps.extend(match profile.xrservice_type {
+                        XRServiceType::Monado => get_missing_monado_deps(),
+                        XRServiceType::Wivrn => get_missing_wivrn_deps(),
+                    });
                     if profile.libsurvive_enabled {
                         missing_deps.extend(get_missing_libsurvive_deps());
                         runners.push(get_build_libsurvive_runner(profile.clone()));
@@ -270,7 +275,12 @@ impl SimpleComponent for App {
                     //     missing_deps.extend(get_missing_mercury_deps());
                     //     runners.push(get_build_mercury_runner(profile.clone()));
                     // }
-                    runners.push(get_build_monado_runner(profile.clone()));
+                    runners.push(
+                        match profile.xrservice_type {
+                            XRServiceType::Monado => get_build_monado_runner(profile.clone()),
+                            XRServiceType::Wivrn => get_build_wivrn_runner(profile.clone()),
+                        }
+                    );
                     // no listed deps for opencomp
                 }
                 runners.push(get_build_opencomposite_runner(profile.clone()));
@@ -307,7 +317,10 @@ impl SimpleComponent for App {
             }
             Msg::RunSetCap => {
                 let profile = self.get_selected_profile();
-                setcap_cap_sys_nice_eip(format!("{pfx}/bin/monado-service", pfx = profile.prefix));
+                setcap_cap_sys_nice_eip(match profile.xrservice_type {
+                    XRServiceType::Monado => format!("{pfx}/bin/monado-service", pfx = profile.prefix),
+                    XRServiceType::Wivrn => format!("{pfx}/bin/wivrn-service", pfx = profile.prefix),
+                });
             }
             Msg::ProfileSelected(prof_name) => {
                 if prof_name == self.config.selected_profile_name {
@@ -316,8 +329,8 @@ impl SimpleComponent for App {
                 self.config.selected_profile_name = prof_name;
                 save_config(&self.config);
             }
-            Msg::SetMonadoRuntime(monado) => {
-                if monado {
+            Msg::SetXRServiceRuntime(is_rex) => {
+                if is_rex {
                     let profile = self.get_selected_profile();
                     set_current_active_runtime_to_profile(profile.clone());
                     set_current_openvrpaths_to_profile(profile.clone());
@@ -354,10 +367,10 @@ impl SimpleComponent for App {
         let setcap_confirm_dialog = adw::MessageDialog::builder()
             .modal(true)
             .transient_for(root)
-            .heading("Set monado-service Capabilities")
+            .heading("Set Capabilities")
             .body(concat!(
                 "We need to set certain capabilities (CAP_SYS_NICE=eip) on the ",
-                "monado-service executable. This requires your superuser password.\n\n",
+                "OpenXR server executable. This requires your superuser password.\n\n",
                 "Do you want to continue?",
             ))
             .hide_on_close(true)
@@ -384,9 +397,9 @@ impl SimpleComponent for App {
                 .forward(sender.input_sender(), |message| match message {
                     MainViewOutMsg::UpdateView => Msg::UpdateView,
                     MainViewOutMsg::EnableDebugViewChanged(val) => Msg::EnableDebugViewChanged(val),
-                    MainViewOutMsg::DoStartStopMonado => Msg::DoStartStopMonado,
+                    MainViewOutMsg::DoStartStopXRService => Msg::DoStartStopXRService,
                     MainViewOutMsg::ProfileSelected(name) => Msg::ProfileSelected(name),
-                    MainViewOutMsg::SetMonadoRuntime(monado) => Msg::SetMonadoRuntime(monado),
+                    MainViewOutMsg::SetXRServiceRuntime(is_rex) => Msg::SetXRServiceRuntime(is_rex),
                 }),
             debug_view: DebugView::builder()
                 .launch(DebugViewInit {
@@ -413,8 +426,8 @@ impl SimpleComponent for App {
             config,
             tracker: 0,
             profiles,
-            monado_runner: None,
-            monado_log: vec![],
+            xrservice_runner: None,
+            xrservice_log: vec![],
             build_pipeline: None,
         };
         let widgets = view_output!();

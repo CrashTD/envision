@@ -12,7 +12,7 @@ use relm4_icons::icon_name;
 
 #[tracker::track]
 pub struct MainView {
-    monado_active: bool,
+    xrservice_active: bool,
     enable_debug_view: bool,
     profile_names: Vec<String>,
     steam_launch_options: String,
@@ -23,7 +23,7 @@ pub struct MainView {
 #[derive(Debug)]
 pub enum MainViewMsg {
     StartStopClicked,
-    MonadoActiveChanged(bool),
+    XRServiceActiveChanged(bool),
     EnableDebugViewChanged(bool),
     UpdateProfileNames(Vec<String>, Config),
     SetSelectedProfile(u32),
@@ -36,9 +36,9 @@ pub enum MainViewMsg {
 pub enum MainViewOutMsg {
     UpdateView,
     EnableDebugViewChanged(bool),
-    DoStartStopMonado,
+    DoStartStopXRService,
     ProfileSelected(String),
-    SetMonadoRuntime(bool),
+    SetXRServiceRuntime(bool),
 }
 
 pub struct MainViewInit {
@@ -115,10 +115,10 @@ impl SimpleComponent for MainView {
                         add_css_class: "destructive-action",
                         set_hexpand: true,
                         set_halign: gtk::Align::Center,
-                        #[track = "model.changed(MainView::monado_active())"]
-                        set_class_active: ("suggested-action", !model.monado_active),
-                        #[track = "model.changed(MainView::monado_active())"]
-                        set_label: match model.monado_active {
+                        #[track = "model.changed(MainView::xrservice_active())"]
+                        set_class_active: ("suggested-action", !model.xrservice_active),
+                        #[track = "model.changed(MainView::xrservice_active())"]
+                        set_label: match model.xrservice_active {
                             true => "Stop",
                             false => "Start",
                         },
@@ -154,7 +154,7 @@ impl SimpleComponent for MainView {
                         gtk::Switch {
                         },
                         gtk::Label {
-                            set_label: "Monado"
+                            set_label: APP_NAME,
                         },
                     },
                     gtk::Box {
@@ -164,8 +164,8 @@ impl SimpleComponent for MainView {
                         set_spacing: 12,
                         set_margin_top: 12,
                         set_margin_bottom: 12,
-                        #[track = "model.changed(MainView::monado_active())"]
-                        set_visible: model.monado_active,
+                        #[track = "model.changed(MainView::xrservice_active())"]
+                        set_visible: model.xrservice_active,
                         gtk::Separator {
                             set_orientation: gtk::Orientation::Horizontal,
                             set_hexpand: true,
@@ -186,7 +186,10 @@ impl SimpleComponent for MainView {
                             set_xalign: 0.0,
                             set_margin_start: 12,
                             set_margin_end: 12,
-                            set_label: "Set this string in the launch options of Steam games, so that they can pick up Monado and OpenOVR correctly",
+                            set_label: format!(
+                                "Set this string in the launch options of Steam games, so that they can pick up the {app} runtime correctly",
+                                app = APP_NAME)
+                                .as_str(),
                             set_wrap: true,
                             set_wrap_mode: gtk::pango::WrapMode::Word,
                         },
@@ -236,10 +239,10 @@ impl SimpleComponent for MainView {
 
         match message {
             MainViewMsg::StartStopClicked => {
-                sender.output(MainViewOutMsg::DoStartStopMonado);
+                sender.output(MainViewOutMsg::DoStartStopXRService);
             }
-            MainViewMsg::MonadoActiveChanged(active) => {
-                self.set_monado_active(active);
+            MainViewMsg::XRServiceActiveChanged(active) => {
+                self.set_xrservice_active(active);
             }
             MainViewMsg::EnableDebugViewChanged(val) => {
                 self.set_enable_debug_view(val);
@@ -251,7 +254,9 @@ impl SimpleComponent for MainView {
                 // draw, so selecting here will result in nothing cause the
                 // dropdown is effectively empty
                 sender.input(MainViewMsg::SetSelectedProfile({
-                    let pos = self.profile_names.iter()
+                    let pos = self
+                        .profile_names
+                        .iter()
                         .position(|p| p.clone() == config.selected_profile_name);
                     match pos {
                         Some(idx) => idx as u32,
@@ -260,7 +265,11 @@ impl SimpleComponent for MainView {
                 }));
             }
             MainViewMsg::SetSelectedProfile(index) => {
-                self.profiles_dropdown.as_ref().unwrap().clone().set_selected(index);
+                self.profiles_dropdown
+                    .as_ref()
+                    .unwrap()
+                    .clone()
+                    .set_selected(index);
             }
             MainViewMsg::SteamLaunchOptionsChanged(lo) => self.set_steam_launch_options(lo),
             MainViewMsg::CopySteamLaunchOptions => gtk::gdk::Display::default()
@@ -281,7 +290,7 @@ impl SimpleComponent for MainView {
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
         let mut model = MainView {
-            monado_active: false,
+            xrservice_active: false,
             enable_debug_view: init.config.debug_view_enabled,
             profiles_dropdown: None,
             profile_names: vec![],
@@ -300,7 +309,7 @@ impl SimpleComponent for MainView {
                 }
             }
             widgets.runtime_switch.connect_state_set(move |_, state| {
-                sender.output(MainViewOutMsg::SetMonadoRuntime(state));
+                sender.output(MainViewOutMsg::SetXRServiceRuntime(state));
                 gtk::Inhibit(false)
             });
         }

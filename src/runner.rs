@@ -1,4 +1,4 @@
-use crate::{file_utils::get_writer, profile::Profile};
+use crate::{file_utils::get_writer, profile::{Profile, XRServiceType}};
 use expect_dialog::ExpectDialog;
 use nix::{
     sys::signal::{kill, Signal::SIGTERM},
@@ -87,10 +87,13 @@ impl Runner {
         }
     }
 
-    pub fn monado_runner_from_profile(profile: Profile) -> Self {
+    pub fn xrservice_runner_from_profile(profile: Profile) -> Self {
         Self::new(
             Some(profile.environment),
-            format!("{pfx}/bin/monado-service", pfx = profile.prefix),
+            match profile.xrservice_type {
+                XRServiceType::Monado => format!("{pfx}/bin/monado-service", pfx = profile.prefix),
+                XRServiceType::Wivrn => format!("{pfx}/bin/wivrn-server", pfx = profile.prefix),
+            },
             vec![],
         )
     }
@@ -241,7 +244,7 @@ mod tests {
 
     #[test]
     fn can_create_from_profile() {
-        Runner::monado_runner_from_profile(Profile::load_profile(
+        Runner::xrservice_runner_from_profile(Profile::load_profile(
             &"./test/files/profile.json".to_string(),
         ));
     }
