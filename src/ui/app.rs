@@ -419,7 +419,7 @@ impl SimpleComponent for App {
                     ));
                 self.download_wivrn_thread.set(Some(download_file(
                     // TODO: always download latest
-                    "https://github.com/Meumeu/WiVRn/releases/download/v0.4/WiVRn-oculus-release.apk".into(),
+                    "https://github.com/Meumeu/WiVRn/releases/latest/download/WiVRn-oculus-release.apk".into(),
                     wivrn_apk_download_path()
                 )));
             }
