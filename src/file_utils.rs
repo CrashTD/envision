@@ -44,6 +44,13 @@ pub fn get_xdg_data_dir() -> String {
     }
 }
 
+pub fn get_xdg_cache_dir() -> String {
+    match env::var("XDG_CACHE_HOME") {
+        Ok(cache_home) => cache_home,
+        Err(_) => format!("{home}/.cache", home = get_home_dir()),
+    }
+}
+
 pub fn get_config_dir() -> String {
     format!(
         "{config}/{name}",
@@ -54,6 +61,10 @@ pub fn get_config_dir() -> String {
 
 pub fn get_data_dir() -> String {
     format!("{data}/{name}", data = get_xdg_data_dir(), name = CMD_NAME)
+}
+
+pub fn get_cache_dir() -> String {
+    format!("{cache}/{name}", cache = get_xdg_cache_dir(), name = CMD_NAME)
 }
 
 pub fn set_file_radonly(path_s: &String, readonly: bool) {

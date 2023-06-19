@@ -23,6 +23,9 @@ relm4-components = "0.6.0"
 relm4-icons = { version = "0.6.0", features = [
     "menu", "loupe", "copy"
 ] }
+reqwest = { version = "0.11.18", features = [
+    "blocking"
+] }
 serde = { version = "1.0.163", features = [
     "derive"
 ] }

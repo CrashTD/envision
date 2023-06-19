@@ -1,6 +1,9 @@
+use std::rc::Rc;
+
 use crate::config::Config;
 use crate::constants::APP_NAME;
 use crate::file_builders::active_runtime_json::{self, get_current_active_runtime};
+use crate::profile::XRServiceType;
 use crate::ui::app::{
     AboutAction, BuildProfileAction, DebugViewToggleAction, LibsurviveSetupAction,
 };
@@ -10,14 +13,23 @@ use relm4::prelude::*;
 use relm4::{ComponentParts, ComponentSender, SimpleComponent};
 use relm4_icons::icon_name;
 
+#[derive(PartialEq, Eq, Debug, Clone)]
+pub enum InstallWivrnStatus {
+    Success,
+    Done(Option<String>),
+    InProgress,
+}
+
 #[tracker::track]
 pub struct MainView {
     xrservice_active: bool,
+    xrservice_type: XRServiceType,
     enable_debug_view: bool,
     profile_names: Vec<String>,
     steam_launch_options: String,
     #[tracker::do_not_track]
     profiles_dropdown: Option<gtk::DropDown>,
+    install_wivrn_status: InstallWivrnStatus,
 }
 
 #[derive(Debug)]
@@ -30,6 +42,8 @@ pub enum MainViewMsg {
     ProfileSelected(u32),
     SteamLaunchOptionsChanged(String),
     CopySteamLaunchOptions,
+    UpdateXRServiceType(XRServiceType),
+    UpdateInstallWivrnStatus(InstallWivrnStatus),
 }
 
 #[derive(Debug)]
@@ -39,6 +53,7 @@ pub enum MainViewOutMsg {
     DoStartStopXRService,
     ProfileSelected(String),
     SetXRServiceRuntime(bool),
+    InstallWivrnApk,
 }
 
 pub struct MainViewInit {
@@ -228,7 +243,89 @@ impl SimpleComponent for MainView {
                                 }
                             },
                         },
-                    }
+                    },
+                    gtk::Box {
+                        set_orientation: gtk::Orientation::Vertical,
+                        set_spacing: 12,
+                        set_margin_top: 12,
+                        set_margin_bottom: 12,
+                        #[track = "model.changed(MainView::xrservice_type())"]
+                        set_visible: match model.xrservice_type {
+                            XRServiceType::Wivrn => true,
+                            _ => false,
+                        },
+                        gtk::Separator {
+                            set_orientation: gtk::Orientation::Horizontal,
+                            set_hexpand: true,
+                        },
+                        gtk::Label {
+                            add_css_class: "heading",
+                            set_hexpand: true,
+                            set_xalign: 0.0,
+                            set_margin_start: 12,
+                            set_margin_end: 12,
+                            set_label: "Install WiVRn APK",
+                            set_wrap: true,
+                            set_wrap_mode: gtk::pango::WrapMode::Word,
+                        },
+                        gtk::Label {
+                            add_css_class: "dim-label",
+                            set_hexpand: true,
+                            set_xalign: 0.0,
+                            set_margin_start: 12,
+                            set_margin_end: 12,
+                            set_label: concat!(
+                                "Install the WiVRn APK on your standalong Android headset. ",
+                                "You will need to enable Developer Mode on your headset, ",
+                                "then press the \"Install WiVRn\" button."
+                            ),
+                            set_wrap: true,
+                            set_wrap_mode: gtk::pango::WrapMode::Word,
+                        },
+                        gtk::Button {
+                            add_css_class: "suggested-action",
+                            set_label: "Install WiVRn",
+                            set_margin_start: 12,
+                            set_margin_end: 12,
+                            set_halign: gtk::Align::Start,
+                            #[track = "model.changed(MainView::install_wivrn_status())"]
+                            set_sensitive: match model.install_wivrn_status {
+                                InstallWivrnStatus::InProgress => false,
+                                _ => true,
+                            },
+                            connect_clicked[sender] => move |_| {
+                                sender.output(MainViewOutMsg::InstallWivrnApk);
+                            },
+                        },
+                        gtk::Label {
+                            add_css_class: "error",
+                            set_margin_start: 12,
+                            set_margin_end: 12,
+                            set_xalign: 0.0,
+                            #[track = "model.changed(MainView::install_wivrn_status())"]
+                            set_visible: match &model.install_wivrn_status {
+                                InstallWivrnStatus::Done(Some(_)) => true,
+                                _ => false,
+                            },
+                            #[track = "model.changed(MainView::install_wivrn_status())"]
+                            set_label: match &model.install_wivrn_status {
+                                InstallWivrnStatus::Done(Some(err)) => err.as_str(),
+                                _ => "",
+                            },
+                        },
+                        gtk::Label {
+                            add_css_class: "success",
+                            set_margin_start: 12,
+                            set_margin_end: 12,
+                            set_xalign: 0.0,
+                            #[track = "model.changed(MainView::install_wivrn_status())"]
+                            set_visible: match &model.install_wivrn_status {
+                                InstallWivrnStatus::Success => true,
+                                _ => false,
+                            },
+                            set_label: "WiVRn Installed Successfully",
+                        },
+                    },
                 }
             }
         }
@@ -246,6 +343,9 @@ impl SimpleComponent for MainView {
             }
             MainViewMsg::EnableDebugViewChanged(val) => {
                 self.set_enable_debug_view(val);
+            }
+            MainViewMsg::UpdateXRServiceType(typ) => {
+                self.set_xrservice_type(typ);
             }
             MainViewMsg::UpdateProfileNames(names, config) => {
                 self.set_profile_names(names);
@@ -281,6 +381,9 @@ impl SimpleComponent for MainView {
                     self.profile_names.get(position as usize).unwrap().clone(),
                 ));
             }
+            MainViewMsg::UpdateInstallWivrnStatus(status) => {
+                self.set_install_wivrn_status(status);
+            }
         }
     }
 
@@ -291,10 +394,12 @@ impl SimpleComponent for MainView {
     ) -> ComponentParts<Self> {
         let mut model = MainView {
             xrservice_active: false,
+            xrservice_type: XRServiceType::Monado,
             enable_debug_view: init.config.debug_view_enabled,
             profiles_dropdown: None,
             profile_names: vec![],
             steam_launch_options: "".into(),
+            install_wivrn_status: InstallWivrnStatus::Done(None),
             tracker: 0,
         };
         let widgets = view_output!();

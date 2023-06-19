@@ -21,6 +21,8 @@ pub mod profiles;
 pub mod runner;
 pub mod runner_pipeline;
 pub mod ui;
+pub mod adb;
+pub mod downloader;
 
 fn main() -> Result<()> {
     // Prepare i18n
