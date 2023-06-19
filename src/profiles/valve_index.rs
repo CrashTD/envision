@@ -1,4 +1,4 @@
-use crate::{constants::APP_NAME, file_utils::get_data_dir, profile::Profile, paths::{data_monado_path, data_opencomposite_path, data_libsurvive_path}};
+use crate::{constants::APP_NAME, file_utils::get_data_dir, profile::{Profile, XRServiceType}, paths::{data_monado_path, data_opencomposite_path, data_libsurvive_path}};
 use std::collections::HashMap;
 
 pub fn valve_index_profile() -> Profile {
@@ -12,7 +12,8 @@ pub fn valve_index_profile() -> Profile {
     environment.insert("LD_LIBRARY_PATH".into(), format!("{pfx}/lib", pfx = prefix));
     Profile {
         name: format!("Valve Index - {name} Default", name = APP_NAME),
-        monado_path: data_monado_path(),
+        xrservice_path: data_monado_path(),
+        xrservice_type: XRServiceType::Monado,
         opencomposite_path: data_opencomposite_path(),
         libsurvive_path: Some(data_libsurvive_path()),
         basalt_path: None,

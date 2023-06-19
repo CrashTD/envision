@@ -5,7 +5,7 @@ pub fn get_build_monado_runner(profile: Profile) -> Runner {
         None,
         format!("{sysdata}/scripts/build_monado.sh", sysdata = PKG_DATA_DIR),
         vec![
-            profile.monado_path,
+            profile.xrservice_path,
             profile.prefix,
         ]
     );

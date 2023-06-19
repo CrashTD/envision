@@ -1,4 +1,4 @@
-use crate::{constants::APP_NAME, paths::{data_opencomposite_path, SYSTEM_PREFIX}, profile::Profile};
+use crate::{constants::APP_NAME, paths::{data_opencomposite_path, SYSTEM_PREFIX}, profile::{Profile, XRServiceType}};
 use std::collections::HashMap;
 
 pub fn system_valve_index_profile() -> Profile {
@@ -10,7 +10,8 @@ pub fn system_valve_index_profile() -> Profile {
     Profile {
         name: format!("Valve Index (System) - {name} Default", name = APP_NAME),
         opencomposite_path: data_opencomposite_path(),
-        monado_path: "".into(),
+        xrservice_path: "".into(),
+        xrservice_type: XRServiceType::Monado,
         libsurvive_path: None,
         basalt_path: None,
         mercury_path: None,

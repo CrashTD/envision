@@ -1,6 +1,7 @@
 {
     "name": "Demo profile",
-    "monado_path": "/home/user/monado",
+    "xrservice_path": "/home/user/monado",
+    "xrservice_type": "Monado",
     "opencomposite_path": "/home/user/opencomposite",
     "libsurvive_path": "/home/user/libsurvive",
     "basalt_path": null,

@@ -7,9 +7,16 @@ use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, fmt::Display, fs::File, io::BufReader};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum XRServiceType {
+    Monado,
+    Wivrn,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Profile {
     pub name: String,
-    pub monado_path: String,
+    pub xrservice_path: String,
+    pub xrservice_type: XRServiceType,
     pub opencomposite_path: String,
     pub libsurvive_path: Option<String>,
     pub basalt_path: Option<String>,
@@ -62,13 +69,15 @@ impl Profile {
 mod tests {
     use std::collections::HashMap;
 
+    use crate::profile::XRServiceType;
+
     use super::Profile;
 
     #[test]
     fn profile_can_be_loaded() {
         let profile = Profile::load_profile(&"./test/files/profile.json".to_string());
         assert_eq!(profile.name, "Demo profile");
-        assert_eq!(profile.monado_path, "/home/user/monado");
+        assert_eq!(profile.xrservice_path, "/home/user/monado");
         assert_eq!(profile.opencomposite_path, "/home/user/opencomposite");
         assert_eq!(profile.prefix, "/home/user/rex2prefix");
         assert_eq!(
@@ -96,7 +105,8 @@ mod tests {
         env.insert("XRT_COMPOSITOR_COMPUTE".into(), "1".into());
         let p = Profile {
             name: "Demo profile".into(),
-            monado_path: String::from("/home/user/monado"),
+            xrservice_path: String::from("/home/user/monado"),
+            xrservice_type: XRServiceType::Monado,
             opencomposite_path: String::from("/home/user/opencomposite"),
             libsurvive_path: Some(String::from("/home/user/libsurvive")),
             basalt_path: None,
