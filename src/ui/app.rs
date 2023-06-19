@@ -24,6 +24,7 @@ use crate::file_utils::setcap_cap_sys_nice_eip;
 use crate::profile::{Profile, XRServiceType};
 use crate::profiles::system_valve_index::system_valve_index_profile;
 use crate::profiles::valve_index::valve_index_profile;
+use crate::profiles::wivrn::wivrn_profile;
 use crate::runner::{Runner, RunnerStatus};
 use crate::runner_pipeline::RunnerPipeline;
 use crate::ui::build_window::BuildWindowMsg;
@@ -275,12 +276,10 @@ impl SimpleComponent for App {
                     //     missing_deps.extend(get_missing_mercury_deps());
                     //     runners.push(get_build_mercury_runner(profile.clone()));
                     // }
-                    runners.push(
-                        match profile.xrservice_type {
-                            XRServiceType::Monado => get_build_monado_runner(profile.clone()),
-                            XRServiceType::Wivrn => get_build_wivrn_runner(profile.clone()),
-                        }
-                    );
+                    runners.push(match profile.xrservice_type {
+                        XRServiceType::Monado => get_build_monado_runner(profile.clone()),
+                        XRServiceType::Wivrn => get_build_wivrn_runner(profile.clone()),
+                    });
                     // no listed deps for opencomp
                 }
                 runners.push(get_build_opencomposite_runner(profile.clone()));
@@ -318,8 +317,12 @@ impl SimpleComponent for App {
             Msg::RunSetCap => {
                 let profile = self.get_selected_profile();
                 setcap_cap_sys_nice_eip(match profile.xrservice_type {
-                    XRServiceType::Monado => format!("{pfx}/bin/monado-service", pfx = profile.prefix),
-                    XRServiceType::Wivrn => format!("{pfx}/bin/wivrn-service", pfx = profile.prefix),
+                    XRServiceType::Monado => {
+                        format!("{pfx}/bin/monado-service", pfx = profile.prefix)
+                    }
+                    XRServiceType::Wivrn => {
+                        format!("{pfx}/bin/wivrn-service", pfx = profile.prefix)
+                    }
                 });
             }
             Msg::ProfileSelected(prof_name) => {
@@ -356,7 +359,11 @@ impl SimpleComponent for App {
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
         let config = get_config();
-        let profiles = vec![valve_index_profile(), system_valve_index_profile()];
+        let profiles = vec![
+            valve_index_profile(),
+            system_valve_index_profile(),
+            wivrn_profile(),
+        ];
         let dependencies_dialog = adw::MessageDialog::builder()
             .modal(true)
             .transient_for(root)

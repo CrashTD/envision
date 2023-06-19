@@ -8,6 +8,10 @@ pub fn data_monado_path() -> String {
     format!("{data}/monado", data = get_data_dir())
 }
 
+pub fn data_wivrn_path() -> String {
+    format!("{data}/wivrn", data = get_data_dir())
+}
+
 pub fn data_libsurvive_path() -> String {
     format!("{data}/libsurvive", data = get_data_dir())
 }
