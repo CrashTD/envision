@@ -199,7 +199,7 @@ impl Runner {
 
 #[cfg(test)]
 mod tests {
-    use crate::profile::load_profile;
+    use crate::profile::Profile;
 
     use super::{Runner, RunnerStatus};
     use core::time;
@@ -241,6 +241,8 @@ mod tests {
 
     #[test]
     fn can_create_from_profile() {
-        Runner::monado_runner_from_profile(load_profile(&"./test/files/profile.json".to_string()));
+        Runner::monado_runner_from_profile(Profile::load_profile(
+            &"./test/files/profile.json".to_string(),
+        ));
     }
 }

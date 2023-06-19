@@ -1,4 +1,7 @@
-use crate::{file_utils::get_writer, paths::{SYSTEM_PREFIX, BWRAP_SYSTEM_PREFIX}};
+use crate::{
+    file_utils::get_writer,
+    paths::{BWRAP_SYSTEM_PREFIX, SYSTEM_PREFIX},
+};
 use expect_dialog::ExpectDialog;
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, fmt::Display, fs::File, io::BufReader};
@@ -42,28 +45,28 @@ impl Profile {
         opts.push("%command%".into());
         opts.join(" ")
     }
-}
 
-pub fn load_profile(path: &String) -> Profile {
-    let file = File::open(path).expect_dialog("Unable to open profile");
-    let reader = BufReader::new(file);
-    serde_json::from_reader(reader).expect_dialog("Faiuled to deserialize profile")
-}
+    pub fn load_profile(path: &String) -> Self {
+        let file = File::open(path).expect_dialog("Unable to open profile");
+        let reader = BufReader::new(file);
+        serde_json::from_reader(reader).expect_dialog("Faiuled to deserialize profile")
+    }
 
-pub fn dump_profile(profile: Profile, path_s: &String) -> () {
-    let writer = get_writer(path_s);
-    serde_json::to_writer_pretty(writer, &profile).expect_dialog("Could not write profile")
+    pub fn dump_profile(&self, path_s: &String) -> () {
+        let writer = get_writer(path_s);
+        serde_json::to_writer_pretty(writer, self).expect_dialog("Could not write profile")
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use std::collections::HashMap;
 
-    use super::{dump_profile, load_profile, Profile};
+    use super::Profile;
 
     #[test]
     fn profile_can_be_loaded() {
-        let profile = load_profile(&"./test/files/profile.json".to_string());
+        let profile = Profile::load_profile(&"./test/files/profile.json".to_string());
         assert_eq!(profile.name, "Demo profile");
         assert_eq!(profile.monado_path, "/home/user/monado");
         assert_eq!(profile.opencomposite_path, "/home/user/opencomposite");
@@ -106,8 +109,8 @@ mod tests {
             can_be_built: true,
         };
         let fpath = String::from("./target/testout/testprofile.json");
-        dump_profile(p, &fpath);
-        let loaded = load_profile(&fpath);
+        p.dump_profile(&fpath);
+        let loaded = Profile::load_profile(&fpath);
         assert_eq!(loaded.name, "Demo profile");
         assert_eq!(
             loaded.libsurvive_path,
