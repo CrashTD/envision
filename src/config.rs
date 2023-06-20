@@ -12,6 +12,16 @@ pub struct Config {
     pub debug_view_enabled: bool,
 }
 
+impl Default for Config {
+    fn default() -> Self {
+        Config {
+            // TODO: handle first start with no profile selected
+            selected_profile_name: "".to_string(),
+            debug_view_enabled: false,
+        }
+    }
+}
+
 impl Config {
     pub fn get_selected_profile(&self, profiles: &Vec<Profile>) -> Profile {
         match profiles.iter().find(|p| {p.name == self.selected_profile_name}) {
@@ -19,58 +29,50 @@ impl Config {
             None => profiles.get(0).expect_dialog("No profiles found").clone(),
         }
     }
-}
 
-fn config_file_path() -> String {
-    format!(
-        "{config}/{name}.json",
-        config = get_config_dir(),
-        name = CMD_NAME
-    )
-}
-
-fn default_config() -> Config {
-    Config {
-        // TODO: handle first start with no profile selected
-        selected_profile_name: "".to_string(),
-        debug_view_enabled: false,
+    pub fn config_file_path() -> String {
+        format!(
+            "{config}/{name}.json",
+            config = get_config_dir(),
+            name = CMD_NAME
+        )
     }
-}
 
-fn get_config_from_path(path_s: String) -> Config {
-    match File::open(path_s) {
-        Ok(file) => {
-            let reader = BufReader::new(file);
-            match serde_json::from_reader(reader) {
-                Ok(config) => config,
-                Err(_) => default_config(),
+    fn from_path(path_s: String) -> Self {
+        match File::open(path_s) {
+            Ok(file) => {
+                let reader = BufReader::new(file);
+                match serde_json::from_reader(reader) {
+                    Ok(config) => config,
+                    Err(_) => Self::default(),
+                }
             }
+            Err(_) => Self::default(),
         }
-        Err(_) => default_config(),
     }
-}
 
-pub fn get_config() -> Config {
-    get_config_from_path(config_file_path())
-}
+    fn save_to_path(&self, path_s: &String) -> Result<(), serde_json::Error> {
+        let writer = get_writer(path_s);
+        serde_json::to_writer_pretty(writer, self)
+    }
 
-fn save_config_to_path(config: &Config, path_s: &String) -> Result<(), serde_json::Error> {
-    let writer = get_writer(path_s);
-    serde_json::to_writer_pretty(writer, config)
-}
+    pub fn save(&self) {
+        self.save_to_path(&Self::config_file_path()).expect_dialog("Failed to save config");
+    }
 
-pub fn save_config(config: &Config) {
-    save_config_to_path(config, &config_file_path()).expect_dialog("Failed to save config");
+    pub fn get_config() -> Self {
+        Self::from_path(Self::config_file_path())
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::get_config_from_path;
+    use crate::config::Config;
 
     #[test]
     fn will_load_default_if_config_does_not_exist() {
         assert_eq!(
-            get_config_from_path("/non/existing/file.json".into()).debug_view_enabled,
+            Config::from_path("/non/existing/file.json".into()).debug_view_enabled,
             false
         )
     }

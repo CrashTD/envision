@@ -8,7 +8,7 @@ use crate::builders::build_libsurvive::get_build_libsurvive_runner;
 use crate::builders::build_monado::get_build_monado_runner;
 use crate::builders::build_opencomposite::get_build_opencomposite_runner;
 use crate::builders::build_wivrn::get_build_wivrn_runner;
-use crate::config::{get_config, save_config, Config};
+use crate::config::Config;
 use crate::constants::APP_NAME;
 use crate::dependencies::basalt_deps::get_missing_basalt_deps;
 use crate::dependencies::libsurvive_deps::get_missing_libsurvive_deps;
@@ -211,7 +211,7 @@ impl SimpleComponent for App {
             Msg::EnableDebugViewChanged(val) => {
                 self.set_enable_debug_view(val);
                 self.config.debug_view_enabled = val;
-                save_config(&self.config);
+                self.config.save();
                 self.debug_view
                     .sender()
                     .emit(DebugViewMsg::EnableDebugViewChanged(val));
@@ -328,7 +328,7 @@ impl SimpleComponent for App {
                     return;
                 }
                 self.config.selected_profile_name = prof_name;
-                save_config(&self.config);
+                self.config.save();
                 let profile = self.get_selected_profile();
                 self.main_view
                     .sender()
@@ -362,7 +362,7 @@ impl SimpleComponent for App {
         root: &Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
-        let config = get_config();
+        let config = Config::get_config();
         let profiles = vec![
             valve_index_profile(),
             system_valve_index_profile(),
