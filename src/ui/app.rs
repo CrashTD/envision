@@ -74,7 +74,7 @@ pub struct App {
 
 #[derive(Debug)]
 pub enum Msg {
-    UpdateView,
+    ClockTicking,
     BuildProfile,
     EnableDebugViewChanged(bool),
     DoStartStopXRService,
@@ -151,7 +151,7 @@ impl SimpleComponent for App {
         self.reset();
 
         match message {
-            Msg::UpdateView => {
+            Msg::ClockTicking => {
                 match &mut self.xrservice_runner {
                     None => {}
                     Some(runner) => {
@@ -407,7 +407,6 @@ impl SimpleComponent for App {
                     selected_profile: config.get_selected_profile(&profiles),
                 })
                 .forward(sender.input_sender(), |message| match message {
-                    MainViewOutMsg::UpdateView => Msg::UpdateView,
                     MainViewOutMsg::EnableDebugViewChanged(val) => Msg::EnableDebugViewChanged(val),
                     MainViewOutMsg::DoStartStopXRService => Msg::DoStartStopXRService,
                     MainViewOutMsg::ProfileSelected(name) => Msg::ProfileSelected(name),
@@ -418,7 +417,7 @@ impl SimpleComponent for App {
                     enable_debug_view: config.debug_view_enabled,
                 })
                 .forward(sender.input_sender(), |message| match message {
-                    _ => Msg::UpdateView,
+                    _ => Msg::ClockTicking,
                 }),
             about_dialog: AboutDialog::builder()
                 .transient_for(root)
@@ -496,7 +495,7 @@ impl SimpleComponent for App {
 
         let timer_sender = sender.clone();
         glib::timeout_add_local(Duration::from_millis(1000), move || {
-            timer_sender.input(Msg::UpdateView);
+            timer_sender.input(Msg::ClockTicking);
             return glib::Continue(true);
         });
 

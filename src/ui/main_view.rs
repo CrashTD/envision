@@ -44,7 +44,6 @@ pub enum MainViewMsg {
 
 #[derive(Debug)]
 pub enum MainViewOutMsg {
-    UpdateView,
     EnableDebugViewChanged(bool),
     DoStartStopXRService,
     ProfileSelected(String),

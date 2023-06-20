@@ -7,7 +7,7 @@ use crate::{
 };
 use gtk::prelude::*;
 use relm4::prelude::*;
-use std::{cell::Cell, thread::JoinHandle};
+use std::thread::JoinHandle;
 
 #[derive(PartialEq, Eq, Debug, Clone)]
 pub enum InstallWivrnStatus {
@@ -21,7 +21,7 @@ pub struct InstallWivrnBox {
     selected_profile: Profile,
     install_wivrn_status: InstallWivrnStatus,
     #[tracker::do_not_track]
-    download_thread: Cell<Option<JoinHandle<Result<(), reqwest::Error>>>>,
+    download_thread: Option<JoinHandle<Result<(), reqwest::Error>>>,
     #[tracker::do_not_track]
     install_runner: Option<Runner>,
 }
@@ -135,10 +135,9 @@ impl SimpleComponent for InstallWivrnBox {
 
         match message {
             Self::Input::ClockTicking => {
-                if self.download_thread.get_mut().is_some() {
+                if self.download_thread.is_some() {
                     let finished = self
                         .download_thread
-                        .get_mut()
                         .as_ref()
                         .unwrap()
                         .is_finished();
@@ -173,10 +172,10 @@ impl SimpleComponent for InstallWivrnBox {
             }
             Self::Input::DownloadWivrn => {
                 self.set_install_wivrn_status(InstallWivrnStatus::InProgress);
-                self.download_thread.set(Some(download_file(
+                self.download_thread = Some(download_file(
                     "https://github.com/Meumeu/WiVRn/releases/latest/download/WiVRn-oculus-release.apk".into(),
                     wivrn_apk_download_path()
-                )));
+                ));
             }
             Self::Input::InstallWivrnApk => {
                 let mut runner = get_adb_install_runner(&wivrn_apk_download_path());
@@ -197,7 +196,7 @@ impl SimpleComponent for InstallWivrnBox {
         let model = Self {
             selected_profile: init.selected_profile,
             install_wivrn_status: InstallWivrnStatus::Done(None),
-            download_thread: Cell::new(None),
+            download_thread: None,
             install_runner: None,
             tracker: 0,
         };
