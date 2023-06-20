@@ -167,7 +167,7 @@ impl SimpleComponent for App {
                             RunnerStatus::Stopped(_) => {
                                 self.main_view
                                     .sender()
-                                    .emit(MainViewMsg::XRServiceActiveChanged(false));
+                                    .emit(MainViewMsg::XRServiceActiveChanged(false, None));
                             }
                         };
                     }
@@ -227,11 +227,9 @@ impl SimpleComponent for App {
                     self.start_xrservice();
                     self.main_view
                         .sender()
-                        .emit(MainViewMsg::XRServiceActiveChanged(true));
-                    self.main_view
-                        .sender()
-                        .emit(MainViewMsg::SteamLaunchOptionsChanged(
-                            self.get_selected_profile().get_steam_launch_options(),
+                        .emit(MainViewMsg::XRServiceActiveChanged(
+                            true,
+                            Some(self.get_selected_profile()),
                         ));
                 }
                 Some(runner) => match runner.status() {
@@ -239,7 +237,7 @@ impl SimpleComponent for App {
                         runner.terminate();
                         self.main_view
                             .sender()
-                            .emit(MainViewMsg::XRServiceActiveChanged(false));
+                            .emit(MainViewMsg::XRServiceActiveChanged(false, None));
                     }
                     RunnerStatus::Stopped(_) => {
                         self.debug_view
@@ -248,7 +246,10 @@ impl SimpleComponent for App {
                         self.start_xrservice();
                         self.main_view
                             .sender()
-                            .emit(MainViewMsg::XRServiceActiveChanged(true));
+                            .emit(MainViewMsg::XRServiceActiveChanged(
+                                true,
+                                Some(self.get_selected_profile()),
+                            ));
                     }
                 },
             },
@@ -332,9 +333,7 @@ impl SimpleComponent for App {
                 let profile = self.get_selected_profile();
                 self.main_view
                     .sender()
-                    .emit(MainViewMsg::UpdateSelectedProfile(
-                        profile.clone()
-                    ));
+                    .emit(MainViewMsg::UpdateSelectedProfile(profile.clone()));
             }
             Msg::SetXRServiceRuntime(is_rex) => {
                 if is_rex {

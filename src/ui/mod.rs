@@ -5,3 +5,4 @@ pub mod debug_view;
 pub mod build_window;
 pub mod libsurvive_setup_window;
 pub mod install_wivrn_box;
+pub mod steam_launch_options_box;
