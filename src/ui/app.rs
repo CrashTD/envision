@@ -125,14 +125,13 @@ impl SimpleComponent for App {
                     set_orientation: gtk::Orientation::Horizontal,
                     set_hexpand: true,
                     set_vexpand: true,
-                    append: model.main_view.widget(),
-                    append: sep = &gtk::Separator {
+                    model.main_view.widget(),
+                    gtk::Separator {
                         set_orientation: gtk::Orientation::Vertical,
                         #[track = "model.changed(App::enable_debug_view())"]
                         set_visible: model.enable_debug_view,
                     },
-                    append: model.debug_view.widget(),
-                    // append: model.debug_view.widget(),
+                    model.debug_view.widget(),
                 }
             }
         }
