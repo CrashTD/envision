@@ -1,6 +1,6 @@
 use crate::{
     constants::CMD_NAME,
-    file_utils::{get_config_dir, get_writer},
+    file_utils::{get_config_dir, get_writer}, profile::Profile,
 };
 use expect_dialog::ExpectDialog;
 use serde::{Deserialize, Serialize};
@@ -10,6 +10,15 @@ use std::{fs::File, io::BufReader};
 pub struct Config {
     pub selected_profile_name: String,
     pub debug_view_enabled: bool,
+}
+
+impl Config {
+    pub fn get_selected_profile(&self, profiles: &Vec<Profile>) -> Profile {
+        match profiles.iter().find(|p| {p.name == self.selected_profile_name}) {
+            Some(p) => p.clone(),
+            None => profiles.get(0).expect_dialog("No profiles found").clone(),
+        }
+    }
 }
 
 fn config_file_path() -> String {

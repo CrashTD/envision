@@ -2,8 +2,7 @@ use super::about_dialog::AboutDialog;
 use super::build_window::{BuildStatus, BuildWindow};
 use super::debug_view::{DebugView, DebugViewMsg};
 use super::libsurvive_setup_window::LibsurviveSetupWindow;
-use super::main_view::{InstallWivrnStatus, MainViewMsg};
-use crate::adb::get_adb_install_runner;
+use super::main_view::MainViewMsg;
 use crate::builders::build_basalt::get_build_basalt_runner;
 use crate::builders::build_libsurvive::get_build_libsurvive_runner;
 use crate::builders::build_monado::get_build_monado_runner;
@@ -15,7 +14,6 @@ use crate::dependencies::basalt_deps::get_missing_basalt_deps;
 use crate::dependencies::libsurvive_deps::get_missing_libsurvive_deps;
 use crate::dependencies::monado_deps::get_missing_monado_deps;
 use crate::dependencies::wivrn_deps::get_missing_wivrn_deps;
-use crate::downloader::download_file;
 use crate::file_builders::active_runtime_json::{
     set_current_active_runtime_to_profile, set_current_active_runtime_to_steam,
 };
@@ -23,7 +21,6 @@ use crate::file_builders::openvrpaths_vrpath::{
     set_current_openvrpaths_to_profile, set_current_openvrpaths_to_steam,
 };
 use crate::file_utils::setcap_cap_sys_nice_eip;
-use crate::paths::wivrn_apk_download_path;
 use crate::profile::{Profile, XRServiceType};
 use crate::profiles::system_valve_index::system_valve_index_profile;
 use crate::profiles::valve_index::valve_index_profile;
@@ -42,8 +39,6 @@ use relm4::adw::ResponseAppearance;
 use relm4::gtk::glib;
 use relm4::{new_action_group, new_stateful_action, new_stateless_action, prelude::*};
 use relm4::{ComponentParts, ComponentSender, SimpleComponent};
-use std::cell::Cell;
-use std::thread::JoinHandle;
 use std::time::Duration;
 
 #[tracker::track]
@@ -75,11 +70,6 @@ pub struct App {
     build_pipeline: Option<RunnerPipeline>,
     #[tracker::do_not_track]
     profiles: Vec<Profile>,
-
-    #[tracker::do_not_track]
-    download_wivrn_thread: Cell<Option<JoinHandle<Result<(), reqwest::Error>>>>,
-    #[tracker::do_not_track]
-    install_wivrn_runner: Option<Runner>,
 }
 
 #[derive(Debug)]
@@ -92,8 +82,6 @@ pub enum Msg {
     SetXRServiceRuntime(bool),
     RunSetCap,
     OpenLibsurviveSetup,
-    DownloadWivrnApk,
-    InstallWivrnApk,
 }
 
 impl App {
@@ -106,11 +94,8 @@ impl App {
         return None;
     }
 
-    pub fn get_selected_profile(&self) -> &Profile {
-        match self.get_profile_by_name(&self.config.selected_profile_name) {
-            Some(profile) => profile,
-            None => self.profiles.get(0).expect_dialog("No profiles found"),
-        }
+    pub fn get_selected_profile(&self) -> Profile {
+        self.config.get_selected_profile(&self.profiles)
     }
 
     pub fn start_xrservice(&mut self) {
@@ -221,49 +206,7 @@ impl SimpleComponent for App {
                         }
                     }
                 };
-                if self.download_wivrn_thread.get_mut().is_some() {
-                    let finished = self
-                        .download_wivrn_thread
-                        .get_mut()
-                        .as_ref()
-                        .unwrap()
-                        .is_finished();
-                    if finished {
-                        let joinh = self.download_wivrn_thread.take().unwrap();
-                        match joinh.join().unwrap() {
-                            Ok(_) => {
-                                sender.input(Msg::InstallWivrnApk);
-                            }
-                            Err(_) => {
-                                self.main_view.sender().emit(
-                                    MainViewMsg::UpdateInstallWivrnStatus(
-                                        InstallWivrnStatus::Done(Some(
-                                            "Error downloading WiVRn APK".into(),
-                                        )),
-                                    ),
-                                );
-                            }
-                        }
-                    }
-                }
-                match &mut self.install_wivrn_runner {
-                    None => {}
-                    Some(runner) => match runner.status() {
-                        RunnerStatus::Running => {}
-                        RunnerStatus::Stopped(status) => {
-                            self.install_wivrn_runner.take();
-                            self.main_view
-                                .sender()
-                                .emit(MainViewMsg::UpdateInstallWivrnStatus(match status {
-                                    None | Some(0) => InstallWivrnStatus::Success,
-                                    Some(err_code) => InstallWivrnStatus::Done(Some(format!(
-                                        "ADB exited with code \"{c}\"",
-                                        c = err_code
-                                    ))),
-                                }));
-                        }
-                    },
-                }
+                self.main_view.sender().emit(MainViewMsg::ClockTicking);
             }
             Msg::EnableDebugViewChanged(val) => {
                 self.set_enable_debug_view(val);
@@ -389,8 +332,8 @@ impl SimpleComponent for App {
                 let profile = self.get_selected_profile();
                 self.main_view
                     .sender()
-                    .emit(MainViewMsg::UpdateXRServiceType(
-                        profile.clone().xrservice_type,
+                    .emit(MainViewMsg::UpdateSelectedProfile(
+                        profile.clone()
                     ));
             }
             Msg::SetXRServiceRuntime(is_rex) => {
@@ -410,23 +353,6 @@ impl SimpleComponent for App {
                         self.get_selected_profile().clone(),
                     ))
                     .expect_dialog("Failed to present Libsurvive Setup Window");
-            }
-            Msg::DownloadWivrnApk => {
-                self.main_view
-                    .sender()
-                    .emit(MainViewMsg::UpdateInstallWivrnStatus(
-                        InstallWivrnStatus::InProgress,
-                    ));
-                self.download_wivrn_thread.set(Some(download_file(
-                    // TODO: always download latest
-                    "https://github.com/Meumeu/WiVRn/releases/latest/download/WiVRn-oculus-release.apk".into(),
-                    wivrn_apk_download_path()
-                )));
-            }
-            Msg::InstallWivrnApk => {
-                let mut runner = get_adb_install_runner(&wivrn_apk_download_path());
-                runner.start();
-                self.install_wivrn_runner = Some(runner);
             }
         }
     }
@@ -478,6 +404,7 @@ impl SimpleComponent for App {
             main_view: MainView::builder()
                 .launch(MainViewInit {
                     config: config.clone(),
+                    selected_profile: config.get_selected_profile(&profiles),
                 })
                 .forward(sender.input_sender(), |message| match message {
                     MainViewOutMsg::UpdateView => Msg::UpdateView,
@@ -485,7 +412,6 @@ impl SimpleComponent for App {
                     MainViewOutMsg::DoStartStopXRService => Msg::DoStartStopXRService,
                     MainViewOutMsg::ProfileSelected(name) => Msg::ProfileSelected(name),
                     MainViewOutMsg::SetXRServiceRuntime(is_rex) => Msg::SetXRServiceRuntime(is_rex),
-                    MainViewOutMsg::InstallWivrnApk => Msg::DownloadWivrnApk,
                 }),
             debug_view: DebugView::builder()
                 .launch(DebugViewInit {
@@ -515,8 +441,6 @@ impl SimpleComponent for App {
             xrservice_runner: None,
             xrservice_log: vec![],
             build_pipeline: None,
-            download_wivrn_thread: Cell::new(None),
-            install_wivrn_runner: None,
         };
         let widgets = view_output!();
 
