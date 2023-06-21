@@ -28,21 +28,21 @@ fn wivrn_deps() -> Vec<Dependency> {
             dep_type: DepType::Include,
             filename: "nlohmann/json.hpp".into(),
         },
-        Dependency {
-            name: "libavcodec-dev".into(),
-            dep_type: DepType::Include,
-            filename: "libavcodec/avcodec.h".into(),
-        },
-        Dependency {
-            name: "libavfilter-dev".into(),
-            dep_type: DepType::Include,
-            filename: "libavfilter/avfilter.h".into(),
-        },
-        Dependency {
-            name: "libswscale-dev".into(),
-            dep_type: DepType::Include,
-            filename: "libswscale/swscale.h".into(),
-        },
+        // Dependency {
+        //     name: "libavcodec-dev".into(),
+        //     dep_type: DepType::Include,
+        //     filename: "libavcodec/avcodec.h".into(),
+        // },
+        // Dependency {
+        //     name: "libavfilter-dev".into(),
+        //     dep_type: DepType::Include,
+        //     filename: "libavfilter/avfilter.h".into(),
+        // },
+        // Dependency {
+        //     name: "libswscale-dev".into(),
+        //     dep_type: DepType::Include,
+        //     filename: "libswscale/swscale.h".into(),
+        // },
         Dependency {
             name: "glslang".into(),
             dep_type: DepType::Executable,
