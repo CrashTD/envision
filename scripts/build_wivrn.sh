@@ -23,4 +23,5 @@ cmake -B build-server -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_INSTALL_PREFIX="${PREFIX}" \
     .. -GNinja
 cmake --build build-server
+ninja
 ninja install
