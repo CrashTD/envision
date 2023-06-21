@@ -2,8 +2,8 @@ use crate::{constants::CMD_NAME, runner::Runner};
 use expect_dialog::ExpectDialog;
 use std::{
     env,
-    fs::{self, create_dir_all, OpenOptions},
-    io::BufWriter,
+    fs::{self, create_dir_all, OpenOptions, File},
+    io::{BufWriter, BufReader},
     path::Path,
 };
 
@@ -24,6 +24,37 @@ pub fn get_writer(path_s: &String) -> BufWriter<std::fs::File> {
         .open(path)
         .expect_dialog("Could not open file");
     BufWriter::new(file)
+}
+
+pub fn get_reader(path_s: &String) -> Option<BufReader<File>> {
+    let path = Path::new(&path_s);
+    if !(path.is_file() || path.is_symlink()) {
+        return None;
+    }
+    match File::open(path) {
+        Err(e) => {
+            println!("Error opening {}: {}", path_s, e);
+            return None;
+        }
+        Ok(fd) => {
+            Some(BufReader::new(fd))
+        }
+    }
+}
+
+pub fn deserialize_file<T: serde::de::DeserializeOwned>(path_s: &String) -> Option<T> {
+    match get_reader(&path_s) {
+        None => None,
+        Some(reader) => {
+            match serde_json::from_reader(reader) {
+                Err(e) => {
+                    println!("Failed to deserialize {}: {}", path_s, e);
+                    None
+                }
+                Ok(res) => Some(res)
+            }
+        }
+    }
 }
 
 pub fn get_home_dir() -> String {

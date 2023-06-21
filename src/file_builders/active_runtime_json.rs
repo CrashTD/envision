@@ -1,7 +1,13 @@
-use std::{fs::File, io::BufReader, path::Path};
+use crate::{
+    file_utils::{
+        deserialize_file, get_writer, get_xdg_config_dir, get_xdg_data_dir, set_file_radonly,
+    },
+    paths::SYSTEM_PREFIX,
+    profile::Profile,
+};
 use expect_dialog::ExpectDialog;
 use serde::{Deserialize, Serialize};
-use crate::{file_utils::{get_xdg_config_dir, get_xdg_data_dir, get_writer, set_file_radonly}, profile::Profile, paths::SYSTEM_PREFIX};
+use std::path::Path;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ActiveRuntimeInnerRuntime {
@@ -31,18 +37,12 @@ pub fn is_steam(active_runtime: ActiveRuntime) -> bool {
     }
 }
 
-fn get_active_runtime_from_path(path_s: String) -> Option<ActiveRuntime> {
-    let path = Path::new(&path_s);
-    if !(path.is_file() || path.is_symlink()) {
-        return None;
-    }
-    let fd = File::open(path).expect_dialog("Unable to open active_runtime.json");
-    let reader = BufReader::new(fd);
-    Some(serde_json::from_reader(reader).expect_dialog("Failed to deserialize active_runtime.json"))
+fn get_active_runtime_from_path(path_s: &String) -> Option<ActiveRuntime> {
+    deserialize_file(path_s)
 }
 
 pub fn get_current_active_runtime() -> Option<ActiveRuntime> {
-    get_active_runtime_from_path(get_active_runtime_json_path())
+    get_active_runtime_from_path(&get_active_runtime_json_path())
 }
 
 fn dump_active_runtime_to_path(active_runtime: ActiveRuntime, path_s: String) {
@@ -81,10 +81,7 @@ fn build_profile_active_runtime(profile: Profile) -> ActiveRuntime {
         runtime: ActiveRuntimeInnerRuntime {
             name: None,
             valve_runtime_is_steamvr: None,
-            library_path: format!(
-                "{prefix}/lib/libopenxr_monado.so",
-                prefix = profile.prefix
-            ),
+            library_path: format!("{prefix}/lib/libopenxr_monado.so", prefix = profile.prefix),
         },
     }
 }
@@ -96,10 +93,16 @@ pub fn set_current_active_runtime_to_profile(profile: Profile) {
     if pfx == SYSTEM_PREFIX {
         let path_s = get_active_runtime_json_path();
         let path = Path::new(&path_s);
-        let mut rel_chain = path.components().map(|c| String::from("..")).collect::<Vec<String>>();
+        let mut rel_chain = path
+            .components()
+            .map(|_| String::from(".."))
+            .collect::<Vec<String>>();
         rel_chain.pop();
         rel_chain.pop();
-        ar.runtime.library_path = format!("{rels}/usr/lib/libopenxr_monado.so", rels = rel_chain.join("/"));
+        ar.runtime.library_path = format!(
+            "{rels}/usr/lib/libopenxr_monado.so",
+            rels = rel_chain.join("/")
+        );
     }
     dump_current_active_runtime(ar);
 }
@@ -113,7 +116,7 @@ mod tests {
 
     #[test]
     fn can_read_active_runtime_json_steamvr() {
-        let ar = get_active_runtime_from_path("./test/files/active_runtime.json.steamvr".into())
+        let ar = get_active_runtime_from_path(&"./test/files/active_runtime.json.steamvr".into())
             .unwrap();
         assert_eq!(ar.file_format_version, "1.0.0");
         assert!(ar.runtime.valve_runtime_is_steamvr.unwrap());

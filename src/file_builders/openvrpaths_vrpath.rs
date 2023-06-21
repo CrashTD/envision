@@ -1,9 +1,11 @@
-use std::{fs::File, io::BufReader, path::Path};
-
+use crate::{
+    file_utils::{
+        deserialize_file, get_writer, get_xdg_config_dir, get_xdg_data_dir, set_file_radonly,
+    },
+    profile::Profile,
+};
 use expect_dialog::ExpectDialog;
 use serde::{Deserialize, Serialize};
-
-use crate::{file_utils::{get_xdg_config_dir, get_xdg_data_dir, get_writer, set_file_radonly}, profile::Profile};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct OpenVrPaths {
@@ -33,18 +35,12 @@ pub fn is_steam(ovr_paths: OpenVrPaths) -> bool {
         .is_some()
 }
 
-fn get_openvrpaths_from_path(path_s: String) -> Option<OpenVrPaths> {
-    let path = Path::new(&path_s);
-    if !(path.is_file() || path.is_symlink()) {
-        return None;
-    }
-    let fd = File::open(path).expect_dialog("Unable to open openvrpaths.vrpath");
-    let reader = BufReader::new(fd);
-    Some(serde_json::from_reader(reader).expect_dialog("Failed to deserialize openvrpaths.vrpath"))
+fn get_openvrpaths_from_path(path_s: &String) -> Option<OpenVrPaths> {
+    deserialize_file(path_s)
 }
 
 pub fn get_current_openvrpaths() -> Option<OpenVrPaths> {
-    get_openvrpaths_from_path(get_openvrpaths_vrpath_path())
+    get_openvrpaths_from_path(&get_openvrpaths_vrpath_path())
 }
 
 fn dump_openvrpaths_to_path(ovr_paths: OpenVrPaths, path_s: String) {
@@ -65,7 +61,10 @@ fn build_steam_openvrpaths() -> OpenVrPaths {
         external_drivers: None,
         jsonid: "vrpathreg".into(),
         log: vec![format!("{data}/Steam/logs", data = datadir)],
-        runtime: vec![format!("{data}/Steam/steamapps/common/SteamVR", data = datadir)],
+        runtime: vec![format!(
+            "{data}/Steam/steamapps/common/SteamVR",
+            data = datadir
+        )],
         version: 1,
     }
 }
@@ -81,7 +80,10 @@ fn build_profile_openvrpaths(profile: Profile) -> OpenVrPaths {
         external_drivers: None,
         jsonid: "vrpathreg".into(),
         log: vec![format!("{data}/Steam/logs", data = datadir)],
-        runtime: vec![format!("{opencomp_dir}/build", opencomp_dir = profile.opencomposite_path)],
+        runtime: vec![format!(
+            "{opencomp_dir}/build",
+            opencomp_dir = profile.opencomposite_path
+        )],
         version: 1,
     }
 }
@@ -96,7 +98,7 @@ mod tests {
 
     #[test]
     fn can_read_openvrpaths_vrpath_steamvr() {
-        let ovrp = get_openvrpaths_from_path("./test/files/openvrpaths.vrpath".into()).unwrap();
+        let ovrp = get_openvrpaths_from_path(&"./test/files/openvrpaths.vrpath".into()).unwrap();
         assert_eq!(ovrp.config.len(), 1);
         assert_eq!(
             ovrp.config.get(0).unwrap(),
