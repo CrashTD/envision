@@ -312,7 +312,7 @@ impl SimpleComponent for App {
                         format!("{pfx}/bin/monado-service", pfx = profile.prefix)
                     }
                     XRServiceType::Wivrn => {
-                        format!("{pfx}/bin/wivrn-service", pfx = profile.prefix)
+                        format!("{pfx}/bin/wivrn-serer", pfx = profile.prefix)
                     }
                 });
             }
