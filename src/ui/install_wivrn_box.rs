@@ -161,6 +161,9 @@ impl SimpleComponent for InstallWivrnBox {
                             self.install_runner.take();
                             self.set_install_wivrn_status(match status {
                                 None | Some(0) => InstallWivrnStatus::Success,
+                                Some(255) => {
+                                    InstallWivrnStatus::Done(Some("You need to authorize this computer to run developer commands in your headset. Authorize it and try again.".into()))
+                                }
                                 Some(err_code) => InstallWivrnStatus::Done(Some(format!(
                                     "ADB exited with code \"{c}\"",
                                     c = err_code
