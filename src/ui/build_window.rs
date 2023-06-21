@@ -18,11 +18,11 @@ pub struct BuildWindow {
     #[tracker::do_not_track]
     pub textbuf: gtk::TextBuffer,
     #[tracker::do_not_track]
+    pub textview: Option<gtk::TextView>,
+    #[tracker::do_not_track]
     pub win: Option<adw::Window>,
     #[tracker::do_not_track]
     build_status_label: Option<gtk::Label>,
-    #[tracker::do_not_track]
-    pub scrolled_win: Option<gtk::ScrolledWindow>,
 }
 
 #[derive(Debug)]
@@ -87,13 +87,13 @@ impl SimpleComponent for BuildWindow {
                         set_justify: gtk::Justification::Center,
                     }
                 },
-                #[name(scrolled_win)]
                 gtk::ScrolledWindow {
                     set_hexpand: true,
                     set_vexpand: true,
                     set_margin_all: 12,
                     add_css_class: "card",
                     set_overflow: gtk::Overflow::Hidden,
+                    #[name(textview)]
                     gtk::TextView {
                         set_hexpand: true,
                         set_vexpand: true,
@@ -126,25 +126,26 @@ impl SimpleComponent for BuildWindow {
         self.reset();
 
         match message {
-            BuildWindowMsg::Present => {
+            Self::Input::Present => {
                 self.win.as_ref().unwrap().present();
                 sender.input(BuildWindowMsg::UpdateBuildStatus(BuildStatus::Building));
             }
-            BuildWindowMsg::UpdateTitle(t) => {
+            Self::Input::UpdateTitle(t) => {
                 self.set_title(t);
             }
-            BuildWindowMsg::UpdateContent(c) => {
+            Self::Input::UpdateContent(c) => {
                 if self.content != c {
                     self.set_content(c);
                     self.textbuf.set_text(&self.content);
-                    let sw = self.scrolled_win.as_ref().unwrap().clone();
-                    let adj = sw.vadjustment();
-                    // upper means highest value = lowest point in the sw
-                    adj.set_value(adj.upper());
-                    sw.set_vadjustment(Some(&adj));
+                    let textbuf = self.textbuf.clone();
+                    let textview = self.textview.as_ref().unwrap().clone();
+                    gtk::glib::idle_add_local_once(move || {
+                        let end_mark = textbuf.create_mark(None, &textbuf.end_iter(), false);
+                        textview.scroll_mark_onscreen(&end_mark);
+                    });
                 }
             }
-            BuildWindowMsg::UpdateBuildStatus(status) => {
+            Self::Input::UpdateBuildStatus(status) => {
                 let label = self.build_status_label.as_ref().unwrap();
                 label.remove_css_class("success");
                 label.remove_css_class("error");
@@ -155,7 +156,7 @@ impl SimpleComponent for BuildWindow {
                 }
                 self.set_build_status(status);
             }
-            BuildWindowMsg::UpdateCanClose(val) => {
+            Self::Input::UpdateCanClose(val) => {
                 self.set_can_close(val);
             }
         };
@@ -166,21 +167,21 @@ impl SimpleComponent for BuildWindow {
         root: &Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
-        let mut model = BuildWindow {
+        let mut model = Self {
             tracker: 0,
             title: "".into(),
             content: "".into(),
             can_close: false,
             textbuf: gtk::TextBuffer::builder().build(),
+            textview: None,
             build_status: BuildStatus::Building,
             win: None,
             build_status_label: None,
-            scrolled_win: None,
         };
         let widgets = view_output!();
-        model.scrolled_win = Some(widgets.scrolled_win.clone());
         model.win = Some(widgets.win.clone());
         model.build_status_label = Some(widgets.build_status_label.clone());
+        model.textview = Some(widgets.textview.clone());
         ComponentParts { model, widgets }
     }
 }

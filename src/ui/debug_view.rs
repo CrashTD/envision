@@ -44,7 +44,7 @@ pub struct DebugView {
     #[tracker::do_not_track]
     pub textbuf: gtk::TextBuffer,
     #[tracker::do_not_track]
-    pub scrolled_win: Option<gtk::ScrolledWindow>,
+    pub textview: Option<gtk::TextView>,
     #[tracker::do_not_track]
     pub searchbar: Option<gtk::SearchBar>,
     #[tracker::do_not_track]
@@ -98,10 +98,10 @@ impl SimpleComponent for DebugView {
                 },
                 connect_entry: &search_entry,
             },
-            #[name(scrolled_win)]
             gtk::ScrolledWindow {
                 set_hexpand: true,
                 set_vexpand: true,
+                #[name(textview)]
                 gtk::TextView {
                     set_hexpand: true,
                     set_vexpand: true,
@@ -113,13 +113,13 @@ impl SimpleComponent for DebugView {
         }
     }
 
-    fn update(&mut self, message: Self::Input, _sender: ComponentSender<Self>) {
+    fn update(&mut self, message: Self::Input, sender: ComponentSender<Self>) {
         self.reset();
 
         match message {
-            DebugViewMsg::DebugLevelChanged(level) => {}
-            DebugViewMsg::SearchTermChanged(term) => {}
-            DebugViewMsg::LogUpdated(n_log) => {
+            Self::Input::DebugLevelChanged(level) => {}
+            Self::Input::SearchTermChanged(term) => {}
+            Self::Input::LogUpdated(n_log) => {
                 let searchbar = self.searchbar.as_ref().unwrap().clone();
                 let search_entry = self.search_entry.as_ref().unwrap().clone();
                 let mut search_text: String = search_entry.text().into();
@@ -135,13 +135,14 @@ impl SimpleComponent for DebugView {
                     self.log = n_log.concat();
                 }
                 self.textbuf.set_text(&self.log);
-                let sw = self.scrolled_win.as_ref().unwrap().clone();
-                let adj = sw.vadjustment();
-                // upper means highest value = lowest point in the sw
-                adj.set_value(adj.upper());
-                sw.set_vadjustment(Some(&adj));
+                let textbuf = self.textbuf.clone();
+                let textview = self.textview.as_ref().unwrap().clone();
+                gtk::glib::idle_add_local_once(move || {
+                    let end_mark = textbuf.create_mark(None, &textbuf.end_iter(), false);
+                    textview.scroll_mark_onscreen(&end_mark);
+                });
             }
-            DebugViewMsg::EnableDebugViewChanged(val) => self.set_enable_debug_view(val),
+            Self::Input::EnableDebugViewChanged(val) => self.set_enable_debug_view(val),
         }
     }
 
@@ -150,22 +151,22 @@ impl SimpleComponent for DebugView {
         root: &Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
-        let mut model = DebugView {
+        let mut model = Self {
             tracker: 0,
             debug_level: DebugLevel::Debug,
             search_term: "".into(),
             log: "".into(),
             textbuf: gtk::TextBuffer::builder().build(),
+            textview: None,
             enable_debug_view: init.enable_debug_view,
-            scrolled_win: None,
             searchbar: None,
             search_entry: None,
         };
 
         let widgets = view_output!();
-        model.scrolled_win = Some(widgets.scrolled_win.clone());
         model.searchbar = Some(widgets.searchbar.clone());
         model.search_entry = Some(widgets.search_entry.clone());
+        model.textview = Some(widgets.textview.clone());
 
         ComponentParts { model, widgets }
     }
