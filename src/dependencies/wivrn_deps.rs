@@ -5,7 +5,7 @@ fn wivrn_deps() -> Vec<Dependency> {
     vec![Dependency {
         name: "x264-dev".into(),
         dep_type: DepType::Include,
-        filename: "x265.h".into(),
+        filename: "x264.h".into(),
     }]
 }
 
