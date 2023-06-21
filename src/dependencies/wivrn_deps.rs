@@ -2,7 +2,13 @@ use crate::depcheck::{Dependency, check_dependencies, DependencyCheckResult};
 
 fn wivrn_deps() -> Vec<Dependency> {
     // TODO: populate!
-    vec![]
+    vec![
+        Dependency {
+            name: "x264-dev".into(),
+            dep_type: DepType::Include,
+            filename: "x265.h".into(),
+        },
+    ]
 }
 
 pub fn check_wivrn_deps() -> Vec<DependencyCheckResult> {
