@@ -22,5 +22,5 @@ cmake -B build-server -DCMAKE_BUILD_TYPE=Release \
     -DWIVRN_BUILD_CLIENT=OFF \
     -DCMAKE_INSTALL_PREFIX="${PREFIX}" \
     .. -GNinja
-cmake --build .
-ninja install
+cmake --build build-server
+ninja -C build-server install
