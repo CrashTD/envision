@@ -40,10 +40,14 @@ impl Profile {
     pub fn get_steam_launch_options(&self) -> String {
         let mut opts = vec![];
         opts.push(format!(
-            "XR_RUNTIME_JSON={prefix}/share/openxr/1/openxr_monado.json",
+            "XR_RUNTIME_JSON={prefix}/share/openxr/1/openxr_{runtime}.json",
             prefix = match self.prefix.as_str() {
                 SYSTEM_PREFIX => BWRAP_SYSTEM_PREFIX,
                 other => other,
+            },
+            runtime = match self.xrservice_type {
+                XRServiceType::Wivrn => "wivrn",
+                XRServiceType::Monado => "monado",
             }
         ));
         opts.push(format!(
