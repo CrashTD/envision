@@ -18,13 +18,9 @@ fi
 cd "$REPO_DIR"
 mkdir -p build
 cd build
-export PKG_CONFIG_PATH="${PREFIX}/lib/pkgconfig"
 cmake -B build-server -DCMAKE_BUILD_TYPE=Release \
     -DWIVRN_BUILD_CLIENT=OFF \
-    -DCMAKE_LIBDIR="${PREFIX}/lib" \
     -DCMAKE_INSTALL_PREFIX="${PREFIX}" \
-    -DCMAKE_C_FLAGS="-Wl,-rpath ${PREFIX}/lib" \
-    -DCMAKE_CXX_FLAGS="-Wl,-rpath ${PREFIX}/lib" \
     .. -GNinja
 cmake --build build-server
 ninja install
