@@ -14,12 +14,6 @@ use crate::dependencies::basalt_deps::get_missing_basalt_deps;
 use crate::dependencies::libsurvive_deps::get_missing_libsurvive_deps;
 use crate::dependencies::monado_deps::get_missing_monado_deps;
 use crate::dependencies::wivrn_deps::get_missing_wivrn_deps;
-use crate::file_builders::active_runtime_json::{
-    set_current_active_runtime_to_profile, set_current_active_runtime_to_steam,
-};
-use crate::file_builders::openvrpaths_vrpath::{
-    set_current_openvrpaths_to_profile, set_current_openvrpaths_to_steam,
-};
 use crate::file_utils::setcap_cap_sys_nice_eip;
 use crate::profile::{Profile, XRServiceType};
 use crate::profiles::system_valve_index::system_valve_index_profile;
@@ -79,7 +73,6 @@ pub enum Msg {
     EnableDebugViewChanged(bool),
     DoStartStopXRService,
     ProfileSelected(String),
-    SetXRServiceRuntime(bool),
     RunSetCap,
     OpenLibsurviveSetup,
 }
@@ -334,16 +327,6 @@ impl SimpleComponent for App {
                     .sender()
                     .emit(MainViewMsg::UpdateSelectedProfile(profile.clone()));
             }
-            Msg::SetXRServiceRuntime(is_rex) => {
-                if is_rex {
-                    let profile = self.get_selected_profile();
-                    set_current_active_runtime_to_profile(profile.clone());
-                    set_current_openvrpaths_to_profile(profile.clone());
-                } else {
-                    set_current_active_runtime_to_steam();
-                    set_current_openvrpaths_to_steam();
-                }
-            }
             Msg::OpenLibsurviveSetup => {
                 self.libsurvive_setup_window
                     .sender()
@@ -408,7 +391,6 @@ impl SimpleComponent for App {
                     MainViewOutMsg::EnableDebugViewChanged(val) => Msg::EnableDebugViewChanged(val),
                     MainViewOutMsg::DoStartStopXRService => Msg::DoStartStopXRService,
                     MainViewOutMsg::ProfileSelected(name) => Msg::ProfileSelected(name),
-                    MainViewOutMsg::SetXRServiceRuntime(is_rex) => Msg::SetXRServiceRuntime(is_rex),
                 }),
             debug_view: DebugView::builder()
                 .launch(DebugViewInit {

@@ -6,3 +6,4 @@ pub mod build_window;
 pub mod libsurvive_setup_window;
 pub mod install_wivrn_box;
 pub mod steam_launch_options_box;
+pub mod runtime_switcher_box;
