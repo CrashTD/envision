@@ -3,7 +3,7 @@ use crate::{
         deserialize_file, get_writer, get_xdg_config_dir, get_xdg_data_dir, set_file_radonly,
     },
     paths::SYSTEM_PREFIX,
-    profile::Profile,
+    profile::{Profile, XRServiceType},
 };
 use expect_dialog::ExpectDialog;
 use serde::{Deserialize, Serialize};
@@ -81,7 +81,14 @@ fn build_profile_active_runtime(profile: Profile) -> ActiveRuntime {
         runtime: ActiveRuntimeInnerRuntime {
             name: None,
             valve_runtime_is_steamvr: None,
-            library_path: format!("{prefix}/lib/libopenxr_monado.so", prefix = profile.prefix),
+            library_path: format!(
+                "{prefix}/lib/libopenxr_{xrservice}.so",
+                prefix = profile.prefix,
+                xrservice = match profile.xrservice_type {
+                    XRServiceType::Monado => "monado",
+                    XRServiceType::Wivrn => "wivrn",
+                }
+            ),
         },
     }
 }
