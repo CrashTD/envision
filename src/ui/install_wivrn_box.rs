@@ -3,7 +3,7 @@ use crate::{
     downloader::download_file,
     paths::wivrn_apk_download_path,
     profile::{Profile, XRServiceType},
-    runner::{Runner, RunnerStatus},
+    runner::{Runner, RunnerStatus}, depcheck::check_dependency, dependencies::adb_dep::adb_dep,
 };
 use gtk::prelude::*;
 use relm4::prelude::*;
@@ -24,6 +24,8 @@ pub struct InstallWivrnBox {
     download_thread: Option<JoinHandle<Result<(), reqwest::Error>>>,
     #[tracker::do_not_track]
     install_runner: Option<Runner>,
+    #[tracker::do_not_track]
+    adb_missing_dialog: adw::MessageDialog,
 }
 
 #[derive(Debug)]
@@ -170,11 +172,16 @@ impl SimpleComponent for InstallWivrnBox {
                 }
             }
             Self::Input::DownloadWivrn => {
-                self.set_install_wivrn_status(InstallWivrnStatus::InProgress);
-                self.download_thread = Some(download_file(
-                    "https://github.com/Meumeu/WiVRn/releases/latest/download/WiVRn-oculus-release.apk".into(),
-                    wivrn_apk_download_path()
-                ));
+                if !check_dependency(adb_dep()) {
+                    self.adb_missing_dialog.present();
+                }
+                else {
+                    self.set_install_wivrn_status(InstallWivrnStatus::InProgress);
+                    self.download_thread = Some(download_file(
+                        "https://github.com/Meumeu/WiVRn/releases/latest/download/WiVRn-oculus-release.apk".into(),
+                        wivrn_apk_download_path()
+                    ));
+                }
             }
             Self::Input::InstallWivrnApk => {
                 let mut runner = get_adb_install_runner(&wivrn_apk_download_path());
@@ -192,11 +199,20 @@ impl SimpleComponent for InstallWivrnBox {
         root: &Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
+        let adb_missing_dialog = adw::MessageDialog::builder()
+                .modal(true)
+                .transient_for(root.root().unwrap().downcast_ref::<gtk::Window>().unwrap())
+                .title("ADB is not installed")
+                .body("Please install ADB on your computer to install WiVRn on your Android headset")
+                .hide_on_close(true)
+                .build();
+
         let model = Self {
             selected_profile: init.selected_profile,
             install_wivrn_status: InstallWivrnStatus::Done(None),
             download_thread: None,
             install_runner: None,
+            adb_missing_dialog,
             tracker: 0,
         };
 
