@@ -23,6 +23,7 @@ pub mod runner_pipeline;
 pub mod ui;
 pub mod adb;
 pub mod downloader;
+pub mod env_var_descriptions;
 
 fn main() -> Result<()> {
     // Prepare i18n

@@ -16,12 +16,14 @@ gtk4 = { version = "0.6.6", features = [
     "v4_10"
 ] }
 nix = "0.26.2"
+phf = "0.11.1"
+phf_macros = "0.11.1"
 relm4 = { version = "0.6.0", features = [
     "libadwaita"
 ] }
 relm4-components = "0.6.0"
 relm4-icons = { version = "0.6.0", features = [
-    "menu", "loupe", "copy"
+    "menu", "loupe", "copy", "edit", "plus"
 ] }
 reqwest = { version = "0.11.18", features = [
     "blocking"

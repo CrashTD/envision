@@ -1,6 +1,5 @@
 use relm4::prelude::*;
 use gtk::prelude::*;
-
 use crate::{constants::APP_NAME, file_builders::{active_runtime_json::{get_current_active_runtime, self, set_current_active_runtime_to_profile, set_current_active_runtime_to_steam}, openvrpaths_vrpath::{set_current_openvrpaths_to_profile, set_current_openvrpaths_to_steam}}, profile::Profile};
 
 pub struct RuntimeSwitcherBox {

@@ -136,11 +136,7 @@ impl SimpleComponent for InstallWivrnBox {
         match message {
             Self::Input::ClockTicking => {
                 if self.download_thread.is_some() {
-                    let finished = self
-                        .download_thread
-                        .as_ref()
-                        .unwrap()
-                        .is_finished();
+                    let finished = self.download_thread.as_ref().unwrap().is_finished();
                     if finished {
                         let joinh = self.download_thread.take().unwrap();
                         match joinh.join().unwrap() {

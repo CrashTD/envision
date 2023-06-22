@@ -1,4 +1,5 @@
 use super::install_wivrn_box::{InstallWivrnBox, InstallWivrnBoxInit, InstallWivrnBoxMsg};
+use super::profile_editor::{ProfileEditor, ProfileEditorMsg};
 use super::runtime_switcher_box::{
     RuntimeSwitcherBox, RuntimeSwitcherBoxInit, RuntimeSwitcherBoxMsg,
 };
@@ -9,6 +10,7 @@ use crate::profile::{Profile, XRServiceType};
 use crate::ui::app::{
     AboutAction, BuildProfileAction, DebugViewToggleAction, LibsurviveSetupAction,
 };
+use crate::ui::profile_editor::ProfileEditorInit;
 use gtk::prelude::*;
 use relm4::prelude::*;
 use relm4::{ComponentParts, ComponentSender, SimpleComponent};
@@ -17,9 +19,9 @@ use relm4_icons::icon_name;
 #[tracker::track]
 pub struct MainView {
     xrservice_active: bool,
-    xrservice_type: XRServiceType,
     enable_debug_view: bool,
     profile_names: Vec<String>,
+    selected_profile: Profile,
     #[tracker::do_not_track]
     profiles_dropdown: Option<gtk::DropDown>,
     #[tracker::do_not_track]
@@ -28,6 +30,8 @@ pub struct MainView {
     steam_launch_options_box: Controller<SteamLaunchOptionsBox>,
     #[tracker::do_not_track]
     runtime_switcher_box: Controller<RuntimeSwitcherBox>,
+    #[tracker::do_not_track]
+    profile_editor: Controller<ProfileEditor>,
 }
 
 #[derive(Debug)]
@@ -40,6 +44,7 @@ pub enum MainViewMsg {
     SetSelectedProfile(u32),
     ProfileSelected(u32),
     UpdateSelectedProfile(Profile),
+    EditProfile,
 }
 
 #[derive(Debug)]
@@ -94,16 +99,29 @@ impl SimpleComponent for MainView {
                         set_icon_name: icon_name::MENU,
                         set_menu_model: Some(&app_menu),
                     },
-                    pack_start: profiles_dropdown = &gtk::DropDown {
-                        set_tooltip_text: Some("Profiles"),
-                        #[track = "model.changed(Self::profile_names())"]
-                        set_model: Some(&{
-                            let names: Vec<_> = model.profile_names.iter().map(String::as_str).collect();
-                            gtk::StringList::new(&names)
-                        }),
-                        connect_selected_item_notify[sender] => move |this| {
-                            sender.input(MainViewMsg::ProfileSelected(this.selected()));
+                    pack_start = &gtk::Box {
+                        set_orientation: gtk::Orientation::Horizontal,
+                        add_css_class: "linked",
+                        #[name(profiles_dropdown)]
+                        gtk::DropDown {
+                            set_tooltip_text: Some("Profiles"),
+                            #[track = "model.changed(Self::profile_names())"]
+                            set_model: Some(&{
+                                let names: Vec<_> = model.profile_names.iter().map(String::as_str).collect();
+                                gtk::StringList::new(&names)
+                            }),
+                            connect_selected_item_notify[sender] => move |this| {
+                                sender.input(MainViewMsg::ProfileSelected(this.selected()));
+                            },
                         },
+                        gtk::Button {
+                            set_icon_name: icon_name::EDIT,
+                            add_css_class: "suggested-action",
+                            set_tooltip_text: Some("Edit Profile"),
+                            connect_clicked[sender] => move |_| {
+                                sender.input(Self::Input::EditProfile);
+                            }
+                        }
                     },
                     #[track = "model.changed(Self::enable_debug_view())"]
                     set_show_end_title_buttons: !model.enable_debug_view,
@@ -173,7 +191,7 @@ impl SimpleComponent for MainView {
                 self.set_enable_debug_view(val);
             }
             Self::Input::UpdateSelectedProfile(prof) => {
-                self.set_xrservice_type(prof.xrservice_type.clone());
+                self.set_selected_profile(prof.clone());
                 self.install_wivrn_box
                     .sender()
                     .emit(InstallWivrnBoxMsg::UpdateSelectedProfile(prof.clone()));
@@ -212,6 +230,9 @@ impl SimpleComponent for MainView {
                     self.profile_names.get(position as usize).unwrap().clone(),
                 ));
             }
+            Self::Input::EditProfile => {
+                self.profile_editor.emit(ProfileEditorMsg::Present(self.selected_profile.clone()));
+            }
         }
     }
 
@@ -222,7 +243,6 @@ impl SimpleComponent for MainView {
     ) -> ComponentParts<Self> {
         let mut model = Self {
             xrservice_active: false,
-            xrservice_type: XRServiceType::Monado,
             enable_debug_view: init.config.debug_view_enabled,
             profiles_dropdown: None,
             profile_names: vec![],
@@ -237,6 +257,8 @@ impl SimpleComponent for MainView {
                     selected_profile: init.selected_profile.clone(),
                 })
                 .detach(),
+            profile_editor: ProfileEditor::builder().launch(ProfileEditorInit {}).detach(),
+            selected_profile: init.selected_profile.clone(),
             tracker: 0,
         };
         let widgets = view_output!();
