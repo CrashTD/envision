@@ -21,5 +21,6 @@ pub fn system_valve_index_profile() -> Profile {
         environment,
         prefix: SYSTEM_PREFIX.into(),
         can_be_built: false,
+        editable: false,
     }
 }

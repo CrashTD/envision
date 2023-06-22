@@ -12,6 +12,8 @@ use crate::ui::app::{
 };
 use crate::ui::profile_editor::ProfileEditorInit;
 use gtk::prelude::*;
+use relm4::adw::traits::MessageDialogExt;
+use relm4::adw::ResponseAppearance;
 use relm4::prelude::*;
 use relm4::{ComponentParts, ComponentSender, SimpleComponent};
 use relm4_icons::icon_name;
@@ -32,6 +34,8 @@ pub struct MainView {
     runtime_switcher_box: Controller<RuntimeSwitcherBox>,
     #[tracker::do_not_track]
     profile_editor: Controller<ProfileEditor>,
+    #[tracker::do_not_track]
+    profile_not_editable_dialog: adw::MessageDialog,
 }
 
 #[derive(Debug)]
@@ -45,6 +49,7 @@ pub enum MainViewMsg {
     ProfileSelected(u32),
     UpdateSelectedProfile(Profile),
     EditProfile,
+    DuplicateProfile,
 }
 
 #[derive(Debug)]
@@ -231,7 +236,15 @@ impl SimpleComponent for MainView {
                 ));
             }
             Self::Input::EditProfile => {
-                self.profile_editor.emit(ProfileEditorMsg::Present(self.selected_profile.clone()));
+                if self.selected_profile.editable {
+                    self.profile_editor
+                        .emit(ProfileEditorMsg::Present(self.selected_profile.clone()));
+                } else {
+                    self.profile_not_editable_dialog.present();
+                }
+            }
+            Self::Input::DuplicateProfile => {
+                println!("dup")
             }
         }
     }
@@ -241,6 +254,30 @@ impl SimpleComponent for MainView {
         root: &Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
+        let profile_not_editable_dialog = adw::MessageDialog::builder()
+            .modal(true)
+            // .transient_for(root.root().unwrap().upcast_ref::<gtk::Window>())
+            .heading("This profile is not editable")
+            .body(concat!(
+                "You can duplicate it and edit the new copy. ",
+                "Do you want to duplicate the current profile?"
+            ))
+            .hide_on_close(true)
+            .build();
+        profile_not_editable_dialog.add_response("no", "_No");
+        profile_not_editable_dialog.add_response("yes", "_Yes");
+        profile_not_editable_dialog.set_response_appearance("no", ResponseAppearance::Destructive);
+        profile_not_editable_dialog.set_response_appearance("yes", ResponseAppearance::Suggested);
+
+        {
+            let pne_sender = sender.clone();
+            profile_not_editable_dialog.connect_response(None, move |_, res| {
+                if res == "yes" {
+                    pne_sender.input(Self::Input::DuplicateProfile);
+                }
+            });
+        }
+
         let mut model = Self {
             xrservice_active: false,
             enable_debug_view: init.config.debug_view_enabled,
@@ -257,8 +294,11 @@ impl SimpleComponent for MainView {
                     selected_profile: init.selected_profile.clone(),
                 })
                 .detach(),
-            profile_editor: ProfileEditor::builder().launch(ProfileEditorInit {}).detach(),
+            profile_editor: ProfileEditor::builder()
+                .launch(ProfileEditorInit {})
+                .detach(),
             selected_profile: init.selected_profile.clone(),
+            profile_not_editable_dialog,
             tracker: 0,
         };
         let widgets = view_output!();

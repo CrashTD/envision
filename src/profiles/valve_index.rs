@@ -24,5 +24,6 @@ pub fn valve_index_profile() -> Profile {
         environment,
         prefix,
         can_be_built: true,
+        editable: false,
     }
 }

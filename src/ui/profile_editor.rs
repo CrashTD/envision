@@ -5,13 +5,20 @@ use gtk::prelude::*;
 use relm4::{factory::FactoryVecDeque, prelude::*};
 use relm4_icons::icon_name;
 
+#[tracker::track]
 pub struct ProfileEditor {
     profile: Option<Profile>,
+
+    #[tracker::do_not_track]
     win: Option<adw::PreferencesWindow>,
 
+    #[tracker::do_not_track]
     name_row: adw::EntryRow,
+    #[tracker::do_not_track]
     env_rows: FactoryVecDeque<EntryModel>,
+    #[tracker::do_not_track]
     switch_rows: FactoryVecDeque<SwitchModel>,
+    #[tracker::do_not_track]
     path_rows: FactoryVecDeque<PathModel>,
 }
 
@@ -36,6 +43,11 @@ impl SimpleComponent for ProfileEditor {
         adw::PreferencesWindow {
             set_hide_on_close: true,
             set_modal: true,
+            #[track = "model.changed(Self::profile())"]
+            set_title: match model.profile.as_ref() {
+                Some(p) => Some(p.name.as_str()),
+                None => None,
+            },
             add: mainpage = &adw::PreferencesPage {
                 add: maingrp = &adw::PreferencesGroup {
                     set_title: "Profile Info",
@@ -49,13 +61,14 @@ impl SimpleComponent for ProfileEditor {
     }
 
     fn update(&mut self, message: Self::Input, sender: ComponentSender<Self>) {
+        self.reset();
+
         match message {
             Self::Input::Present(prof) => {
-                let win = self.win.as_ref().unwrap();
                 let p = prof.clone();
-                win.set_title(Some(p.name.as_str()));
 
                 self.name_row.set_text(p.name.as_str());
+
                 self.env_rows.guard().clear();
                 for (k, v) in p.environment.iter() {
                     self.env_rows.guard().push_back(EntryModelInit {
@@ -111,8 +124,9 @@ impl SimpleComponent for ProfileEditor {
                     value: p.mercury_path
                 });
 
-                self.profile = Some(prof);
-                win.present();
+                self.set_profile(Some(prof.clone()));
+
+                self.win.as_ref().unwrap().present();
             }
             Self::Input::SaveProfile => {}
             Self::Input::EntryChanged(name, value) => {
@@ -173,7 +187,8 @@ impl SimpleComponent for ProfileEditor {
                     // .description("")
                     .build(),
                 sender.input_sender(),
-            )
+            ),
+            tracker: 0,
         };
 
         let widgets = view_output!();

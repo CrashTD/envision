@@ -28,6 +28,7 @@ pub struct Profile {
     /** Install prefix */
     pub prefix: String,
     pub can_be_built: bool,
+    pub editable: bool,
 }
 
 impl Display for Profile {
@@ -121,6 +122,7 @@ mod tests {
             environment: env,
             prefix: String::from("/home/user/rex2prefix"),
             can_be_built: true,
+            editable: true,
         };
         let fpath = String::from("./target/testout/testprofile.json");
         p.dump_profile(&fpath);
