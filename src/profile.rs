@@ -47,12 +47,16 @@ impl Profile {
                 other => other,
             },
             runtime = match self.xrservice_type {
-                XRServiceType::Wivrn => "wivrn",
                 XRServiceType::Monado => "monado",
+                XRServiceType::Wivrn => "wivrn",
             }
         ));
         opts.push(format!(
-            "PRESSURE_VESSEL_FILESYSTEMS_RW=$XDG_RUNTIME_DIR/monado_comp_ipc"
+            "PRESSURE_VESSEL_FILESYSTEMS_RW=$XDG_RUNTIME_DIR/{xrservice}_comp_ipc",
+            xrservice = match self.xrservice_type {
+                XRServiceType::Monado => "monado",
+                XRServiceType::Wivrn => "wivrn",
+            }
         ));
         opts.push("%command%".into());
         opts.join(" ")
