@@ -5,6 +5,7 @@ use relm4_icons::icon_name;
 
 #[derive(Debug)]
 pub enum DebugLevel {
+    Trace,
     Debug,
     Info,
     Warning,
@@ -14,6 +15,7 @@ pub enum DebugLevel {
 impl DebugLevel {
     pub fn from_string(s: String) -> Self {
         match s.to_lowercase().as_str() {
+            "trace" => Self::Trace,
             "debug" => Self::Debug,
             "info" => Self::Info,
             "warning" => Self::Warning,
@@ -23,7 +25,7 @@ impl DebugLevel {
     }
 }
 
-pub const DEBUG_LEVEL_STRINGS: [&str; 4] = ["Debug", "Info", "Warning", "Error"];
+pub const DEBUG_LEVEL_STRINGS: [&str; 5] = ["Trace", "Debug", "Info", "Warning", "Error"];
 
 #[derive(Debug)]
 pub enum DebugViewMsg {
