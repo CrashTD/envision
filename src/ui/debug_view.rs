@@ -146,15 +146,15 @@ impl SimpleComponent for DebugView {
                     .unwrap_or(&LogLevel::Debug)
                     .clone();
                 println!("log level: {}", log_level.to_string());
-                if searchbar.is_search_mode() && !search_text.is_empty() {
-                    self.log = self
-                        .log
+                let log = match searchbar.is_search_mode() && !search_text.is_empty() {
+                    true => self.log
                         .iter()
                         .filter(|row| row.to_lowercase().contains(&search_text))
                         .map(|s| s.to_string())
-                        .collect::<Vec<String>>();
-                }
-                self.textbuf.set_text(&self.log.concat());
+                        .collect::<Vec<String>>().concat(),
+                    false => self.log.concat(),
+                };
+                self.textbuf.set_text(&log);
                 let textbuf = self.textbuf.clone();
                 let textview = self.textview.as_ref().unwrap().clone();
                 gtk::glib::idle_add_local_once(move || {
