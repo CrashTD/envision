@@ -185,7 +185,11 @@ impl SimpleComponent for App {
                                         self.build_window.sender().emit(
                                             BuildWindowMsg::UpdateBuildStatus(BuildStatus::Done),
                                         );
-                                        self.setcap_confirm_dialog.present();
+                                        // apparently setcap on wivrn causes issues, so in case
+                                        // it's not monado, we're just skipping this
+                                        if self.get_selected_profile().xrservice_type == XRServiceType::Monado {
+                                            self.setcap_confirm_dialog.present();
+                                        }
                                         self.build_window
                                             .sender()
                                             .emit(BuildWindowMsg::UpdateCanClose(true));
@@ -310,17 +314,12 @@ impl SimpleComponent for App {
             Msg::RunSetCap => {
                 if !check_dependency(pkexec_dep()) {
                     println!("pkexec not found, skipping setcap");
-                }
-                else {
+                } else {
                     let profile = self.get_selected_profile();
-                    setcap_cap_sys_nice_eip(match profile.xrservice_type {
-                        XRServiceType::Monado => {
-                            format!("{pfx}/bin/monado-service", pfx = profile.prefix)
-                        }
-                        XRServiceType::Wivrn => {
-                            format!("{pfx}/bin/wivrn-serer", pfx = profile.prefix)
-                        }
-                    });
+                    setcap_cap_sys_nice_eip(format!(
+                        "{pfx}/bin/monado-service",
+                        pfx = profile.prefix
+                    ));
                 }
             }
             Msg::ProfileSelected(prof_name) => {
