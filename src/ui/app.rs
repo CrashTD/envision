@@ -10,9 +10,11 @@ use crate::builders::build_opencomposite::get_build_opencomposite_runner;
 use crate::builders::build_wivrn::get_build_wivrn_runner;
 use crate::config::Config;
 use crate::constants::APP_NAME;
+use crate::depcheck::check_dependency;
 use crate::dependencies::basalt_deps::get_missing_basalt_deps;
 use crate::dependencies::libsurvive_deps::get_missing_libsurvive_deps;
 use crate::dependencies::monado_deps::get_missing_monado_deps;
+use crate::dependencies::pkexec_dep::pkexec_dep;
 use crate::dependencies::wivrn_deps::get_missing_wivrn_deps;
 use crate::file_utils::setcap_cap_sys_nice_eip;
 use crate::profile::{Profile, XRServiceType};
@@ -306,15 +308,20 @@ impl SimpleComponent for App {
                 self.build_pipeline = Some(pipeline);
             }
             Msg::RunSetCap => {
-                let profile = self.get_selected_profile();
-                setcap_cap_sys_nice_eip(match profile.xrservice_type {
-                    XRServiceType::Monado => {
-                        format!("{pfx}/bin/monado-service", pfx = profile.prefix)
-                    }
-                    XRServiceType::Wivrn => {
-                        format!("{pfx}/bin/wivrn-serer", pfx = profile.prefix)
-                    }
-                });
+                if !check_dependency(pkexec_dep()) {
+                    println!("pkexec not found, skipping setcap");
+                }
+                else {
+                    let profile = self.get_selected_profile();
+                    setcap_cap_sys_nice_eip(match profile.xrservice_type {
+                        XRServiceType::Monado => {
+                            format!("{pfx}/bin/monado-service", pfx = profile.prefix)
+                        }
+                        XRServiceType::Wivrn => {
+                            format!("{pfx}/bin/wivrn-serer", pfx = profile.prefix)
+                        }
+                    });
+                }
             }
             Msg::ProfileSelected(prof_name) => {
                 if prof_name == self.config.selected_profile_name {
