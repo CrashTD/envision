@@ -1,10 +1,11 @@
+use expect_dialog::ExpectDialog;
 use gtk::prelude::*;
 use relm4::prelude::*;
 use relm4::{ComponentSender, SimpleComponent};
 use relm4_icons::icon_name;
 
-#[derive(Debug)]
-pub enum DebugLevel {
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+pub enum LogLevel {
     Trace,
     Debug,
     Info,
@@ -12,7 +13,7 @@ pub enum DebugLevel {
     Error,
 }
 
-impl DebugLevel {
+impl LogLevel {
     pub fn from_string(s: String) -> Self {
         match s.to_lowercase().as_str() {
             "trace" => Self::Trace,
@@ -23,26 +24,38 @@ impl DebugLevel {
             _ => Self::Debug,
         }
     }
+
+    pub fn to_string(&self) -> &str {
+        match self {
+            LogLevel::Trace => "Trace",
+            LogLevel::Debug => "Debug",
+            LogLevel::Info => "Info",
+            LogLevel::Warning => "Warning",
+            LogLevel::Error => "Error",
+        }
+    }
 }
 
 pub const DEBUG_LEVEL_STRINGS: [&str; 5] = ["Trace", "Debug", "Info", "Warning", "Error"];
+pub const DEBUG_LEVEL_VALS: [LogLevel; 5] = [
+    LogLevel::Trace,
+    LogLevel::Debug,
+    LogLevel::Info,
+    LogLevel::Warning,
+    LogLevel::Error,
+];
 
 #[derive(Debug)]
 pub enum DebugViewMsg {
-    DebugLevelChanged(DebugLevel),
-    SearchTermChanged(String),
     LogUpdated(Vec<String>),
     EnableDebugViewChanged(bool),
+    FilterLog,
 }
 
 #[tracker::track]
 pub struct DebugView {
     #[tracker::do_not_track]
-    pub debug_level: DebugLevel,
-    #[tracker::do_not_track]
-    pub search_term: String,
-    #[tracker::do_not_track]
-    pub log: String,
+    pub log: Vec<String>,
     #[tracker::do_not_track]
     pub textbuf: gtk::TextBuffer,
     #[tracker::do_not_track]
@@ -51,6 +64,8 @@ pub struct DebugView {
     pub searchbar: Option<gtk::SearchBar>,
     #[tracker::do_not_track]
     pub search_entry: Option<gtk::SearchEntry>,
+    #[tracker::do_not_track]
+    pub dropdown: Option<gtk::DropDown>,
 
     pub enable_debug_view: bool,
 }
@@ -85,8 +100,7 @@ impl SimpleComponent for DebugView {
                         set_icon_name: icon_name::LOUPE,
                         set_tooltip_text: Some("Filter Log"),
                     },
-                    pack_start: log_level_dropdown = &gtk::DropDown::from_strings(&DEBUG_LEVEL_STRINGS) {
-                    },
+                    pack_start: log_level_dropdown = &gtk::DropDown::from_strings(&DEBUG_LEVEL_STRINGS),
                 },
             },
             #[name(searchbar)]
@@ -97,6 +111,9 @@ impl SimpleComponent for DebugView {
                 #[wrap(Some)]
                 set_child: search_entry = &gtk::SearchEntry {
                     set_hexpand: true,
+                    connect_changed[sender] => move |_| {
+                        sender.input(Self::Input::FilterLog);
+                    }
                 },
                 connect_entry: &search_entry,
             },
@@ -119,30 +136,35 @@ impl SimpleComponent for DebugView {
         self.reset();
 
         match message {
-            Self::Input::DebugLevelChanged(level) => {}
-            Self::Input::SearchTermChanged(term) => {}
-            Self::Input::LogUpdated(n_log) => {
+            Self::Input::FilterLog => {
                 let searchbar = self.searchbar.as_ref().unwrap().clone();
                 let search_entry = self.search_entry.as_ref().unwrap().clone();
-                let mut search_text: String = search_entry.text().into();
-                search_text = search_text.trim().to_lowercase();
+                let search_text = search_entry.text().to_string().trim().to_lowercase();
+                // TODO: add log level filtering
+                let log_level = DEBUG_LEVEL_VALS
+                    .get(self.dropdown.as_ref().unwrap().selected() as usize)
+                    .unwrap_or(&LogLevel::Debug)
+                    .clone();
+                println!("log level: {}", log_level.to_string());
                 if searchbar.is_search_mode() && !search_text.is_empty() {
-                    self.log = n_log
+                    self.log = self
+                        .log
                         .iter()
                         .filter(|row| row.to_lowercase().contains(&search_text))
                         .map(|s| s.to_string())
-                        .collect::<Vec<String>>()
-                        .concat();
-                } else {
-                    self.log = n_log.concat();
+                        .collect::<Vec<String>>();
                 }
-                self.textbuf.set_text(&self.log);
+                self.textbuf.set_text(&self.log.concat());
                 let textbuf = self.textbuf.clone();
                 let textview = self.textview.as_ref().unwrap().clone();
                 gtk::glib::idle_add_local_once(move || {
                     let end_mark = textbuf.create_mark(None, &textbuf.end_iter(), false);
                     textview.scroll_mark_onscreen(&end_mark);
                 });
+            }
+            Self::Input::LogUpdated(n_log) => {
+                self.log = n_log;
+                sender.input(Self::Input::FilterLog);
             }
             Self::Input::EnableDebugViewChanged(val) => self.set_enable_debug_view(val),
         }
@@ -155,20 +177,29 @@ impl SimpleComponent for DebugView {
     ) -> ComponentParts<Self> {
         let mut model = Self {
             tracker: 0,
-            debug_level: DebugLevel::Debug,
-            search_term: "".into(),
-            log: "".into(),
+            log: vec![],
             textbuf: gtk::TextBuffer::builder().build(),
             textview: None,
             enable_debug_view: init.enable_debug_view,
             searchbar: None,
             search_entry: None,
+            dropdown: None,
         };
 
         let widgets = view_output!();
         model.searchbar = Some(widgets.searchbar.clone());
         model.search_entry = Some(widgets.search_entry.clone());
         model.textview = Some(widgets.textview.clone());
+        model.dropdown = Some(widgets.log_level_dropdown.clone());
+
+        {
+            let dd_sender = sender.clone();
+            widgets
+                .log_level_dropdown
+                .connect_selected_notify(move |dd| {
+                    dd_sender.input(Self::Input::FilterLog);
+                });
+        }
 
         ComponentParts { model, widgets }
     }
