@@ -256,7 +256,6 @@ impl SimpleComponent for MainView {
     ) -> ComponentParts<Self> {
         let profile_not_editable_dialog = adw::MessageDialog::builder()
             .modal(true)
-            .transient_for(root.root().unwrap().downcast_ref::<gtk::Window>().unwrap())
             .heading("This profile is not editable")
             .body(concat!(
                 "You can duplicate it and edit the new copy. ",

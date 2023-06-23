@@ -201,7 +201,6 @@ impl SimpleComponent for InstallWivrnBox {
     ) -> ComponentParts<Self> {
         let adb_missing_dialog = adw::MessageDialog::builder()
                 .modal(true)
-                .transient_for(root.root().unwrap().downcast_ref::<gtk::Window>().unwrap())
                 .title("ADB is not installed")
                 .body("Please install ADB on your computer to install WiVRn on your Android headset")
                 .hide_on_close(true)
