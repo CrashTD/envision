@@ -29,7 +29,7 @@ use crate::ui::libsurvive_setup_window::LibsurviveSetupMsg;
 use crate::ui::main_view::{MainView, MainViewInit, MainViewOutMsg};
 use expect_dialog::ExpectDialog;
 use gtk::prelude::*;
-use relm4::actions::{ActionGroupName, RelmAction, RelmActionGroup};
+use relm4::actions::{ActionGroupName, RelmAction, RelmActionGroup, AccelsPlus};
 use relm4::adw::traits::MessageDialogExt;
 use relm4::adw::ResponseAppearance;
 use relm4::gtk::glib;
@@ -40,6 +40,9 @@ use std::time::Duration;
 #[tracker::track]
 pub struct App {
     enable_debug_view: bool,
+
+    #[tracker::do_not_track]
+    application: adw::Application,
 
     #[tracker::do_not_track]
     main_view: Controller<MainView>,
@@ -77,6 +80,7 @@ pub enum Msg {
     ProfileSelected(String),
     RunSetCap,
     OpenLibsurviveSetup,
+    Quit,
 }
 
 impl App {
@@ -101,9 +105,14 @@ impl App {
     }
 }
 
+#[derive(Debug)]
+pub struct AppInit {
+    pub application: adw::Application,
+}
+
 #[relm4::component(pub)]
 impl SimpleComponent for App {
-    type Init = ();
+    type Init = AppInit;
     type Input = Msg;
     type Output = ();
 
@@ -340,12 +349,15 @@ impl SimpleComponent for App {
                         self.get_selected_profile().clone(),
                     ))
                     .expect_dialog("Failed to present Libsurvive Setup Window");
+            },
+            Msg::Quit => {
+                self.application.quit();
             }
         }
     }
 
     fn init(
-        _params: Self::Init,
+        init: Self::Init,
         root: &Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
@@ -389,6 +401,7 @@ impl SimpleComponent for App {
         }
 
         let model = App {
+            application: init.application,
             main_view: MainView::builder()
                 .launch(MainViewInit {
                     config: config.clone(),
@@ -453,6 +466,13 @@ impl SimpleComponent for App {
             })
         };
 
+        let quit_action = {
+            let quit_sender = sender.clone();
+            RelmAction::<QuitAction>::new_stateless(move |_| {
+                quit_sender.input(Msg::Quit);
+            })
+        };
+
         let debug_view_toggle_action: RelmAction<DebugViewToggleAction> = {
             let debugtoggle_sender = sender.clone();
             RelmAction::<DebugViewToggleAction>::new_stateful(
@@ -466,11 +486,13 @@ impl SimpleComponent for App {
         };
 
         actions.add_action(about_action);
+        actions.add_action(quit_action);
         actions.add_action(buildprofile_action);
         actions.add_action(debug_view_toggle_action);
         actions.add_action(libsurvive_setup_action);
 
         root.insert_action_group(AppActionGroup::NAME, Some(&actions.into_action_group()));
+        model.application.set_accelerators_for_action::<QuitAction>(&["<Control>q"]);
 
         model
             .main_view
@@ -494,4 +516,5 @@ new_action_group!(pub AppActionGroup, "win");
 new_stateless_action!(pub AboutAction, AppActionGroup, "about");
 new_stateless_action!(pub BuildProfileAction, AppActionGroup, "buildprofile");
 new_stateless_action!(pub LibsurviveSetupAction, AppActionGroup, "libsurvivesetup");
+new_stateless_action!(pub QuitAction, AppActionGroup, "quit");
 new_stateful_action!(pub DebugViewToggleAction, AppActionGroup, "debugviewtoggle", (), bool);

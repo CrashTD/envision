@@ -6,7 +6,7 @@ use relm4::{
     gtk::{self, gio, glib, gdk},
     RelmApp,
 };
-use ui::app::App;
+use ui::app::{App, AppInit};
 
 pub mod builders;
 pub mod config;
@@ -56,7 +56,9 @@ fn main() -> Result<()> {
         .flags(gio::ApplicationFlags::empty())
         .resource_base_path("/org/gabmus/rex2")
         .build();
-    let app = RelmApp::from_app(main_app);
-    app.run::<App>(());
+    let app = RelmApp::from_app(main_app.clone());
+    app.run::<App>(AppInit {
+        application: main_app,
+    });
     Ok(())
 }
