@@ -350,11 +350,12 @@ impl SimpleComponent for App {
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
         let config = Config::get_config();
-        let profiles = vec![
+        let mut profiles = vec![
             valve_index_profile(),
             system_valve_index_profile(),
             wivrn_profile(),
         ];
+        profiles.extend(config.user_profiles.clone());
         let dependencies_dialog = adw::MessageDialog::builder()
             .modal(true)
             .transient_for(root)

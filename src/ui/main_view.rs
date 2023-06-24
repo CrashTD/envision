@@ -49,6 +49,7 @@ pub enum MainViewMsg {
     ProfileSelected(u32),
     UpdateSelectedProfile(Profile),
     EditProfile,
+    CreateProfile,
     DuplicateProfile,
 }
 
@@ -104,30 +105,6 @@ impl SimpleComponent for MainView {
                         set_icon_name: icon_name::MENU,
                         set_menu_model: Some(&app_menu),
                     },
-                    pack_start = &gtk::Box {
-                        set_orientation: gtk::Orientation::Horizontal,
-                        add_css_class: "linked",
-                        #[name(profiles_dropdown)]
-                        gtk::DropDown {
-                            set_tooltip_text: Some("Profiles"),
-                            #[track = "model.changed(Self::profile_names())"]
-                            set_model: Some(&{
-                                let names: Vec<_> = model.profile_names.iter().map(String::as_str).collect();
-                                gtk::StringList::new(&names)
-                            }),
-                            connect_selected_item_notify[sender] => move |this| {
-                                sender.input(MainViewMsg::ProfileSelected(this.selected()));
-                            },
-                        },
-                        gtk::Button {
-                            set_icon_name: icon_name::EDIT,
-                            add_css_class: "suggested-action",
-                            set_tooltip_text: Some("Edit Profile"),
-                            connect_clicked[sender] => move |_| {
-                                sender.input(Self::Input::EditProfile);
-                            }
-                        }
-                    },
                     #[track = "model.changed(Self::enable_debug_view())"]
                     set_show_end_title_buttons: !model.enable_debug_view,
                 },
@@ -162,6 +139,47 @@ impl SimpleComponent for MainView {
                     model.steam_launch_options_box.widget(),
                     model.install_wivrn_box.widget(),
                 }
+            },
+            gtk::Separator {
+                set_orientation: gtk::Orientation::Horizontal,
+                set_hexpand: true,
+            },
+            gtk::Box {
+                set_orientation: gtk::Orientation::Horizontal,
+                set_spacing: 12,
+                add_css_class: "toolbar",
+                add_css_class: "view",
+                gtk::Box {
+                    set_orientation: gtk::Orientation::Horizontal,
+                    add_css_class: "linked",
+                    #[name(profiles_dropdown)]
+                    gtk::DropDown {
+                        set_hexpand: true,
+                        set_tooltip_text: Some("Profiles"),
+                        #[track = "model.changed(Self::profile_names())"]
+                        set_model: Some(&{
+                            let names: Vec<_> = model.profile_names.iter().map(String::as_str).collect();
+                            gtk::StringList::new(&names)
+                        }),
+                        connect_selected_item_notify[sender] => move |this| {
+                            sender.input(MainViewMsg::ProfileSelected(this.selected()));
+                        },
+                    },
+                    gtk::Button {
+                        set_icon_name: icon_name::EDIT,
+                        set_tooltip_text: Some("Edit Profile"),
+                        connect_clicked[sender] => move |_| {
+                            sender.input(Self::Input::EditProfile);
+                        }
+                    },
+                    gtk::Button {
+                        set_icon_name: "list-add-symbolic",
+                        set_tooltip_text: Some("Create Profile"),
+                        connect_clicked[sender] => move |_| {
+                            sender.input(Self::Input::CreateProfile);
+                        }
+                    }
+                },
             }
         }
     }
@@ -243,8 +261,11 @@ impl SimpleComponent for MainView {
                     self.profile_not_editable_dialog.present();
                 }
             }
+            Self::Input::CreateProfile => {
+                println!("create");
+            }
             Self::Input::DuplicateProfile => {
-                println!("dup")
+                println!("dup");
             }
         }
     }

@@ -10,6 +10,7 @@ use std::{fs::File, io::BufReader};
 pub struct Config {
     pub selected_profile_name: String,
     pub debug_view_enabled: bool,
+    pub user_profiles: Vec<Profile>,
 }
 
 impl Default for Config {
@@ -18,6 +19,7 @@ impl Default for Config {
             // TODO: handle first start with no profile selected
             selected_profile_name: "".to_string(),
             debug_view_enabled: false,
+            user_profiles: vec![],
         }
     }
 }

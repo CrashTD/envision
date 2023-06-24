@@ -1,6 +1,6 @@
 use crate::{
-    file_utils::get_writer,
-    paths::{BWRAP_SYSTEM_PREFIX, SYSTEM_PREFIX},
+    file_utils::{get_data_dir, get_writer},
+    paths::{data_monado_path, data_opencomposite_path, BWRAP_SYSTEM_PREFIX, SYSTEM_PREFIX},
 };
 use expect_dialog::ExpectDialog;
 use serde::{Deserialize, Serialize};
@@ -34,6 +34,30 @@ pub struct Profile {
 impl Display for Profile {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(&self.name.to_string())
+    }
+}
+
+impl Default for Profile {
+    fn default() -> Self {
+        Self {
+            name: "Default profile name".into(),
+            xrservice_path: data_monado_path(),
+            xrservice_type: XRServiceType::Monado,
+            opencomposite_path: data_opencomposite_path(),
+            basalt_path: None,
+            mercury_path: None,
+            libsurvive_path: None,
+            basalt_enabled: false,
+            mercury_enabled: false,
+            libsurvive_enabled: false,
+            environment: HashMap::new(),
+            prefix: format!(
+                "{data}/prefixes/default_profile_prefix",
+                data = get_data_dir()
+            ),
+            can_be_built: true,
+            editable: true,
+        }
     }
 }
 
