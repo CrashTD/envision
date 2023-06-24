@@ -1,5 +1,12 @@
-use super::factories::{entry_row_factory::{EntryModel, EntryModelInit}, switch_row_factory::{SwitchModel, SwitchModelInit}, path_row_factory::{PathModel, PathModelInit}};
-use crate::{env_var_descriptions::env_var_descriptions_as_paragraph, profile::Profile};
+use super::factories::{
+    entry_row_factory::{EntryModel, EntryModelInit},
+    path_row_factory::{PathModel, PathModelInit},
+    switch_row_factory::{SwitchModel, SwitchModelInit},
+};
+use crate::{
+    env_var_descriptions::env_var_descriptions_as_paragraph,
+    profile::{Profile, XRServiceType},
+};
 use adw::prelude::*;
 use gtk::prelude::*;
 use relm4::{factory::FactoryVecDeque, prelude::*};
@@ -14,6 +21,8 @@ pub struct ProfileEditor {
 
     #[tracker::do_not_track]
     name_row: adw::EntryRow,
+    #[tracker::do_not_track]
+    type_row: adw::ComboRow,
     #[tracker::do_not_track]
     env_rows: FactoryVecDeque<EntryModel>,
     #[tracker::do_not_track]
@@ -52,6 +61,7 @@ impl SimpleComponent for ProfileEditor {
                 add: maingrp = &adw::PreferencesGroup {
                     set_title: "Profile Info",
                     model.name_row.clone(),
+                    model.type_row.clone(),
                 },
                 add: model.env_rows.widget(),
                 add: model.switch_rows.widget(),
@@ -68,6 +78,8 @@ impl SimpleComponent for ProfileEditor {
                 let p = prof.clone();
 
                 self.name_row.set_text(p.name.as_str());
+
+                self.type_row.set_selected(prof.xrservice_type.as_number());
 
                 self.env_rows.guard().clear();
                 for (k, v) in p.environment.iter() {
@@ -101,27 +113,27 @@ impl SimpleComponent for ProfileEditor {
                 self.path_rows.guard().push_back(PathModelInit {
                     name: "XR Service Path".into(),
                     key: "xrservice_path".into(),
-                    value: Some(p.xrservice_path)
+                    value: Some(p.xrservice_path),
                 });
                 self.path_rows.guard().push_back(PathModelInit {
                     name: "OpenComposite Path".into(),
                     key: "opencomposite_path".into(),
-                    value: Some(p.opencomposite_path)
+                    value: Some(p.opencomposite_path),
                 });
                 self.path_rows.guard().push_back(PathModelInit {
                     name: "Libsurvive Path".into(),
                     key: "libsurvive_path".into(),
-                    value: p.libsurvive_path
+                    value: p.libsurvive_path,
                 });
                 self.path_rows.guard().push_back(PathModelInit {
                     name: "Basalt Path".into(),
                     key: "basalt_path".into(),
-                    value: p.basalt_path
+                    value: p.basalt_path,
                 });
                 self.path_rows.guard().push_back(PathModelInit {
                     name: "Mercury Path".into(),
                     key: "mercury_path".into(),
-                    value: p.mercury_path
+                    value: p.mercury_path,
                 });
 
                 self.set_profile(Some(prof.clone()));
@@ -166,6 +178,21 @@ impl SimpleComponent for ProfileEditor {
             profile: None,
             win: None,
             name_row: adw::EntryRow::builder().title("Name").build(),
+            type_row: adw::ComboRow::builder()
+                .title("XR Service Type")
+                .subtitle(
+                    "Monado is for PCVR headsets, while WiVRn is for Andorid standalone headsets",
+                )
+                .model(&gtk::StringList::new(
+                    XRServiceType::iter()
+                        .map(|st| st.to_string())
+                        .collect::<Vec<String>>()
+                        .iter()
+                        .map(|s| s.as_str())
+                        .collect::<Vec<&str>>()
+                        .as_slice(),
+                ))
+                .build(),
             env_rows: FactoryVecDeque::new(
                 adw::PreferencesGroup::builder()
                     .title("Environment Variables")

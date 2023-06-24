@@ -24,6 +24,12 @@ impl XRServiceType {
     pub fn iter() -> Iter<'static, XRServiceType> {
         [Self::Monado, Self::Wivrn].iter()
     }
+
+    pub fn as_number(&self) -> u32 {
+        match self {
+            Self::Monado => 0, Self::Wivrn => 1,
+        }
+    }
 }
 
 impl Display for XRServiceType {
