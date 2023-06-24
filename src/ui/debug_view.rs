@@ -1,3 +1,6 @@
+use std::fmt::Display;
+use std::slice::Iter;
+
 use expect_dialog::ExpectDialog;
 use gtk::prelude::*;
 use relm4::prelude::*;
@@ -25,25 +28,29 @@ impl LogLevel {
         }
     }
 
-    pub fn to_string(&self) -> &str {
-        match self {
+    pub fn iter() -> Iter<'static, LogLevel> {
+        [
+            Self::Trace,
+            Self::Debug,
+            Self::Info,
+            Self::Warning,
+            Self::Error,
+        ]
+        .iter()
+    }
+}
+
+impl Display for LogLevel {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
             LogLevel::Trace => "Trace",
             LogLevel::Debug => "Debug",
             LogLevel::Info => "Info",
             LogLevel::Warning => "Warning",
             LogLevel::Error => "Error",
-        }
+        })
     }
 }
-
-pub const DEBUG_LEVEL_STRINGS: [&str; 5] = ["Trace", "Debug", "Info", "Warning", "Error"];
-pub const DEBUG_LEVEL_VALS: [LogLevel; 5] = [
-    LogLevel::Trace,
-    LogLevel::Debug,
-    LogLevel::Info,
-    LogLevel::Warning,
-    LogLevel::Error,
-];
 
 #[derive(Debug)]
 pub enum DebugViewMsg {
@@ -100,7 +107,15 @@ impl SimpleComponent for DebugView {
                         set_icon_name: icon_name::LOUPE,
                         set_tooltip_text: Some("Filter Log"),
                     },
-                    pack_start: log_level_dropdown = &gtk::DropDown::from_strings(&DEBUG_LEVEL_STRINGS),
+                    pack_start: log_level_dropdown = &gtk::DropDown::from_strings(
+                        LogLevel::iter()
+                            .map(|lvl| lvl.to_string())
+                            .collect::<Vec<String>>()
+                            .iter()
+                            .map(|s| s.as_str())
+                            .collect::<Vec<&str>>()
+                            .as_slice()
+                    ),
                 },
             },
             #[name(searchbar)]
@@ -141,17 +156,19 @@ impl SimpleComponent for DebugView {
                 let search_entry = self.search_entry.as_ref().unwrap().clone();
                 let search_text = search_entry.text().to_string().trim().to_lowercase();
                 // TODO: add log level filtering
-                let log_level = DEBUG_LEVEL_VALS
+                let log_level = LogLevel::iter()
+                    .as_slice()
                     .get(self.dropdown.as_ref().unwrap().selected() as usize)
-                    .unwrap_or(&LogLevel::Debug)
-                    .clone();
+                    .unwrap();
                 println!("log level: {}", log_level.to_string());
                 let log = match searchbar.is_search_mode() && !search_text.is_empty() {
-                    true => self.log
+                    true => self
+                        .log
                         .iter()
                         .filter(|row| row.to_lowercase().contains(&search_text))
                         .map(|s| s.to_string())
-                        .collect::<Vec<String>>().concat(),
+                        .collect::<Vec<String>>()
+                        .concat(),
                     false => self.log.concat(),
                 };
                 self.textbuf.set_text(&log);
