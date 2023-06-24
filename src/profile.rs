@@ -4,12 +4,35 @@ use crate::{
 };
 use expect_dialog::ExpectDialog;
 use serde::{Deserialize, Serialize};
-use std::{collections::HashMap, fmt::Display, fs::File, io::BufReader};
+use std::{collections::HashMap, fmt::Display, fs::File, io::BufReader, slice::Iter};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum XRServiceType {
     Monado,
     Wivrn,
+}
+
+impl XRServiceType {
+    pub fn from_string(s: String) -> Self {
+        match s.trim().to_lowercase().as_str() {
+            "monado" => Self::Monado,
+            "wivrn" => Self::Wivrn,
+            _ => Self::Monado,
+        }
+    }
+
+    pub fn iter() -> Iter<'static, XRServiceType> {
+        [Self::Monado, Self::Wivrn].iter()
+    }
+}
+
+impl Display for XRServiceType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
+            Self::Monado => "Monado",
+            Self::Wivrn => "WiVRn",
+        })
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
