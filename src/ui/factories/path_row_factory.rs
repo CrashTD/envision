@@ -52,7 +52,7 @@ impl FactoryComponent for PathModel {
                 set_valign: gtk::Align::Center,
                 add_css_class: "flat",
                 add_css_class: "circular",
-                set_icon_name: "edit-clear",
+                set_icon_name: "edit-clear-symbolic",
                 set_tooltip_text: Some("Clear Path"),
                 connect_clicked[sender] => move |_| {
                     sender.input(Self::Input::Changed(None));

@@ -261,6 +261,7 @@ impl SimpleComponent for MainView {
                     .unwrap()
                     .clone()
                     .set_selected(index);
+                self.set_selected_profile(self.profiles.get(index as usize).unwrap().clone());
             }
             Self::Input::ProfileSelected(position) => {
                 sender.output(MainViewOutMsg::ProfileSelected(

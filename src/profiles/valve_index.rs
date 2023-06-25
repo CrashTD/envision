@@ -26,5 +26,6 @@ pub fn valve_index_profile() -> Profile {
         prefix,
         can_be_built: true,
         editable: false,
+        ..Default::default()
     }
 }

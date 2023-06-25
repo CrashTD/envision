@@ -1,4 +1,5 @@
 {
+    "uuid": "demo",
     "name": "Demo profile",
     "xrservice_path": "/home/user/monado",
     "xrservice_type": "Monado",
@@ -15,5 +16,12 @@
         "SURVIVE_GLOBALSCENESOLVER": "0"
     },
     "prefix": "/home/user/rex2prefix",
-    "can_be_built": true
+    "can_be_built": true,
+    "editable": true,
+    "pull_on_build": true,
+    "xrservice_repo": null,
+    "opencomposite_repo": null,
+    "libsurvive_repo": null,
+    "basalt_repo": null,
+    "mercury_repo": null
 }

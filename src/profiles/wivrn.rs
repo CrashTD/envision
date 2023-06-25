@@ -23,5 +23,6 @@ pub fn wivrn_profile() -> Profile {
         prefix,
         can_be_built: true,
         editable: false,
+        ..Default::default()
     }
 }

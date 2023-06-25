@@ -56,11 +56,17 @@ pub struct Profile {
     pub libsurvive_enabled: bool,
     pub basalt_enabled: bool,
     pub mercury_enabled: bool,
+    pub xrservice_repo: Option<String>,
+    pub opencomposite_repo: Option<String>,
+    pub libsurvive_repo: Option<String>,
+    pub basalt_repo: Option<String>,
+    pub mercury_repo: Option<String>,
     pub environment: HashMap<String, String>,
     /** Install prefix */
     pub prefix: String,
     pub can_be_built: bool,
     pub editable: bool,
+    pub pull_on_build: bool,
 }
 
 impl Display for Profile {
@@ -89,6 +95,12 @@ impl Default for Profile {
                 data = get_data_dir()
             ),
             can_be_built: true,
+            pull_on_build: true,
+            xrservice_repo: None,
+            opencomposite_repo: None,
+            libsurvive_repo: None,
+            basalt_repo: None,
+            mercury_repo: None,
             editable: true,
         }
     }
@@ -203,8 +215,8 @@ mod tests {
             mercury_enabled: false,
             environment: env,
             prefix: String::from("/home/user/rex2prefix"),
-            can_be_built: true,
             editable: true,
+            ..Default::default()
         };
         let fpath = String::from("./target/testout/testprofile.json");
         p.dump_profile(&fpath);
