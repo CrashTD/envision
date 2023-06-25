@@ -11,7 +11,6 @@ use crate::{
 use adw::prelude::*;
 use gtk::prelude::*;
 use relm4::{factory::FactoryVecDeque, prelude::*};
-use relm4_icons::icon_name;
 
 #[tracker::track]
 pub struct ProfileEditor {
@@ -380,7 +379,7 @@ impl SimpleComponent for ProfileEditor {
         add_env_popover.set_child(Some(&add_env_popover_box));
 
         let add_env_var_btn = gtk::MenuButton::builder()
-            .icon_name(icon_name::PLUS)
+            .icon_name("list-add-symbolic")
             .tooltip_text("Add Environment Variable")
             .css_classes(["flat"])
             .popover(&add_env_popover)

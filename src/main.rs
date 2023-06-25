@@ -50,7 +50,6 @@ fn main() -> Result<()> {
     }
     gtk::Window::set_default_icon_name(APP_ID);
 
-    relm4_icons::initialize_icons();
     let main_app = adw::Application::builder()
         .application_id(APP_ID)
         .flags(gio::ApplicationFlags::empty())

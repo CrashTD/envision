@@ -16,7 +16,6 @@ use relm4::adw::traits::MessageDialogExt;
 use relm4::adw::ResponseAppearance;
 use relm4::prelude::*;
 use relm4::{ComponentParts, ComponentSender, SimpleComponent};
-use relm4_icons::icon_name;
 
 #[tracker::track]
 pub struct MainView {
@@ -108,7 +107,7 @@ impl SimpleComponent for MainView {
                         add_css_class: "title",
                     },
                     pack_end: menu_btn = &gtk::MenuButton {
-                        set_icon_name: icon_name::MENU,
+                        set_icon_name: "open-menu-symbolic",
                         set_menu_model: Some(&app_menu),
                     },
                     #[track = "model.changed(Self::enable_debug_view())"]
@@ -172,7 +171,7 @@ impl SimpleComponent for MainView {
                         },
                     },
                     gtk::Button {
-                        set_icon_name: icon_name::EDIT,
+                        set_icon_name: "edit-symbolic",
                         set_tooltip_text: Some("Edit Profile"),
                         connect_clicked[sender] => move |_| {
                             sender.input(Self::Input::EditProfile);

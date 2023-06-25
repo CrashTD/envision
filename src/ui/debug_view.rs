@@ -1,11 +1,9 @@
-use std::fmt::Display;
-use std::slice::Iter;
-
 use expect_dialog::ExpectDialog;
 use gtk::prelude::*;
 use relm4::prelude::*;
 use relm4::{ComponentSender, SimpleComponent};
-use relm4_icons::icon_name;
+use std::fmt::Display;
+use std::slice::Iter;
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum LogLevel {
@@ -104,7 +102,7 @@ impl SimpleComponent for DebugView {
                         add_css_class: "title",
                     },
                     pack_end: search_toggle = &gtk::ToggleButton {
-                        set_icon_name: icon_name::LOUPE,
+                        set_icon_name: "edit-find-symbolic",
                         set_tooltip_text: Some("Filter Log"),
                     },
                     pack_start: log_level_dropdown = &gtk::DropDown::from_strings(

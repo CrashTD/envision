@@ -1,9 +1,7 @@
+use crate::{constants::APP_NAME, profile::Profile};
 use expect_dialog::ExpectDialog;
 use gtk::prelude::*;
 use relm4::prelude::*;
-use relm4_icons::icon_name;
-
-use crate::{constants::APP_NAME, profile::Profile};
 
 #[tracker::track]
 pub struct SteamLaunchOptionsBox {
@@ -88,7 +86,7 @@ impl SimpleComponent for SteamLaunchOptionsBox {
                     add_css_class: "flat",
                     add_css_class: "circular",
                     set_tooltip_text: Some("Copy"),
-                    set_icon_name: icon_name::COPY,
+                    set_icon_name: "edit-copy-symbolic",
                     set_vexpand: false,
                     set_valign: gtk::Align::Center,
                     connect_clicked[sender] => move |_| {
