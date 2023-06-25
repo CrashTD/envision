@@ -123,7 +123,10 @@ impl SimpleComponent for ProfileEditor {
 
                 self.type_row.set_selected(prof.xrservice_type.as_number());
 
-                self.pull_on_build_switch.as_ref().unwrap().set_active(prof.pull_on_build);
+                self.pull_on_build_switch
+                    .as_ref()
+                    .unwrap()
+                    .set_active(prof.pull_on_build);
 
                 {
                     let mut guard = self.env_rows.guard();
@@ -423,14 +426,21 @@ impl SimpleComponent for ProfileEditor {
             path_rows: FactoryVecDeque::new(
                 adw::PreferencesGroup::builder()
                     .title("Paths")
-                    // .description("")
+                    .description(concat!(
+                        "Where the various components' repositories will be cloned to.\n\n",
+                        "Install Prefix will be the path where the components will be ",
+                        "installed after building."
+                    ))
                     .build(),
                 sender.input_sender(),
             ),
             repo_rows: FactoryVecDeque::new(
                 adw::PreferencesGroup::builder()
                     .title("Repositories")
-                    .description("Change the repositories from which various components are pulled.\n\nLeave empty to use the default repository.")
+                    .description(concat!(
+                        "Change the repositories from which various components are pulled.\n\n",
+                        "Leave empty to use the default repository."
+                    ))
                     .build(),
                 sender.input_sender(),
             ),
