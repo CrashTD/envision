@@ -71,8 +71,10 @@ impl FactoryComponent for SwitchModel {
         }
     }
 
-    fn forward_to_parent(_output: Self::Output) -> Option<Self::ParentInput> {
-        None
+    fn forward_to_parent(output: Self::Output) -> Option<Self::ParentInput> {
+        Some(match output {
+            Self::Output::Changed(key, value) => ProfileEditorMsg::SwitchChanged(key, value)
+        })
     }
 
     fn init_model(init: Self::Init, index: &Self::Index, sender: FactorySender<Self>) -> Self {

@@ -29,7 +29,7 @@ use crate::ui::libsurvive_setup_window::LibsurviveSetupMsg;
 use crate::ui::main_view::{MainView, MainViewInit, MainViewOutMsg};
 use expect_dialog::ExpectDialog;
 use gtk::prelude::*;
-use relm4::actions::{ActionGroupName, RelmAction, RelmActionGroup, AccelsPlus};
+use relm4::actions::{AccelsPlus, ActionGroupName, RelmAction, RelmActionGroup};
 use relm4::adw::traits::MessageDialogExt;
 use relm4::adw::ResponseAppearance;
 use relm4::gtk::glib;
@@ -77,7 +77,9 @@ pub enum Msg {
     BuildProfile,
     EnableDebugViewChanged(bool),
     DoStartStopXRService,
-    ProfileSelected(String),
+    ProfileSelected(Profile),
+    DeleteProfile,
+    SaveProfile(Profile),
     RunSetCap,
     OpenLibsurviveSetup,
     Quit,
@@ -102,6 +104,17 @@ impl App {
         let mut runner = Runner::xrservice_runner_from_profile(self.get_selected_profile().clone());
         runner.start();
         self.xrservice_runner = Some(runner);
+    }
+
+    pub fn profiles_list(config: &Config) -> Vec<Profile> {
+        let mut profiles = vec![
+            valve_index_profile(),
+            system_valve_index_profile(),
+            wivrn_profile(),
+        ];
+        profiles.extend(config.user_profiles.clone());
+        profiles.sort_unstable_by(|a, b| a.name.cmp(&b.name));
+        profiles
     }
 }
 
@@ -196,7 +209,9 @@ impl SimpleComponent for App {
                                         );
                                         // apparently setcap on wivrn causes issues, so in case
                                         // it's not monado, we're just skipping this
-                                        if self.get_selected_profile().xrservice_type == XRServiceType::Monado {
+                                        if self.get_selected_profile().xrservice_type
+                                            == XRServiceType::Monado
+                                        {
                                             self.setcap_confirm_dialog.present();
                                         }
                                         self.build_window
@@ -320,6 +335,47 @@ impl SimpleComponent for App {
                     .emit(BuildWindowMsg::UpdateCanClose(false));
                 self.build_pipeline = Some(pipeline);
             }
+            Msg::DeleteProfile => {
+                let todel = self.get_selected_profile();
+                if todel.editable {
+                    self.config.user_profiles = self
+                        .config
+                        .user_profiles
+                        .iter()
+                        .filter(|p| p.uuid != todel.uuid)
+                        .map(|p| p.clone())
+                        .collect();
+                    self.config.save();
+                    self.profiles = Self::profiles_list(&self.config);
+                    self.main_view.sender().emit(MainViewMsg::UpdateSelectedProfile(
+                        self.get_selected_profile()
+                    ));
+                    self.main_view
+                        .sender()
+                        .emit(MainViewMsg::UpdateProfiles(
+                            self.profiles.clone(),
+                            self.config.clone(),
+                        ))
+                }
+            }
+            Msg::SaveProfile(prof) => {
+                match self.profiles.iter().position(|p| p.uuid == prof.uuid) {
+                    None => {},
+                    Some(index) => {
+                        self.profiles.remove(index);
+                    }
+                }
+                self.profiles.push(prof);
+                self.profiles.sort_unstable_by(|a, b| a.name.cmp(&b.name));
+                self.config.set_profiles(&self.profiles);
+                self.config.save();
+                self.main_view
+                    .sender()
+                    .emit(MainViewMsg::UpdateProfiles(
+                        self.profiles.clone(),
+                        self.config.clone(),
+                    ))
+            }
             Msg::RunSetCap => {
                 if !check_dependency(pkexec_dep()) {
                     println!("pkexec not found, skipping setcap");
@@ -331,11 +387,11 @@ impl SimpleComponent for App {
                     ));
                 }
             }
-            Msg::ProfileSelected(prof_name) => {
-                if prof_name == self.config.selected_profile_name {
+            Msg::ProfileSelected(prof) => {
+                if prof.uuid == self.config.selected_profile_uuid {
                     return;
                 }
-                self.config.selected_profile_name = prof_name;
+                self.config.selected_profile_uuid = prof.uuid;
                 self.config.save();
                 let profile = self.get_selected_profile();
                 self.main_view
@@ -349,7 +405,7 @@ impl SimpleComponent for App {
                         self.get_selected_profile().clone(),
                     ))
                     .expect_dialog("Failed to present Libsurvive Setup Window");
-            },
+            }
             Msg::Quit => {
                 self.application.quit();
             }
@@ -362,12 +418,7 @@ impl SimpleComponent for App {
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
         let config = Config::get_config();
-        let mut profiles = vec![
-            valve_index_profile(),
-            system_valve_index_profile(),
-            wivrn_profile(),
-        ];
-        profiles.extend(config.user_profiles.clone());
+        let profiles = Self::profiles_list(&config);
         let dependencies_dialog = adw::MessageDialog::builder()
             .modal(true)
             .transient_for(root)
@@ -410,7 +461,9 @@ impl SimpleComponent for App {
                 .forward(sender.input_sender(), |message| match message {
                     MainViewOutMsg::EnableDebugViewChanged(val) => Msg::EnableDebugViewChanged(val),
                     MainViewOutMsg::DoStartStopXRService => Msg::DoStartStopXRService,
-                    MainViewOutMsg::ProfileSelected(name) => Msg::ProfileSelected(name),
+                    MainViewOutMsg::ProfileSelected(uuid) => Msg::ProfileSelected(uuid),
+                    MainViewOutMsg::DeleteProfile => Msg::DeleteProfile,
+                    MainViewOutMsg::SaveProfile(p) => Msg::SaveProfile(p),
                 }),
             debug_view: DebugView::builder()
                 .launch(DebugViewInit {
@@ -492,13 +545,15 @@ impl SimpleComponent for App {
         actions.add_action(libsurvive_setup_action);
 
         root.insert_action_group(AppActionGroup::NAME, Some(&actions.into_action_group()));
-        model.application.set_accelerators_for_action::<QuitAction>(&["<Control>q"]);
+        model
+            .application
+            .set_accelerators_for_action::<QuitAction>(&["<Control>q"]);
 
         model
             .main_view
             .sender()
-            .emit(MainViewMsg::UpdateProfileNames(
-                model.profiles.iter().map(|p| p.clone().name).collect(),
+            .emit(MainViewMsg::UpdateProfiles(
+                model.profiles.clone(),
                 model.config.clone(),
             ));
 

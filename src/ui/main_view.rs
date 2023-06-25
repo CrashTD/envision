@@ -1,5 +1,5 @@
 use super::install_wivrn_box::{InstallWivrnBox, InstallWivrnBoxInit, InstallWivrnBoxMsg};
-use super::profile_editor::{ProfileEditor, ProfileEditorMsg};
+use super::profile_editor::{ProfileEditor, ProfileEditorMsg, ProfileEditorOutMsg};
 use super::runtime_switcher_box::{
     RuntimeSwitcherBox, RuntimeSwitcherBoxInit, RuntimeSwitcherBoxMsg,
 };
@@ -22,7 +22,7 @@ use relm4_icons::icon_name;
 pub struct MainView {
     xrservice_active: bool,
     enable_debug_view: bool,
-    profile_names: Vec<String>,
+    profiles: Vec<Profile>,
     selected_profile: Profile,
     #[tracker::do_not_track]
     profiles_dropdown: Option<gtk::DropDown>,
@@ -36,6 +36,8 @@ pub struct MainView {
     profile_editor: Controller<ProfileEditor>,
     #[tracker::do_not_track]
     profile_not_editable_dialog: adw::MessageDialog,
+    #[tracker::do_not_track]
+    profile_delete_confirm_dialog: adw::MessageDialog,
 }
 
 #[derive(Debug)]
@@ -44,20 +46,24 @@ pub enum MainViewMsg {
     StartStopClicked,
     XRServiceActiveChanged(bool, Option<Profile>),
     EnableDebugViewChanged(bool),
-    UpdateProfileNames(Vec<String>, Config),
+    UpdateProfiles(Vec<Profile>, Config),
     SetSelectedProfile(u32),
     ProfileSelected(u32),
     UpdateSelectedProfile(Profile),
     EditProfile,
     CreateProfile,
+    DeleteProfile,
     DuplicateProfile,
+    SaveProfile(Profile),
 }
 
 #[derive(Debug)]
 pub enum MainViewOutMsg {
     EnableDebugViewChanged(bool),
     DoStartStopXRService,
-    ProfileSelected(String),
+    ProfileSelected(Profile),
+    DeleteProfile,
+    SaveProfile(Profile),
 }
 
 pub struct MainViewInit {
@@ -156,9 +162,9 @@ impl SimpleComponent for MainView {
                     gtk::DropDown {
                         set_hexpand: true,
                         set_tooltip_text: Some("Profiles"),
-                        #[track = "model.changed(Self::profile_names())"]
+                        #[track = "model.changed(Self::profiles())"]
                         set_model: Some(&{
-                            let names: Vec<_> = model.profile_names.iter().map(String::as_str).collect();
+                            let names: Vec<_> = model.profiles.iter().map(|p| p.name.as_str()).collect();
                             gtk::StringList::new(&names)
                         }),
                         connect_selected_item_notify[sender] => move |this| {
@@ -178,7 +184,17 @@ impl SimpleComponent for MainView {
                         connect_clicked[sender] => move |_| {
                             sender.input(Self::Input::CreateProfile);
                         }
-                    }
+                    },
+                    gtk::Button {
+                        set_icon_name: "edit-delete-symbolic",
+                        add_css_class: "destructive-action",
+                        set_tooltip_text: Some("Delete Profile"),
+                        #[track = "model.changed(Self::selected_profile())"]
+                        set_sensitive: model.selected_profile.editable,
+                        connect_clicked[sender] => move |_| {
+                            sender.input(Self::Input::DeleteProfile);
+                        }
+                    },
                 },
             }
         }
@@ -222,17 +238,17 @@ impl SimpleComponent for MainView {
                     .sender()
                     .emit(RuntimeSwitcherBoxMsg::UpdateSelectedProfile(prof.clone()));
             }
-            Self::Input::UpdateProfileNames(names, config) => {
-                self.set_profile_names(names);
+            Self::Input::UpdateProfiles(profiles, config) => {
+                self.set_profiles(profiles);
                 // why send another message to set the dropdown selection?
                 // set_* from tracker likely updates the view obj in the next
                 // draw, so selecting here will result in nothing cause the
                 // dropdown is effectively empty
                 sender.input(MainViewMsg::SetSelectedProfile({
                     let pos = self
-                        .profile_names
+                        .profiles
                         .iter()
-                        .position(|p| p.clone() == config.selected_profile_name);
+                        .position(|p| p.uuid == config.selected_profile_uuid);
                     match pos {
                         Some(idx) => idx as u32,
                         None => 0,
@@ -247,10 +263,8 @@ impl SimpleComponent for MainView {
                     .set_selected(index);
             }
             Self::Input::ProfileSelected(position) => {
-                // self.install_wivrn_box.sender.emit(InstallWivrnBoxMsg::Upda);
-                // TODO: send profile to install_wivrn_box
                 sender.output(MainViewOutMsg::ProfileSelected(
-                    self.profile_names.get(position as usize).unwrap().clone(),
+                    self.profiles.get(position as usize).unwrap().clone(),
                 ));
             }
             Self::Input::EditProfile => {
@@ -262,10 +276,20 @@ impl SimpleComponent for MainView {
                 }
             }
             Self::Input::CreateProfile => {
-                println!("create");
+                self.profile_editor
+                    .sender()
+                    .emit(ProfileEditorMsg::Present(Profile::default()));
+            }
+            Self::Input::DeleteProfile => {
+                self.profile_delete_confirm_dialog.present();
+            }
+            Self::Input::SaveProfile(prof) => {
+                sender.output(Self::Output::SaveProfile(prof));
             }
             Self::Input::DuplicateProfile => {
-                println!("dup");
+                self.profile_editor.sender().emit(ProfileEditorMsg::Present(
+                    self.selected_profile.create_duplicate(),
+                ));
             }
         }
     }
@@ -277,12 +301,12 @@ impl SimpleComponent for MainView {
     ) -> ComponentParts<Self> {
         let profile_not_editable_dialog = adw::MessageDialog::builder()
             .modal(true)
+            .hide_on_close(true)
             .heading("This profile is not editable")
             .body(concat!(
                 "You can duplicate it and edit the new copy. ",
                 "Do you want to duplicate the current profile?"
             ))
-            .hide_on_close(true)
             .build();
         profile_not_editable_dialog.add_response("no", "_No");
         profile_not_editable_dialog.add_response("yes", "_Yes");
@@ -298,11 +322,31 @@ impl SimpleComponent for MainView {
             });
         }
 
+        let profile_delete_confirm_dialog = adw::MessageDialog::builder()
+            .modal(true)
+            .hide_on_close(true)
+            .heading("Are you sure you want to delete this profile?")
+            .build();
+        profile_delete_confirm_dialog.add_response("no", "_No");
+        profile_delete_confirm_dialog.add_response("yes", "_Yes");
+        profile_delete_confirm_dialog
+            .set_response_appearance("no", ResponseAppearance::Destructive);
+        profile_delete_confirm_dialog.set_response_appearance("yes", ResponseAppearance::Suggested);
+
+        {
+            let pdc_sender = sender.clone();
+            profile_delete_confirm_dialog.connect_response(None, move |_, res| {
+                if res == "yes" {
+                    pdc_sender.output(Self::Output::DeleteProfile);
+                }
+            });
+        }
+
         let mut model = Self {
             xrservice_active: false,
             enable_debug_view: init.config.debug_view_enabled,
             profiles_dropdown: None,
-            profile_names: vec![],
+            profiles: vec![],
             steam_launch_options_box: SteamLaunchOptionsBox::builder().launch(()).detach(),
             install_wivrn_box: InstallWivrnBox::builder()
                 .launch(InstallWivrnBoxInit {
@@ -316,9 +360,12 @@ impl SimpleComponent for MainView {
                 .detach(),
             profile_editor: ProfileEditor::builder()
                 .launch(ProfileEditorInit {})
-                .detach(),
+                .forward(sender.input_sender(), |message| match message {
+                    ProfileEditorOutMsg::SaveProfile(p) => Self::Input::SaveProfile(p),
+                }),
             selected_profile: init.selected_profile.clone(),
             profile_not_editable_dialog,
+            profile_delete_confirm_dialog,
             tracker: 0,
         };
         let widgets = view_output!();

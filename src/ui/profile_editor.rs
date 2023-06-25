@@ -35,8 +35,17 @@ pub struct ProfileEditor {
 pub enum ProfileEditorMsg {
     Present(Profile),
     EntryChanged(String, String),
+    TextChanged(String, String),
+    PathChanged(String, Option<String>),
+    SwitchChanged(String, bool),
+    ComboChanged(String, String),
     AddEnvVar,
-    SaveProfile, // ?
+    SaveProfile,
+}
+
+#[derive(Debug)]
+pub enum ProfileEditorOutMsg {
+    SaveProfile(Profile),
 }
 
 pub struct ProfileEditorInit {}
@@ -45,7 +54,7 @@ pub struct ProfileEditorInit {}
 impl SimpleComponent for ProfileEditor {
     type Init = ProfileEditorInit;
     type Input = ProfileEditorMsg;
-    type Output = ();
+    type Output = ProfileEditorOutMsg;
 
     view! {
         #[name(win)]
@@ -66,6 +75,21 @@ impl SimpleComponent for ProfileEditor {
                 add: model.env_rows.widget(),
                 add: model.switch_rows.widget(),
                 add: model.path_rows.widget(),
+                add: save_grp = &adw::PreferencesGroup {
+                    add: save_box = &gtk::Box {
+                        set_orientation: gtk::Orientation::Vertical,
+                        set_hexpand: true,
+                        gtk::Button {
+                            set_halign: gtk::Align::Center,
+                            set_label: "Save",
+                            add_css_class: "pill",
+                            add_css_class: "suggested-action",
+                            connect_clicked[sender] => move |_| {
+                                sender.input(Self::Input::SaveProfile);
+                            },
+                        },
+                    }
+                },
             }
         }
     }
@@ -135,19 +159,70 @@ impl SimpleComponent for ProfileEditor {
                     key: "mercury_path".into(),
                     value: p.mercury_path,
                 });
+                self.path_rows.guard().push_back(PathModelInit {
+                    name: "Install Prefix".into(),
+                    key: "prefix".into(),
+                    value: Some(p.prefix),
+                });
 
                 self.set_profile(Some(prof.clone()));
 
                 self.win.as_ref().unwrap().present();
             }
-            Self::Input::SaveProfile => {}
+            Self::Input::SaveProfile => {
+                let prof = self.profile.as_ref().unwrap();
+                if prof.validate() {
+                    sender.output(ProfileEditorOutMsg::SaveProfile(prof.clone()));
+                    self.win.as_ref().unwrap().close();
+                } else {
+                    self.win.as_ref().unwrap().add_toast(adw::Toast::builder().title("Profile failed validation").build());
+                }
+            }
+            // TODO: rename to reflect this is only for env
+            // + make entryfactory take a signal to send to parent
             Self::Input::EntryChanged(name, value) => {
-                println!("{}: {}", name, value);
                 self.profile
                     .as_mut()
                     .unwrap()
                     .environment
                     .insert(name, value);
+            }
+            Self::Input::PathChanged(key, value) => {
+                let prof = self.profile.as_mut().unwrap();
+                match key.as_str() {
+                    "xrservice_path" => prof.xrservice_path = value.unwrap_or("".to_string()),
+                    "opencomposite_path" => {
+                        prof.opencomposite_path = value.unwrap_or("".to_string())
+                    }
+                    "libsurvive_path" => prof.libsurvive_path = value,
+                    "basalt_path" => prof.basalt_path = value,
+                    "mercury_path" => prof.mercury_path = value,
+                    "prefix" => prof.prefix = value.unwrap_or("".to_string()),
+                    _ => panic!("Unknown profile path key"),
+                }
+            }
+            Self::Input::SwitchChanged(key, value) => {
+                let prof = self.profile.as_mut().unwrap();
+                match key.as_str() {
+                    "libsurvive_enabled" => prof.libsurvive_enabled = value,
+                    "basalt_enabled" => prof.basalt_enabled = value,
+                    "mercury_enabled" => prof.mercury_enabled = value,
+                    _ => panic!("Unknown profile switch key"),
+                }
+            }
+            Self::Input::TextChanged(key, value) => {
+                let prof = self.profile.as_mut().unwrap();
+                match key.as_str() {
+                    "name" => prof.name = value,
+                    _ => panic!("Unknown profile text key"),
+                }
+            }
+            Self::Input::ComboChanged(key, value) => {
+                let prof = self.profile.as_mut().unwrap();
+                match key.as_str() {
+                    "xrservice_type" => prof.xrservice_type = XRServiceType::from_string(value),
+                    _ => panic!("Unknown profile text key"),
+                }
             }
             Self::Input::AddEnvVar => {
                 println!("Add env var");
@@ -217,6 +292,30 @@ impl SimpleComponent for ProfileEditor {
             ),
             tracker: 0,
         };
+
+        {
+            let name_sender = sender.clone();
+            model.name_row.connect_changed(move |nr| {
+                name_sender.input(Self::Input::TextChanged(
+                    "name".to_string(),
+                    nr.text().to_string(),
+                ));
+            });
+        }
+
+        {
+            let type_sender = sender.clone();
+            model.type_row.connect_selected_item_notify(move |tr| {
+                type_sender.input(Self::Input::ComboChanged(
+                    "xrservice_type".to_string(),
+                    match tr.selected() {
+                        0 => "monado".to_string(),
+                        1 => "wivrn".to_string(),
+                        _ => panic!("XRServiceType combo row cannot have more than 2 choices"),
+                    },
+                ));
+            });
+        }
 
         let widgets = view_output!();
         model.win = Some(widgets.win.clone());

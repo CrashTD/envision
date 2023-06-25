@@ -8,7 +8,7 @@ use std::{fs::File, io::BufReader};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Config {
-    pub selected_profile_name: String,
+    pub selected_profile_uuid: String,
     pub debug_view_enabled: bool,
     pub user_profiles: Vec<Profile>,
 }
@@ -17,7 +17,7 @@ impl Default for Config {
     fn default() -> Self {
         Config {
             // TODO: handle first start with no profile selected
-            selected_profile_name: "".to_string(),
+            selected_profile_uuid: "".to_string(),
             debug_view_enabled: false,
             user_profiles: vec![],
         }
@@ -26,7 +26,7 @@ impl Default for Config {
 
 impl Config {
     pub fn get_selected_profile(&self, profiles: &Vec<Profile>) -> Profile {
-        match profiles.iter().find(|p| {p.name == self.selected_profile_name}) {
+        match profiles.iter().find(|p| {p.uuid == self.selected_profile_uuid}) {
             Some(p) => p.clone(),
             None => profiles.get(0).expect_dialog("No profiles found").clone(),
         }
@@ -64,6 +64,10 @@ impl Config {
 
     pub fn get_config() -> Self {
         Self::from_path(Self::config_file_path())
+    }
+
+    pub fn set_profiles(&mut self, profiles: &Vec<Profile>) {
+        self.user_profiles = profiles.iter().filter(|p| p.editable).map(Profile::clone).collect();
     }
 }
 

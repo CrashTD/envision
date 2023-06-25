@@ -11,6 +11,7 @@ pub fn valve_index_profile() -> Profile {
     environment.insert("SURVIVE_TIMECODE_OFFSET_MS".into(), "-6.94".into());
     environment.insert("LD_LIBRARY_PATH".into(), format!("{pfx}/lib", pfx = prefix));
     Profile {
+        uuid: "valve-index-default".into(),
         name: format!("Valve Index - {name} Default", name = APP_NAME),
         xrservice_path: data_monado_path(),
         xrservice_type: XRServiceType::Monado,

@@ -5,6 +5,7 @@ use crate::{
 use expect_dialog::ExpectDialog;
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, fmt::Display, fs::File, io::BufReader, slice::Iter};
+use uuid::Uuid;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum XRServiceType {
@@ -27,7 +28,8 @@ impl XRServiceType {
 
     pub fn as_number(&self) -> u32 {
         match self {
-            Self::Monado => 0, Self::Wivrn => 1,
+            Self::Monado => 0,
+            Self::Wivrn => 1,
         }
     }
 }
@@ -43,6 +45,7 @@ impl Display for XRServiceType {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Profile {
+    pub uuid: String,
     pub name: String,
     pub xrservice_path: String,
     pub xrservice_type: XRServiceType,
@@ -69,6 +72,7 @@ impl Display for Profile {
 impl Default for Profile {
     fn default() -> Self {
         Self {
+            uuid: Uuid::new_v4().to_string(),
             name: "Default profile name".into(),
             xrservice_path: data_monado_path(),
             xrservice_type: XRServiceType::Monado,
@@ -125,6 +129,26 @@ impl Profile {
         let writer = get_writer(path_s);
         serde_json::to_writer_pretty(writer, self).expect_dialog("Could not write profile")
     }
+
+    pub fn create_duplicate(&self) -> Self {
+        let mut dup = self.clone();
+        dup.uuid = Uuid::new_v4().to_string();
+        dup.editable = true;
+        dup.name = format!("Duplicate of {}", dup.name);
+        dup
+    }
+
+    pub fn validate(&self) -> bool {
+        !self.name.is_empty()
+            && self.editable
+            && !self.uuid.is_empty()
+            && !self.xrservice_path.is_empty()
+            && !self.prefix.is_empty()
+            && (!self.libsurvive_enabled
+                || self.libsurvive_path.as_ref().is_some_and(|p| !p.is_empty()))
+            && (!self.basalt_enabled || self.basalt_path.as_ref().is_some_and(|p| !p.is_empty()))
+            && (!self.mercury_enabled || self.mercury_path.as_ref().is_some_and(|p| !p.is_empty()))
+    }
 }
 
 #[cfg(test)]
@@ -166,6 +190,7 @@ mod tests {
         env.insert("XRT_COMPOSITOR_SCALE_PERCENTAGE".into(), "140".into());
         env.insert("XRT_COMPOSITOR_COMPUTE".into(), "1".into());
         let p = Profile {
+            uuid: "demo".into(),
             name: "Demo profile".into(),
             xrservice_path: String::from("/home/user/monado"),
             xrservice_type: XRServiceType::Monado,

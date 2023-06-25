@@ -8,6 +8,7 @@ pub fn wivrn_profile() -> Profile {
     let mut environment: HashMap<String, String> = HashMap::new();
     environment.insert("LD_LIBRARY_PATH".into(), format!("{pfx}/lib", pfx = prefix));
     Profile {
+        uuid: "wivrn-default".into(),
         name: format!("WiVRn - {name} Default", name = APP_NAME),
         xrservice_path: data_wivrn_path(),
         xrservice_type: XRServiceType::Wivrn,
