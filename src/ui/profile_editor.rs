@@ -428,7 +428,7 @@ impl SimpleComponent for ProfileEditor {
                     .title("Paths")
                     .description(concat!(
                         "Where the various components' repositories will be cloned to.\n\n",
-                        "Install Prefix will be the path where the components will be ",
+                        "\"Install Prefix\" is the path where the components are ",
                         "installed after building."
                     ))
                     .build(),
