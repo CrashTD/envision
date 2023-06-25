@@ -4,33 +4,35 @@ use gtk::prelude::*;
 use relm4::prelude::*;
 
 #[derive(Debug)]
-pub struct EntryModel {
-    name: String,
+pub struct EnvVarModel {
+    pub name: String,
     value: String,
 }
 
-pub struct EntryModelInit {
+pub struct EnvVarModelInit {
     pub name: String,
     pub value: String,
 }
 
 #[derive(Debug)]
-pub enum EntryModelMsg {
+pub enum EnvVarModelMsg {
     Changed(String),
+    Delete,
 }
 
 #[derive(Debug)]
-pub enum EntryModelOutMsg {
+pub enum EnvVarModelOutMsg {
     Changed(String, String),
+    Delete(String),
 }
 
 #[relm4::factory(pub)]
-impl FactoryComponent for EntryModel {
-    type Init = EntryModelInit;
-    type Input = EntryModelMsg;
-    type Output = EntryModelOutMsg;
+impl FactoryComponent for EnvVarModel {
+    type Init = EnvVarModelInit;
+    type Input = EnvVarModelMsg;
+    type Output = EnvVarModelOutMsg;
     type CommandOutput = ();
-    type Widgets = EntryModelWidgets;
+    type Widgets = EnvVarModelWidgets;
     type ParentInput = ProfileEditorMsg;
     type ParentWidget = adw::PreferencesGroup;
 
@@ -38,6 +40,16 @@ impl FactoryComponent for EntryModel {
         root = adw::EntryRow {
             set_title:  &self.name,
             set_text: &self.value,
+            add_suffix: del_btn = &gtk::Button {
+                set_icon_name: "edit-delete-symbolic",
+                set_tooltip_text: Some("Delete Environment Variable"),
+                set_valign: gtk::Align::Center,
+                add_css_class: "flat",
+                add_css_class: "circular",
+                connect_clicked[sender] => move |_| {
+                    sender.input(Self::Input::Delete);
+                }
+            },
             connect_changed[sender] => move |entry| {
                 sender.input_sender().emit(Self::Input::Changed(entry.text().to_string()));
             },
@@ -52,12 +64,16 @@ impl FactoryComponent for EntryModel {
                     .output_sender()
                     .emit(Self::Output::Changed(self.name.clone(), val));
             }
+            Self::Input::Delete => {
+                sender.output(Self::Output::Delete(self.name.clone()));
+            }
         }
     }
 
     fn forward_to_parent(output: Self::Output) -> Option<Self::ParentInput> {
         Some(match output {
-            Self::Output::Changed(name, value) => ProfileEditorMsg::EntryChanged(name, value),
+            Self::Output::Changed(name, value) => ProfileEditorMsg::EnvVarChanged(name, value),
+            Self::Output::Delete(name) => ProfileEditorMsg::EnvVarDelete(name),
         })
     }
 

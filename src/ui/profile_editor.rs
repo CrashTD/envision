@@ -1,5 +1,5 @@
 use super::factories::{
-    entry_row_factory::{EntryModel, EntryModelInit},
+    env_var_row_factory::{EnvVarModel, EnvVarModelInit},
     path_row_factory::{PathModel, PathModelInit},
     switch_row_factory::{SwitchModel, SwitchModelInit},
 };
@@ -24,7 +24,7 @@ pub struct ProfileEditor {
     #[tracker::do_not_track]
     type_row: adw::ComboRow,
     #[tracker::do_not_track]
-    env_rows: FactoryVecDeque<EntryModel>,
+    env_rows: FactoryVecDeque<EnvVarModel>,
     #[tracker::do_not_track]
     switch_rows: FactoryVecDeque<SwitchModel>,
     #[tracker::do_not_track]
@@ -34,12 +34,13 @@ pub struct ProfileEditor {
 #[derive(Debug)]
 pub enum ProfileEditorMsg {
     Present(Profile),
-    EntryChanged(String, String),
+    EnvVarChanged(String, String),
+    EnvVarDelete(String),
     TextChanged(String, String),
     PathChanged(String, Option<String>),
     SwitchChanged(String, bool),
     ComboChanged(String, String),
-    AddEnvVar,
+    AddEnvVar(String),
     SaveProfile,
 }
 
@@ -107,7 +108,7 @@ impl SimpleComponent for ProfileEditor {
 
                 self.env_rows.guard().clear();
                 for (k, v) in p.environment.iter() {
-                    self.env_rows.guard().push_back(EntryModelInit {
+                    self.env_rows.guard().push_back(EnvVarModelInit {
                         name: k.clone(),
                         value: v.clone(),
                     });
@@ -175,17 +176,30 @@ impl SimpleComponent for ProfileEditor {
                     sender.output(ProfileEditorOutMsg::SaveProfile(prof.clone()));
                     self.win.as_ref().unwrap().close();
                 } else {
-                    self.win.as_ref().unwrap().add_toast(adw::Toast::builder().title("Profile failed validation").build());
+                    self.win.as_ref().unwrap().add_toast(
+                        adw::Toast::builder()
+                            .title("Profile failed validation")
+                            .build(),
+                    );
                 }
             }
-            // TODO: rename to reflect this is only for env
-            // + make entryfactory take a signal to send to parent
-            Self::Input::EntryChanged(name, value) => {
+            Self::Input::EnvVarChanged(name, value) => {
                 self.profile
                     .as_mut()
                     .unwrap()
                     .environment
                     .insert(name, value);
+            }
+            Self::Input::EnvVarDelete(name) => {
+                self.profile.as_mut().unwrap().environment.remove(&name);
+                let pos = self
+                    .env_rows
+                    .guard()
+                    .iter()
+                    .position(|evr| evr.name == name);
+                if pos.is_some() {
+                    self.env_rows.guard().remove(pos.unwrap());
+                }
             }
             Self::Input::PathChanged(key, value) => {
                 let prof = self.profile.as_mut().unwrap();
@@ -224,8 +238,15 @@ impl SimpleComponent for ProfileEditor {
                     _ => panic!("Unknown profile text key"),
                 }
             }
-            Self::Input::AddEnvVar => {
-                println!("Add env var");
+            Self::Input::AddEnvVar(name) => {
+                let prof = self.profile.as_mut().unwrap();
+                if !prof.environment.contains_key(&name) {
+                    prof.environment.insert(name.clone(), "".to_string());
+                    self.env_rows.guard().push_back(EnvVarModelInit {
+                        name,
+                        value: "".to_string(),
+                    });
+                }
             }
         }
     }
@@ -235,19 +256,45 @@ impl SimpleComponent for ProfileEditor {
         root: &Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
-        let add_env_var_btn = gtk::Button::builder()
+        let add_env_popover = gtk::Popover::builder().build();
+        let add_env_popover_box = gtk::Box::builder()
+            .orientation(gtk::Orientation::Horizontal)
+            .css_classes(["linked"])
+            .build();
+        let add_env_name_entry = gtk::Entry::builder()
+            .placeholder_text("Env Var Name...")
+            .build();
+        let add_env_btn = gtk::Button::builder()
+            .css_classes(["suggested-action"])
+            .icon_name("list-add-symbolic")
+            .tooltip_text("Add Env Var")
+            .build();
+        {
+            let aeb_sender = sender.clone();
+            let entry = add_env_name_entry.clone();
+            let popover = add_env_popover.clone();
+            add_env_btn.connect_clicked(move |_| {
+                let name_gstr = entry.text();
+                let name = name_gstr.trim();
+                if !name.is_empty() {
+                    popover.popdown();
+                    entry.set_text("");
+                    aeb_sender.input(Self::Input::AddEnvVar(name.to_string()));
+                }
+            });
+        }
+        add_env_popover_box.append(&add_env_name_entry);
+        add_env_popover_box.append(&add_env_btn);
+        add_env_popover.set_child(Some(&add_env_popover_box));
+
+        let add_env_var_btn = gtk::MenuButton::builder()
             .icon_name(icon_name::PLUS)
             .tooltip_text("Add Environment Variable")
             .css_classes(["flat"])
+            .popover(&add_env_popover)
             .valign(gtk::Align::Start)
             .halign(gtk::Align::End)
             .build();
-        {
-            let btn_sender = sender.clone();
-            add_env_var_btn.connect_clicked(move |_| {
-                btn_sender.input(Self::Input::AddEnvVar);
-            });
-        }
 
         let mut model = Self {
             profile: None,
