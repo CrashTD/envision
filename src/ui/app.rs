@@ -457,6 +457,7 @@ impl SimpleComponent for App {
                 .launch(MainViewInit {
                     config: config.clone(),
                     selected_profile: config.get_selected_profile(&profiles),
+                    root_win: root.clone().into(),
                 })
                 .forward(sender.input_sender(), |message| match message {
                     MainViewOutMsg::EnableDebugViewChanged(val) => Msg::EnableDebugViewChanged(val),

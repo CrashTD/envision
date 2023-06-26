@@ -68,6 +68,7 @@ pub enum MainViewOutMsg {
 pub struct MainViewInit {
     pub config: Config,
     pub selected_profile: Profile,
+    pub root_win: gtk::Window,
 }
 
 #[relm4::component(pub)]
@@ -301,6 +302,7 @@ impl SimpleComponent for MainView {
     ) -> ComponentParts<Self> {
         let profile_not_editable_dialog = adw::MessageDialog::builder()
             .modal(true)
+            .transient_for(&init.root_win)
             .hide_on_close(true)
             .heading("This profile is not editable")
             .body(concat!(
@@ -324,6 +326,7 @@ impl SimpleComponent for MainView {
 
         let profile_delete_confirm_dialog = adw::MessageDialog::builder()
             .modal(true)
+            .transient_for(&init.root_win)
             .hide_on_close(true)
             .heading("Are you sure you want to delete this profile?")
             .build();
@@ -351,6 +354,7 @@ impl SimpleComponent for MainView {
             install_wivrn_box: InstallWivrnBox::builder()
                 .launch(InstallWivrnBoxInit {
                     selected_profile: init.selected_profile.clone(),
+                    root_win: init.root_win.clone(),
                 })
                 .detach(),
             runtime_switcher_box: RuntimeSwitcherBox::builder()
@@ -359,7 +363,9 @@ impl SimpleComponent for MainView {
                 })
                 .detach(),
             profile_editor: ProfileEditor::builder()
-                .launch(ProfileEditorInit {})
+                .launch(ProfileEditorInit {
+                    root_win: init.root_win.clone(),
+                })
                 .forward(sender.input_sender(), |message| match message {
                     ProfileEditorOutMsg::SaveProfile(p) => Self::Input::SaveProfile(p),
                 }),

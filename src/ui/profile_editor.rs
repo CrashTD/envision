@@ -53,7 +53,9 @@ pub enum ProfileEditorOutMsg {
     SaveProfile(Profile),
 }
 
-pub struct ProfileEditorInit {}
+pub struct ProfileEditorInit {
+    pub root_win: gtk::Window,
+}
 
 #[relm4::component(pub)]
 impl SimpleComponent for ProfileEditor {
@@ -66,6 +68,7 @@ impl SimpleComponent for ProfileEditor {
         adw::PreferencesWindow {
             set_hide_on_close: true,
             set_modal: true,
+            set_transient_for: Some(&init.root_win),
             #[track = "model.changed(Self::profile())"]
             set_title: match model.profile.as_ref() {
                 Some(p) => Some(p.name.as_str()),
