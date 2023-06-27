@@ -157,9 +157,23 @@ impl Profile {
             && !self.xrservice_path.is_empty()
             && !self.prefix.is_empty()
             && (!self.libsurvive_enabled
-                || self.libsurvive_path.as_ref().is_some_and(|p| !p.is_empty()))
-            && (!self.basalt_enabled || self.basalt_path.as_ref().is_some_and(|p| !p.is_empty()))
-            && (!self.mercury_enabled || self.mercury_path.as_ref().is_some_and(|p| !p.is_empty()))
+                || !self
+                    .libsurvive_path
+                    .as_ref()
+                    .unwrap_or(&"".to_string())
+                    .is_empty())
+            && (!self.basalt_enabled
+                || !self
+                    .basalt_path
+                    .as_ref()
+                    .unwrap_or(&"".to_string())
+                    .is_empty())
+            && (!self.mercury_enabled
+                || !self
+                    .mercury_path
+                    .as_ref()
+                    .unwrap_or(&"".to_string())
+                    .is_empty())
     }
 }
 
