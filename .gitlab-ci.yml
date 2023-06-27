@@ -2,7 +2,7 @@ image: "rust:alpine"
 
 test:cargo:
   script:
-    - apk add gtk4.0-dev libadwaita-dev musl-dev openssl-dev
+    - apk add gtk4.0-dev libadwaita-dev musl-dev openssl-dev meson
     - rustc --version && cargo --version  # Print version info for debugging
     - meson setup -Dprefix="$PWD/build/localprefix" -Dprofile=development
     - ninja -C build
