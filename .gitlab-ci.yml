@@ -1,9 +1,10 @@
-# image: "rust:latest"
-#
-# test:cargo:
-#   script:
-#     - rustc --version && cargo --version  # Print version info for debugging
-#     - cargo test --workspace --verbose
+image: "rust:alpine"
+
+test:cargo:
+  script:
+    - apk add gtk4 libadwaita
+    - rustc --version && cargo --version  # Print version info for debugging
+    - cargo test --workspace --verbose
 
 # deploy:
 #   stage: deploy
