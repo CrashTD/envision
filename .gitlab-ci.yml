@@ -4,6 +4,8 @@ test:cargo:
   script:
     - apk add gtk4.0-dev libadwaita-dev musl-dev openssl-dev
     - rustc --version && cargo --version  # Print version info for debugging
+    - meson setup -Dprefix="$PWD/build/localprefix" -Dprofile=development
+    - ninja -C build
     - cargo test --workspace --verbose
 
 # deploy:
