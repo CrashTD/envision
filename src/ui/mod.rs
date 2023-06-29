@@ -9,3 +9,4 @@ pub mod steam_launch_options_box;
 pub mod runtime_switcher_box;
 pub mod profile_editor;
 pub mod factories;
+pub mod wivrn_conf_editor;
