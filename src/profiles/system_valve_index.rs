@@ -1,4 +1,8 @@
-use crate::{constants::APP_NAME, paths::{data_opencomposite_path, SYSTEM_PREFIX}, profile::{Profile, XRServiceType}};
+use crate::{
+    constants::APP_NAME,
+    paths::{data_opencomposite_path, SYSTEM_PREFIX},
+    profile::{Profile, ProfileFeatures, XRServiceType},
+};
 use std::collections::HashMap;
 
 pub fn system_valve_index_profile() -> Profile {
@@ -13,12 +17,9 @@ pub fn system_valve_index_profile() -> Profile {
         opencomposite_path: data_opencomposite_path(),
         xrservice_path: "".into(),
         xrservice_type: XRServiceType::Monado,
-        libsurvive_path: None,
-        basalt_path: None,
-        mercury_path: None,
-        libsurvive_enabled: false,
-        mercury_enabled: false,
-        basalt_enabled: false,
+        features: ProfileFeatures {
+            ..Default::default()
+        },
         environment,
         prefix: SYSTEM_PREFIX.into(),
         can_be_built: false,

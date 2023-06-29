@@ -148,19 +148,19 @@ impl SimpleComponent for ProfileEditor {
                         name: "Libsurvive".into(),
                         description: Some("Lighthouse based spacial tracking".into()),
                         key: "libsurvive_enabled".into(),
-                        value: p.libsurvive_enabled,
+                        value: p.features.libsurvive.enabled,
                     });
                     guard.push_back(SwitchModelInit {
                         name: "Basalt".into(),
                         description: Some("Camera based SLAM tracking".into()),
                         key: "basalt_enabled".into(),
-                        value: p.basalt_enabled,
+                        value: p.features.basalt.enabled,
                     });
                     guard.push_back(SwitchModelInit {
                         name: "Mercury".into(),
                         description: Some("Camera based hand tracking".into()),
                         key: "mercury_enabled".into(),
-                        value: p.mercury_enabled,
+                        value: p.features.mercury.enabled,
                     });
                 }
 
@@ -180,17 +180,17 @@ impl SimpleComponent for ProfileEditor {
                     guard.push_back(PathModelInit {
                         name: "Libsurvive Path".into(),
                         key: "libsurvive_path".into(),
-                        value: p.libsurvive_path,
+                        value: p.features.libsurvive.path,
                     });
                     guard.push_back(PathModelInit {
                         name: "Basalt Path".into(),
                         key: "basalt_path".into(),
-                        value: p.basalt_path,
+                        value: p.features.basalt.path,
                     });
                     guard.push_back(PathModelInit {
                         name: "Mercury Path".into(),
                         key: "mercury_path".into(),
-                        value: p.mercury_path,
+                        value: p.features.mercury.path,
                     });
                     guard.push_back(PathModelInit {
                         name: "Install Prefix".into(),
@@ -215,17 +215,17 @@ impl SimpleComponent for ProfileEditor {
                     guard.push_back(EntryModelInit {
                         key: "libsurvive_repo".into(),
                         name: "Libsurvive Repo".into(),
-                        value: p.libsurvive_repo.unwrap_or("".into()),
+                        value: p.features.libsurvive.repo.unwrap_or("".into()),
                     });
                     guard.push_back(EntryModelInit {
                         key: "basalt_repo".into(),
                         name: "Basalt Repo".into(),
-                        value: p.basalt_repo.unwrap_or("".into()),
+                        value: p.features.basalt.repo.unwrap_or("".into()),
                     });
                     guard.push_back(EntryModelInit {
                         key: "mercury_repo".into(),
                         name: "Mercury Repo".into(),
-                        value: p.mercury_repo.unwrap_or("".into()),
+                        value: p.features.mercury.repo.unwrap_or("".into()),
                     });
                 }
 
@@ -271,9 +271,9 @@ impl SimpleComponent for ProfileEditor {
                     "opencomposite_path" => {
                         prof.opencomposite_path = value.unwrap_or("".to_string())
                     }
-                    "libsurvive_path" => prof.libsurvive_path = value,
-                    "basalt_path" => prof.basalt_path = value,
-                    "mercury_path" => prof.mercury_path = value,
+                    "libsurvive_path" => prof.features.libsurvive.path = value,
+                    "basalt_path" => prof.features.basalt.path = value,
+                    "mercury_path" => prof.features.mercury.path = value,
                     "prefix" => prof.prefix = value.unwrap_or("".to_string()),
                     _ => panic!("Unknown profile path key"),
                 }
@@ -281,9 +281,9 @@ impl SimpleComponent for ProfileEditor {
             Self::Input::SwitchChanged(key, value) => {
                 let prof = self.profile.as_mut().unwrap();
                 match key.as_str() {
-                    "libsurvive_enabled" => prof.libsurvive_enabled = value,
-                    "basalt_enabled" => prof.basalt_enabled = value,
-                    "mercury_enabled" => prof.mercury_enabled = value,
+                    "libsurvive_enabled" => prof.features.libsurvive.enabled = value,
+                    "basalt_enabled" => prof.features.basalt.enabled = value,
+                    "mercury_enabled" => prof.features.mercury.enabled = value,
                     "pull_on_build" => prof.pull_on_build = value,
                     _ => panic!("Unknown profile switch key"),
                 }
@@ -305,19 +305,19 @@ impl SimpleComponent for ProfileEditor {
                         }
                     }
                     "libsurvive_repo" => {
-                        prof.libsurvive_repo = match value.trim() {
+                        prof.features.libsurvive.repo = match value.trim() {
                             "" => None,
                             s => Some(s.to_string()),
                         }
                     }
                     "basalt_repo" => {
-                        prof.basalt_repo = match value.trim() {
+                        prof.features.basalt.repo = match value.trim() {
                             "" => None,
                             s => Some(s.to_string()),
                         }
                     }
                     "mercury_repo" => {
-                        prof.mercury_repo = match value.trim() {
+                        prof.features.mercury.repo = match value.trim() {
                             "" => None,
                             s => Some(s.to_string()),
                         }

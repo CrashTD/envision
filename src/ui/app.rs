@@ -285,15 +285,15 @@ impl SimpleComponent for App {
                         XRServiceType::Monado => get_missing_monado_deps(),
                         XRServiceType::Wivrn => get_missing_wivrn_deps(),
                     });
-                    if profile.libsurvive_enabled {
+                    if profile.features.libsurvive.enabled {
                         missing_deps.extend(get_missing_libsurvive_deps());
                         runners.push(get_build_libsurvive_runner(profile.clone()));
                     }
-                    if profile.basalt_enabled {
+                    if profile.features.basalt.enabled {
                         missing_deps.extend(get_missing_basalt_deps());
                         runners.push(get_build_basalt_runner(profile.clone()));
                     }
-                    // if profile.mercury_enabled {
+                    // if profile.features.mercury.enabled {
                     //     missing_deps.extend(get_missing_mercury_deps());
                     //     runners.push(get_build_mercury_runner(profile.clone()));
                     // }

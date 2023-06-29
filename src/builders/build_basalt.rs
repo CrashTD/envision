@@ -4,7 +4,7 @@ use crate::{constants::PKG_DATA_DIR, profile::Profile, runner::Runner};
 pub fn get_build_basalt_runner(profile: Profile) -> Runner {
     let mut args = vec![
         profile
-            .basalt_path
+            .features.basalt.path
             .expect_dialog("Missing basalt path for given profile"),
         profile.prefix,
         match profile.pull_on_build {
@@ -12,8 +12,8 @@ pub fn get_build_basalt_runner(profile: Profile) -> Runner {
             false => "0".into(),
         },
     ];
-    if profile.basalt_repo.is_some() {
-        args.push(profile.basalt_repo.unwrap());
+    if profile.features.basalt.repo.is_some() {
+        args.push(profile.features.basalt.repo.unwrap());
     }
     let runner = Runner::new(
         None,

@@ -4,7 +4,7 @@ use expect_dialog::ExpectDialog;
 pub fn get_build_libsurvive_runner(profile: Profile) -> Runner {
     let mut args = vec![
         profile
-            .libsurvive_path
+            .features.libsurvive.path
             .expect_dialog("Missing libsurvive path for given profile"),
         profile.prefix,
         match profile.pull_on_build {
@@ -12,8 +12,8 @@ pub fn get_build_libsurvive_runner(profile: Profile) -> Runner {
             false => "0".into(),
         },
     ];
-    if profile.libsurvive_repo.is_some() {
-        args.push(profile.libsurvive_repo.unwrap());
+    if profile.features.libsurvive.repo.is_some() {
+        args.push(profile.features.libsurvive.repo.unwrap());
     }
     let runner = Runner::new(
         None,

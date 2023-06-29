@@ -1,15 +1,31 @@
 {
     "uuid": "demo",
     "name": "Demo profile",
-    "xrservice_path": "/home/user/monado",
     "xrservice_type": "Monado",
+    "xrservice_path": "/home/user/monado",
+    "xrservice_repo": null,
     "opencomposite_path": "/home/user/opencomposite",
-    "libsurvive_path": "/home/user/libsurvive",
-    "basalt_path": null,
-    "mercury_path": null,
-    "libsurvive_enabled": true,
-    "basalt_enabled": false,
-    "mercury_enabled": false,
+    "opencomposite_repo": null,
+    "features": {
+        "libsurvive": {
+            "feature_type": "Libsurvive",
+            "enabled": true,
+            "path": "/home/user/libsurvive",
+            "repo": null
+        },
+        "basalt": {
+            "feature_type": "Basalt",
+            "enabled": false,
+            "path": null,
+            "repo": null
+        },
+        "mercury": {
+            "feature_type": "Mercury",
+            "enabled": false,
+            "path": null,
+            "repo": null
+        }
+    },
     "environment": {
         "XRT_COMPOSITOR_SCALE_PERCENTAGE": "140",
         "XRT_COMPOSITOR_COMPUTE": "1",
@@ -18,10 +34,5 @@
     "prefix": "/home/user/rex2prefix",
     "can_be_built": true,
     "editable": true,
-    "pull_on_build": true,
-    "xrservice_repo": null,
-    "opencomposite_repo": null,
-    "libsurvive_repo": null,
-    "basalt_repo": null,
-    "mercury_repo": null
+    "pull_on_build": true
 }

@@ -1,6 +1,10 @@
+use crate::{
+    constants::APP_NAME,
+    file_utils::get_data_dir,
+    paths::{data_opencomposite_path, data_wivrn_path},
+    profile::{Profile, ProfileFeatures, XRServiceType},
+};
 use std::collections::HashMap;
-
-use crate::{file_utils::get_data_dir, profile::{Profile, XRServiceType}, paths::{data_wivrn_path, data_opencomposite_path}, constants::APP_NAME};
 
 pub fn wivrn_profile() -> Profile {
     let data_dir = get_data_dir();
@@ -13,12 +17,9 @@ pub fn wivrn_profile() -> Profile {
         xrservice_path: data_wivrn_path(),
         xrservice_type: XRServiceType::Wivrn,
         opencomposite_path: data_opencomposite_path(),
-        libsurvive_path: None,
-        basalt_path: None,
-        mercury_path: None,
-        libsurvive_enabled: false,
-        basalt_enabled: false,
-        mercury_enabled: false,
+        features: ProfileFeatures {
+            ..Default::default()
+        },
         environment,
         prefix,
         can_be_built: true,

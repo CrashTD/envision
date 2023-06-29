@@ -44,23 +44,92 @@ impl Display for XRServiceType {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ProfileFeatureType {
+    Libsurvive,
+    Basalt,
+    Mercury,
+}
+
+impl ProfileFeatureType {
+    pub fn from_string(s: String) -> Self {
+        match s.trim().to_lowercase().as_str() {
+            "libsurvive" => Self::Libsurvive,
+            "basalt" => Self::Basalt,
+            "mercury" => Self::Mercury,
+            _ => panic!("Unknown profile feature type"),
+        }
+    }
+
+    pub fn iter() -> Iter<'static, ProfileFeatureType> {
+        [Self::Libsurvive, Self::Basalt, Self::Mercury].iter()
+    }
+}
+
+impl Display for ProfileFeatureType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
+            Self::Libsurvive => "Libsurvive",
+            Self::Basalt => "Basalt",
+            Self::Mercury => "Mercury",
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ProfileFeature {
+    pub feature_type: ProfileFeatureType,
+    pub enabled: bool,
+    pub path: Option<String>,
+    pub repo: Option<String>,
+}
+
+impl Default for ProfileFeature {
+    fn default() -> Self {
+        Self {
+            feature_type: ProfileFeatureType::Libsurvive,
+            enabled: false,
+            path: None,
+            repo: None,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ProfileFeatures {
+    pub libsurvive: ProfileFeature,
+    pub basalt: ProfileFeature,
+    pub mercury: ProfileFeature,
+}
+
+impl Default for ProfileFeatures {
+    fn default() -> Self {
+        Self {
+            libsurvive: ProfileFeature {
+                feature_type: ProfileFeatureType::Libsurvive,
+                ..Default::default()
+            },
+            basalt: ProfileFeature {
+                feature_type: ProfileFeatureType::Basalt,
+                ..Default::default()
+            },
+            mercury: ProfileFeature {
+                feature_type: ProfileFeatureType::Mercury,
+                ..Default::default()
+            },
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Profile {
     pub uuid: String,
     pub name: String,
-    pub xrservice_path: String,
     pub xrservice_type: XRServiceType,
-    pub opencomposite_path: String,
-    pub libsurvive_path: Option<String>,
-    pub basalt_path: Option<String>,
-    pub mercury_path: Option<String>,
-    pub libsurvive_enabled: bool,
-    pub basalt_enabled: bool,
-    pub mercury_enabled: bool,
+    pub xrservice_path: String,
     pub xrservice_repo: Option<String>,
+    pub opencomposite_path: String,
     pub opencomposite_repo: Option<String>,
-    pub libsurvive_repo: Option<String>,
-    pub basalt_repo: Option<String>,
-    pub mercury_repo: Option<String>,
+    pub features: ProfileFeatures,
     pub environment: HashMap<String, String>,
     /** Install prefix */
     pub prefix: String,
@@ -83,12 +152,20 @@ impl Default for Profile {
             xrservice_path: data_monado_path(),
             xrservice_type: XRServiceType::Monado,
             opencomposite_path: data_opencomposite_path(),
-            basalt_path: None,
-            mercury_path: None,
-            libsurvive_path: None,
-            basalt_enabled: false,
-            mercury_enabled: false,
-            libsurvive_enabled: false,
+            features: ProfileFeatures {
+                libsurvive: ProfileFeature {
+                    feature_type: ProfileFeatureType::Libsurvive,
+                    ..Default::default()
+                },
+                basalt: ProfileFeature {
+                    feature_type: ProfileFeatureType::Basalt,
+                    ..Default::default()
+                },
+                mercury: ProfileFeature {
+                    feature_type: ProfileFeatureType::Mercury,
+                    ..Default::default()
+                },
+            },
             environment: HashMap::new(),
             prefix: format!(
                 "{data}/prefixes/default_profile_prefix",
@@ -98,9 +175,6 @@ impl Default for Profile {
             pull_on_build: true,
             xrservice_repo: None,
             opencomposite_repo: None,
-            libsurvive_repo: None,
-            basalt_repo: None,
-            mercury_repo: None,
             editable: true,
         }
     }
@@ -156,21 +230,27 @@ impl Profile {
             && !self.uuid.is_empty()
             && !self.xrservice_path.is_empty()
             && !self.prefix.is_empty()
-            && (!self.libsurvive_enabled
+            && (!self.features.libsurvive.enabled
                 || !self
-                    .libsurvive_path
+                    .features
+                    .libsurvive
+                    .path
                     .as_ref()
                     .unwrap_or(&"".to_string())
                     .is_empty())
-            && (!self.basalt_enabled
+            && (!self.features.basalt.enabled
                 || !self
-                    .basalt_path
+                    .features
+                    .basalt
+                    .path
                     .as_ref()
                     .unwrap_or(&"".to_string())
                     .is_empty())
-            && (!self.mercury_enabled
+            && (!self.features.mercury.enabled
                 || !self
-                    .mercury_path
+                    .features
+                    .mercury
+                    .path
                     .as_ref()
                     .unwrap_or(&"".to_string())
                     .is_empty())
@@ -181,7 +261,7 @@ impl Profile {
 mod tests {
     use std::collections::HashMap;
 
-    use crate::profile::XRServiceType;
+    use crate::profile::{ProfileFeature, ProfileFeatureType, ProfileFeatures, XRServiceType};
 
     use super::Profile;
 
@@ -193,14 +273,14 @@ mod tests {
         assert_eq!(profile.opencomposite_path, "/home/user/opencomposite");
         assert_eq!(profile.prefix, "/home/user/rex2prefix");
         assert_eq!(
-            profile.libsurvive_path.as_deref(),
+            profile.features.libsurvive.path.as_deref(),
             Some("/home/user/libsurvive")
         );
-        assert_eq!(profile.mercury_path, None);
-        assert_eq!(profile.basalt_path, None);
-        assert_eq!(profile.libsurvive_enabled, true);
-        assert_eq!(profile.basalt_enabled, false);
-        assert_eq!(profile.mercury_enabled, false);
+        assert_eq!(profile.features.mercury.path, None);
+        assert_eq!(profile.features.basalt.path, None);
+        assert_eq!(profile.features.libsurvive.enabled, true);
+        assert_eq!(profile.features.basalt.enabled, false);
+        assert_eq!(profile.features.mercury.enabled, false);
         assert!(profile
             .environment
             .contains_key("XRT_COMPOSITOR_SCALE_PERCENTAGE"));
@@ -221,12 +301,22 @@ mod tests {
             xrservice_path: String::from("/home/user/monado"),
             xrservice_type: XRServiceType::Monado,
             opencomposite_path: String::from("/home/user/opencomposite"),
-            libsurvive_path: Some(String::from("/home/user/libsurvive")),
-            basalt_path: None,
-            mercury_path: None,
-            libsurvive_enabled: true,
-            basalt_enabled: false,
-            mercury_enabled: false,
+            features: ProfileFeatures {
+                libsurvive: ProfileFeature {
+                    feature_type: ProfileFeatureType::Libsurvive,
+                    enabled: true,
+                    path: Some(String::from("/home/user/libsurvive")),
+                    repo: None,
+                },
+                basalt: ProfileFeature {
+                    feature_type: ProfileFeatureType::Basalt,
+                    ..Default::default()
+                },
+                mercury: ProfileFeature {
+                    feature_type: ProfileFeatureType::Mercury,
+                    ..Default::default()
+                },
+            },
             environment: env,
             prefix: String::from("/home/user/rex2prefix"),
             editable: true,
@@ -237,7 +327,7 @@ mod tests {
         let loaded = Profile::load_profile(&fpath);
         assert_eq!(loaded.name, "Demo profile");
         assert_eq!(
-            loaded.libsurvive_path,
+            loaded.features.libsurvive.path,
             Some(String::from("/home/user/libsurvive"))
         );
         assert_eq!(
