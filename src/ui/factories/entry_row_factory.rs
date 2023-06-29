@@ -38,7 +38,7 @@ impl FactoryComponent for EntryModel {
 
     view! {
         root = adw::EntryRow {
-            set_title:  &self.name,
+            set_title: &self.name,
             set_text: &self.value,
             add_suffix: clear_btn = &gtk::Button {
                 set_icon_name: "edit-clear-symbolic",

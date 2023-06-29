@@ -8,7 +8,12 @@ use crate::{
     runner::{Runner, RunnerStatus},
 };
 use gtk::prelude::*;
-use relm4::{prelude::*, adw::traits::MessageDialogExt};
+use relm4::{
+    actions::{ActionGroupName, RelmAction, RelmActionGroup},
+    adw::traits::MessageDialogExt,
+    new_action_group, new_stateless_action,
+    prelude::*,
+};
 use std::thread::JoinHandle;
 
 #[derive(PartialEq, Eq, Debug, Clone)]
@@ -34,7 +39,7 @@ pub struct InstallWivrnBox {
 pub enum InstallWivrnBoxMsg {
     ClockTicking,
     UpdateSelectedProfile(Profile),
-    DownloadWivrn,
+    DownloadWivrn(String),
     InstallWivrnApk,
 }
 
@@ -49,6 +54,15 @@ impl SimpleComponent for InstallWivrnBox {
     type Init = InstallWivrnBoxInit;
     type Input = InstallWivrnBoxMsg;
     type Output = ();
+
+    menu! {
+        install_wivrn_menu: {
+            section! {
+                "For _Oculus" => WivrnApkOculusAction,
+                "For _Pico" => WivrnApkPicoAction,
+            }
+        }
+    }
 
     view! {
         gtk::Box {
@@ -89,7 +103,7 @@ impl SimpleComponent for InstallWivrnBox {
                 set_wrap: true,
                 set_wrap_mode: gtk::pango::WrapMode::Word,
             },
-            gtk::Button {
+            gtk::MenuButton {
                 add_css_class: "suggested-action",
                 set_label: "Install WiVRn",
                 set_margin_start: 12,
@@ -100,9 +114,7 @@ impl SimpleComponent for InstallWivrnBox {
                     InstallWivrnStatus::InProgress => false,
                     _ => true,
                 },
-                connect_clicked[sender] => move |_| {
-                    sender.input(Self::Input::DownloadWivrn);
-                },
+                set_menu_model: Some(&install_wivrn_menu),
             },
             gtk::Label {
                 add_css_class: "error",
@@ -174,15 +186,12 @@ impl SimpleComponent for InstallWivrnBox {
                     };
                 }
             }
-            Self::Input::DownloadWivrn => {
+            Self::Input::DownloadWivrn(link) => {
                 if !check_dependency(adb_dep()) {
                     self.adb_missing_dialog.present();
                 } else {
                     self.set_install_wivrn_status(InstallWivrnStatus::InProgress);
-                    self.download_thread = Some(download_file(
-                        "https://github.com/Meumeu/WiVRn/releases/latest/download/WiVRn-oculus-release.apk".into(),
-                        wivrn_apk_download_path()
-                    ));
+                    self.download_thread = Some(download_file(link, wivrn_apk_download_path()));
                 }
             }
             Self::Input::InstallWivrnApk => {
@@ -221,6 +230,34 @@ impl SimpleComponent for InstallWivrnBox {
 
         let widgets = view_output!();
 
+        let mut actions = RelmActionGroup::<InstallWivrnActionGroup>::new();
+
+        let apk_oculus_action = {
+            let oculus_sender = sender.clone();
+            RelmAction::<WivrnApkOculusAction>::new_stateless(move |_| {
+                oculus_sender.input(Self::Input::DownloadWivrn("https://github.com/Meumeu/WiVRn/releases/latest/download/WiVRn-oculus-release.apk".into()));
+            })
+        };
+
+        let apk_pico_action = {
+            let pico_sender = sender.clone();
+            RelmAction::<WivrnApkPicoAction>::new_stateless(move |_| {
+                pico_sender.input(Self::Input::DownloadWivrn("https://github.com/Meumeu/WiVRn/releases/latest/download/WiVRn-pico-release.apk".into()));
+            })
+        };
+
+        actions.add_action(apk_oculus_action);
+        actions.add_action(apk_pico_action);
+
+        root.insert_action_group(
+            InstallWivrnActionGroup::NAME,
+            Some(&actions.into_action_group()),
+        );
+
         ComponentParts { model, widgets }
     }
 }
+
+new_action_group!(pub InstallWivrnActionGroup, "installwivrn");
+new_stateless_action!(pub WivrnApkOculusAction, InstallWivrnActionGroup, "apkoculus");
+new_stateless_action!(pub WivrnApkPicoAction, InstallWivrnActionGroup, "apkpico");

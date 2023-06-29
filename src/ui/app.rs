@@ -347,20 +347,20 @@ impl SimpleComponent for App {
                         .collect();
                     self.config.save();
                     self.profiles = Self::profiles_list(&self.config);
-                    self.main_view.sender().emit(MainViewMsg::UpdateSelectedProfile(
-                        self.get_selected_profile()
-                    ));
                     self.main_view
                         .sender()
-                        .emit(MainViewMsg::UpdateProfiles(
-                            self.profiles.clone(),
-                            self.config.clone(),
-                        ))
+                        .emit(MainViewMsg::UpdateSelectedProfile(
+                            self.get_selected_profile(),
+                        ));
+                    self.main_view.sender().emit(MainViewMsg::UpdateProfiles(
+                        self.profiles.clone(),
+                        self.config.clone(),
+                    ))
                 }
             }
             Msg::SaveProfile(prof) => {
                 match self.profiles.iter().position(|p| p.uuid == prof.uuid) {
-                    None => {},
+                    None => {}
                     Some(index) => {
                         self.profiles.remove(index);
                     }
@@ -369,12 +369,10 @@ impl SimpleComponent for App {
                 self.profiles.sort_unstable_by(|a, b| a.name.cmp(&b.name));
                 self.config.set_profiles(&self.profiles);
                 self.config.save();
-                self.main_view
-                    .sender()
-                    .emit(MainViewMsg::UpdateProfiles(
-                        self.profiles.clone(),
-                        self.config.clone(),
-                    ))
+                self.main_view.sender().emit(MainViewMsg::UpdateProfiles(
+                    self.profiles.clone(),
+                    self.config.clone(),
+                ))
             }
             Msg::RunSetCap => {
                 if !check_dependency(pkexec_dep()) {
@@ -546,17 +544,15 @@ impl SimpleComponent for App {
         actions.add_action(libsurvive_setup_action);
 
         root.insert_action_group(AppActionGroup::NAME, Some(&actions.into_action_group()));
+
         model
             .application
             .set_accelerators_for_action::<QuitAction>(&["<Control>q"]);
 
-        model
-            .main_view
-            .sender()
-            .emit(MainViewMsg::UpdateProfiles(
-                model.profiles.clone(),
-                model.config.clone(),
-            ));
+        model.main_view.sender().emit(MainViewMsg::UpdateProfiles(
+            model.profiles.clone(),
+            model.config.clone(),
+        ));
 
         let timer_sender = sender.clone();
         glib::timeout_add_local(Duration::from_millis(1000), move || {

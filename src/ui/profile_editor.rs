@@ -401,10 +401,10 @@ impl SimpleComponent for ProfileEditor {
                 )
                 .model(&gtk::StringList::new(
                     XRServiceType::iter()
-                        .map(|st| st.to_string())
+                        .map(XRServiceType::to_string)
                         .collect::<Vec<String>>()
                         .iter()
-                        .map(|s| s.as_str())
+                        .map(String::as_str)
                         .collect::<Vec<&str>>()
                         .as_slice(),
                 ))
