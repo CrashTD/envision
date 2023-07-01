@@ -1,4 +1,7 @@
-use crate::{file_utils::get_writer, profile::{Profile, XRServiceType}};
+use crate::{
+    file_utils::get_writer,
+    profile::{Profile, XRServiceType},
+};
 use expect_dialog::ExpectDialog;
 use nix::{
     sys::signal::{kill, Signal::SIGTERM},
@@ -98,23 +101,29 @@ impl Runner {
         )
     }
 
-    pub fn start(&mut self) {
+    pub fn try_start(&mut self) -> Result<(), std::io::Error> {
         self.threads = Vec::new();
-        self.process = Some(
-            Command::new(self.command.clone())
-                .args(self.args.clone())
-                .envs(self.environment.clone())
-                .stderr(Stdio::piped())
-                .stdout(Stdio::piped())
-                .spawn()
-                .expect_dialog("Failed to execute runner"),
-        );
+        let cmd = Command::new(self.command.clone())
+            .args(self.args.clone())
+            .envs(self.environment.clone())
+            .stderr(Stdio::piped())
+            .stdout(Stdio::piped())
+            .spawn();
+        if cmd.is_err() {
+            return Err(cmd.unwrap_err());
+        }
+        self.process = Some(cmd.unwrap());
         let stdout = self.process.as_mut().unwrap().stdout.take().unwrap();
         let stderr = self.process.as_mut().unwrap().stderr.take().unwrap();
         let stdout_sender = self.sender.clone();
         let stderr_sender = self.sender.clone();
         self.threads.push(logger_thread!(stdout, stdout_sender));
         self.threads.push(logger_thread!(stderr, stderr_sender));
+        Ok(())
+    }
+
+    pub fn start(&mut self) {
+        self.try_start().expect_dialog("Failed to execute runner");
     }
 
     fn join_threads(&mut self) {

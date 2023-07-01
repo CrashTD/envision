@@ -58,6 +58,8 @@ pub struct App {
     setcap_confirm_dialog: adw::MessageDialog,
     #[tracker::do_not_track]
     libsurvive_setup_window: Controller<LibsurviveSetupWindow>,
+    #[tracker::do_not_track]
+    profile_runner_failed_dialog: adw::MessageDialog,
 
     #[tracker::do_not_track]
     config: Config,
@@ -101,9 +103,24 @@ impl App {
 
     pub fn start_xrservice(&mut self) {
         self.xrservice_log.clear();
+        self.debug_view
+            .sender()
+            .emit(DebugViewMsg::LogUpdated(vec![]));
         let mut runner = Runner::xrservice_runner_from_profile(self.get_selected_profile().clone());
-        runner.start();
-        self.xrservice_runner = Some(runner);
+        match runner.try_start() {
+            Ok(_) => {
+                self.xrservice_runner = Some(runner);
+                self.main_view
+                    .sender()
+                    .emit(MainViewMsg::XRServiceActiveChanged(
+                        true,
+                        Some(self.get_selected_profile()),
+                    ));
+            }
+            Err(_) => {
+                self.profile_runner_failed_dialog.present();
+            }
+        };
     }
 
     pub fn profiles_list(config: &Config) -> Vec<Profile> {
@@ -243,16 +260,7 @@ impl SimpleComponent for App {
             }
             Msg::DoStartStopXRService => match &mut self.xrservice_runner {
                 None => {
-                    self.debug_view
-                        .sender()
-                        .emit(DebugViewMsg::LogUpdated(vec![]));
                     self.start_xrservice();
-                    self.main_view
-                        .sender()
-                        .emit(MainViewMsg::XRServiceActiveChanged(
-                            true,
-                            Some(self.get_selected_profile()),
-                        ));
                 }
                 Some(runner) => match runner.status() {
                     RunnerStatus::Running => {
@@ -262,16 +270,7 @@ impl SimpleComponent for App {
                             .emit(MainViewMsg::XRServiceActiveChanged(false, None));
                     }
                     RunnerStatus::Stopped(_) => {
-                        self.debug_view
-                            .sender()
-                            .emit(DebugViewMsg::LogUpdated(vec![]));
                         self.start_xrservice();
-                        self.main_view
-                            .sender()
-                            .emit(MainViewMsg::XRServiceActiveChanged(
-                                true,
-                                Some(self.get_selected_profile()),
-                            ));
                     }
                 },
             },
@@ -449,6 +448,18 @@ impl SimpleComponent for App {
             });
         }
 
+        let profile_runner_failed_dialog = adw::MessageDialog::builder()
+            .modal(true)
+            .transient_for(root)
+            .heading("Failed to start profile")
+            .body(concat!(
+                "You need to build the current profile before starting it.",
+                "\n\nYou can do this from the menu."
+            ))
+            .hide_on_close(true)
+            .build();
+        profile_runner_failed_dialog.add_response("ok", "_Ok");
+
         let model = App {
             application: init.application,
             main_view: MainView::builder()
@@ -485,6 +496,7 @@ impl SimpleComponent for App {
                 .detach(),
             dependencies_dialog,
             setcap_confirm_dialog,
+            profile_runner_failed_dialog,
             enable_debug_view: config.debug_view_enabled,
             config,
             tracker: 0,
