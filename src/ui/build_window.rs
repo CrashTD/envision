@@ -23,6 +23,8 @@ pub struct BuildWindow {
     pub win: Option<adw::Window>,
     #[tracker::do_not_track]
     build_status_label: Option<gtk::Label>,
+    #[tracker::do_not_track]
+    scrolledwin: Option<gtk::ScrolledWindow>,
 }
 
 #[derive(Debug)]
@@ -87,6 +89,7 @@ impl SimpleComponent for BuildWindow {
                         set_justify: gtk::Justification::Center,
                     }
                 },
+                #[name(scrolledwin)]
                 gtk::ScrolledWindow {
                     set_hexpand: true,
                     set_vexpand: true,
@@ -135,6 +138,11 @@ impl SimpleComponent for BuildWindow {
             }
             Self::Input::UpdateContent(c) => {
                 if c.len() > 0 {
+                    let is_at_bottom = {
+                        let adj = self.scrolledwin.as_ref().unwrap().vadjustment();
+                        (adj.upper() - adj.page_size() - adj.value()) <= 15.0
+                    };
+
                     let n_lines = c.concat();
                     let mut n_content = self.content.clone();
                     n_content.push_str(n_lines.as_str());
@@ -145,10 +153,12 @@ impl SimpleComponent for BuildWindow {
                     );
                     let textbuf = self.textbuf.clone();
                     let textview = self.textview.as_ref().unwrap().clone();
-                    gtk::glib::idle_add_local_once(move || {
-                        let end_mark = textbuf.create_mark(None, &textbuf.end_iter(), false);
-                        textview.scroll_mark_onscreen(&end_mark);
-                    });
+                    if is_at_bottom {
+                        gtk::glib::idle_add_local_once(move || {
+                            let end_mark = textbuf.create_mark(None, &textbuf.end_iter(), false);
+                            textview.scroll_mark_onscreen(&end_mark);
+                        });
+                    }
                 }
             }
             Self::Input::UpdateBuildStatus(status) => {
@@ -182,12 +192,14 @@ impl SimpleComponent for BuildWindow {
             textview: None,
             build_status: BuildStatus::Building,
             win: None,
+            scrolledwin: None,
             build_status_label: None,
         };
         let widgets = view_output!();
         model.win = Some(widgets.win.clone());
         model.build_status_label = Some(widgets.build_status_label.clone());
         model.textview = Some(widgets.textview.clone());
+        model.scrolledwin = Some(widgets.scrolledwin.clone());
         ComponentParts { model, widgets }
     }
 }
