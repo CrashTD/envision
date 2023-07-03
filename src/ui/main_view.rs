@@ -179,6 +179,13 @@ impl SimpleComponent for MainView {
                         }
                     },
                     gtk::Button {
+                        set_icon_name: "edit-copy-symbolic",
+                        set_tooltip_text: Some("Duplicate Profile"),
+                        connect_clicked[sender] => move |_| {
+                            sender.input(Self::Input::DuplicateProfile);
+                        }
+                    },
+                    gtk::Button {
                         set_icon_name: "list-add-symbolic",
                         set_tooltip_text: Some("Create Profile"),
                         connect_clicked[sender] => move |_| {
