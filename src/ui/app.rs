@@ -5,6 +5,7 @@ use super::libsurvive_setup_window::LibsurviveSetupWindow;
 use super::main_view::MainViewMsg;
 use crate::builders::build_basalt::get_build_basalt_runner;
 use crate::builders::build_libsurvive::get_build_libsurvive_runner;
+use crate::builders::build_mercury::get_build_mercury_runner;
 use crate::builders::build_monado::get_build_monado_runner;
 use crate::builders::build_opencomposite::get_build_opencomposite_runner;
 use crate::builders::build_wivrn::get_build_wivrn_runner;
@@ -13,6 +14,7 @@ use crate::constants::APP_NAME;
 use crate::depcheck::check_dependency;
 use crate::dependencies::basalt_deps::get_missing_basalt_deps;
 use crate::dependencies::libsurvive_deps::get_missing_libsurvive_deps;
+use crate::dependencies::mercury_deps::get_missing_mercury_deps;
 use crate::dependencies::monado_deps::get_missing_monado_deps;
 use crate::dependencies::pkexec_dep::pkexec_dep;
 use crate::dependencies::wivrn_deps::get_missing_wivrn_deps;
@@ -292,10 +294,10 @@ impl SimpleComponent for App {
                         missing_deps.extend(get_missing_basalt_deps());
                         runners.push(get_build_basalt_runner(profile.clone()));
                     }
-                    // if profile.features.mercury.enabled {
-                    //     missing_deps.extend(get_missing_mercury_deps());
-                    //     runners.push(get_build_mercury_runner(profile.clone()));
-                    // }
+                    if profile.features.mercury_enabled {
+                        missing_deps.extend(get_missing_mercury_deps());
+                        runners.push(get_build_mercury_runner(profile.clone()));
+                    }
                     runners.push(match profile.xrservice_type {
                         XRServiceType::Monado => get_build_monado_runner(profile.clone()),
                         XRServiceType::Wivrn => get_build_wivrn_runner(profile.clone()),

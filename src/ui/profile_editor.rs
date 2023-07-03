@@ -160,7 +160,7 @@ impl SimpleComponent for ProfileEditor {
                         name: "Mercury".into(),
                         description: Some("Camera based hand tracking".into()),
                         key: "mercury_enabled".into(),
-                        value: p.features.mercury.enabled,
+                        value: p.features.mercury_enabled,
                     });
                 }
 
@@ -186,11 +186,6 @@ impl SimpleComponent for ProfileEditor {
                         name: "Basalt Path".into(),
                         key: "basalt_path".into(),
                         value: p.features.basalt.path,
-                    });
-                    guard.push_back(PathModelInit {
-                        name: "Mercury Path".into(),
-                        key: "mercury_path".into(),
-                        value: p.features.mercury.path,
                     });
                     guard.push_back(PathModelInit {
                         name: "Install Prefix".into(),
@@ -221,11 +216,6 @@ impl SimpleComponent for ProfileEditor {
                         key: "basalt_repo".into(),
                         name: "Basalt Repo".into(),
                         value: p.features.basalt.repo.unwrap_or("".into()),
-                    });
-                    guard.push_back(EntryModelInit {
-                        key: "mercury_repo".into(),
-                        name: "Mercury Repo".into(),
-                        value: p.features.mercury.repo.unwrap_or("".into()),
                     });
                 }
 
@@ -273,7 +263,6 @@ impl SimpleComponent for ProfileEditor {
                     }
                     "libsurvive_path" => prof.features.libsurvive.path = value,
                     "basalt_path" => prof.features.basalt.path = value,
-                    "mercury_path" => prof.features.mercury.path = value,
                     "prefix" => prof.prefix = value.unwrap_or("".to_string()),
                     _ => panic!("Unknown profile path key"),
                 }
@@ -283,7 +272,7 @@ impl SimpleComponent for ProfileEditor {
                 match key.as_str() {
                     "libsurvive_enabled" => prof.features.libsurvive.enabled = value,
                     "basalt_enabled" => prof.features.basalt.enabled = value,
-                    "mercury_enabled" => prof.features.mercury.enabled = value,
+                    "mercury_enabled" => prof.features.mercury_enabled = value,
                     "pull_on_build" => prof.pull_on_build = value,
                     _ => panic!("Unknown profile switch key"),
                 }
@@ -312,12 +301,6 @@ impl SimpleComponent for ProfileEditor {
                     }
                     "basalt_repo" => {
                         prof.features.basalt.repo = match value.trim() {
-                            "" => None,
-                            s => Some(s.to_string()),
-                        }
-                    }
-                    "mercury_repo" => {
-                        prof.features.mercury.repo = match value.trim() {
                             "" => None,
                             s => Some(s.to_string()),
                         }

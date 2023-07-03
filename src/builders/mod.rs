@@ -3,3 +3,4 @@ pub mod build_libsurvive;
 pub mod build_opencomposite;
 pub mod build_basalt;
 pub mod build_wivrn;
+pub mod build_mercury;

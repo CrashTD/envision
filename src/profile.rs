@@ -47,7 +47,6 @@ impl Display for XRServiceType {
 pub enum ProfileFeatureType {
     Libsurvive,
     Basalt,
-    Mercury,
 }
 
 impl ProfileFeatureType {
@@ -55,13 +54,12 @@ impl ProfileFeatureType {
         match s.trim().to_lowercase().as_str() {
             "libsurvive" => Self::Libsurvive,
             "basalt" => Self::Basalt,
-            "mercury" => Self::Mercury,
             _ => panic!("Unknown profile feature type"),
         }
     }
 
     pub fn iter() -> Iter<'static, ProfileFeatureType> {
-        [Self::Libsurvive, Self::Basalt, Self::Mercury].iter()
+        [Self::Libsurvive, Self::Basalt].iter()
     }
 }
 
@@ -70,7 +68,6 @@ impl Display for ProfileFeatureType {
         f.write_str(match self {
             Self::Libsurvive => "Libsurvive",
             Self::Basalt => "Basalt",
-            Self::Mercury => "Mercury",
         })
     }
 }
@@ -98,7 +95,7 @@ impl Default for ProfileFeature {
 pub struct ProfileFeatures {
     pub libsurvive: ProfileFeature,
     pub basalt: ProfileFeature,
-    pub mercury: ProfileFeature,
+    pub mercury_enabled: bool,
 }
 
 impl Default for ProfileFeatures {
@@ -112,10 +109,7 @@ impl Default for ProfileFeatures {
                 feature_type: ProfileFeatureType::Basalt,
                 ..Default::default()
             },
-            mercury: ProfileFeature {
-                feature_type: ProfileFeatureType::Mercury,
-                ..Default::default()
-            },
+            mercury_enabled: false,
         }
     }
 }
@@ -161,10 +155,7 @@ impl Default for Profile {
                     feature_type: ProfileFeatureType::Basalt,
                     ..Default::default()
                 },
-                mercury: ProfileFeature {
-                    feature_type: ProfileFeatureType::Mercury,
-                    ..Default::default()
-                },
+                mercury_enabled: false,
             },
             environment: HashMap::new(),
             prefix: format!(
@@ -246,14 +237,6 @@ impl Profile {
                     .as_ref()
                     .unwrap_or(&"".to_string())
                     .is_empty())
-            && (!self.features.mercury.enabled
-                || !self
-                    .features
-                    .mercury
-                    .path
-                    .as_ref()
-                    .unwrap_or(&"".to_string())
-                    .is_empty())
     }
 }
 
@@ -276,11 +259,10 @@ mod tests {
             profile.features.libsurvive.path.as_deref(),
             Some("/home/user/libsurvive")
         );
-        assert_eq!(profile.features.mercury.path, None);
         assert_eq!(profile.features.basalt.path, None);
         assert_eq!(profile.features.libsurvive.enabled, true);
         assert_eq!(profile.features.basalt.enabled, false);
-        assert_eq!(profile.features.mercury.enabled, false);
+        assert_eq!(profile.features.mercury_enabled, false);
         assert!(profile
             .environment
             .contains_key("XRT_COMPOSITOR_SCALE_PERCENTAGE"));
@@ -312,10 +294,7 @@ mod tests {
                     feature_type: ProfileFeatureType::Basalt,
                     ..Default::default()
                 },
-                mercury: ProfileFeature {
-                    feature_type: ProfileFeatureType::Mercury,
-                    ..Default::default()
-                },
+                mercury_enabled: false,
             },
             environment: env,
             prefix: String::from("/home/user/rex2prefix"),
