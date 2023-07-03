@@ -82,8 +82,10 @@ impl RunnerPipeline {
         }
     }
 
-    pub fn get_log(&self) -> String {
-        self.log.concat()
+    pub fn get_log(&mut self) -> Vec<String> {
+        let log = self.log.to_owned();
+        self.log = vec![];
+        log
     }
 
     pub fn status(&self) -> RunnerStatus {

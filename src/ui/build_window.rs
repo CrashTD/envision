@@ -30,7 +30,7 @@ pub enum BuildWindowMsg {
     Present,
     UpdateTitle(String),
     UpdateBuildStatus(BuildStatus),
-    UpdateContent(String),
+    UpdateContent(Vec<String>),
     UpdateCanClose(bool),
 }
 
@@ -134,9 +134,15 @@ impl SimpleComponent for BuildWindow {
                 self.set_title(t);
             }
             Self::Input::UpdateContent(c) => {
-                if self.content != c {
-                    self.set_content(c);
-                    self.textbuf.set_text(&self.content);
+                if c.len() > 0 {
+                    let n_lines = c.concat();
+                    let mut n_content = self.content.clone();
+                    n_content.push_str(n_lines.as_str());
+                    self.set_content(n_content);
+                    self.textbuf.insert(
+                        &mut self.textbuf.end_iter(),
+                        n_lines.as_str()
+                    );
                     let textbuf = self.textbuf.clone();
                     let textview = self.textview.as_ref().unwrap().clone();
                     gtk::glib::idle_add_local_once(move || {
