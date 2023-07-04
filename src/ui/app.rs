@@ -68,8 +68,6 @@ pub struct App {
     #[tracker::do_not_track]
     xrservice_runner: Option<Runner>,
     #[tracker::do_not_track]
-    xrservice_log: Vec<String>,
-    #[tracker::do_not_track]
     build_pipeline: Option<RunnerPipeline>,
     #[tracker::do_not_track]
     profiles: Vec<Profile>,
@@ -104,10 +102,9 @@ impl App {
     }
 
     pub fn start_xrservice(&mut self) {
-        self.xrservice_log.clear();
         self.debug_view
             .sender()
-            .emit(DebugViewMsg::LogUpdated(vec![]));
+            .emit(DebugViewMsg::ClearLog);
         let mut runner = Runner::xrservice_runner_from_profile(self.get_selected_profile().clone());
         match runner.try_start() {
             Ok(_) => {
@@ -192,10 +189,9 @@ impl SimpleComponent for App {
                     Some(runner) => {
                         let n_rows = runner.consume_rows();
                         if !n_rows.is_empty() {
-                            self.xrservice_log.extend(n_rows);
                             self.debug_view
                                 .sender()
-                                .emit(DebugViewMsg::LogUpdated(self.xrservice_log.clone()));
+                                .emit(DebugViewMsg::LogUpdated(n_rows));
                         }
                         match runner.status() {
                             RunnerStatus::Running => {}
@@ -504,7 +500,6 @@ impl SimpleComponent for App {
             tracker: 0,
             profiles,
             xrservice_runner: None,
-            xrservice_log: vec![],
             build_pipeline: None,
         };
         let widgets = view_output!();

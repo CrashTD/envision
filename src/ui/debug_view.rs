@@ -2,6 +2,7 @@ use expect_dialog::ExpectDialog;
 use gtk::prelude::*;
 use relm4::prelude::*;
 use relm4::{ComponentSender, SimpleComponent};
+use sourceview5::prelude::*;
 use std::fmt::Display;
 use std::slice::Iter;
 
@@ -51,28 +52,43 @@ impl Display for LogLevel {
 }
 
 #[derive(Debug)]
+pub enum SearchDirection {
+    Forward,
+    Backward,
+}
+
+#[derive(Debug)]
 pub enum DebugViewMsg {
     LogUpdated(Vec<String>),
+    ClearLog,
     EnableDebugViewChanged(bool),
-    FilterLog,
+    FilterLog(SearchDirection),
 }
 
 #[tracker::track]
 pub struct DebugView {
     #[tracker::do_not_track]
-    pub log: Vec<String>,
+    log: Vec<String>,
     #[tracker::do_not_track]
-    pub textbuf: gtk::TextBuffer,
+    textbuf: sourceview5::Buffer,
     #[tracker::do_not_track]
-    pub textview: Option<gtk::TextView>,
+    textview: Option<sourceview5::View>,
     #[tracker::do_not_track]
-    pub searchbar: Option<gtk::SearchBar>,
+    searchbar: Option<gtk::SearchBar>,
     #[tracker::do_not_track]
-    pub search_entry: Option<gtk::SearchEntry>,
+    search_entry: Option<gtk::SearchEntry>,
     #[tracker::do_not_track]
-    pub dropdown: Option<gtk::DropDown>,
+    dropdown: Option<gtk::DropDown>,
+    #[tracker::do_not_track]
+    scrolledwin: Option<gtk::ScrolledWindow>,
+    #[tracker::do_not_track]
+    search_ctx: sourceview5::SearchContext,
+    #[tracker::do_not_track]
+    search_settings: sourceview5::SearchSettings,
+    #[tracker::do_not_track]
+    search_mark: Option<gtk::TextMark>,
 
-    pub enable_debug_view: bool,
+    enable_debug_view: bool,
 }
 
 pub struct DebugViewInit {
@@ -122,24 +138,48 @@ impl SimpleComponent for DebugView {
                 #[chain(flags(gtk::glib::BindingFlags::BIDIRECTIONAL).build())]
                 bind_property: ("search-mode-enabled", &search_toggle, "active"),
                 #[wrap(Some)]
-                set_child: search_entry = &gtk::SearchEntry {
+                set_child: searchbox = &gtk::Box {
+                    set_orientation: gtk::Orientation::Horizontal,
+                    add_css_class: "linked",
                     set_hexpand: true,
-                    connect_changed[sender] => move |_| {
-                        sender.input(Self::Input::FilterLog);
-                    }
+                    #[name(search_entry)]
+                    gtk::SearchEntry {
+                        set_hexpand: true,
+                        connect_changed[sender] => move |_| {
+                            sender.input(Self::Input::FilterLog(SearchDirection::Forward));
+                        },
+                        connect_activate[sender] => move |_| {
+                            sender.input(Self::Input::FilterLog(SearchDirection::Forward));
+                        },
+                    },
+                    gtk::Button {
+                        set_icon_name: "go-up-symbolic",
+                        set_tooltip_text: Some("Previous Match"),
+                        connect_clicked[sender] => move |_| {
+                            sender.input(Self::Input::FilterLog(SearchDirection::Backward))
+                        },
+                    },
+                    gtk::Button {
+                        set_icon_name: "go-down-symbolic",
+                        set_tooltip_text: Some("Next Match"),
+                        connect_clicked[sender] => move |_| {
+                            sender.input(Self::Input::FilterLog(SearchDirection::Forward))
+                        },
+                    },
                 },
                 connect_entry: &search_entry,
             },
+            #[name(scrolledwin)]
             gtk::ScrolledWindow {
                 set_hexpand: true,
                 set_vexpand: true,
                 #[name(textview)]
-                gtk::TextView {
+                sourceview5::View {
                     set_hexpand: true,
                     set_vexpand: true,
                     set_editable: false,
                     set_monospace: true,
-                    set_buffer: Some(&model.textbuf)
+                    set_buffer: Some(&model.textbuf),
                 },
             }
         }
@@ -149,37 +189,71 @@ impl SimpleComponent for DebugView {
         self.reset();
 
         match message {
-            Self::Input::FilterLog => {
+            Self::Input::FilterLog(direction) => {
                 let searchbar = self.searchbar.as_ref().unwrap().clone();
                 let search_entry = self.search_entry.as_ref().unwrap().clone();
-                let search_text = search_entry.text().to_string().trim().to_lowercase();
+                let search_text = search_entry.text().to_string();
                 // TODO: add log level filtering
                 let log_level = LogLevel::iter()
                     .as_slice()
                     .get(self.dropdown.as_ref().unwrap().selected() as usize)
                     .unwrap();
                 println!("log level: {}", log_level.to_string());
-                let log = match searchbar.is_search_mode() && !search_text.is_empty() {
-                    true => self
-                        .log
-                        .iter()
-                        .filter(|row| row.to_lowercase().contains(&search_text))
-                        .map(|s| s.to_string())
-                        .collect::<Vec<String>>()
-                        .concat(),
-                    false => self.log.concat(),
-                };
-                self.textbuf.set_text(&log);
-                let textbuf = self.textbuf.clone();
-                let textview = self.textview.as_ref().unwrap().clone();
-                gtk::glib::idle_add_local_once(move || {
-                    let end_mark = textbuf.create_mark(None, &textbuf.end_iter(), false);
-                    textview.scroll_mark_onscreen(&end_mark);
-                });
+                if searchbar.is_search_mode() && !search_text.is_empty() {
+                    self.search_settings
+                        .set_search_text(Some(search_text.as_str()));
+                    self.search_mark = Some(self.textbuf.get_insert());
+                    let mut iter = self
+                        .textbuf
+                        .iter_at_mark(self.search_mark.as_ref().unwrap());
+                    iter.forward_char();
+                    let search_res = match direction {
+                        SearchDirection::Forward => self.search_ctx.forward(&iter),
+                        SearchDirection::Backward => self.search_ctx.backward(&iter),
+                    };
+                    match search_res {
+                        None => {
+                            // TODO: mark search entry red
+                        }
+                        Some((start, end, _)) => {
+                            self.textbuf.move_mark(
+                                self.search_mark.as_ref().unwrap(),
+                                match direction {
+                                    SearchDirection::Forward => &end,
+                                    SearchDirection::Backward => &start,
+                                },
+                            );
+                            self.textbuf.select_range(&start, &end);
+                            self.textview
+                                .as_ref()
+                                .unwrap()
+                                .scroll_mark_onscreen(&self.textbuf.create_mark(None, &end, false));
+                        }
+                    }
+                } else {
+                    self.search_settings.set_search_text(None);
+                }
             }
             Self::Input::LogUpdated(n_log) => {
-                self.log = n_log;
-                sender.input(Self::Input::FilterLog);
+                let is_at_bottom = {
+                    let adj = self.scrolledwin.as_ref().unwrap().vadjustment();
+                    (adj.upper() - adj.page_size() - adj.value()) <= 15.0
+                };
+                self.log.extend(n_log.clone());
+                self.textbuf
+                    .insert(&mut self.textbuf.end_iter(), n_log.concat().as_str());
+                let textbuf = self.textbuf.clone();
+                let textview = self.textview.as_ref().unwrap().clone();
+                if is_at_bottom && !self.searchbar.as_ref().unwrap().is_search_mode() {
+                    gtk::glib::idle_add_local_once(move || {
+                        let end_mark = textbuf.create_mark(None, &textbuf.end_iter(), false);
+                        textview.scroll_mark_onscreen(&end_mark);
+                    });
+                }
+            }
+            Self::Input::ClearLog => {
+                self.log = vec![];
+                self.textbuf.set_text("");
             }
             Self::Input::EnableDebugViewChanged(val) => self.set_enable_debug_view(val),
         }
@@ -190,15 +264,35 @@ impl SimpleComponent for DebugView {
         root: &Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
+        let textbuf = sourceview5::Buffer::builder()
+            .highlight_syntax(false)
+            .style_scheme(
+                &sourceview5::StyleSchemeManager::new()
+                    .scheme("Adwaita-dark")
+                    .expect_dialog("Couldn't find Adwaita-dark style scheme for gtksourceview5"),
+            )
+            .build();
+        let search_settings = sourceview5::SearchSettings::builder()
+            .wrap_around(true)
+            .case_sensitive(false)
+            .build();
+        let search_ctx = sourceview5::SearchContext::builder()
+            .buffer(&textbuf)
+            .settings(&search_settings)
+            .build();
         let mut model = Self {
             tracker: 0,
             log: vec![],
-            textbuf: gtk::TextBuffer::builder().build(),
+            textbuf,
             textview: None,
             enable_debug_view: init.enable_debug_view,
             searchbar: None,
             search_entry: None,
             dropdown: None,
+            scrolledwin: None,
+            search_settings,
+            search_ctx,
+            search_mark: None,
         };
 
         let widgets = view_output!();
@@ -206,13 +300,14 @@ impl SimpleComponent for DebugView {
         model.search_entry = Some(widgets.search_entry.clone());
         model.textview = Some(widgets.textview.clone());
         model.dropdown = Some(widgets.log_level_dropdown.clone());
+        model.scrolledwin = Some(widgets.scrolledwin.clone());
 
         {
             let dd_sender = sender.clone();
             widgets
                 .log_level_dropdown
-                .connect_selected_notify(move |dd| {
-                    dd_sender.input(Self::Input::FilterLog);
+                .connect_selected_notify(move |_| {
+                    dd_sender.input(Self::Input::FilterLog(SearchDirection::Forward));
                 });
         }
 
