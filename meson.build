@@ -18,6 +18,7 @@ description = 'GUI for Monado'  # temporary
 dependency('glib-2.0', version: '>= 2.66')
 dependency('gio-2.0', version: '>= 2.66')
 dependency('gtk4', version: '>= 4.10.0')
+dependency('gtksourceview-5', version: '>= 5.6.0')
 
 glib_compile_resources = find_program('glib-compile-resources', required: true)
 # glib_compile_schemas = find_program('glib-compile-schemas', required: true)
