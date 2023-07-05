@@ -132,6 +132,8 @@ impl SimpleComponent for BuildWindow {
             Self::Input::Present => {
                 self.win.as_ref().unwrap().present();
                 sender.input(BuildWindowMsg::UpdateBuildStatus(BuildStatus::Building));
+                self.set_content("".into());
+                self.textbuf.set_text("");
             }
             Self::Input::UpdateTitle(t) => {
                 self.set_title(t);
