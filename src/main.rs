@@ -24,6 +24,8 @@ pub mod ui;
 pub mod adb;
 pub mod downloader;
 pub mod env_var_descriptions;
+pub mod log_parser;
+pub mod log_level;
 
 fn main() -> Result<()> {
     // Prepare i18n

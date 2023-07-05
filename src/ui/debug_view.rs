@@ -1,55 +1,10 @@
+use crate::log_level::LogLevel;
+use crate::log_parser::MonadoLog;
 use expect_dialog::ExpectDialog;
 use gtk::prelude::*;
 use relm4::prelude::*;
 use relm4::{ComponentSender, SimpleComponent};
 use sourceview5::prelude::*;
-use std::fmt::Display;
-use std::slice::Iter;
-
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
-pub enum LogLevel {
-    Trace,
-    Debug,
-    Info,
-    Warning,
-    Error,
-}
-
-impl LogLevel {
-    pub fn from_string(s: String) -> Self {
-        match s.to_lowercase().as_str() {
-            "trace" => Self::Trace,
-            "debug" => Self::Debug,
-            "info" => Self::Info,
-            "warning" => Self::Warning,
-            "error" => Self::Error,
-            _ => Self::Debug,
-        }
-    }
-
-    pub fn iter() -> Iter<'static, LogLevel> {
-        [
-            Self::Trace,
-            Self::Debug,
-            Self::Info,
-            Self::Warning,
-            Self::Error,
-        ]
-        .iter()
-    }
-}
-
-impl Display for LogLevel {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(match self {
-            LogLevel::Trace => "Trace",
-            LogLevel::Debug => "Debug",
-            LogLevel::Info => "Info",
-            LogLevel::Warning => "Warning",
-            LogLevel::Error => "Error",
-        })
-    }
-}
 
 #[derive(Debug)]
 pub enum SearchDirection {
@@ -63,6 +18,7 @@ pub enum DebugViewMsg {
     ClearLog,
     EnableDebugViewChanged(bool),
     FilterLog(SearchDirection),
+    LogLevelChanged(LogLevel),
 }
 
 #[tracker::track]
@@ -87,6 +43,8 @@ pub struct DebugView {
     search_settings: sourceview5::SearchSettings,
     #[tracker::do_not_track]
     search_mark: Option<gtk::TextMark>,
+    #[tracker::do_not_track]
+    log_level: LogLevel,
 
     enable_debug_view: bool,
 }
@@ -189,16 +147,17 @@ impl SimpleComponent for DebugView {
         self.reset();
 
         match message {
+            Self::Input::LogLevelChanged(lvl) => {
+                self.log_level = lvl;
+                let log = self.log.clone();
+                self.log = vec![];
+                self.textbuf.set_text("");
+                sender.input(Self::Input::LogUpdated(log));
+            }
             Self::Input::FilterLog(direction) => {
                 let searchbar = self.searchbar.as_ref().unwrap().clone();
                 let search_entry = self.search_entry.as_ref().unwrap().clone();
                 let search_text = search_entry.text().to_string();
-                // TODO: add log level filtering
-                let log_level = LogLevel::iter()
-                    .as_slice()
-                    .get(self.dropdown.as_ref().unwrap().selected() as usize)
-                    .unwrap();
-                println!("log level: {}", log_level.to_string());
                 if searchbar.is_search_mode() && !search_text.is_empty() {
                     self.search_settings
                         .set_search_text(Some(search_text.as_str()));
@@ -240,8 +199,25 @@ impl SimpleComponent for DebugView {
                     (adj.upper() - adj.page_size() - adj.value()) <= 15.0
                 };
                 self.log.extend(n_log.clone());
-                self.textbuf
-                    .insert(&mut self.textbuf.end_iter(), n_log.concat().as_str());
+                for row in n_log {
+                    let txt = match MonadoLog::from_str(row.as_str()) {
+                        Some(o) => match o.level >= self.log_level {
+                            false => None,
+                            true => Some(format!(
+                                "{lvl}\t[{file}:{func}]\n\t{msg}\n",
+                                lvl = o.level.to_string(),
+                                file = o.file,
+                                func = o.func,
+                                msg = o.message
+                            )),
+                        },
+                        None => Some(row),
+                    };
+                    if txt.is_some() {
+                        self.textbuf
+                            .insert(&mut self.textbuf.end_iter(), txt.unwrap().as_str());
+                    }
+                }
                 let textbuf = self.textbuf.clone();
                 let textview = self.textview.as_ref().unwrap().clone();
                 if is_at_bottom && !self.searchbar.as_ref().unwrap().is_search_mode() {
@@ -293,6 +269,7 @@ impl SimpleComponent for DebugView {
             search_settings,
             search_ctx,
             search_mark: None,
+            log_level: LogLevel::Trace,
         };
 
         let widgets = view_output!();
@@ -306,8 +283,14 @@ impl SimpleComponent for DebugView {
             let dd_sender = sender.clone();
             widgets
                 .log_level_dropdown
-                .connect_selected_notify(move |_| {
-                    dd_sender.input(Self::Input::FilterLog(SearchDirection::Forward));
+                .connect_selected_notify(move |dd| {
+                    dd_sender.input(Self::Input::LogLevelChanged(
+                        LogLevel::iter()
+                            .as_slice()
+                            .get(dd.selected() as usize)
+                            .unwrap()
+                            .clone(),
+                    ));
                 });
         }
 

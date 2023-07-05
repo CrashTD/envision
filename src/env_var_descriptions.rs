@@ -11,6 +11,7 @@ pub static ENV_VAR_DESCRIPTIONS: Map<&str, &str> = phf_map! {
     "LD_LIBRARY_PATH" =>
         "Colon-separated list of directories where the dynamic linker will search for shared object libraries.",
     "XRT_DEBUG_GUI" => "Set to 1 to enable the Monado debug UI",
+    "XRT_JSON_LOG" => "Set to 1 to enable JSON logging for Monado. This enables better log visualization and log level filtering.",
 };
 
 pub fn env_var_descriptions_as_paragraph() -> String {
