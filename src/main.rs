@@ -1,5 +1,5 @@
 use anyhow::Result;
-use constants::{APP_ID, APP_NAME, GETTEXT_PACKAGE, LOCALE_DIR, RESOURCES};
+use constants::{APP_ID, APP_NAME, GETTEXT_PACKAGE, LOCALE_DIR, resources};
 use gettextrs::LocaleCategory;
 use relm4::{
     adw,
@@ -37,7 +37,7 @@ fn main() -> Result<()> {
     glib::set_application_name(APP_NAME);
 
     {
-        let res = gio::Resource::load(RESOURCES).expect("Could not load gresource file");
+        let res = gio::Resource::load(resources()).expect("Could not load gresource file");
         gio::resources_register(&res);
     }
 

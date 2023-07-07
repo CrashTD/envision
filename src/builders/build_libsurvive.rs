@@ -1,4 +1,4 @@
-use crate::{constants::PKG_DATA_DIR, profile::Profile, runner::Runner};
+use crate::{constants::pkg_data_dir, profile::Profile, runner::Runner};
 use expect_dialog::ExpectDialog;
 
 pub fn get_build_libsurvive_runner(profile: Profile) -> Runner {
@@ -19,7 +19,7 @@ pub fn get_build_libsurvive_runner(profile: Profile) -> Runner {
         None,
         format!(
             "{sysdata}/scripts/build_libsurvive.sh",
-            sysdata = PKG_DATA_DIR
+            sysdata = pkg_data_dir()
         ),
         args,
     );

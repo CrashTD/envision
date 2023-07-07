@@ -1,4 +1,4 @@
-use crate::{constants::PKG_DATA_DIR, profile::Profile, runner::Runner};
+use crate::{constants::pkg_data_dir, profile::Profile, runner::Runner};
 
 pub fn get_build_opencomposite_runner(profile: Profile) -> Runner {
     let mut args = vec![
@@ -15,7 +15,7 @@ pub fn get_build_opencomposite_runner(profile: Profile) -> Runner {
         None,
         format!(
             "{sysdata}/scripts/build_opencomposite.sh",
-            sysdata = PKG_DATA_DIR
+            sysdata = pkg_data_dir()
         ),
         args,
     );

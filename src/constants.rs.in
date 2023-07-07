@@ -1,3 +1,5 @@
+use crate::file_utils::get_exec_prefix;
+
 pub const APP_NAME: &str = "@PRETTY_NAME@";
 pub const APP_ID: &str = "@APP_ID@";
 pub const PKG_DATA_DIR: &str = "@PKGDATADIR@";
@@ -12,4 +14,12 @@ pub const BUILD_PROFILE: &str = "@PROFILE@";
 
 pub fn get_developers() -> Vec<String> {
     vec!["Gabriele Musco <gabmus@disroot.org>".to_string()]
+}
+
+pub fn pkg_data_dir() -> String {
+    format!("{}/share/rex2", get_exec_prefix())
+}
+
+pub fn resources() -> String {
+    format!("{}/resources.gresource", pkg_data_dir())
 }

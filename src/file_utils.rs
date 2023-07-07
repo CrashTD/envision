@@ -2,8 +2,8 @@ use crate::{constants::CMD_NAME, runner::Runner};
 use expect_dialog::ExpectDialog;
 use std::{
     env,
-    fs::{self, create_dir_all, OpenOptions, File},
-    io::{BufWriter, BufReader},
+    fs::{self, create_dir_all, File, OpenOptions},
+    io::{BufReader, BufWriter},
     path::Path,
 };
 
@@ -36,24 +36,20 @@ pub fn get_reader(path_s: &String) -> Option<BufReader<File>> {
             println!("Error opening {}: {}", path_s, e);
             return None;
         }
-        Ok(fd) => {
-            Some(BufReader::new(fd))
-        }
+        Ok(fd) => Some(BufReader::new(fd)),
     }
 }
 
 pub fn deserialize_file<T: serde::de::DeserializeOwned>(path_s: &String) -> Option<T> {
     match get_reader(&path_s) {
         None => None,
-        Some(reader) => {
-            match serde_json::from_reader(reader) {
-                Err(e) => {
-                    println!("Failed to deserialize {}: {}", path_s, e);
-                    None
-                }
-                Ok(res) => Some(res)
+        Some(reader) => match serde_json::from_reader(reader) {
+            Err(e) => {
+                println!("Failed to deserialize {}: {}", path_s, e);
+                None
             }
-        }
+            Ok(res) => Some(res),
+        },
     }
 }
 
@@ -95,7 +91,11 @@ pub fn get_data_dir() -> String {
 }
 
 pub fn get_cache_dir() -> String {
-    format!("{cache}/{name}", cache = get_xdg_cache_dir(), name = CMD_NAME)
+    format!(
+        "{cache}/{name}",
+        cache = get_xdg_cache_dir(),
+        name = CMD_NAME
+    )
 }
 
 pub fn set_file_radonly(path_s: &String, readonly: bool) {
@@ -119,4 +119,21 @@ pub fn setcap_cap_sys_nice_eip(file: String) {
     );
     runner.start();
     runner.join();
+}
+
+pub fn get_exec_prefix() -> String {
+    let p = Path::new("/proc/self/exe");
+    if !p.is_symlink() {
+        panic!("/proc/self/exe is not a symlink!");
+    }
+    p.read_link()
+        .unwrap()
+        .as_path()
+        .parent()
+        .unwrap()
+        .parent()
+        .unwrap()
+        .to_str()
+        .unwrap()
+        .to_string()
 }

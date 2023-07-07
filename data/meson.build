@@ -31,7 +31,7 @@ appdata_file = i18n.merge_file(
     output: '@BASENAME@',
     configuration: global_conf
   ),
-  output: '@0@.metainfo.xml'.format(application_id),
+  output: '@0@.appdata.xml'.format(application_id),
   po_dir: podir,
   install: true,
   install_dir: datadir / 'metainfo'
