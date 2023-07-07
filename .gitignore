@@ -2,6 +2,9 @@
 build/
 _build/
 builddir/
+appimage_build/
+AppDir/
+*.AppImage
 build-aux/app
 build-aux/.flatpak-builder/
 src/constants.rs

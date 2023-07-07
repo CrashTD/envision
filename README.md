@@ -14,3 +14,11 @@ ninja -C build
 ninja -C build install
 ./build/localprefix/bin/rex2
 ```
+
+## Build AppImage
+
+```bash
+git clone https://gitlab.com/gabmus/rex2
+cd rex2
+./dist/appimage/build_appimage.sh
+```
