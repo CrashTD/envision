@@ -1,3 +1,4 @@
+use super::devices_box::{DevicesBox, DevicesBoxMsg};
 use super::install_wivrn_box::{InstallWivrnBox, InstallWivrnBoxInit, InstallWivrnBoxMsg};
 use super::profile_editor::{ProfileEditor, ProfileEditorMsg, ProfileEditorOutMsg};
 use super::runtime_switcher_box::{
@@ -11,6 +12,7 @@ use crate::ui::app::{
     AboutAction, BuildProfileAction, DebugViewToggleAction, LibsurviveSetupAction,
 };
 use crate::ui::profile_editor::ProfileEditorInit;
+use crate::xr_devices::XRDevices;
 use gtk::prelude::*;
 use relm4::adw::traits::MessageDialogExt;
 use relm4::adw::ResponseAppearance;
@@ -31,6 +33,8 @@ pub struct MainView {
     steam_launch_options_box: Controller<SteamLaunchOptionsBox>,
     #[tracker::do_not_track]
     runtime_switcher_box: Controller<RuntimeSwitcherBox>,
+    #[tracker::do_not_track]
+    devices_box: Controller<DevicesBox>,
     #[tracker::do_not_track]
     profile_editor: Controller<ProfileEditor>,
     #[tracker::do_not_track]
@@ -54,6 +58,7 @@ pub enum MainViewMsg {
     DeleteProfile,
     DuplicateProfile,
     SaveProfile(Profile),
+    UpdateDevices(Option<XRDevices>),
 }
 
 #[derive(Debug)]
@@ -141,6 +146,7 @@ impl SimpleComponent for MainView {
                             sender.input(MainViewMsg::StartStopClicked)
                         },
                     },
+                    model.devices_box.widget(),
                     model.runtime_switcher_box.widget(),
                     model.steam_launch_options_box.widget(),
                     model.install_wivrn_box.widget(),
@@ -221,6 +227,9 @@ impl SimpleComponent for MainView {
             }
             Self::Input::XRServiceActiveChanged(active, profile) => {
                 self.set_xrservice_active(active);
+                if !active {
+                    sender.input(Self::Input::UpdateDevices(None));
+                }
                 self.steam_launch_options_box
                     .sender()
                     .emit(SteamLaunchOptionsBoxMsg::UpdateXRServiceActive(active));
@@ -299,6 +308,9 @@ impl SimpleComponent for MainView {
                     self.selected_profile.create_duplicate(),
                 ));
             }
+            Self::Input::UpdateDevices(devs) => {
+                self.devices_box.sender().emit(DevicesBoxMsg::UpdateDevices(devs))
+            }
         }
     }
 
@@ -376,6 +388,7 @@ impl SimpleComponent for MainView {
                 .forward(sender.input_sender(), |message| match message {
                     ProfileEditorOutMsg::SaveProfile(p) => Self::Input::SaveProfile(p),
                 }),
+            devices_box: DevicesBox::builder().launch(()).detach(),
             selected_profile: init.selected_profile.clone(),
             profile_not_editable_dialog,
             profile_delete_confirm_dialog,

@@ -90,9 +90,9 @@ impl Runner {
         }
     }
 
-    pub fn xrservice_runner_from_profile(profile: Profile) -> Self {
+    pub fn xrservice_runner_from_profile(profile: &Profile) -> Self {
         Self::new(
-            Some(profile.environment),
+            Some(profile.environment.clone()),
             match profile.xrservice_type {
                 XRServiceType::Monado => format!("{pfx}/bin/monado-service", pfx = profile.prefix),
                 XRServiceType::Wivrn => format!("{pfx}/bin/wivrn-server", pfx = profile.prefix),
@@ -253,7 +253,7 @@ mod tests {
 
     #[test]
     fn can_create_from_profile() {
-        Runner::xrservice_runner_from_profile(Profile::load_profile(
+        Runner::xrservice_runner_from_profile(&Profile::load_profile(
             &"./test/files/profile.json".to_string(),
         ));
     }

@@ -19,6 +19,7 @@ use crate::dependencies::monado_deps::get_missing_monado_deps;
 use crate::dependencies::pkexec_dep::pkexec_dep;
 use crate::dependencies::wivrn_deps::get_missing_wivrn_deps;
 use crate::file_utils::setcap_cap_sys_nice_eip;
+use crate::log_parser::MonadoLog;
 use crate::profile::{Profile, XRServiceType};
 use crate::profiles::system_valve_index::system_valve_index_profile;
 use crate::profiles::valve_index::valve_index_profile;
@@ -29,6 +30,7 @@ use crate::ui::build_window::BuildWindowMsg;
 use crate::ui::debug_view::DebugViewInit;
 use crate::ui::libsurvive_setup_window::LibsurviveSetupMsg;
 use crate::ui::main_view::{MainView, MainViewInit, MainViewOutMsg};
+use crate::xr_devices::XRDevices;
 use expect_dialog::ExpectDialog;
 use gtk::prelude::*;
 use relm4::actions::{AccelsPlus, ActionGroupName, RelmAction, RelmActionGroup};
@@ -71,6 +73,8 @@ pub struct App {
     build_pipeline: Option<RunnerPipeline>,
     #[tracker::do_not_track]
     profiles: Vec<Profile>,
+    #[tracker::do_not_track]
+    devices_processed: bool,
 }
 
 #[derive(Debug)]
@@ -85,6 +89,7 @@ pub enum Msg {
     RunSetCap,
     OpenLibsurviveSetup,
     Quit,
+    ProcessDevicesLog(Vec<String>),
 }
 
 impl App {
@@ -102,10 +107,15 @@ impl App {
     }
 
     pub fn start_xrservice(&mut self) {
+        let prof = self.get_selected_profile();
+        self.devices_processed = match prof.xrservice_type {
+            XRServiceType::Monado => false,
+            XRServiceType::Wivrn => true, // no device from log in wivrn
+        };
         self.debug_view
             .sender()
             .emit(DebugViewMsg::ClearLog);
-        let mut runner = Runner::xrservice_runner_from_profile(self.get_selected_profile().clone());
+        let mut runner = Runner::xrservice_runner_from_profile(&prof);
         match runner.try_start() {
             Ok(_) => {
                 self.xrservice_runner = Some(runner);
@@ -189,6 +199,9 @@ impl SimpleComponent for App {
                     Some(runner) => {
                         let n_rows = runner.consume_rows();
                         if !n_rows.is_empty() {
+                            if !self.devices_processed {
+                                sender.input(Msg::ProcessDevicesLog(n_rows.clone()))
+                            }
                             self.debug_view
                                 .sender()
                                 .emit(DebugViewMsg::LogUpdated(n_rows));
@@ -244,6 +257,25 @@ impl SimpleComponent for App {
                     }
                 };
                 self.main_view.sender().emit(MainViewMsg::ClockTicking);
+            }
+            Msg::ProcessDevicesLog(rows) => {
+                for row in rows {
+                    match MonadoLog::from_str(row.as_str()) {
+                        None => {}
+                        Some(parsed) => {
+                            if parsed.func == "p_create_system" {
+                                match XRDevices::from_log_message(parsed.message) {
+                                    None => {},
+                                    Some(devices) => {
+                                        self.devices_processed = true;
+                                        self.main_view.sender().emit(MainViewMsg::UpdateDevices(Some(devices)));
+                                        break;
+                                    }
+                                };
+                            }
+                        }
+                    };
+                }
             }
             Msg::EnableDebugViewChanged(val) => {
                 self.set_enable_debug_view(val);
@@ -501,6 +533,7 @@ impl SimpleComponent for App {
             profiles,
             xrservice_runner: None,
             build_pipeline: None,
+            devices_processed: false,
         };
         let widgets = view_output!();
 
