@@ -1,14 +1,26 @@
-image: "rust:alpine"
+image: "archlinux:base-devel"
 
-test:cargo:
+stages:
+  - test
+  - deploy
+
+cargo:test:
+  stage: test
   script:
-    - apk add gtk4.0-dev libadwaita-dev musl-dev openssl-dev desktop-file-utils meson git
+    - pacman -Syu gtk4 libadwaita gtksourceview5 openssl desktop-file-utils meson ninja git rust bash fuse2 --needed --noconfirm
     - rustc --version && cargo --version  # Print version info for debugging
     - meson setup build -Dprefix="$PWD/build/localprefix" -Dprofile=development
     - ninja -C build
     - cargo test --workspace --verbose
+  cache:
+    paths:
+      - /var/cache/pacman
 
-# deploy:
-#   stage: deploy
-#   script: echo "Define your deployment script!"
-#   environment: production
+appimage:
+  stage: deploy
+  script:
+    - pacman -Syu gtk4 libadwaita gtksourceview5 openssl desktop-file-utils meson ninja git rust bash fuse2 --needed --noconfirm
+    - bash ./dist/appimage/build_appimage.sh
+  artifacts:
+    paths:
+      - Rex2-*.AppImage
