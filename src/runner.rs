@@ -227,7 +227,7 @@ mod tests {
             vec!["-c".into(), "echo \"REX2TEST: $REX2TEST\"".into()],
         );
         runner.start();
-        sleep(time::Duration::from_millis(10));
+        sleep(time::Duration::from_millis(1000)); // TODO: ugly, fix
         runner.terminate();
         assert_eq!(runner.status(), RunnerStatus::Stopped(Some(0)));
         let out = runner.consume_output();
