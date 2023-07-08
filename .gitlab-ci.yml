@@ -1,4 +1,4 @@
-image: "archlinux:base-devel"
+image: "debian:experimental"
 
 stages:
   - test
@@ -7,19 +7,23 @@ stages:
 cargo:test:
   stage: test
   script:
-    - pacman -Syu gtk4 libadwaita gtksourceview5 openssl desktop-file-utils meson ninja git rust bash fuse2 --needed --noconfirm
+    - apt-get update
+    - apt-get -t experimental install libgtk-4-dev libadwaita-1-dev libgtksourceview-5-dev libssl-dev -y
+    - apt-get install -y rust-all cargo meson ninja-build git desktop-file-utils gettext libjxl-dev file -y
     - rustc --version && cargo --version  # Print version info for debugging
     - meson setup build -Dprefix="$PWD/build/localprefix" -Dprofile=development
     - ninja -C build
     - cargo test --workspace --verbose
   cache:
     paths:
-      - /var/cache/pacman
+      - /var/cache/apt
 
 appimage:
   stage: deploy
   script:
-    - pacman -Syu gtk4 libadwaita gtksourceview5 openssl desktop-file-utils meson ninja git rust bash fuse2 --needed --noconfirm
+    - apt-get update
+    - apt-get -t experimental install libgtk-4-dev libadwaita-1-dev libgtksourceview-5-dev libssl-dev -y
+    - apt-get install -y rust-all cargo meson ninja-build git desktop-file-utils gettext libjxl-dev file -y
     - bash ./dist/appimage/build_appimage.sh
   artifacts:
     paths:
