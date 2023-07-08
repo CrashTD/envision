@@ -4,6 +4,8 @@
 
 UI for building, configuring and running Monado, the open source OpenXR runtime.
 
+Download the latest AppImage snapshot: [GitLab Pipelines](https://gitlab.com/gabmus/rex2/-/pipelines)
+
 ## Running
 
 ```bash
