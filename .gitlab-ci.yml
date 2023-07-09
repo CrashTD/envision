@@ -9,7 +9,7 @@ cargo:test:
   script:
     - apt-get update
     - apt-get -t experimental install libgtk-4-dev libadwaita-1-dev libgtksourceview-5-dev libssl-dev -y
-    - apt-get install -y rust-all cargo meson ninja-build git desktop-file-utils gettext libjxl-dev file libusb-dev -y
+    - apt-get install rust-all cargo meson ninja-build git desktop-file-utils gettext libjxl-dev file libusb-dev -y
     - rustc --version && cargo --version  # Print version info for debugging
     - meson setup build -Dprefix="$PWD/build/localprefix" -Dprofile=development
     - ninja -C build
@@ -23,7 +23,7 @@ appimage:
   script:
     - apt-get update
     - apt-get -t experimental install libgtk-4-dev libadwaita-1-dev libgtksourceview-5-dev libssl-dev -y
-    - apt-get install -y rust-all cargo meson ninja-build git desktop-file-utils gettext libjxl-dev file libusb-dev -y
+    - apt-get install rust-all cargo meson ninja-build git desktop-file-utils gettext libjxl-dev file libusb-dev -y
     - bash ./dist/appimage/build_appimage.sh
   artifacts:
     paths:
