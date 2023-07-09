@@ -47,6 +47,10 @@ pub struct App {
 
     #[tracker::do_not_track]
     application: adw::Application,
+    #[tracker::do_not_track]
+    app_win: adw::ApplicationWindow,
+    #[tracker::do_not_track]
+    inhibit_id: Option<u32>,
 
     #[tracker::do_not_track]
     main_view: Controller<MainView>,
@@ -90,6 +94,7 @@ pub enum Msg {
     OpenLibsurviveSetup,
     Quit,
     ProcessDevicesLog(Vec<String>),
+    InhibitSession(bool),
 }
 
 impl App {
@@ -106,15 +111,34 @@ impl App {
         self.config.get_selected_profile(&self.profiles)
     }
 
+    pub fn set_inhibit_session(&mut self, state: bool) {
+        if state {
+            if self.inhibit_id.is_some() {
+                return;
+            }
+            self.inhibit_id = Some(self.application.inhibit(
+                Some(&self.app_win),
+                gtk::ApplicationInhibitFlags::all(),
+                Some("XR Session running"),
+            ));
+        }
+        else {
+            if self.inhibit_id.is_none() {
+                return;
+            }
+            self.application.uninhibit(self.inhibit_id.unwrap());
+            self.inhibit_id = None;
+        }
+    }
+
     pub fn start_xrservice(&mut self) {
+        self.set_inhibit_session(true);
         let prof = self.get_selected_profile();
         self.devices_processed = match prof.xrservice_type {
             XRServiceType::Monado => false,
             XRServiceType::Wivrn => true, // no device from log in wivrn
         };
-        self.debug_view
-            .sender()
-            .emit(DebugViewMsg::ClearLog);
+        self.debug_view.sender().emit(DebugViewMsg::ClearLog);
         let mut runner = Runner::xrservice_runner_from_profile(&prof);
         match runner.try_start() {
             Ok(_) => {
@@ -265,10 +289,12 @@ impl SimpleComponent for App {
                         Some(parsed) => {
                             if parsed.func == "p_create_system" {
                                 match XRDevices::from_log_message(parsed.message) {
-                                    None => {},
+                                    None => {}
                                     Some(devices) => {
                                         self.devices_processed = true;
-                                        self.main_view.sender().emit(MainViewMsg::UpdateDevices(Some(devices)));
+                                        self.main_view
+                                            .sender()
+                                            .emit(MainViewMsg::UpdateDevices(Some(devices)));
                                         break;
                                     }
                                 };
@@ -281,7 +307,8 @@ impl SimpleComponent for App {
                 self.set_enable_debug_view(val);
                 self.config.debug_view_enabled = val;
                 self.config.save();
-                self.debug_view .sender()
+                self.debug_view
+                    .sender()
                     .emit(DebugViewMsg::EnableDebugViewChanged(val));
                 self.main_view
                     .sender()
@@ -293,6 +320,7 @@ impl SimpleComponent for App {
                 }
                 Some(runner) => match runner.status() {
                     RunnerStatus::Running => {
+                        sender.input(Msg::InhibitSession(false));
                         runner.terminate();
                         self.main_view
                             .sender()
@@ -303,6 +331,7 @@ impl SimpleComponent for App {
                     }
                 },
             },
+            Msg::InhibitSession(state) => self.set_inhibit_session(state),
             Msg::BuildProfile => {
                 let profile = self.get_selected_profile();
                 let mut missing_deps = vec![];
@@ -491,6 +520,8 @@ impl SimpleComponent for App {
 
         let model = App {
             application: init.application,
+            app_win: root.clone(),
+            inhibit_id: None,
             main_view: MainView::builder()
                 .launch(MainViewInit {
                     config: config.clone(),
