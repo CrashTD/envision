@@ -281,8 +281,7 @@ impl SimpleComponent for App {
                 self.set_enable_debug_view(val);
                 self.config.debug_view_enabled = val;
                 self.config.save();
-                self.debug_view
-                    .sender()
+                self.debug_view .sender()
                     .emit(DebugViewMsg::EnableDebugViewChanged(val));
                 self.main_view
                     .sender()

@@ -27,6 +27,7 @@ pub mod env_var_descriptions;
 pub mod log_parser;
 pub mod log_level;
 pub mod xr_devices;
+pub mod device_prober;
 
 fn main() -> Result<()> {
     // Prepare i18n
