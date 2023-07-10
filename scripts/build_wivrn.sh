@@ -28,6 +28,7 @@ rm -rf build
 mkdir -p build
 cd build
 cmake -B build-server -DCMAKE_BUILD_TYPE=Release \
+    -DXRT_HAVE_SYSTEM_CJSON=NO \
     -DWIVRN_BUILD_CLIENT=OFF \
     -DCMAKE_INSTALL_PREFIX="${PREFIX}" \
     .. -GNinja

@@ -29,6 +29,7 @@ mkdir -p build
 cd build
 export PKG_CONFIG_PATH="${PREFIX}/lib/pkgconfig"
 cmake -DCMAKE_BUILD_TYPE=Release \
+    -DXRT_HAVE_SYSTEM_CJSON=NO \
     -DCMAKE_LIBDIR="${PREFIX}/lib" \
     -DCMAKE_INSTALL_PREFIX="${PREFIX}" \
     -DCMAKE_C_FLAGS="-Wl,-rpath ${PREFIX}/lib" \
