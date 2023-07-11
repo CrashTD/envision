@@ -1,11 +1,13 @@
 use crate::{
     file_utils::{
-        deserialize_file, get_writer, get_xdg_config_dir, get_xdg_data_dir, set_file_radonly,
+        deserialize_file, get_backup_dir, get_writer, get_xdg_config_dir, get_xdg_data_dir,
+        set_file_radonly,
     },
     profile::Profile,
 };
 use expect_dialog::ExpectDialog;
 use serde::{Deserialize, Serialize};
+use std::fs::copy;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct OpenVrPaths {
@@ -18,10 +20,7 @@ pub struct OpenVrPaths {
 }
 
 pub fn get_openvr_conf_dir() -> String {
-    format!(
-        "{config}/openvr",
-        config = get_xdg_config_dir()
-    )
+    format!("{config}/openvr", config = get_xdg_config_dir())
 }
 
 fn get_openvrpaths_vrpath_path() -> String {
@@ -40,6 +39,30 @@ pub fn is_steam(ovr_paths: &OpenVrPaths) -> bool {
                 .ends_with("/steam/steamapps/common/steamvr")
         })
         .is_some()
+}
+
+fn get_backup_steam_openvrpaths_path() -> String {
+    format!(
+        "{backup}/openvrpaths.vrpath.steam.bak",
+        backup = get_backup_dir()
+    )
+}
+
+fn get_backed_up_steam_openvrpaths() -> Option<OpenVrPaths> {
+    get_openvrpaths_from_path(&get_backup_steam_openvrpaths_path())
+}
+
+fn backup_steam_openvrpaths() {
+    let openvrpaths = get_current_openvrpaths();
+    if openvrpaths.is_some() {
+        if is_steam(&openvrpaths.unwrap()) {
+            copy(
+                get_openvrpaths_vrpath_path(),
+                get_backup_steam_openvrpaths_path(),
+            )
+            .expect_dialog("Failed to back up openvrpaths.vrpath");
+        }
+    }
 }
 
 fn get_openvrpaths_from_path(path_s: &String) -> Option<OpenVrPaths> {
@@ -62,6 +85,10 @@ pub fn dump_current_openvrpaths(ovr_paths: &OpenVrPaths) {
 }
 
 fn build_steam_openvrpaths() -> OpenVrPaths {
+    let backup = get_backed_up_steam_openvrpaths();
+    if backup.is_some() {
+        return backup.unwrap();
+    }
     let datadir = get_xdg_data_dir();
     OpenVrPaths {
         config: vec![format!("{data}/Steam/config", data = datadir)],
@@ -96,6 +123,7 @@ pub fn build_profile_openvrpaths(profile: &Profile) -> OpenVrPaths {
 }
 
 pub fn set_current_openvrpaths_to_profile(profile: &Profile) {
+    backup_steam_openvrpaths();
     dump_current_openvrpaths(&build_profile_openvrpaths(profile))
 }
 

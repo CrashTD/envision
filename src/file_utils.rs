@@ -102,6 +102,18 @@ pub fn get_cache_dir() -> String {
     )
 }
 
+pub fn get_backup_dir() -> String {
+    let p_s = format!("{data}/backups", data = get_data_dir());
+    let p = Path::new(&p_s);
+    if !p.is_dir() {
+        if p.is_file() {
+            panic!("{} is a file but it should be a directory!", p.to_str().unwrap());
+        }
+        create_dir_all(p);
+    }
+    p.to_str().unwrap().to_string()
+}
+
 pub fn set_file_radonly(path_s: &String, readonly: bool) {
     let path = Path::new(&path_s);
     if !path.is_file() {
