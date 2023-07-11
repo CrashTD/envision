@@ -2,7 +2,7 @@ use crate::{constants::CMD_NAME, runner::Runner};
 use expect_dialog::ExpectDialog;
 use std::{
     env,
-    fs::{self, create_dir_all, remove_dir_all, File, OpenOptions},
+    fs::{self, copy, create_dir_all, remove_dir_all, File, OpenOptions},
     io::{BufReader, BufWriter},
     path::Path,
 };
@@ -107,14 +107,17 @@ pub fn get_backup_dir() -> String {
     let p = Path::new(&p_s);
     if !p.is_dir() {
         if p.is_file() {
-            panic!("{} is a file but it should be a directory!", p.to_str().unwrap());
+            panic!(
+                "{} is a file but it should be a directory!",
+                p.to_str().unwrap()
+            );
         }
-        create_dir_all(p);
+        create_dir_all(p).expect_dialog("Failed to create backups dir");
     }
     p.to_str().unwrap().to_string()
 }
 
-pub fn set_file_radonly(path_s: &String, readonly: bool) {
+pub fn set_file_readonly(path_s: &String, readonly: bool) {
     let path = Path::new(&path_s);
     if !path.is_file() {
         println!("WARN: trying to set readonly on a file that does not exist");
@@ -159,4 +162,19 @@ pub fn rm_rf(path_s: &String) {
         Err(_) => println!("Failed to remove path {}", path_s),
         Ok(_) => {}
     }
+}
+
+pub fn copy_file(source_s: &String, dest_s: &String) {
+    let source = Path::new(source_s);
+    let dest = Path::new(dest_s);
+    let parent = dest.parent();
+    if parent.is_some() {
+        if !parent.unwrap().is_dir() {
+            create_dir_all(parent.unwrap()).expect_dialog(
+                format!("Failed to create dir {}", parent.unwrap().to_str().unwrap()).as_str(),
+            );
+        }
+    }
+    set_file_readonly(dest_s, false);
+    copy(source, dest).expect_dialog(format!("Failed to copy {} to {}", source_s, dest_s).as_str());
 }

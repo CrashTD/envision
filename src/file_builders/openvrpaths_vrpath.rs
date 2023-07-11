@@ -1,13 +1,12 @@
 use crate::{
     file_utils::{
-        deserialize_file, get_backup_dir, get_writer, get_xdg_config_dir, get_xdg_data_dir,
-        set_file_radonly,
+        copy_file, deserialize_file, get_backup_dir, get_writer, get_xdg_config_dir,
+        get_xdg_data_dir, set_file_readonly,
     },
     profile::Profile,
 };
 use expect_dialog::ExpectDialog;
 use serde::{Deserialize, Serialize};
-use std::fs::copy;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct OpenVrPaths {
@@ -56,11 +55,10 @@ fn backup_steam_openvrpaths() {
     let openvrpaths = get_current_openvrpaths();
     if openvrpaths.is_some() {
         if is_steam(&openvrpaths.unwrap()) {
-            copy(
-                get_openvrpaths_vrpath_path(),
-                get_backup_steam_openvrpaths_path(),
-            )
-            .expect_dialog("Failed to back up openvrpaths.vrpath");
+            copy_file(
+                &get_openvrpaths_vrpath_path(),
+                &get_backup_steam_openvrpaths_path(),
+            );
         }
     }
 }
@@ -74,10 +72,8 @@ pub fn get_current_openvrpaths() -> Option<OpenVrPaths> {
 }
 
 fn dump_openvrpaths_to_path(ovr_paths: &OpenVrPaths, path_s: &String) {
-    set_file_radonly(path_s, false);
     let writer = get_writer(path_s);
     serde_json::to_writer_pretty(writer, ovr_paths).expect_dialog("Unable to save openvrpaths");
-    set_file_radonly(path_s, true);
 }
 
 pub fn dump_current_openvrpaths(ovr_paths: &OpenVrPaths) {
@@ -104,6 +100,7 @@ fn build_steam_openvrpaths() -> OpenVrPaths {
 }
 
 pub fn set_current_openvrpaths_to_steam() {
+    set_file_readonly(&get_openvrpaths_vrpath_path(), false);
     dump_current_openvrpaths(&build_steam_openvrpaths())
 }
 
@@ -123,8 +120,11 @@ pub fn build_profile_openvrpaths(profile: &Profile) -> OpenVrPaths {
 }
 
 pub fn set_current_openvrpaths_to_profile(profile: &Profile) {
+    let dest = get_openvrpaths_vrpath_path();
+    set_file_readonly(&dest, false);
     backup_steam_openvrpaths();
-    dump_current_openvrpaths(&build_profile_openvrpaths(profile))
+    dump_current_openvrpaths(&build_profile_openvrpaths(profile));
+    set_file_readonly(&dest, true);
 }
 
 #[cfg(test)]

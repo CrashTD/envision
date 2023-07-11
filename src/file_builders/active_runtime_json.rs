@@ -1,14 +1,14 @@
 use crate::{
     file_utils::{
-        deserialize_file, get_backup_dir, get_writer, get_xdg_config_dir, get_xdg_data_dir,
-        set_file_radonly,
+        copy_file, deserialize_file, get_backup_dir, get_writer, get_xdg_config_dir,
+        get_xdg_data_dir, set_file_readonly,
     },
     paths::SYSTEM_PREFIX,
     profile::{Profile, XRServiceType},
 };
 use expect_dialog::ExpectDialog;
 use serde::{Deserialize, Serialize};
-use std::{fs::copy, path::Path};
+use std::path::Path;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ActiveRuntimeInnerRuntime {
@@ -57,11 +57,10 @@ fn backup_steam_active_runtime() {
     let ar = get_current_active_runtime();
     if ar.is_some() {
         if is_steam(&ar.unwrap()) {
-            copy(
-                get_active_runtime_json_path(),
-                get_backup_steam_active_runtime_path(),
-            )
-            .expect_dialog("Failed to back up active_runtime.json");
+            copy_file(
+                &get_active_runtime_json_path(),
+                &get_backup_steam_active_runtime_path(),
+            );
         }
     }
 }
@@ -75,11 +74,9 @@ pub fn get_current_active_runtime() -> Option<ActiveRuntime> {
 }
 
 fn dump_active_runtime_to_path(active_runtime: &ActiveRuntime, path_s: &String) {
-    set_file_radonly(path_s, false);
     let writer = get_writer(path_s);
     serde_json::to_writer_pretty(writer, active_runtime)
         .expect_dialog("Unable to save active runtime");
-    set_file_radonly(path_s, true);
 }
 
 pub fn dump_current_active_runtime(active_runtime: &ActiveRuntime) {
@@ -105,6 +102,7 @@ fn build_steam_active_runtime() -> ActiveRuntime {
 }
 
 pub fn set_current_active_runtime_to_steam() {
+    set_file_readonly(&get_active_runtime_json_path(), false);
     dump_current_active_runtime(&build_steam_active_runtime())
 }
 
@@ -127,13 +125,14 @@ pub fn build_profile_active_runtime(profile: &Profile) -> ActiveRuntime {
 }
 
 pub fn set_current_active_runtime_to_profile(profile: &Profile) {
+    let dest = get_active_runtime_json_path();
+    set_file_readonly(&dest, false);
     backup_steam_active_runtime();
     let pfx = profile.clone().prefix;
     let mut ar = build_profile_active_runtime(profile);
     // hack: relativize libopenxr_monado.so path for system installs
     if pfx == SYSTEM_PREFIX {
-        let path_s = get_active_runtime_json_path();
-        let path = Path::new(&path_s);
+        let path = Path::new(&dest);
         let mut rel_chain = path
             .components()
             .map(|_| String::from(".."))
@@ -146,6 +145,7 @@ pub fn set_current_active_runtime_to_profile(profile: &Profile) {
         );
     }
     dump_current_active_runtime(&ar);
+    set_file_readonly(&dest, true);
 }
 
 #[cfg(test)]
