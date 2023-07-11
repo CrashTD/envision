@@ -64,22 +64,24 @@ impl SimpleComponent for SteamLaunchOptionsBox {
                 set_margin_end: 12,
                 set_orientation: gtk::Orientation::Horizontal,
                 set_spacing: 6,
-                gtk::TextView {
+                gtk::ScrolledWindow {
                     add_css_class: "card",
-                    set_hexpand: true,
-                    set_vexpand: false,
-                    set_monospace: true,
-                    set_editable: false,
-                    set_wrap_mode: gtk::WrapMode::Word,
-                    set_left_margin: 6,
-                    set_right_margin: 6,
-                    set_top_margin: 6,
-                    set_bottom_margin: 6,
-                    set_size_request: (-1, 150),
-                    #[wrap(Some)]
-                    set_buffer: cmdbuf = &gtk::TextBuffer {
-                        #[track = "model.changed(Self::launch_options())"]
-                        set_text: model.launch_options.as_str(),
+                    set_vscrollbar_policy: gtk::PolicyType::Never,
+                    set_overflow: gtk::Overflow::Hidden,
+                    gtk::TextView {
+                        set_hexpand: true,
+                        set_vexpand: false,
+                        set_monospace: true,
+                        set_editable: false,
+                        set_left_margin: 6,
+                        set_right_margin: 6,
+                        set_top_margin: 6,
+                        set_bottom_margin: 18,
+                        #[wrap(Some)]
+                        set_buffer: cmdbuf = &gtk::TextBuffer {
+                            #[track = "model.changed(Self::launch_options())"]
+                            set_text: model.launch_options.as_str(),
+                        }
                     }
                 },
                 gtk::Button {

@@ -1,9 +1,6 @@
 use super::devices_box::{DevicesBox, DevicesBoxMsg};
 use super::install_wivrn_box::{InstallWivrnBox, InstallWivrnBoxInit, InstallWivrnBoxMsg};
 use super::profile_editor::{ProfileEditor, ProfileEditorMsg, ProfileEditorOutMsg};
-use super::runtime_switcher_box::{
-    RuntimeSwitcherBox, RuntimeSwitcherBoxInit, RuntimeSwitcherBoxMsg,
-};
 use super::steam_launch_options_box::{SteamLaunchOptionsBox, SteamLaunchOptionsBoxMsg};
 use crate::config::Config;
 use crate::constants::APP_NAME;
@@ -31,8 +28,6 @@ pub struct MainView {
     install_wivrn_box: Controller<InstallWivrnBox>,
     #[tracker::do_not_track]
     steam_launch_options_box: Controller<SteamLaunchOptionsBox>,
-    #[tracker::do_not_track]
-    runtime_switcher_box: Controller<RuntimeSwitcherBox>,
     #[tracker::do_not_track]
     devices_box: Controller<DevicesBox>,
     #[tracker::do_not_track]
@@ -147,7 +142,6 @@ impl SimpleComponent for MainView {
                         },
                     },
                     model.devices_box.widget(),
-                    model.runtime_switcher_box.widget(),
                     model.steam_launch_options_box.widget(),
                     model.install_wivrn_box.widget(),
                 }
@@ -250,9 +244,6 @@ impl SimpleComponent for MainView {
                 self.install_wivrn_box
                     .sender()
                     .emit(InstallWivrnBoxMsg::UpdateSelectedProfile(prof.clone()));
-                self.runtime_switcher_box
-                    .sender()
-                    .emit(RuntimeSwitcherBoxMsg::UpdateSelectedProfile(prof.clone()));
             }
             Self::Input::UpdateProfiles(profiles, config) => {
                 self.set_profiles(profiles);
@@ -374,11 +365,6 @@ impl SimpleComponent for MainView {
                 .launch(InstallWivrnBoxInit {
                     selected_profile: init.selected_profile.clone(),
                     root_win: init.root_win.clone(),
-                })
-                .detach(),
-            runtime_switcher_box: RuntimeSwitcherBox::builder()
-                .launch(RuntimeSwitcherBoxInit {
-                    selected_profile: init.selected_profile.clone(),
                 })
                 .detach(),
             profile_editor: ProfileEditor::builder()

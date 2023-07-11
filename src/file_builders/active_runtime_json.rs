@@ -23,14 +23,21 @@ pub struct ActiveRuntime {
     pub runtime: ActiveRuntimeInnerRuntime,
 }
 
-fn get_active_runtime_json_path() -> String {
+pub fn get_openxr_conf_dir() -> String {
     format!(
-        "{config}/openxr/1/active_runtime.json",
+        "{config}/openxr",
         config = get_xdg_config_dir()
     )
 }
 
-pub fn is_steam(active_runtime: ActiveRuntime) -> bool {
+fn get_active_runtime_json_path() -> String {
+    format!(
+        "{config}/1/active_runtime.json",
+        config = get_openxr_conf_dir()
+    )
+}
+
+pub fn is_steam(active_runtime: &ActiveRuntime) -> bool {
     match active_runtime.runtime.valve_runtime_is_steamvr {
         Some(true) => true,
         _ => false,
@@ -45,16 +52,16 @@ pub fn get_current_active_runtime() -> Option<ActiveRuntime> {
     get_active_runtime_from_path(&get_active_runtime_json_path())
 }
 
-fn dump_active_runtime_to_path(active_runtime: ActiveRuntime, path_s: String) {
-    set_file_radonly(&path_s, false);
-    let writer = get_writer(&path_s);
-    serde_json::to_writer_pretty(writer, &active_runtime)
+fn dump_active_runtime_to_path(active_runtime: &ActiveRuntime, path_s: &String) {
+    set_file_radonly(path_s, false);
+    let writer = get_writer(path_s);
+    serde_json::to_writer_pretty(writer, active_runtime)
         .expect_dialog("Unable to save active runtime");
-    set_file_radonly(&path_s, true);
+    set_file_radonly(path_s, true);
 }
 
-pub fn dump_current_active_runtime(active_runtime: ActiveRuntime) {
-    dump_active_runtime_to_path(active_runtime, get_active_runtime_json_path());
+pub fn dump_current_active_runtime(active_runtime: &ActiveRuntime) {
+    dump_active_runtime_to_path(active_runtime, &get_active_runtime_json_path());
 }
 
 fn build_steam_active_runtime() -> ActiveRuntime {
@@ -72,10 +79,10 @@ fn build_steam_active_runtime() -> ActiveRuntime {
 }
 
 pub fn set_current_active_runtime_to_steam() {
-    dump_current_active_runtime(build_steam_active_runtime())
+    dump_current_active_runtime(&build_steam_active_runtime())
 }
 
-fn build_profile_active_runtime(profile: Profile) -> ActiveRuntime {
+pub fn build_profile_active_runtime(profile: &Profile) -> ActiveRuntime {
     ActiveRuntime {
         file_format_version: "1.0.0".into(),
         runtime: ActiveRuntimeInnerRuntime {
@@ -93,7 +100,7 @@ fn build_profile_active_runtime(profile: Profile) -> ActiveRuntime {
     }
 }
 
-pub fn set_current_active_runtime_to_profile(profile: Profile) {
+pub fn set_current_active_runtime_to_profile(profile: &Profile) {
     let pfx = profile.clone().prefix;
     let mut ar = build_profile_active_runtime(profile);
     // hack: relativize libopenxr_monado.so path for system installs
@@ -111,7 +118,7 @@ pub fn set_current_active_runtime_to_profile(profile: Profile) {
             rels = rel_chain.join("/")
         );
     }
-    dump_current_active_runtime(ar);
+    dump_current_active_runtime(&ar);
 }
 
 #[cfg(test)]
@@ -146,6 +153,6 @@ mod tests {
                 name: Some("SteamVR".into()),
             },
         };
-        dump_active_runtime_to_path(ar, "./target/testout/active_runtime.json.steamvr".into());
+        dump_active_runtime_to_path(&ar, &"./target/testout/active_runtime.json.steamvr".into());
     }
 }

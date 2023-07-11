@@ -18,6 +18,8 @@ use crate::dependencies::mercury_deps::get_missing_mercury_deps;
 use crate::dependencies::monado_deps::get_missing_monado_deps;
 use crate::dependencies::pkexec_dep::pkexec_dep;
 use crate::dependencies::wivrn_deps::get_missing_wivrn_deps;
+use crate::file_builders::active_runtime_json::{set_current_active_runtime_to_profile, set_current_active_runtime_to_steam};
+use crate::file_builders::openvrpaths_vrpath::{set_current_openvrpaths_to_profile, set_current_openvrpaths_to_steam};
 use crate::file_utils::setcap_cap_sys_nice_eip;
 use crate::log_parser::MonadoLog;
 use crate::profile::{Profile, XRServiceType};
@@ -94,7 +96,6 @@ pub enum Msg {
     OpenLibsurviveSetup,
     Quit,
     ProcessDevicesLog(Vec<String>),
-    InhibitSession(bool),
 }
 
 impl App {
@@ -134,6 +135,8 @@ impl App {
     pub fn start_xrservice(&mut self) {
         self.set_inhibit_session(true);
         let prof = self.get_selected_profile();
+        set_current_active_runtime_to_profile(&prof);
+        set_current_openvrpaths_to_profile(&prof);
         self.devices_processed = match prof.xrservice_type {
             XRServiceType::Monado => false,
             XRServiceType::Wivrn => true, // no device from log in wivrn
@@ -154,6 +157,20 @@ impl App {
                 self.profile_runner_failed_dialog.present();
             }
         };
+    }
+
+    pub fn shutdown_xrservice(&mut self) {
+        if self.xrservice_runner.is_some() {
+            if self.xrservice_runner.as_mut().unwrap().status() == RunnerStatus::Running {
+                self.xrservice_runner.as_mut().unwrap().terminate();
+            }
+        }
+        set_current_active_runtime_to_steam();
+        set_current_openvrpaths_to_steam();
+        self.set_inhibit_session(false);
+        self.main_view
+            .sender()
+            .emit(MainViewMsg::XRServiceActiveChanged(false, None));
     }
 
     pub fn profiles_list(config: &Config) -> Vec<Profile> {
@@ -200,17 +217,18 @@ impl SimpleComponent for App {
                     },
                     model.debug_view.widget(),
                 }
-            }
+            },
         }
     }
 
     fn shutdown(&mut self, widgets: &mut Self::Widgets, output: relm4::Sender<Self::Output>) {
-        match &mut self.xrservice_runner {
-            None => {}
-            Some(runner) => {
-                runner.terminate();
+        if self.xrservice_runner.is_some() {
+            if self.xrservice_runner.as_mut().unwrap().status() == RunnerStatus::Running {
+                self.xrservice_runner.as_mut().unwrap().terminate();
             }
         }
+        set_current_active_runtime_to_steam();
+        set_current_openvrpaths_to_steam();
     }
 
     fn update(&mut self, message: Self::Input, sender: ComponentSender<Self>) {
@@ -320,18 +338,13 @@ impl SimpleComponent for App {
                 }
                 Some(runner) => match runner.status() {
                     RunnerStatus::Running => {
-                        sender.input(Msg::InhibitSession(false));
-                        runner.terminate();
-                        self.main_view
-                            .sender()
-                            .emit(MainViewMsg::XRServiceActiveChanged(false, None));
+                        self.shutdown_xrservice();
                     }
                     RunnerStatus::Stopped(_) => {
                         self.start_xrservice();
                     }
                 },
             },
-            Msg::InhibitSession(state) => self.set_inhibit_session(state),
             Msg::BuildProfile => {
                 let profile = self.get_selected_profile();
                 let mut missing_deps = vec![];

@@ -2,7 +2,7 @@ use crate::{constants::CMD_NAME, runner::Runner};
 use expect_dialog::ExpectDialog;
 use std::{
     env,
-    fs::{self, create_dir_all, File, OpenOptions},
+    fs::{self, create_dir_all, remove_dir_all, File, OpenOptions},
     io::{BufReader, BufWriter},
     path::Path,
 };
@@ -78,6 +78,10 @@ pub fn get_xdg_cache_dir() -> String {
     }
 }
 
+pub fn get_xdg_runtime_dir() -> String {
+    env::var("XDG_RUNTIME_DIR").expect_dialog("XDG_RUNTIME_DIR is not set")
+}
+
 pub fn get_config_dir() -> String {
     format!(
         "{config}/{name}",
@@ -136,4 +140,11 @@ pub fn get_exec_prefix() -> String {
         .to_str()
         .unwrap()
         .to_string()
+}
+
+pub fn rm_rf(path_s: &String) {
+    match remove_dir_all(path_s) {
+        Err(_) => println!("Failed to remove path {}", path_s),
+        Ok(_) => {}
+    }
 }

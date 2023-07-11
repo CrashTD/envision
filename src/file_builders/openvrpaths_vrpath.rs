@@ -17,14 +17,21 @@ pub struct OpenVrPaths {
     version: u32,
 }
 
-fn get_openvrpaths_vrpath_path() -> String {
+pub fn get_openvr_conf_dir() -> String {
     format!(
-        "{config}/openvr/openvrpaths.vrpath",
+        "{config}/openvr",
         config = get_xdg_config_dir()
     )
 }
 
-pub fn is_steam(ovr_paths: OpenVrPaths) -> bool {
+fn get_openvrpaths_vrpath_path() -> String {
+    format!(
+        "{config}/openvrpaths.vrpath",
+        config = get_openvr_conf_dir()
+    )
+}
+
+pub fn is_steam(ovr_paths: &OpenVrPaths) -> bool {
     ovr_paths
         .runtime
         .iter()
@@ -43,15 +50,15 @@ pub fn get_current_openvrpaths() -> Option<OpenVrPaths> {
     get_openvrpaths_from_path(&get_openvrpaths_vrpath_path())
 }
 
-fn dump_openvrpaths_to_path(ovr_paths: OpenVrPaths, path_s: String) {
-    set_file_radonly(&path_s, false);
-    let writer = get_writer(&path_s);
-    serde_json::to_writer_pretty(writer, &ovr_paths).expect_dialog("Unable to save openvrpaths");
-    set_file_radonly(&path_s, true);
+fn dump_openvrpaths_to_path(ovr_paths: &OpenVrPaths, path_s: &String) {
+    set_file_radonly(path_s, false);
+    let writer = get_writer(path_s);
+    serde_json::to_writer_pretty(writer, ovr_paths).expect_dialog("Unable to save openvrpaths");
+    set_file_radonly(path_s, true);
 }
 
-pub fn dump_current_openvrpaths(ovr_paths: OpenVrPaths) {
-    dump_openvrpaths_to_path(ovr_paths, get_openvrpaths_vrpath_path())
+pub fn dump_current_openvrpaths(ovr_paths: &OpenVrPaths) {
+    dump_openvrpaths_to_path(ovr_paths, &get_openvrpaths_vrpath_path())
 }
 
 fn build_steam_openvrpaths() -> OpenVrPaths {
@@ -70,10 +77,10 @@ fn build_steam_openvrpaths() -> OpenVrPaths {
 }
 
 pub fn set_current_openvrpaths_to_steam() {
-    dump_current_openvrpaths(build_steam_openvrpaths())
+    dump_current_openvrpaths(&build_steam_openvrpaths())
 }
 
-fn build_profile_openvrpaths(profile: Profile) -> OpenVrPaths {
+pub fn build_profile_openvrpaths(profile: &Profile) -> OpenVrPaths {
     let datadir = get_xdg_data_dir();
     OpenVrPaths {
         config: vec![format!("{data}/Steam/config", data = datadir)],
@@ -88,8 +95,8 @@ fn build_profile_openvrpaths(profile: Profile) -> OpenVrPaths {
     }
 }
 
-pub fn set_current_openvrpaths_to_profile(profile: Profile) {
-    dump_current_openvrpaths(build_profile_openvrpaths(profile))
+pub fn set_current_openvrpaths_to_profile(profile: &Profile) {
+    dump_current_openvrpaths(&build_profile_openvrpaths(profile))
 }
 
 #[cfg(test)]
@@ -119,6 +126,6 @@ mod tests {
             runtime: vec!["/home/user/.local/share/Steam/steamapps/common/SteamVR".into()],
             version: 1,
         };
-        dump_openvrpaths_to_path(ovrp, "./target/testout/openvrpaths.vrpath".into())
+        dump_openvrpaths_to_path(&ovrp, &"./target/testout/openvrpaths.vrpath".into())
     }
 }
