@@ -1,35 +1,56 @@
 use anyhow::Result;
-use constants::{APP_ID, APP_NAME, GETTEXT_PACKAGE, LOCALE_DIR, resources};
+use constants::{resources, APP_ID, APP_NAME, GETTEXT_PACKAGE, LOCALE_DIR};
+use file_builders::{
+    active_runtime_json::{get_current_active_runtime, set_current_active_runtime_to_steam},
+    openvrpaths_vrpath::{get_current_openvrpaths, set_current_openvrpaths_to_steam},
+};
 use gettextrs::LocaleCategory;
 use relm4::{
     adw,
-    gtk::{self, gio, glib, gdk},
+    gtk::{self, gdk, gio, glib},
     RelmApp,
 };
 use ui::app::{App, AppInit};
 
+pub mod adb;
 pub mod builders;
 pub mod config;
 pub mod constants;
 pub mod depcheck;
 pub mod dependencies;
+pub mod device_prober;
+pub mod downloader;
+pub mod env_var_descriptions;
 pub mod file_builders;
 pub mod file_utils;
+pub mod log_level;
+pub mod log_parser;
 pub mod paths;
 pub mod profile;
 pub mod profiles;
 pub mod runner;
 pub mod runner_pipeline;
 pub mod ui;
-pub mod adb;
-pub mod downloader;
-pub mod env_var_descriptions;
-pub mod log_parser;
-pub mod log_level;
 pub mod xr_devices;
-pub mod device_prober;
+
+fn restore_steam_xr_files() {
+    let active_runtime = get_current_active_runtime();
+    let openvrpaths = get_current_openvrpaths();
+    if active_runtime.is_some() {
+        if file_builders::active_runtime_json::is_steam(&active_runtime.unwrap()) {
+            set_current_active_runtime_to_steam();
+        }
+    }
+    if openvrpaths.is_some() {
+        if file_builders::openvrpaths_vrpath::is_steam(&openvrpaths.unwrap()) {
+            set_current_openvrpaths_to_steam();
+        }
+    }
+}
 
 fn main() -> Result<()> {
+    restore_steam_xr_files();
+
     // Prepare i18n
     gettextrs::setlocale(LocaleCategory::LcAll, "");
     gettextrs::bindtextdomain(GETTEXT_PACKAGE, LOCALE_DIR).expect("Unable to bind the text domain");
