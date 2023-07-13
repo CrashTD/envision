@@ -36,6 +36,8 @@ pub struct MainView {
     profile_not_editable_dialog: adw::MessageDialog,
     #[tracker::do_not_track]
     profile_delete_confirm_dialog: adw::MessageDialog,
+    #[tracker::do_not_track]
+    cannot_duplicate_profile_dialog: adw::MessageDialog,
 }
 
 #[derive(Debug)]
@@ -295,9 +297,14 @@ impl SimpleComponent for MainView {
                 sender.output(Self::Output::SaveProfile(prof));
             }
             Self::Input::DuplicateProfile => {
-                self.profile_editor.sender().emit(ProfileEditorMsg::Present(
-                    self.selected_profile.create_duplicate(),
-                ));
+                if self.selected_profile.can_be_built {
+                    self.profile_editor.sender().emit(ProfileEditorMsg::Present(
+                        self.selected_profile.create_duplicate(),
+                    ));
+                }
+                else {
+                    self.cannot_duplicate_profile_dialog.present();
+                }
             }
             Self::Input::UpdateDevices(devs) => {
                 self.devices_box.sender().emit(DevicesBoxMsg::UpdateDevices(devs))
@@ -355,6 +362,14 @@ impl SimpleComponent for MainView {
             });
         }
 
+        let cannot_duplicate_profile_dialog = adw::MessageDialog::builder()
+            .modal(true)
+            .transient_for(&init.root_win)
+            .hide_on_close(true)
+            .heading("This profile cannot be duplicated")
+            .build();
+        cannot_duplicate_profile_dialog.add_response("ok", "_Ok");
+
         let mut model = Self {
             xrservice_active: false,
             enable_debug_view: init.config.debug_view_enabled,
@@ -378,6 +393,7 @@ impl SimpleComponent for MainView {
             selected_profile: init.selected_profile.clone(),
             profile_not_editable_dialog,
             profile_delete_confirm_dialog,
+            cannot_duplicate_profile_dialog,
             tracker: 0,
         };
         let widgets = view_output!();
