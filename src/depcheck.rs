@@ -1,4 +1,3 @@
-use expect_dialog::ExpectDialog;
 use std::{env, fmt::Display, path::Path};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -69,7 +68,7 @@ pub fn check_dependency(dep: Dependency) -> bool {
     for dir in match dep.dep_type {
         DepType::SharedObject => shared_obj_paths(),
         DepType::Executable => env::var("PATH")
-            .expect_dialog("PATH environment variable not defined")
+            .expect("PATH environment variable not defined")
             .split(':')
             .map(str::to_string)
             .collect(),

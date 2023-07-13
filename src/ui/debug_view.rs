@@ -1,6 +1,5 @@
 use crate::log_level::LogLevel;
 use crate::log_parser::MonadoLog;
-use expect_dialog::ExpectDialog;
 use gtk::prelude::*;
 use relm4::prelude::*;
 use relm4::{ComponentSender, SimpleComponent};
@@ -245,7 +244,7 @@ impl SimpleComponent for DebugView {
             .style_scheme(
                 &sourceview5::StyleSchemeManager::new()
                     .scheme("Adwaita-dark")
-                    .expect_dialog("Couldn't find Adwaita-dark style scheme for gtksourceview5"),
+                    .expect("Couldn't find Adwaita-dark style scheme for gtksourceview5"),
             )
             .build();
         let search_settings = sourceview5::SearchSettings::builder()

@@ -33,7 +33,6 @@ use crate::ui::debug_view::DebugViewInit;
 use crate::ui::libsurvive_setup_window::LibsurviveSetupMsg;
 use crate::ui::main_view::{MainView, MainViewInit, MainViewOutMsg};
 use crate::xr_devices::XRDevices;
-use expect_dialog::ExpectDialog;
 use gtk::prelude::*;
 use relm4::actions::{AccelsPlus, ActionGroupName, RelmAction, RelmActionGroup};
 use relm4::adw::traits::MessageDialogExt;
@@ -472,7 +471,7 @@ impl SimpleComponent for App {
                     .send(LibsurviveSetupMsg::Present(
                         self.get_selected_profile().clone(),
                     ))
-                    .expect_dialog("Failed to present Libsurvive Setup Window");
+                    .expect("Failed to present Libsurvive Setup Window");
             }
             Msg::Quit => {
                 self.application.quit();

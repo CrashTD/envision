@@ -1,5 +1,4 @@
 use crate::file_utils::get_writer;
-use expect_dialog::ExpectDialog;
 use reqwest::{
     header::{HeaderMap, USER_AGENT},
     Method,
@@ -21,7 +20,7 @@ fn client() -> reqwest::blocking::Client {
         .timeout(TIMEOUT)
         .default_headers(headers())
         .build()
-        .expect_dialog("Failed to build reqwest::Client")
+        .expect("Failed to build reqwest::Client")
 }
 
 pub fn download_file(url: String, path: String) -> JoinHandle<Result<(), reqwest::Error>> {
@@ -36,12 +35,12 @@ pub fn download_file(url: String, path: String) -> JoinHandle<Result<(), reqwest
                 let mut writer = get_writer(&path);
                 for chunk in res
                     .bytes()
-                    .expect_dialog("Could not get HTTP response bytes")
+                    .expect("Could not get HTTP response bytes")
                     .chunks(CHUNK_SIZE)
                 {
-                    writer.write(chunk).expect_dialog("Failed to write chunk");
+                    writer.write(chunk).expect("Failed to write chunk");
                 }
-                writer.flush().expect_dialog("Failed to flush download writer");
+                writer.flush().expect("Failed to flush download writer");
                 Ok(())
             }
             Err(e) => Err(e)

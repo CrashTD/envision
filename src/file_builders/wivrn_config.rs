@@ -1,9 +1,6 @@
-use std::{fmt::Display, slice::Iter};
-
-use expect_dialog::ExpectDialog;
-use serde::{Deserialize, Serialize};
-
 use crate::file_utils::{deserialize_file, get_writer, get_xdg_config_dir};
+use serde::{Deserialize, Serialize};
+use std::{fmt::Display, slice::Iter};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -29,9 +26,7 @@ impl Encoder {
     }
 
     pub fn as_vec() -> Vec<Encoder> {
-        vec![
-            Self::X264, Self::Nvenc, Self::Vaapi
-        ]
+        vec![Self::X264, Self::Nvenc, Self::Vaapi]
     }
 
     pub fn as_number(&self) -> u32 {
@@ -103,7 +98,7 @@ pub fn get_wivrn_config() -> WivrnConfig {
 
 fn dump_wivrn_config_to_path(config: &WivrnConfig, path_s: &String) {
     let writer = get_writer(path_s);
-    serde_json::to_writer_pretty(writer, config).expect_dialog("Unable to save WiVRn config");
+    serde_json::to_writer_pretty(writer, config).expect("Unable to save WiVRn config");
 }
 
 pub fn dump_wivrn_config(config: &WivrnConfig) {

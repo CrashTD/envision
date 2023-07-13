@@ -2,7 +2,6 @@ use crate::{
     constants::CMD_NAME,
     file_utils::{get_config_dir, get_writer}, profile::Profile,
 };
-use expect_dialog::ExpectDialog;
 use serde::{Deserialize, Serialize};
 use std::{fs::File, io::BufReader};
 
@@ -28,7 +27,7 @@ impl Config {
     pub fn get_selected_profile(&self, profiles: &Vec<Profile>) -> Profile {
         match profiles.iter().find(|p| {p.uuid == self.selected_profile_uuid}) {
             Some(p) => p.clone(),
-            None => profiles.get(0).expect_dialog("No profiles found").clone(),
+            None => profiles.get(0).expect("No profiles found").clone(),
         }
     }
 
@@ -59,7 +58,7 @@ impl Config {
     }
 
     pub fn save(&self) {
-        self.save_to_path(&Self::config_file_path()).expect_dialog("Failed to save config");
+        self.save_to_path(&Self::config_file_path()).expect("Failed to save config");
     }
 
     pub fn get_config() -> Self {

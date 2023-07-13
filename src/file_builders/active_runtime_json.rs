@@ -6,7 +6,6 @@ use crate::{
     paths::SYSTEM_PREFIX,
     profile::{Profile, XRServiceType},
 };
-use expect_dialog::ExpectDialog;
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 
@@ -76,7 +75,7 @@ pub fn get_current_active_runtime() -> Option<ActiveRuntime> {
 fn dump_active_runtime_to_path(active_runtime: &ActiveRuntime, path_s: &String) {
     let writer = get_writer(path_s);
     serde_json::to_writer_pretty(writer, active_runtime)
-        .expect_dialog("Unable to save active runtime");
+        .expect("Unable to save active runtime");
 }
 
 pub fn dump_current_active_runtime(active_runtime: &ActiveRuntime) {

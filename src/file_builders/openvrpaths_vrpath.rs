@@ -5,7 +5,6 @@ use crate::{
     },
     profile::Profile,
 };
-use expect_dialog::ExpectDialog;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -73,7 +72,7 @@ pub fn get_current_openvrpaths() -> Option<OpenVrPaths> {
 
 fn dump_openvrpaths_to_path(ovr_paths: &OpenVrPaths, path_s: &String) {
     let writer = get_writer(path_s);
-    serde_json::to_writer_pretty(writer, ovr_paths).expect_dialog("Unable to save openvrpaths");
+    serde_json::to_writer_pretty(writer, ovr_paths).expect("Unable to save openvrpaths");
 }
 
 pub fn dump_current_openvrpaths(ovr_paths: &OpenVrPaths) {

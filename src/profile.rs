@@ -2,7 +2,6 @@ use crate::{
     file_utils::{get_data_dir, get_writer},
     paths::{data_monado_path, data_opencomposite_path, BWRAP_SYSTEM_PREFIX, SYSTEM_PREFIX},
 };
-use expect_dialog::ExpectDialog;
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, fmt::Display, fs::File, io::BufReader, slice::Iter};
 use uuid::Uuid;
@@ -202,14 +201,14 @@ impl Profile {
     }
 
     pub fn load_profile(path: &String) -> Self {
-        let file = File::open(path).expect_dialog("Unable to open profile");
+        let file = File::open(path).expect("Unable to open profile");
         let reader = BufReader::new(file);
-        serde_json::from_reader(reader).expect_dialog("Faiuled to deserialize profile")
+        serde_json::from_reader(reader).expect("Faiuled to deserialize profile")
     }
 
     pub fn dump_profile(&self, path_s: &String) -> () {
         let writer = get_writer(path_s);
-        serde_json::to_writer_pretty(writer, self).expect_dialog("Could not write profile")
+        serde_json::to_writer_pretty(writer, self).expect("Could not write profile")
     }
 
     pub fn create_duplicate(&self) -> Self {
