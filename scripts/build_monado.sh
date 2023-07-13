@@ -34,6 +34,6 @@ cmake -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_INSTALL_PREFIX="${PREFIX}" \
     -DCMAKE_C_FLAGS="-Wl,-rpath ${PREFIX}/lib" \
     -DCMAKE_CXX_FLAGS="-Wl,-rpath ${PREFIX}/lib" \
-    ..
-make -j$(nproc)
-make install
+    .. -G Ninja
+cmake --build .
+cmake --install .
