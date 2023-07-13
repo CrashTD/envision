@@ -241,12 +241,11 @@ impl SimpleComponent for DebugView {
     ) -> ComponentParts<Self> {
         let textbuf = sourceview5::Buffer::builder()
             .highlight_syntax(false)
-            .style_scheme(
-                &sourceview5::StyleSchemeManager::new()
-                    .scheme("Adwaita-dark")
-                    .expect("Couldn't find Adwaita-dark style scheme for gtksourceview5"),
-            )
             .build();
+        match &sourceview5::StyleSchemeManager::new().scheme("Adwaita-dark") {
+            Some(scheme) => textbuf.set_style_scheme(Some(scheme)),
+            None => {}
+        }
         let search_settings = sourceview5::SearchSettings::builder()
             .wrap_around(true)
             .case_sensitive(false)
