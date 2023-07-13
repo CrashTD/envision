@@ -21,6 +21,8 @@ pub struct LibsurviveSetupWindow {
     #[tracker::do_not_track]
     calibration_done_page: Option<adw::StatusPage>,
     #[tracker::do_not_track]
+    calibration_cancelled_page: Option<adw::StatusPage>,
+    #[tracker::do_not_track]
     page1: Option<adw::StatusPage>,
     #[tracker::do_not_track]
     filefilter_listmodel: gtk::gio::ListStore,
@@ -45,6 +47,7 @@ pub enum LibsurviveSetupMsg {
     SetSteamLighthousePath(Option<String>),
     ChooseFileDialog,
     TickCalibrationRunner,
+    Cancel,
 }
 
 impl LibsurviveSetupWindow {
@@ -276,14 +279,46 @@ impl SimpleComponent for LibsurviveSetupWindow {
                         set_vexpand: true,
                         set_title: "Importing Calibration...\nDo Not Touch your Headset!",
                         set_description: Some("Please stand by"),
-                        #[name(progressbar)]
-                        gtk::ProgressBar {
-                            set_margin_top: 12,
-                            set_margin_bottom: 12,
-                            set_margin_start: 24,
-                            set_margin_end: 24,
-                            set_fraction: 0.0,
+                        gtk::Box {
+                            set_orientation: gtk::Orientation::Vertical,
+                            set_spacing: 24,
                             set_hexpand: true,
+                            #[name(progressbar)]
+                            gtk::ProgressBar {
+                                set_margin_top: 12,
+                                set_margin_bottom: 12,
+                                set_margin_start: 24,
+                                set_margin_end: 24,
+                                set_fraction: 0.0,
+                                set_hexpand: true,
+                            },
+                            gtk::Button {
+                                add_css_class: "destructive-action",
+                                add_css_class: "pill",
+                                set_label: "Cancel",
+                                connect_clicked[sender] => move |_| {
+                                    sender.input(Self::Input::Cancel)
+                                }
+                            },
+                        }
+                    },
+                    #[name(calibration_cancelled_page)]
+                    adw::StatusPage {
+                        set_hexpand: true,
+                        set_vexpand: true,
+                        set_title: "Calibration Import Cancelled",
+                        set_description: Some(
+                            "You can re-run the calibration process any time.",
+                        ),
+                        gtk::Button {
+                            set_hexpand: true,
+                            set_halign: gtk::Align::Center,
+                            add_css_class: "pill",
+                            add_css_class: "suggested-action",
+                            set_label: "Ok",
+                            connect_clicked[win] => move |_| {
+                                win.close();
+                            },
                         }
                     },
                     #[name(calibration_done_page)]
@@ -307,7 +342,7 @@ impl SimpleComponent for LibsurviveSetupWindow {
                                 win.close();
                             },
                         }
-                    }
+                    },
                 },
                 adw::CarouselIndicatorDots {
                     set_carousel: Some(&carousel),
@@ -320,11 +355,11 @@ impl SimpleComponent for LibsurviveSetupWindow {
         self.reset();
 
         match message {
-            LibsurviveSetupMsg::Present(prof) => {
+            Self::Input::Present(prof) => {
                 self.profile = Some(prof);
                 self.win.as_ref().unwrap().present();
             }
-            LibsurviveSetupMsg::CalibrateLibsurvive => {
+            Self::Input::CalibrateLibsurvive => {
                 if self.steam_lighthouse_path == NO_FILE_MSG {
                     return;
                 }
@@ -351,13 +386,13 @@ impl SimpleComponent for LibsurviveSetupWindow {
                         .scroll_to(self.loading_page.as_ref().unwrap(), true);
                 }
             }
-            LibsurviveSetupMsg::SetSteamLighthousePath(n_path) => {
+            Self::Input::SetSteamLighthousePath(n_path) => {
                 self.set_steam_lighthouse_path(match n_path {
                     None => NO_FILE_MSG.into(),
                     Some(p) => p,
                 });
             }
-            LibsurviveSetupMsg::ChooseFileDialog => {
+            Self::Input::ChooseFileDialog => {
                 let chooser = gtk::FileDialog::builder()
                     .modal(true)
                     .title("Select SteamVR Calibration")
@@ -380,7 +415,7 @@ impl SimpleComponent for LibsurviveSetupWindow {
                     },
                 );
             }
-            LibsurviveSetupMsg::TickCalibrationRunner => {
+            Self::Input::TickCalibrationRunner => {
                 self.calibration_seconds_elapsed += 1.0;
                 self.progressbar.as_ref().unwrap().set_fraction(
                     (self.calibration_seconds_elapsed / (CALIBRATION_RUN_TIME_SECONDS * 2.0))
@@ -405,8 +440,23 @@ impl SimpleComponent for LibsurviveSetupWindow {
                         self.carousel
                             .as_ref()
                             .unwrap()
-                            .scroll_to(self.calibration_done_page.as_ref().unwrap(), true)
+                            .scroll_to(self.calibration_done_page.as_ref().unwrap(), true);
                     }
+                }
+            }
+            Self::Input::Cancel => {
+                if self.calibration_running.get() {
+                    match self.calibration_runner.as_mut() {
+                        Some(runner) => {
+                            runner.terminate();
+                        }
+                        None => {}
+                    }
+                    self.calibration_running.set(false);
+                    self.carousel
+                        .as_ref()
+                        .unwrap()
+                        .scroll_to(self.calibration_cancelled_page.as_ref().unwrap(), true);
                 }
             }
         }
@@ -426,6 +476,7 @@ impl SimpleComponent for LibsurviveSetupWindow {
             page1: None,
             loading_page: None,
             calibration_done_page: None,
+            calibration_cancelled_page: None,
             steam_lighthouse_path: NO_FILE_MSG.into(),
             filefilter_listmodel: gtk4::gio::ListStore::builder()
                 .item_type(gtk::FileFilter::static_type())
@@ -447,6 +498,7 @@ impl SimpleComponent for LibsurviveSetupWindow {
         model.carousel = Some(widgets.carousel.clone());
         model.loading_page = Some(widgets.loading_page.clone());
         model.calibration_done_page = Some(widgets.calibration_done_page.clone());
+        model.calibration_cancelled_page = Some(widgets.calibration_cancelled_page.clone());
         model.page1 = Some(widgets.page1.clone());
 
         {
