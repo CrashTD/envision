@@ -9,6 +9,7 @@ url='https://gitlab.com/gabmus/rex2'
 license=(GPL)
 depends=(
     gtk4
+    gtksourceview5
     libadwaita
     openxr
     libgl
