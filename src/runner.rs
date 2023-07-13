@@ -2,7 +2,6 @@ use crate::{
     file_utils::get_writer,
     profile::{Profile, XRServiceType},
 };
-use expect_dialog::ExpectDialog;
 use nix::{
     sys::signal::{kill, Signal::SIGTERM},
     unistd::Pid,
@@ -55,7 +54,7 @@ macro_rules! logger_thread {
                         match $sender
                             .clone()
                             .lock()
-                            .expect_dialog("Could not lock sender")
+                            .expect("Could not lock sender")
                             .send(buf)
                         {
                             Ok(_) => {}
@@ -123,14 +122,14 @@ impl Runner {
     }
 
     pub fn start(&mut self) {
-        self.try_start().expect_dialog("Failed to execute runner");
+        self.try_start().expect("Failed to execute runner");
     }
 
     fn join_threads(&mut self) {
         loop {
             match self.threads.pop() {
                 None => break,
-                Some(thread) => thread.join().expect_dialog("Failed to join reader thread"),
+                Some(thread) => thread.join().expect("Failed to join reader thread"),
             }
         }
     }
@@ -147,11 +146,11 @@ impl Runner {
         let child_pid = Pid::from_raw(
             proc.id()
                 .try_into()
-                .expect_dialog("Could not convert pid to u32"),
+                .expect("Could not convert pid to u32"),
         );
-        kill(child_pid, SIGTERM).expect_dialog("Could not send sigterm to process");
+        kill(child_pid, SIGTERM).expect("Could not send sigterm to process");
         self.join_threads();
-        proc.wait().expect_dialog("Failed to wait for process");
+        proc.wait().expect("Failed to wait for process");
     }
 
     pub fn join(&mut self) {
@@ -160,7 +159,7 @@ impl Runner {
             return;
         }
         let mut proc = process.unwrap();
-        proc.wait().expect_dialog("Failed to wait for process");
+        proc.wait().expect("Failed to wait for process");
         self.join_threads();
     }
 

@@ -1,11 +1,10 @@
-use expect_dialog::ExpectDialog;
 use crate::{constants::pkg_data_dir, profile::Profile, runner::Runner};
 
 pub fn get_build_basalt_runner(profile: Profile) -> Runner {
     let mut args = vec![
         profile
             .features.basalt.path
-            .expect_dialog("Missing basalt path for given profile"),
+            .expect("Missing basalt path for given profile"),
         profile.prefix,
         match profile.pull_on_build {
             true => "1".into(),

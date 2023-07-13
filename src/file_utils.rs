@@ -1,5 +1,4 @@
 use crate::{constants::CMD_NAME, runner::Runner};
-use expect_dialog::ExpectDialog;
 use std::{
     env,
     fs::{self, copy, create_dir_all, remove_dir_all, File, OpenOptions},
@@ -12,7 +11,7 @@ pub fn get_writer(path_s: &String) -> BufWriter<std::fs::File> {
     match path.parent() {
         Some(parent) => {
             if !parent.is_dir() {
-                create_dir_all(parent).expect_dialog("Could not create dir")
+                create_dir_all(parent).expect("Could not create dir")
             }
         }
         None => {}
@@ -22,7 +21,7 @@ pub fn get_writer(path_s: &String) -> BufWriter<std::fs::File> {
         .create(true)
         .truncate(true)
         .open(path)
-        .expect_dialog("Could not open file");
+        .expect("Could not open file");
     BufWriter::new(file)
 }
 
@@ -54,7 +53,7 @@ pub fn deserialize_file<T: serde::de::DeserializeOwned>(path_s: &String) -> Opti
 }
 
 pub fn get_home_dir() -> String {
-    env::var("HOME").expect_dialog("HOME env var not defined")
+    env::var("HOME").expect("HOME env var not defined")
 }
 
 pub fn get_xdg_config_dir() -> String {
@@ -79,7 +78,7 @@ pub fn get_xdg_cache_dir() -> String {
 }
 
 pub fn get_xdg_runtime_dir() -> String {
-    env::var("XDG_RUNTIME_DIR").expect_dialog("XDG_RUNTIME_DIR is not set")
+    env::var("XDG_RUNTIME_DIR").expect("XDG_RUNTIME_DIR is not set")
 }
 
 pub fn get_config_dir() -> String {
@@ -112,7 +111,7 @@ pub fn get_backup_dir() -> String {
                 p.to_str().unwrap()
             );
         }
-        create_dir_all(p).expect_dialog("Failed to create backups dir");
+        create_dir_all(p).expect("Failed to create backups dir");
     }
     p.to_str().unwrap().to_string()
 }
@@ -124,10 +123,10 @@ pub fn set_file_readonly(path_s: &String, readonly: bool) {
         return;
     }
     let mut perms = fs::metadata(path)
-        .expect_dialog("Could not get metadata for file")
+        .expect("Could not get metadata for file")
         .permissions();
     perms.set_readonly(readonly);
-    fs::set_permissions(path, perms).expect_dialog("Could not set permissions for file")
+    fs::set_permissions(path, perms).expect("Could not set permissions for file")
 }
 
 pub fn setcap_cap_sys_nice_eip(file: String) {
@@ -170,11 +169,11 @@ pub fn copy_file(source_s: &String, dest_s: &String) {
     let parent = dest.parent();
     if parent.is_some() {
         if !parent.unwrap().is_dir() {
-            create_dir_all(parent.unwrap()).expect_dialog(
+            create_dir_all(parent.unwrap()).expect(
                 format!("Failed to create dir {}", parent.unwrap().to_str().unwrap()).as_str(),
             );
         }
     }
     set_file_readonly(dest_s, false);
-    copy(source, dest).expect_dialog(format!("Failed to copy {} to {}", source_s, dest_s).as_str());
+    copy(source, dest).expect(format!("Failed to copy {} to {}", source_s, dest_s).as_str());
 }

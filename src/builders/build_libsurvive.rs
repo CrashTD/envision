@@ -1,11 +1,10 @@
 use crate::{constants::pkg_data_dir, profile::Profile, runner::Runner};
-use expect_dialog::ExpectDialog;
 
 pub fn get_build_libsurvive_runner(profile: Profile) -> Runner {
     let mut args = vec![
         profile
             .features.libsurvive.path
-            .expect_dialog("Missing libsurvive path for given profile"),
+            .expect("Missing libsurvive path for given profile"),
         profile.prefix,
         match profile.pull_on_build {
             true => "1".into(),

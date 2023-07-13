@@ -1,5 +1,4 @@
 use crate::{constants::APP_NAME, profile::Profile};
-use expect_dialog::ExpectDialog;
 use gtk::prelude::*;
 use relm4::prelude::*;
 
@@ -111,7 +110,7 @@ impl SimpleComponent for SteamLaunchOptionsBox {
             }
             Self::Input::CopyLaunchOptions => {
                 gtk::gdk::Display::default()
-                    .expect_dialog("Could not find default display")
+                    .expect("Could not find default display")
                     .clipboard()
                     .set_text(self.launch_options.as_str());
             }

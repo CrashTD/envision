@@ -1,4 +1,3 @@
-use expect_dialog::ExpectDialog;
 use serde::{Deserialize, Serialize};
 
 use crate::file_utils::{deserialize_file, get_writer, get_xdg_config_dir};
@@ -46,7 +45,7 @@ pub fn get_monado_autorun_config() -> MonadoAutorunConfig {
 fn dump_monado_autorun_config_to_path(config: &MonadoAutorunConfig, path_s: &String) {
     let writer = get_writer(path_s);
     serde_json::to_writer_pretty(writer, config)
-        .expect_dialog("Unable to save Monado Autorun config");
+        .expect("Unable to save Monado Autorun config");
 }
 
 pub fn dump_monado_autorun_config(config: &MonadoAutorunConfig) {
