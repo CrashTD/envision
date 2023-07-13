@@ -25,6 +25,5 @@ cd "$REPO_DIR"
 rm -rf build
 mkdir -p build
 cd build
-cmake -DCMAKE_BUILD_TYPE=Release ..
-make clean
-make -j$(nproc)
+cmake -DCMAKE_BUILD_TYPE=Release .. -G Ninja
+cmake --build .

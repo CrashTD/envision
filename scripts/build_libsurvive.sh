@@ -31,6 +31,6 @@ cmake -DCMAKE_BUILD_TYPE=Release \
     -Wno-dev \
     -DCMAKE_INSTALL_PREFIX="${PREFIX}" \
     -DCMAKE_INSTALL_LIBDIR="${PREFIX}/lib" \
-    ..
-make -j$(nproc)
-make install
+    .. -G Ninja
+cmake --build .
+cmake --install .
