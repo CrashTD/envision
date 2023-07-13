@@ -10,7 +10,7 @@ pub fn wivrn_profile() -> Profile {
     let data_dir = get_data_dir();
     let prefix = format!("{data}/prefixes/wivrn_default", data = data_dir);
     let mut environment: HashMap<String, String> = HashMap::new();
-    environment.insert("LD_LIBRARY_PATH".into(), format!("{pfx}/lib", pfx = prefix));
+    environment.insert("LD_LIBRARY_PATH".into(), format!("{pfx}/lib:{pfx}/lib64", pfx = prefix));
     Profile {
         uuid: "wivrn-default".into(),
         name: format!("WiVRn - {name} Default", name = APP_NAME),

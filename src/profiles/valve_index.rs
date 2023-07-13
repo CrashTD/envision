@@ -15,7 +15,7 @@ pub fn valve_index_profile() -> Profile {
     environment.insert("XRT_COMPOSITOR_COMPUTE".into(), "1".into());
     environment.insert("SURVIVE_GLOBALSCENESOLVER".into(), "0".into());
     environment.insert("SURVIVE_TIMECODE_OFFSET_MS".into(), "-6.94".into());
-    environment.insert("LD_LIBRARY_PATH".into(), format!("{pfx}/lib", pfx = prefix));
+    environment.insert("LD_LIBRARY_PATH".into(), format!("{pfx}/lib:{pfx}/lib64", pfx = prefix));
     Profile {
         uuid: "valve-index-default".into(),
         name: format!("Valve Index - {name} Default", name = APP_NAME),
