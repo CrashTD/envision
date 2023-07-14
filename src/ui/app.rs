@@ -18,8 +18,12 @@ use crate::dependencies::mercury_deps::get_missing_mercury_deps;
 use crate::dependencies::monado_deps::get_missing_monado_deps;
 use crate::dependencies::pkexec_dep::pkexec_dep;
 use crate::dependencies::wivrn_deps::get_missing_wivrn_deps;
-use crate::file_builders::active_runtime_json::{set_current_active_runtime_to_profile, set_current_active_runtime_to_steam};
-use crate::file_builders::openvrpaths_vrpath::{set_current_openvrpaths_to_profile, set_current_openvrpaths_to_steam};
+use crate::file_builders::active_runtime_json::{
+    set_current_active_runtime_to_profile, set_current_active_runtime_to_steam,
+};
+use crate::file_builders::openvrpaths_vrpath::{
+    set_current_openvrpaths_to_profile, set_current_openvrpaths_to_steam,
+};
 use crate::file_utils::setcap_cap_sys_nice_eip;
 use crate::log_parser::MonadoLog;
 use crate::profile::{Profile, XRServiceType};
@@ -88,6 +92,7 @@ pub enum Msg {
     BuildProfile,
     EnableDebugViewChanged(bool),
     DoStartStopXRService,
+    RestartXRService,
     ProfileSelected(Profile),
     DeleteProfile,
     SaveProfile(Profile),
@@ -121,8 +126,7 @@ impl App {
                 gtk::ApplicationInhibitFlags::all(),
                 Some("XR Session running"),
             ));
-        }
-        else {
+        } else {
             if self.inhibit_id.is_none() {
                 return;
             }
@@ -344,6 +348,22 @@ impl SimpleComponent for App {
                     }
                 },
             },
+            Msg::RestartXRService => {
+                match &mut self.xrservice_runner {
+                    None => {}
+                    Some(runner) => match runner.status() {
+                        RunnerStatus::Stopped(_) => {}
+                        RunnerStatus::Running => {
+                            if self.xrservice_runner.is_some() {
+                                if self.xrservice_runner.as_mut().unwrap().status() == RunnerStatus::Running {
+                                    self.xrservice_runner.as_mut().unwrap().terminate();
+                                }
+                            }
+                        },
+                    },
+                }
+                self.start_xrservice();
+            }
             Msg::BuildProfile => {
                 let profile = self.get_selected_profile();
                 let mut missing_deps = vec![];
@@ -543,6 +563,7 @@ impl SimpleComponent for App {
                 .forward(sender.input_sender(), |message| match message {
                     MainViewOutMsg::EnableDebugViewChanged(val) => Msg::EnableDebugViewChanged(val),
                     MainViewOutMsg::DoStartStopXRService => Msg::DoStartStopXRService,
+                    MainViewOutMsg::RestartXRService => Msg::RestartXRService,
                     MainViewOutMsg::ProfileSelected(uuid) => Msg::ProfileSelected(uuid),
                     MainViewOutMsg::DeleteProfile => Msg::DeleteProfile,
                     MainViewOutMsg::SaveProfile(p) => Msg::SaveProfile(p),

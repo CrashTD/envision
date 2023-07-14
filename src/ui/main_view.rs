@@ -44,6 +44,7 @@ pub struct MainView {
 pub enum MainViewMsg {
     ClockTicking,
     StartStopClicked,
+    RestartXRService,
     XRServiceActiveChanged(bool, Option<Profile>),
     EnableDebugViewChanged(bool),
     UpdateProfiles(Vec<Profile>, Config),
@@ -62,6 +63,7 @@ pub enum MainViewMsg {
 pub enum MainViewOutMsg {
     EnableDebugViewChanged(bool),
     DoStartStopXRService,
+    RestartXRService,
     ProfileSelected(Profile),
     DeleteProfile,
     SaveProfile(Profile),
@@ -126,21 +128,38 @@ impl SimpleComponent for MainView {
                     set_margin_top: 12,
                     set_margin_bottom: 12,
                     set_orientation: gtk::Orientation::Vertical,
-                    gtk::Button {
-                        add_css_class: "pill",
-                        add_css_class: "suggested-action",
-                        add_css_class: "destructive-action",
-                        set_hexpand: true,
+                    gtk::Box {
                         set_halign: gtk::Align::Center,
-                        #[track = "model.changed(Self::xrservice_active())"]
-                        set_class_active: ("suggested-action", !model.xrservice_active),
-                        #[track = "model.changed(Self::xrservice_active())"]
-                        set_label: match model.xrservice_active {
-                            true => "Stop",
-                            false => "Start",
+                        set_orientation: gtk::Orientation::Horizontal,
+                        set_spacing: 12,
+                        gtk::Button {
+                            add_css_class: "pill",
+                            add_css_class: "suggested-action",
+                            add_css_class: "destructive-action",
+                            set_halign: gtk::Align::Center,
+                            #[track = "model.changed(Self::xrservice_active())"]
+                            set_class_active: ("suggested-action", !model.xrservice_active),
+                            #[track = "model.changed(Self::xrservice_active())"]
+                            set_label: match model.xrservice_active {
+                                true => "Stop",
+                                false => "Start",
+                            },
+                            connect_clicked[sender] => move |_| {
+                                sender.input(MainViewMsg::StartStopClicked);
+                            },
                         },
-                        connect_clicked[sender] => move |_| {
-                            sender.input(MainViewMsg::StartStopClicked)
+                        gtk::Button {
+                            add_css_class: "circular",
+                            add_css_class: "flat",
+                            set_halign: gtk::Align::Center,
+                            set_valign: gtk::Align::Center,
+                            set_icon_name: "view-refresh-symbolic",
+                            set_tooltip_text: Some("Restart"),
+                            #[track = "model.changed(Self::xrservice_active())"]
+                            set_visible: model.xrservice_active,
+                            connect_clicked[sender] => move |_| {
+                                sender.input(MainViewMsg::RestartXRService)
+                            },
                         },
                     },
                     model.devices_box.widget(),
@@ -219,7 +238,10 @@ impl SimpleComponent for MainView {
                     .emit(InstallWivrnBoxMsg::ClockTicking);
             }
             Self::Input::StartStopClicked => {
-                sender.output(MainViewOutMsg::DoStartStopXRService);
+                sender.output(Self::Output::DoStartStopXRService);
+            }
+            Self::Input::RestartXRService => {
+                sender.output(Self::Output::RestartXRService);
             }
             Self::Input::XRServiceActiveChanged(active, profile) => {
                 self.set_xrservice_active(active);
@@ -301,14 +323,14 @@ impl SimpleComponent for MainView {
                     self.profile_editor.sender().emit(ProfileEditorMsg::Present(
                         self.selected_profile.create_duplicate(),
                     ));
-                }
-                else {
+                } else {
                     self.cannot_duplicate_profile_dialog.present();
                 }
             }
-            Self::Input::UpdateDevices(devs) => {
-                self.devices_box.sender().emit(DevicesBoxMsg::UpdateDevices(devs))
-            }
+            Self::Input::UpdateDevices(devs) => self
+                .devices_box
+                .sender()
+                .emit(DevicesBoxMsg::UpdateDevices(devs)),
         }
     }
 
