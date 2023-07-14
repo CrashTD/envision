@@ -1,6 +1,7 @@
 use crate::{profile::Profile, runner::Runner};
 use gtk::{glib, prelude::*};
 use relm4::prelude::*;
+use adw::prelude::*;
 use std::{cell::Cell, collections::HashMap, path::Path, rc::Rc, time::Duration};
 
 const NO_FILE_MSG: &str = "(No file selected)";
@@ -28,6 +29,9 @@ pub struct LibsurviveSetupWindow {
     filefilter_listmodel: gtk::gio::ListStore,
 
     #[tracker::do_not_track]
+    survive_cli_not_found_dialog: adw::MessageDialog,
+
+    #[tracker::do_not_track]
     calibration_running: Rc<Cell<bool>>,
     #[tracker::do_not_track]
     first_run_done: bool,
@@ -51,7 +55,7 @@ pub enum LibsurviveSetupMsg {
 }
 
 impl LibsurviveSetupWindow {
-    fn create_calibration_runner(&mut self) -> Runner {
+    fn create_calibration_runner(&mut self, survive_cli_path: String) -> Runner {
         let lh_path = self.steam_lighthouse_path.clone();
         let mut env = HashMap::new();
         env.insert(
@@ -60,10 +64,7 @@ impl LibsurviveSetupWindow {
         );
         Runner::new(
             Some(env),
-            format!(
-                "{pfx}/bin/survive-cli",
-                pfx = self.profile.as_ref().unwrap().prefix
-            ),
+            survive_cli_path,
             vec!["--steamvr-calibration".into(), lh_path],
         )
     }
@@ -366,24 +367,29 @@ impl SimpleComponent for LibsurviveSetupWindow {
                 let path_s = self.steam_lighthouse_path.clone();
                 let lh_path = Path::new(&path_s);
                 if lh_path.is_file() {
-                    let mut runner = self.create_calibration_runner();
-                    self.calibration_running.set(true);
-                    self.first_run_done = false;
-                    self.calibration_seconds_elapsed = 0.0;
-                    runner.start();
-                    {
-                        let timer_sender = sender.clone();
-                        let cont = self.calibration_running.clone();
-                        glib::timeout_add_local(Duration::from_millis(1000), move || {
-                            timer_sender.input(LibsurviveSetupMsg::TickCalibrationRunner);
-                            return glib::Continue(cont.get());
-                        });
+                    let survive_cli_path = self.profile.as_ref().unwrap().get_survive_cli_path();
+                    if survive_cli_path.is_some() {
+                        let mut runner = self.create_calibration_runner(survive_cli_path.unwrap());
+                        self.calibration_running.set(true);
+                        self.first_run_done = false;
+                        self.calibration_seconds_elapsed = 0.0;
+                        runner.start();
+                        {
+                            let timer_sender = sender.clone();
+                            let cont = self.calibration_running.clone();
+                            glib::timeout_add_local(Duration::from_millis(1000), move || {
+                                timer_sender.input(LibsurviveSetupMsg::TickCalibrationRunner);
+                                return glib::Continue(cont.get());
+                            });
+                        }
+                        self.calibration_runner = Some(runner);
+                        self.carousel
+                            .as_ref()
+                            .unwrap()
+                            .scroll_to(self.loading_page.as_ref().unwrap(), true);
+                    } else {
+                        self.survive_cli_not_found_dialog.present();
                     }
-                    self.calibration_runner = Some(runner);
-                    self.carousel
-                        .as_ref()
-                        .unwrap()
-                        .scroll_to(self.loading_page.as_ref().unwrap(), true);
                 }
             }
             Self::Input::SetSteamLighthousePath(n_path) => {
@@ -427,7 +433,9 @@ impl SimpleComponent for LibsurviveSetupWindow {
                             self.first_run_done = true;
                             let runner = self.calibration_runner.as_mut().unwrap();
                             runner.terminate();
-                            let mut n_runner = self.create_calibration_runner();
+                            let mut n_runner = self.create_calibration_runner(
+                                self.profile.as_ref().unwrap().get_survive_cli_path().unwrap(),
+                            );
                             n_runner.start();
                             self.calibration_runner = Some(n_runner);
                         }
@@ -469,6 +477,18 @@ impl SimpleComponent for LibsurviveSetupWindow {
     ) -> relm4::ComponentParts<Self> {
         let json_filter = gtk::FileFilter::new();
         json_filter.add_mime_type("application/json");
+
+        let survive_cli_not_found_dialog = adw::MessageDialog::builder()
+            .modal(true)
+            .hide_on_close(true)
+            .heading("Survive CLI not found")
+            .body(concat!(
+                "You might need to build this profile first, ",
+                "or maybe Libsurvive isn't enabled for this profile"
+            ))
+            .build();
+        survive_cli_not_found_dialog.add_response("ok", "_Ok");
+
         let mut model = LibsurviveSetupWindow {
             win: None,
             progressbar: None,
@@ -486,6 +506,7 @@ impl SimpleComponent for LibsurviveSetupWindow {
             calibration_running: Rc::new(Cell::new(false)),
             first_run_done: false,
             calibration_seconds_elapsed: 0.0,
+            survive_cli_not_found_dialog,
             tracker: 0,
         };
 
@@ -494,6 +515,9 @@ impl SimpleComponent for LibsurviveSetupWindow {
         let widgets = view_output!();
 
         model.win = Some(widgets.win.clone());
+        model
+            .survive_cli_not_found_dialog
+            .set_transient_for(Some(model.win.as_ref().unwrap()));
         model.progressbar = Some(widgets.progressbar.clone());
         model.carousel = Some(widgets.carousel.clone());
         model.loading_page = Some(widgets.loading_page.clone());
