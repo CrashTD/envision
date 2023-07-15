@@ -1,8 +1,6 @@
 use crate::{
-    file_utils::{
-        copy_file, deserialize_file, get_backup_dir, get_writer, get_xdg_config_dir,
-        get_xdg_data_dir, set_file_readonly,
-    },
+    file_utils::{copy_file, deserialize_file, get_writer, set_file_readonly},
+    paths::{get_backup_dir, get_xdg_config_dir, get_xdg_data_dir},
     profile::Profile,
 };
 use serde::{Deserialize, Serialize};

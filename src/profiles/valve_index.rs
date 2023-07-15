@@ -1,7 +1,6 @@
 use crate::{
     constants::APP_NAME,
-    file_utils::get_data_dir,
-    paths::{data_libsurvive_path, data_monado_path, data_opencomposite_path},
+    paths::{data_libsurvive_path, data_monado_path, data_opencomposite_path, get_data_dir},
     profile::{Profile, ProfileFeature, ProfileFeatureType, ProfileFeatures, XRServiceType},
 };
 use std::collections::HashMap;
@@ -15,7 +14,10 @@ pub fn valve_index_profile() -> Profile {
     environment.insert("XRT_COMPOSITOR_COMPUTE".into(), "1".into());
     environment.insert("SURVIVE_GLOBALSCENESOLVER".into(), "0".into());
     environment.insert("SURVIVE_TIMECODE_OFFSET_MS".into(), "-6.94".into());
-    environment.insert("LD_LIBRARY_PATH".into(), format!("{pfx}/lib:{pfx}/lib64", pfx = prefix));
+    environment.insert(
+        "LD_LIBRARY_PATH".into(),
+        format!("{pfx}/lib:{pfx}/lib64", pfx = prefix),
+    );
     Profile {
         uuid: "valve-index-default".into(),
         name: format!("Valve Index - {name} Default", name = APP_NAME),

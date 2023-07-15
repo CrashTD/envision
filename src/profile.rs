@@ -1,9 +1,11 @@
 use crate::{
-    file_utils::{get_data_dir, get_writer},
-    paths::{data_monado_path, data_opencomposite_path, BWRAP_SYSTEM_PREFIX, SYSTEM_PREFIX},
+    file_utils::get_writer,
+    paths::{
+        data_monado_path, data_opencomposite_path, get_data_dir, BWRAP_SYSTEM_PREFIX, SYSTEM_PREFIX,
+    },
 };
 use serde::{Deserialize, Serialize};
-use std::{collections::HashMap, fmt::Display, fs::File, io::BufReader, slice::Iter, path::Path};
+use std::{collections::HashMap, fmt::Display, fs::File, io::BufReader, path::Path, slice::Iter};
 use uuid::Uuid;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -201,10 +203,7 @@ impl Profile {
     }
 
     pub fn get_survive_cli_path(&self) -> Option<String> {
-        let path_s = format!(
-            "{pfx}/bin/survive-cli",
-            pfx = self.prefix
-        );
+        let path_s = format!("{pfx}/bin/survive-cli", pfx = self.prefix);
         if Path::new(&path_s).is_file() {
             return Some(path_s);
         }

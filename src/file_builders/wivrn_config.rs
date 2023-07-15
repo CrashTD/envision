@@ -1,4 +1,7 @@
-use crate::file_utils::{deserialize_file, get_writer, get_xdg_config_dir};
+use crate::{
+    file_utils::{deserialize_file, get_writer},
+    paths::get_xdg_config_dir,
+};
 use serde::{Deserialize, Serialize};
 use std::{fmt::Display, slice::Iter};
 

@@ -1,9 +1,6 @@
 use crate::{
-    file_utils::{
-        copy_file, deserialize_file, get_backup_dir, get_writer, get_xdg_config_dir,
-        get_xdg_data_dir, set_file_readonly,
-    },
-    paths::SYSTEM_PREFIX,
+    file_utils::{copy_file, deserialize_file, get_writer, set_file_readonly},
+    paths::{get_backup_dir, get_xdg_config_dir, get_xdg_data_dir, SYSTEM_PREFIX},
     profile::{Profile, XRServiceType},
 };
 use serde::{Deserialize, Serialize};
@@ -74,8 +71,7 @@ pub fn get_current_active_runtime() -> Option<ActiveRuntime> {
 
 fn dump_active_runtime_to_path(active_runtime: &ActiveRuntime, path_s: &String) {
     let writer = get_writer(path_s);
-    serde_json::to_writer_pretty(writer, active_runtime)
-        .expect("Unable to save active runtime");
+    serde_json::to_writer_pretty(writer, active_runtime).expect("Unable to save active runtime");
 }
 
 pub fn dump_current_active_runtime(active_runtime: &ActiveRuntime) {

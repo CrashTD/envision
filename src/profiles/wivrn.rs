@@ -1,7 +1,6 @@
 use crate::{
     constants::APP_NAME,
-    file_utils::get_data_dir,
-    paths::{data_opencomposite_path, data_wivrn_path},
+    paths::{data_opencomposite_path, data_wivrn_path, get_data_dir},
     profile::{Profile, ProfileFeatures, XRServiceType},
 };
 use std::collections::HashMap;
@@ -10,7 +9,10 @@ pub fn wivrn_profile() -> Profile {
     let data_dir = get_data_dir();
     let prefix = format!("{data}/prefixes/wivrn_default", data = data_dir);
     let mut environment: HashMap<String, String> = HashMap::new();
-    environment.insert("LD_LIBRARY_PATH".into(), format!("{pfx}/lib:{pfx}/lib64", pfx = prefix));
+    environment.insert(
+        "LD_LIBRARY_PATH".into(),
+        format!("{pfx}/lib:{pfx}/lib64", pfx = prefix),
+    );
     Profile {
         uuid: "wivrn-default".into(),
         name: format!("WiVRn - {name} Default", name = APP_NAME),

@@ -1,7 +1,4 @@
-use crate::{
-    constants::CMD_NAME,
-    file_utils::{get_config_dir, get_writer}, profile::Profile,
-};
+use crate::{constants::CMD_NAME, file_utils::get_writer, paths::get_config_dir, profile::Profile};
 use serde::{Deserialize, Serialize};
 use std::{fs::File, io::BufReader};
 
@@ -25,7 +22,10 @@ impl Default for Config {
 
 impl Config {
     pub fn get_selected_profile(&self, profiles: &Vec<Profile>) -> Profile {
-        match profiles.iter().find(|p| {p.uuid == self.selected_profile_uuid}) {
+        match profiles
+            .iter()
+            .find(|p| p.uuid == self.selected_profile_uuid)
+        {
             Some(p) => p.clone(),
             None => profiles.get(0).expect("No profiles found").clone(),
         }
@@ -58,7 +58,8 @@ impl Config {
     }
 
     pub fn save(&self) {
-        self.save_to_path(&Self::config_file_path()).expect("Failed to save config");
+        self.save_to_path(&Self::config_file_path())
+            .expect("Failed to save config");
     }
 
     pub fn get_config() -> Self {
@@ -66,7 +67,11 @@ impl Config {
     }
 
     pub fn set_profiles(&mut self, profiles: &Vec<Profile>) {
-        self.user_profiles = profiles.iter().filter(|p| p.editable).map(Profile::clone).collect();
+        self.user_profiles = profiles
+            .iter()
+            .filter(|p| p.editable)
+            .map(Profile::clone)
+            .collect();
     }
 }
 

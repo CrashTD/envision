@@ -1,4 +1,4 @@
-use crate::{constants::pkg_data_dir, file_utils::get_cache_dir, profile::Profile, runner::Runner};
+use crate::{constants::pkg_data_dir, paths::get_cache_dir, profile::Profile, runner::Runner};
 
 pub fn get_build_mercury_runner(profile: Profile) -> Runner {
     let args = vec![profile.prefix, get_cache_dir()];
