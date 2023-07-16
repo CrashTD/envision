@@ -20,7 +20,12 @@ impl Cmake {
                 if k.contains(" ") {
                     panic!("Cmake vars cannot contain spaces!");
                 }
-                args.push(format!("-D{k}=\"{v}\"", k=k, v=v));
+                if v.contains(" ") {
+                    args.push(format!("-D{k}=\"{v}\"", k=k, v=v));
+                }
+                else {
+                    args.push(format!("-D{k}={v}", k=k, v=v));
+                }
             }
         }
         args.push(self.source_dir.clone());
@@ -30,6 +35,12 @@ impl Cmake {
     pub fn get_build_runner(&self) -> Runner {
         Runner::new(self.env.clone(), "cmake".into(), vec![
             "--build".into(), self.build_dir.clone()
+        ])
+    }
+
+    pub fn get_install_runner(&self) -> Runner {
+        Runner::new(self.env.clone(), "cmake".into(), vec![
+            "--install".into(), self.build_dir.clone()
         ])
     }
 }

@@ -1,7 +1,7 @@
 use crate::{constants::pkg_data_dir, paths::get_cache_dir, profile::Profile, runner::Runner};
 
-pub fn get_build_mercury_runner(profile: Profile) -> Runner {
-    let args = vec![profile.prefix, get_cache_dir()];
+pub fn get_build_mercury_runner(profile: &Profile) -> Runner {
+    let args = vec![profile.prefix.clone(), get_cache_dir()];
     let runner = Runner::new(
         None,
         format!(

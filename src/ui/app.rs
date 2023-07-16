@@ -4,11 +4,11 @@ use super::debug_view::{DebugView, DebugViewMsg};
 use super::libsurvive_setup_window::LibsurviveSetupWindow;
 use super::main_view::MainViewMsg;
 use crate::builders::build_basalt::get_build_basalt_runner;
-use crate::builders::build_libsurvive::get_build_libsurvive_runner;
+use crate::builders::build_libsurvive::get_build_libsurvive_runners;
 use crate::builders::build_mercury::get_build_mercury_runner;
-use crate::builders::build_monado::get_build_monado_runner;
-use crate::builders::build_opencomposite::get_build_opencomposite_runner;
-use crate::builders::build_wivrn::get_build_wivrn_runner;
+use crate::builders::build_monado::get_build_monado_runners;
+use crate::builders::build_opencomposite::get_build_opencomposite_runners;
+use crate::builders::build_wivrn::get_build_wivrn_runners;
 use crate::config::Config;
 use crate::constants::APP_NAME;
 use crate::depcheck::check_dependency;
@@ -346,11 +346,13 @@ impl SimpleComponent for App {
                         RunnerStatus::Stopped(_) => {}
                         RunnerStatus::Running => {
                             if self.xrservice_runner.is_some() {
-                                if self.xrservice_runner.as_mut().unwrap().status() == RunnerStatus::Running {
+                                if self.xrservice_runner.as_mut().unwrap().status()
+                                    == RunnerStatus::Running
+                                {
                                     self.xrservice_runner.as_mut().unwrap().terminate();
                                 }
                             }
-                        },
+                        }
                     },
                 }
                 self.start_xrservice();
@@ -367,23 +369,23 @@ impl SimpleComponent for App {
                     });
                     if profile.features.libsurvive.enabled {
                         missing_deps.extend(get_missing_libsurvive_deps());
-                        runners.push(get_build_libsurvive_runner(profile.clone()));
+                        runners.extend(get_build_libsurvive_runners(&profile));
                     }
                     if profile.features.basalt.enabled {
                         missing_deps.extend(get_missing_basalt_deps());
-                        runners.push(get_build_basalt_runner(profile.clone()));
+                        runners.push(get_build_basalt_runner(&profile));
                     }
                     if profile.features.mercury_enabled {
                         missing_deps.extend(get_missing_mercury_deps());
-                        runners.push(get_build_mercury_runner(profile.clone()));
+                        runners.push(get_build_mercury_runner(&profile));
                     }
-                    runners.push(match profile.xrservice_type {
-                        XRServiceType::Monado => get_build_monado_runner(profile.clone()),
-                        XRServiceType::Wivrn => get_build_wivrn_runner(profile.clone()),
+                    runners.extend(match profile.xrservice_type {
+                        XRServiceType::Monado => get_build_monado_runners(&profile),
+                        XRServiceType::Wivrn => get_build_wivrn_runners(&profile),
                     });
                     // no listed deps for opencomp
                 }
-                runners.push(get_build_opencomposite_runner(profile.clone()));
+                runners.extend(get_build_opencomposite_runners(&profile));
                 if !missing_deps.is_empty() {
                     missing_deps.sort_unstable();
                     missing_deps.dedup(); // dedup only works if sorted, hence the above

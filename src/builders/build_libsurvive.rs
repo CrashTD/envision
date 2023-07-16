@@ -1,26 +1,49 @@
-use crate::{constants::pkg_data_dir, profile::Profile, runner::Runner};
+use crate::{
+    build_tools::{cmake::Cmake, git::Git},
+    file_utils::rm_rf,
+    profile::Profile,
+    runner::Runner,
+};
+use std::collections::HashMap;
 
-pub fn get_build_libsurvive_runner(profile: Profile) -> Runner {
-    let mut args = vec![
-        profile
-            .features.libsurvive.path
-            .expect("Missing libsurvive path for given profile"),
-        profile.prefix,
-        match profile.pull_on_build {
-            true => "1".into(),
-            false => "0".into(),
+pub fn get_build_libsurvive_runners(profile: &Profile) -> Vec<Runner> {
+    let mut runners: Vec<Runner> = vec![];
+    let git = Git {
+        repo: match profile.features.libsurvive.repo.as_ref() {
+            Some(r) => r.clone(),
+            None => "https://github.com/cntools/libsurvive".into(),
         },
-    ];
-    if profile.features.libsurvive.repo.is_some() {
-        args.push(profile.features.libsurvive.repo.unwrap());
-    }
-    let runner = Runner::new(
-        None,
-        format!(
-            "{sysdata}/scripts/build_libsurvive.sh",
-            sysdata = pkg_data_dir()
-        ),
-        args,
+        dir: profile.features.libsurvive.path.as_ref().unwrap().clone(),
+    };
+    match git.clone_or_pull(profile) {
+        Some(r) => runners.push(r),
+        None => {}
+    };
+
+    let build_dir = format!(
+        "{}/build",
+        profile.features.libsurvive.path.as_ref().unwrap()
     );
-    runner
+    rm_rf(&build_dir);
+    let mut cmake_vars: HashMap<String, String> = HashMap::new();
+    cmake_vars.insert("CMAKE_BUILD_TYPE".into(), "Release".into());
+    cmake_vars.insert("ENABLE_api_example".into(), "OFF".into());
+    cmake_vars.insert("CMAKE_SKIP_INSTALL_RPATH".into(), "YES".into());
+    cmake_vars.insert("CMAKE_INSTALL_PREFIX".into(), profile.prefix.clone());
+    cmake_vars.insert(
+        "CMAKE_INSTALL_LIBDIR".into(),
+        format!("{}/lib", profile.prefix),
+    );
+
+    let cmake = Cmake {
+        env: None,
+        vars: Some(cmake_vars),
+        source_dir: profile.features.libsurvive.path.as_ref().unwrap().clone(),
+        build_dir,
+    };
+    runners.push(cmake.get_prepare_runner());
+    runners.push(cmake.get_build_runner());
+    runners.push(cmake.get_install_runner());
+
+    runners
 }
