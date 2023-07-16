@@ -103,15 +103,6 @@ pub enum Msg {
 }
 
 impl App {
-    fn get_profile_by_name(&self, name: &String) -> Option<&Profile> {
-        for profile in &self.profiles {
-            if &profile.name == name {
-                return Some(profile);
-            }
-        }
-        return None;
-    }
-
     pub fn get_selected_profile(&self) -> Profile {
         self.config.get_selected_profile(&self.profiles)
     }
