@@ -654,6 +654,12 @@ impl SimpleComponent for App {
         model
             .application
             .set_accelerators_for_action::<QuitAction>(&["<Control>q"]);
+        model
+            .application
+            .set_accelerators_for_action::<BuildProfileAction>(&["F5"]);
+        model
+            .application
+            .set_accelerators_for_action::<BuildProfileCleanAction>(&["<Control>F5"]);
 
         model.main_view.sender().emit(MainViewMsg::UpdateProfiles(
             model.profiles.clone(),
