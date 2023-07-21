@@ -4,9 +4,9 @@ use crate::{
     profile::Profile,
     runner::Runner,
 };
-use std::collections::HashMap;
+use std::{collections::HashMap, path::Path};
 
-pub fn get_build_libsurvive_runners(profile: &Profile) -> Vec<Runner> {
+pub fn get_build_libsurvive_runners(profile: &Profile, clean_build: bool) -> Vec<Runner> {
     let mut runners: Vec<Runner> = vec![];
     let git = Git {
         repo: match profile.features.libsurvive.repo.as_ref() {
@@ -24,7 +24,6 @@ pub fn get_build_libsurvive_runners(profile: &Profile) -> Vec<Runner> {
         "{}/build",
         profile.features.libsurvive.path.as_ref().unwrap()
     );
-    rm_rf(&build_dir);
     let mut cmake_vars: HashMap<String, String> = HashMap::new();
     cmake_vars.insert("CMAKE_BUILD_TYPE".into(), "Release".into());
     cmake_vars.insert("ENABLE_api_example".into(), "OFF".into());
@@ -39,9 +38,12 @@ pub fn get_build_libsurvive_runners(profile: &Profile) -> Vec<Runner> {
         env: None,
         vars: Some(cmake_vars),
         source_dir: profile.features.libsurvive.path.as_ref().unwrap().clone(),
-        build_dir,
+        build_dir: build_dir.clone(),
     };
-    runners.push(cmake.get_prepare_runner());
+    if !Path::new(&build_dir).is_dir() || clean_build {
+        rm_rf(&build_dir);
+        runners.push(cmake.get_prepare_runner());
+    }
     runners.push(cmake.get_build_runner());
     runners.push(cmake.get_install_runner());
 

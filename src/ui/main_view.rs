@@ -6,7 +6,7 @@ use crate::config::Config;
 use crate::constants::APP_NAME;
 use crate::profile::{Profile, XRServiceType};
 use crate::ui::app::{
-    AboutAction, BuildProfileAction, DebugViewToggleAction, LibsurviveSetupAction,
+    AboutAction, BuildProfileAction, DebugViewToggleAction, LibsurviveSetupAction, BuildProfileCleanAction,
 };
 use crate::ui::profile_editor::ProfileEditorInit;
 use crate::xr_devices::XRDevices;
@@ -87,6 +87,7 @@ impl SimpleComponent for MainView {
                 // value inside action is ignored
                 "_Debug View" => DebugViewToggleAction,
                 "_Build Profile" => BuildProfileAction,
+                "C_lean Build Profile" => BuildProfileCleanAction,
                 "_Calibrate Lighthouses" => LibsurviveSetupAction,
             },
             section! {

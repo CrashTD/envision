@@ -89,7 +89,7 @@ pub struct App {
 #[derive(Debug)]
 pub enum Msg {
     ClockTicking,
-    BuildProfile,
+    BuildProfile(bool),
     EnableDebugViewChanged(bool),
     DoStartStopXRService,
     RestartXRService,
@@ -357,7 +357,7 @@ impl SimpleComponent for App {
                 }
                 self.start_xrservice();
             }
-            Msg::BuildProfile => {
+            Msg::BuildProfile(clean_build) => {
                 let profile = self.get_selected_profile();
                 let mut missing_deps = vec![];
                 let mut runners: Vec<Runner> = vec![];
@@ -369,7 +369,7 @@ impl SimpleComponent for App {
                     });
                     if profile.features.libsurvive.enabled {
                         missing_deps.extend(get_missing_libsurvive_deps());
-                        runners.extend(get_build_libsurvive_runners(&profile));
+                        runners.extend(get_build_libsurvive_runners(&profile, clean_build));
                     }
                     if profile.features.basalt.enabled {
                         missing_deps.extend(get_missing_basalt_deps());
@@ -380,12 +380,12 @@ impl SimpleComponent for App {
                         runners.push(get_build_mercury_runner(&profile));
                     }
                     runners.extend(match profile.xrservice_type {
-                        XRServiceType::Monado => get_build_monado_runners(&profile),
-                        XRServiceType::Wivrn => get_build_wivrn_runners(&profile),
+                        XRServiceType::Monado => get_build_monado_runners(&profile, clean_build),
+                        XRServiceType::Wivrn => get_build_wivrn_runners(&profile, clean_build),
                     });
                     // no listed deps for opencomp
                 }
-                runners.extend(get_build_opencomposite_runners(&profile));
+                runners.extend(get_build_opencomposite_runners(&profile, clean_build));
                 if !missing_deps.is_empty() {
                     missing_deps.sort_unstable();
                     missing_deps.dedup(); // dedup only works if sorted, hence the above
@@ -598,7 +598,14 @@ impl SimpleComponent for App {
         let buildprofile_action = {
             let this_sender = sender.clone();
             RelmAction::<BuildProfileAction>::new_stateless(move |_| {
-                this_sender.input_sender().emit(Msg::BuildProfile);
+                this_sender.input_sender().emit(Msg::BuildProfile(false));
+            })
+        };
+
+        let buildprofileclean_action = {
+            let this_sender = sender.clone();
+            RelmAction::<BuildProfileCleanAction>::new_stateless(move |_| {
+                this_sender.input_sender().emit(Msg::BuildProfile(true));
             })
         };
 
@@ -638,6 +645,7 @@ impl SimpleComponent for App {
         actions.add_action(about_action);
         actions.add_action(quit_action);
         actions.add_action(buildprofile_action);
+        actions.add_action(buildprofileclean_action);
         actions.add_action(debug_view_toggle_action);
         actions.add_action(libsurvive_setup_action);
 
@@ -665,6 +673,7 @@ impl SimpleComponent for App {
 new_action_group!(pub AppActionGroup, "win");
 new_stateless_action!(pub AboutAction, AppActionGroup, "about");
 new_stateless_action!(pub BuildProfileAction, AppActionGroup, "buildprofile");
+new_stateless_action!(pub BuildProfileCleanAction, AppActionGroup, "buildprofileclean");
 new_stateless_action!(pub LibsurviveSetupAction, AppActionGroup, "libsurvivesetup");
 new_stateless_action!(pub QuitAction, AppActionGroup, "quit");
 new_stateful_action!(pub DebugViewToggleAction, AppActionGroup, "debugviewtoggle", (), bool);
