@@ -1,49 +1,34 @@
-use super::factories::{
-    entry_row_factory::{EntryModel, EntryModelInit},
-    env_var_row_factory::{EnvVarModel, EnvVarModelInit},
-    path_row_factory::{PathModel, PathModelInit},
-    switch_row_factory::{SwitchModel, SwitchModelInit},
+use super::{
+    factories::env_var_row_factory::{EnvVarModel, EnvVarModelInit},
+    preference_rows::combo_row,
 };
 use crate::{
     env_var_descriptions::env_var_descriptions_as_paragraph,
     profile::{Profile, XRServiceType},
+    ui::preference_rows::{entry_row, path_row, switch_row},
+    withclones,
 };
 use adw::prelude::*;
 use gtk::prelude::*;
 use relm4::{factory::FactoryVecDeque, prelude::*};
+use std::{cell::RefCell, rc::Rc};
 
 #[tracker::track]
 pub struct ProfileEditor {
-    profile: Option<Profile>,
+    profile: Rc<RefCell<Profile>>,
 
     #[tracker::do_not_track]
     win: Option<adw::PreferencesWindow>,
 
     #[tracker::do_not_track]
-    name_row: adw::EntryRow,
-    #[tracker::do_not_track]
-    type_row: adw::ComboRow,
-    #[tracker::do_not_track]
-    pull_on_build_switch: Option<gtk::Switch>,
-    #[tracker::do_not_track]
     env_rows: FactoryVecDeque<EnvVarModel>,
-    #[tracker::do_not_track]
-    switch_rows: FactoryVecDeque<SwitchModel>,
-    #[tracker::do_not_track]
-    path_rows: FactoryVecDeque<PathModel>,
-    #[tracker::do_not_track]
-    repo_rows: FactoryVecDeque<EntryModel>,
 }
 
 #[derive(Debug)]
 pub enum ProfileEditorMsg {
-    Present(Profile),
+    Present,
     EnvVarChanged(String, String),
     EnvVarDelete(String),
-    EntryChanged(String, String),
-    PathChanged(String, Option<String>),
-    SwitchChanged(String, bool),
-    ComboChanged(String, String),
     AddEnvVar(String),
     SaveProfile,
 }
@@ -55,6 +40,7 @@ pub enum ProfileEditorOutMsg {
 
 pub struct ProfileEditorInit {
     pub root_win: gtk::Window,
+    pub profile: Profile,
 }
 
 #[relm4::component(pub)]
@@ -66,35 +52,204 @@ impl SimpleComponent for ProfileEditor {
     view! {
         #[name(win)]
         adw::PreferencesWindow {
-            set_hide_on_close: true,
             set_modal: true,
             set_transient_for: Some(&init.root_win),
             #[track = "model.changed(Self::profile())"]
-            set_title: match model.profile.as_ref() {
-                Some(p) => Some(p.name.as_str()),
-                None => None,
-            },
+            set_title: Some(model.profile.borrow().name.as_str()),
             add: mainpage = &adw::PreferencesPage {
                 add: maingrp = &adw::PreferencesGroup {
                     set_title: "General",
-                    model.name_row.clone(),
-                    model.type_row.clone(),
-                    adw::ActionRow {
-                        set_title: "Update on Build",
-                        add_suffix: pull_on_build_switch = &gtk::Switch {
-                            set_valign: gtk::Align::Center,
-                            connect_state_set[sender] => move |_, state| {
-                                sender.input(Self::Input::SwitchChanged("pull_on_build".into(), state));
+                    add: {
+                        withclones![prof];
+                        &entry_row("Profile Name", model.profile.borrow().name.as_str(), move |row| {
+                            prof.borrow_mut().name = row.text().to_string();
+                        })
+                    },
+                    add: {
+                        withclones![prof];
+                        &switch_row(
+                            "Update on Build", None,
+                            model.profile.borrow().pull_on_build,
+                            move |_, state| {
+                                prof.borrow_mut().pull_on_build = state;
                                 gtk::Inhibit(false)
                             }
-                        },
-                        set_activatable_widget: Some(&pull_on_build_switch),
-                    }
+                        )
+                    },
+                    add: {
+                        withclones![prof];
+                        &path_row(
+                            "Install Prefix",
+                            None,
+                            Some(model.profile.borrow().prefix.clone()),
+                            Some(init.root_win.clone()),
+                            move |n_path| {
+                                prof.borrow_mut().prefix = n_path.unwrap_or_default()
+                            },
+                        )
+                    },
+                },
+                add: xrservicegrp = &adw::PreferencesGroup {
+                    set_title: "XR Service",
+                    add: {
+                        withclones![prof];
+                        &combo_row(
+                            "XR Service Type",
+                            Some("Monado is for PCVR headsets, while WiVRn is for Andorid standalone headsets"),
+                            model.profile.borrow().xrservice_type.to_string().as_str(),
+                            XRServiceType::iter()
+                                .map(XRServiceType::to_string)
+                                .collect::<Vec<String>>(),
+                            move |row| {
+                                prof.borrow_mut().xrservice_type =
+                                    match row.selected() {
+                                        0 => XRServiceType::Monado,
+                                        1 => XRServiceType::Wivrn,
+                                        _ => panic!("XRServiceType combo row cannot have more than 2 choices"),
+                                    };
+                            },
+                        )
+                    },
+                    add: {
+                        withclones![prof];
+                        &path_row(
+                            "XR Service Path",
+                            None,
+                            Some(model.profile.borrow().xrservice_path.clone()),
+                            Some(init.root_win.clone()),
+                            move |n_path| {
+                                prof.borrow_mut().xrservice_path = n_path.unwrap_or_default()
+                            },
+                        )
+                    },
+                    add: {
+                        withclones![prof];
+                        &entry_row(
+                            "XR Service Repo",
+                            model.profile.borrow().xrservice_repo.clone().unwrap_or_default().as_str(),
+                            move |row| {
+                                let n_val = row.text().to_string();
+                                prof.borrow_mut().xrservice_repo = (!n_val.is_empty()).then_some(n_val);
+                            }
+                        )
+                    },
+                },
+                add: opencompgrp = &adw::PreferencesGroup {
+                    set_title: "OpenComposite",
+                    set_description: Some("OpenVR driver built on top of OpenXR"),
+                    add: {
+                        withclones![prof];
+                        &path_row(
+                            "OpenComposite Path", None,
+                            Some(model.profile.borrow().opencomposite_path.clone()),
+                            Some(init.root_win.clone()),
+                            move |n_path| {
+                                prof.borrow_mut().opencomposite_path = n_path.unwrap_or_default();
+                            }
+                        )
+                    },
+                    add: {
+                        withclones![prof];
+                        &entry_row(
+                            "OpenComposite Repo",
+                            model.profile.borrow().opencomposite_repo.clone().unwrap_or_default().as_str(),
+                            move |row| {
+                                let n_val = row.text().to_string();
+                                prof.borrow_mut().opencomposite_repo = (!n_val.is_empty()).then_some(n_val);
+                            }
+                        )
+                    },
+                },
+                add: libsurvivegrp = &adw::PreferencesGroup {
+                    set_title: "Libsurvive",
+                    set_description: Some("Lighthouse tracking driver"),
+                    add: {
+                        withclones![prof];
+                        &switch_row(
+                            "Enable Libsurvive", None,
+                            model.profile.borrow().features.libsurvive.enabled,
+                            move |_, state| {
+                                prof.borrow_mut().features.libsurvive.enabled = state;
+                                gtk::Inhibit(false)
+                            }
+                        )
+                    },
+                    add: {
+                        withclones![prof];
+                        &path_row(
+                            "Libsurvive Path", None,
+                            model.profile.borrow().features.libsurvive.path.clone(),
+                            Some(init.root_win.clone()),
+                            move |n_path| {
+                                prof.borrow_mut().features.libsurvive.path = n_path;
+                            }
+                        )
+                    },
+                    add: {
+                        withclones![prof];
+                        &entry_row(
+                            "Libsurvive Repo",
+                            model.profile.borrow().features.libsurvive.repo.clone().unwrap_or_default().as_str(),
+                            move |row| {
+                                let n_val = row.text().to_string();
+                                prof.borrow_mut().features.libsurvive.repo = (!n_val.is_empty()).then_some(n_val);
+                            }
+                        )
+                    },
+                },
+                add: basaltgrp = &adw::PreferencesGroup {
+                    set_title: "Basalt",
+                    set_description: Some("Camera based SLAM tracking driver"),
+                    add: {
+                        withclones![prof];
+                        &switch_row(
+                            "Enable Basalt", None,
+                            model.profile.borrow().features.basalt.enabled,
+                            move |_, state| {
+                                prof.borrow_mut().features.basalt.enabled = state;
+                                gtk::Inhibit(false)
+                            }
+                        )
+                    },
+                    add: {
+                        withclones![prof];
+                        &path_row(
+                            "Basalt Path", None,
+                            model.profile.borrow().features.basalt.path.clone(),
+                            Some(init.root_win.clone()),
+                            move |n_path| {
+                                prof.borrow_mut().features.basalt.path = n_path;
+                            }
+                        )
+                    },
+                    add: {
+                        withclones![prof];
+                        &entry_row(
+                            "Basalt Repo",
+                            model.profile.borrow().features.basalt.repo.clone().unwrap_or_default().as_str(),
+                            move |row| {
+                                let n_val = row.text().to_string();
+                                prof.borrow_mut().features.basalt.repo = n_val.is_empty().then_some(n_val);
+                            }
+                        )
+                    },
+                },
+                add: mercurygrp = &adw::PreferencesGroup {
+                    set_title: "Mercury",
+                    set_description: Some("Camera and OpenCV based hand tracking driver"),
+                    add: {
+                        withclones![prof];
+                        &switch_row(
+                            "Enable Mercury", None,
+                            model.profile.borrow().features.mercury_enabled,
+                            move |_, state| {
+                                prof.borrow_mut().features.mercury_enabled = state;
+                                gtk::Inhibit(false)
+                            }
+                        )
+                    },
                 },
                 add: model.env_rows.widget(),
-                add: model.switch_rows.widget(),
-                add: model.path_rows.widget(),
-                add: model.repo_rows.widget(),
                 add: save_grp = &adw::PreferencesGroup {
                     add: save_box = &gtk::Box {
                         set_orientation: gtk::Orientation::Vertical,
@@ -118,113 +273,11 @@ impl SimpleComponent for ProfileEditor {
         self.reset();
 
         match message {
-            Self::Input::Present(prof) => {
-                let p = prof.clone();
-
-                self.name_row.set_text(p.name.as_str());
-
-                self.type_row.set_selected(prof.xrservice_type.as_number());
-
-                self.pull_on_build_switch
-                    .as_ref()
-                    .unwrap()
-                    .set_active(prof.pull_on_build);
-
-                {
-                    let mut guard = self.env_rows.guard();
-                    guard.clear();
-                    for (k, v) in p.environment.iter() {
-                        guard.push_back(EnvVarModelInit {
-                            name: k.clone(),
-                            value: v.clone(),
-                        });
-                    }
-                }
-
-                {
-                    let mut guard = self.switch_rows.guard();
-                    guard.clear();
-                    guard.push_back(SwitchModelInit {
-                        name: "Libsurvive".into(),
-                        description: Some("Lighthouse based spacial tracking".into()),
-                        key: "libsurvive_enabled".into(),
-                        value: p.features.libsurvive.enabled,
-                    });
-                    guard.push_back(SwitchModelInit {
-                        name: "Basalt".into(),
-                        description: Some("Camera based SLAM tracking".into()),
-                        key: "basalt_enabled".into(),
-                        value: p.features.basalt.enabled,
-                    });
-                    guard.push_back(SwitchModelInit {
-                        name: "Mercury".into(),
-                        description: Some("Camera based hand tracking".into()),
-                        key: "mercury_enabled".into(),
-                        value: p.features.mercury_enabled,
-                    });
-                }
-
-                {
-                    let mut guard = self.path_rows.guard();
-                    guard.clear();
-                    guard.push_back(PathModelInit {
-                        name: "XR Service Path".into(),
-                        key: "xrservice_path".into(),
-                        value: Some(p.xrservice_path),
-                    });
-                    guard.push_back(PathModelInit {
-                        name: "OpenComposite Path".into(),
-                        key: "opencomposite_path".into(),
-                        value: Some(p.opencomposite_path),
-                    });
-                    guard.push_back(PathModelInit {
-                        name: "Libsurvive Path".into(),
-                        key: "libsurvive_path".into(),
-                        value: p.features.libsurvive.path,
-                    });
-                    guard.push_back(PathModelInit {
-                        name: "Basalt Path".into(),
-                        key: "basalt_path".into(),
-                        value: p.features.basalt.path,
-                    });
-                    guard.push_back(PathModelInit {
-                        name: "Install Prefix".into(),
-                        key: "prefix".into(),
-                        value: Some(p.prefix),
-                    });
-                }
-
-                {
-                    let mut guard = self.repo_rows.guard();
-                    guard.clear();
-                    guard.push_back(EntryModelInit {
-                        key: "xrservice_repo".into(),
-                        name: "XR Service Repo".into(),
-                        value: p.xrservice_repo.unwrap_or("".into()),
-                    });
-                    guard.push_back(EntryModelInit {
-                        key: "opencomposite_repo".into(),
-                        name: "OpenComposite Repo".into(),
-                        value: p.opencomposite_repo.unwrap_or("".into()),
-                    });
-                    guard.push_back(EntryModelInit {
-                        key: "libsurvive_repo".into(),
-                        name: "Libsurvive Repo".into(),
-                        value: p.features.libsurvive.repo.unwrap_or("".into()),
-                    });
-                    guard.push_back(EntryModelInit {
-                        key: "basalt_repo".into(),
-                        name: "Basalt Repo".into(),
-                        value: p.features.basalt.repo.unwrap_or("".into()),
-                    });
-                }
-
-                self.set_profile(Some(prof.clone()));
-
+            Self::Input::Present => {
                 self.win.as_ref().unwrap().present();
             }
             Self::Input::SaveProfile => {
-                let prof = self.profile.as_ref().unwrap();
+                let prof = self.profile.borrow();
                 if prof.validate() {
                     sender.output(ProfileEditorOutMsg::SaveProfile(prof.clone()));
                     self.win.as_ref().unwrap().close();
@@ -237,14 +290,10 @@ impl SimpleComponent for ProfileEditor {
                 }
             }
             Self::Input::EnvVarChanged(name, value) => {
-                self.profile
-                    .as_mut()
-                    .unwrap()
-                    .environment
-                    .insert(name, value);
+                self.profile.borrow_mut().environment.insert(name, value);
             }
             Self::Input::EnvVarDelete(name) => {
-                self.profile.as_mut().unwrap().environment.remove(&name);
+                self.profile.borrow_mut().environment.remove(&name);
                 let pos = self
                     .env_rows
                     .guard()
@@ -254,69 +303,8 @@ impl SimpleComponent for ProfileEditor {
                     self.env_rows.guard().remove(pos.unwrap());
                 }
             }
-            Self::Input::PathChanged(key, value) => {
-                let prof = self.profile.as_mut().unwrap();
-                match key.as_str() {
-                    "xrservice_path" => prof.xrservice_path = value.unwrap_or("".to_string()),
-                    "opencomposite_path" => {
-                        prof.opencomposite_path = value.unwrap_or("".to_string())
-                    }
-                    "libsurvive_path" => prof.features.libsurvive.path = value,
-                    "basalt_path" => prof.features.basalt.path = value,
-                    "prefix" => prof.prefix = value.unwrap_or("".to_string()),
-                    _ => panic!("Unknown profile path key"),
-                }
-            }
-            Self::Input::SwitchChanged(key, value) => {
-                let prof = self.profile.as_mut().unwrap();
-                match key.as_str() {
-                    "libsurvive_enabled" => prof.features.libsurvive.enabled = value,
-                    "basalt_enabled" => prof.features.basalt.enabled = value,
-                    "mercury_enabled" => prof.features.mercury_enabled = value,
-                    "pull_on_build" => prof.pull_on_build = value,
-                    _ => panic!("Unknown profile switch key"),
-                }
-            }
-            Self::Input::EntryChanged(key, value) => {
-                let prof = self.profile.as_mut().unwrap();
-                match key.as_str() {
-                    "name" => prof.name = value,
-                    "xrservice_repo" => {
-                        prof.xrservice_repo = match value.trim() {
-                            "" => None,
-                            s => Some(s.to_string()),
-                        }
-                    }
-                    "opencomposite_repo" => {
-                        prof.opencomposite_repo = match value.trim() {
-                            "" => None,
-                            s => Some(s.to_string()),
-                        }
-                    }
-                    "libsurvive_repo" => {
-                        prof.features.libsurvive.repo = match value.trim() {
-                            "" => None,
-                            s => Some(s.to_string()),
-                        }
-                    }
-                    "basalt_repo" => {
-                        prof.features.basalt.repo = match value.trim() {
-                            "" => None,
-                            s => Some(s.to_string()),
-                        }
-                    }
-                    _ => panic!("Unknown profile text key"),
-                }
-            }
-            Self::Input::ComboChanged(key, value) => {
-                let prof = self.profile.as_mut().unwrap();
-                match key.as_str() {
-                    "xrservice_type" => prof.xrservice_type = XRServiceType::from_string(value),
-                    _ => panic!("Unknown profile text key"),
-                }
-            }
             Self::Input::AddEnvVar(name) => {
-                let prof = self.profile.as_mut().unwrap();
+                let mut prof = self.profile.borrow_mut();
                 if !prof.environment.contains_key(&name) {
                     prof.environment.insert(name.clone(), "".to_string());
                     self.env_rows.guard().push_back(EnvVarModelInit {
@@ -346,20 +334,6 @@ impl SimpleComponent for ProfileEditor {
             .icon_name("list-add-symbolic")
             .tooltip_text("Add Env Var")
             .build();
-        {
-            let aeb_sender = sender.clone();
-            let entry = add_env_name_entry.clone();
-            let popover = add_env_popover.clone();
-            add_env_btn.connect_clicked(move |_| {
-                let name_gstr = entry.text();
-                let name = name_gstr.trim();
-                if !name.is_empty() {
-                    popover.popdown();
-                    entry.set_text("");
-                    aeb_sender.input(Self::Input::AddEnvVar(name.to_string()));
-                }
-            });
-        }
         add_env_popover_box.append(&add_env_name_entry);
         add_env_popover_box.append(&add_env_btn);
         add_env_popover.set_child(Some(&add_env_popover_box));
@@ -373,26 +347,12 @@ impl SimpleComponent for ProfileEditor {
             .halign(gtk::Align::End)
             .build();
 
+        let profile = Rc::new(RefCell::new(init.profile));
+        let prof = profile.clone();
+
         let mut model = Self {
-            profile: None,
+            profile,
             win: None,
-            name_row: adw::EntryRow::builder().title("Name").build(),
-            type_row: adw::ComboRow::builder()
-                .title("XR Service Type")
-                .subtitle(
-                    "Monado is for PCVR headsets, while WiVRn is for Andorid standalone headsets",
-                )
-                .model(&gtk::StringList::new(
-                    XRServiceType::iter()
-                        .map(XRServiceType::to_string)
-                        .collect::<Vec<String>>()
-                        .iter()
-                        .map(String::as_str)
-                        .collect::<Vec<&str>>()
-                        .as_slice(),
-                ))
-                .build(),
-            pull_on_build_switch: None,
             env_rows: FactoryVecDeque::new(
                 adw::PreferencesGroup::builder()
                     .title("Environment Variables")
@@ -401,64 +361,34 @@ impl SimpleComponent for ProfileEditor {
                     .build(),
                 sender.input_sender(),
             ),
-            switch_rows: FactoryVecDeque::new(
-                adw::PreferencesGroup::builder()
-                    .title("Components")
-                    .description("Enable or disable features")
-                    .build(),
-                sender.input_sender(),
-            ),
-            path_rows: FactoryVecDeque::new(
-                adw::PreferencesGroup::builder()
-                    .title("Paths")
-                    .description(concat!(
-                        "Where the various components' repositories will be cloned to.\n\n",
-                        "\"Install Prefix\" is the path where the components are ",
-                        "installed after building."
-                    ))
-                    .build(),
-                sender.input_sender(),
-            ),
-            repo_rows: FactoryVecDeque::new(
-                adw::PreferencesGroup::builder()
-                    .title("Repositories")
-                    .description(concat!(
-                        "Change the repositories from which various components are pulled.\n\n",
-                        "Leave empty to use the default repository."
-                    ))
-                    .build(),
-                sender.input_sender(),
-            ),
             tracker: 0,
         };
-
         {
-            let name_sender = sender.clone();
-            model.name_row.connect_changed(move |nr| {
-                name_sender.input(Self::Input::EntryChanged(
-                    "name".to_string(),
-                    nr.text().to_string(),
-                ));
-            });
-        }
-
-        {
-            let type_sender = sender.clone();
-            model.type_row.connect_selected_item_notify(move |tr| {
-                type_sender.input(Self::Input::ComboChanged(
-                    "xrservice_type".to_string(),
-                    match tr.selected() {
-                        0 => "monado".to_string(),
-                        1 => "wivrn".to_string(),
-                        _ => panic!("XRServiceType combo row cannot have more than 2 choices"),
-                    },
-                ));
-            });
+            let mut guard = model.env_rows.guard();
+            guard.clear();
+            for (k, v) in prof.borrow().environment.iter() {
+                guard.push_back(EnvVarModelInit {
+                    name: k.clone(),
+                    value: v.clone(),
+                });
+            }
         }
 
         let widgets = view_output!();
         model.win = Some(widgets.win.clone());
-        model.pull_on_build_switch = Some(widgets.pull_on_build_switch.clone());
+
+        {
+            withclones![sender, add_env_name_entry, add_env_popover];
+            add_env_btn.connect_clicked(move |_| {
+                let name_gstr = add_env_name_entry.text();
+                let name = name_gstr.trim();
+                if !name.is_empty() {
+                    add_env_popover.popdown();
+                    add_env_name_entry.set_text("");
+                    sender.input(Self::Input::AddEnvVar(name.to_string()));
+                }
+            });
+        }
 
         ComponentParts { model, widgets }
     }

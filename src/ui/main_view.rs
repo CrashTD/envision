@@ -6,7 +6,8 @@ use crate::config::Config;
 use crate::constants::APP_NAME;
 use crate::profile::{Profile, XRServiceType};
 use crate::ui::app::{
-    AboutAction, BuildProfileAction, DebugViewToggleAction, LibsurviveSetupAction, BuildProfileCleanAction,
+    AboutAction, BuildProfileAction, BuildProfileCleanAction, DebugViewToggleAction,
+    LibsurviveSetupAction,
 };
 use crate::ui::profile_editor::ProfileEditorInit;
 use crate::xr_devices::XRDevices;
@@ -31,13 +32,15 @@ pub struct MainView {
     #[tracker::do_not_track]
     devices_box: Controller<DevicesBox>,
     #[tracker::do_not_track]
-    profile_editor: Controller<ProfileEditor>,
-    #[tracker::do_not_track]
     profile_not_editable_dialog: adw::MessageDialog,
     #[tracker::do_not_track]
     profile_delete_confirm_dialog: adw::MessageDialog,
     #[tracker::do_not_track]
     cannot_duplicate_profile_dialog: adw::MessageDialog,
+    #[tracker::do_not_track]
+    profile_editor: Option<Controller<ProfileEditor>>,
+    #[tracker::do_not_track]
+    root_win: gtk::Window,
 }
 
 #[derive(Debug)]
@@ -73,6 +76,19 @@ pub struct MainViewInit {
     pub config: Config,
     pub selected_profile: Profile,
     pub root_win: gtk::Window,
+}
+
+impl MainView {
+    fn create_profile_editor(&mut self, sender: ComponentSender<MainView>, prof: Profile) {
+        self.profile_editor = Some(ProfileEditor::builder()
+            .launch(ProfileEditorInit {
+                root_win: self.root_win.clone(),
+                profile: prof,
+            })
+            .forward(sender.input_sender(), |message| match message {
+                ProfileEditorOutMsg::SaveProfile(p) => MainViewMsg::SaveProfile(p),
+            }));
+    }
 }
 
 #[relm4::component(pub)]
@@ -302,16 +318,15 @@ impl SimpleComponent for MainView {
             }
             Self::Input::EditProfile => {
                 if self.selected_profile.editable {
-                    self.profile_editor
-                        .emit(ProfileEditorMsg::Present(self.selected_profile.clone()));
+                    self.create_profile_editor(sender, self.selected_profile.clone());
+                    self.profile_editor.as_ref().unwrap().emit(ProfileEditorMsg::Present);
                 } else {
                     self.profile_not_editable_dialog.present();
                 }
             }
             Self::Input::CreateProfile => {
-                self.profile_editor
-                    .sender()
-                    .emit(ProfileEditorMsg::Present(Profile::default()));
+                self.create_profile_editor(sender, Profile::default());
+                self.profile_editor.as_ref().unwrap().sender().emit(ProfileEditorMsg::Present);
             }
             Self::Input::DeleteProfile => {
                 self.profile_delete_confirm_dialog.present();
@@ -321,9 +336,8 @@ impl SimpleComponent for MainView {
             }
             Self::Input::DuplicateProfile => {
                 if self.selected_profile.can_be_built {
-                    self.profile_editor.sender().emit(ProfileEditorMsg::Present(
-                        self.selected_profile.create_duplicate(),
-                    ));
+                    self.create_profile_editor(sender, self.selected_profile.create_duplicate());
+                    self.profile_editor.as_ref().unwrap().sender().emit(ProfileEditorMsg::Present);
                 } else {
                     self.cannot_duplicate_profile_dialog.present();
                 }
@@ -405,18 +419,13 @@ impl SimpleComponent for MainView {
                     root_win: init.root_win.clone(),
                 })
                 .detach(),
-            profile_editor: ProfileEditor::builder()
-                .launch(ProfileEditorInit {
-                    root_win: init.root_win.clone(),
-                })
-                .forward(sender.input_sender(), |message| match message {
-                    ProfileEditorOutMsg::SaveProfile(p) => Self::Input::SaveProfile(p),
-                }),
             devices_box: DevicesBox::builder().launch(()).detach(),
             selected_profile: init.selected_profile.clone(),
             profile_not_editable_dialog,
             profile_delete_confirm_dialog,
             cannot_duplicate_profile_dialog,
+            root_win: init.root_win.clone(),
+            profile_editor: None,
             tracker: 0,
         };
         let widgets = view_output!();
