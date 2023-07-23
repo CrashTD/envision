@@ -2,11 +2,17 @@ use crate::{constants::CMD_NAME, file_utils::get_writer, paths::get_config_dir, 
 use serde::{Deserialize, Serialize};
 use std::{fs::File, io::BufReader};
 
+fn default_win_size() -> [i32; 2] {
+    [360, 400]
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Config {
     pub selected_profile_uuid: String,
     pub debug_view_enabled: bool,
     pub user_profiles: Vec<Profile>,
+    #[serde(default = "default_win_size")]
+    pub win_size: [i32; 2],
 }
 
 impl Default for Config {
@@ -16,6 +22,7 @@ impl Default for Config {
             selected_profile_uuid: "".to_string(),
             debug_view_enabled: false,
             user_profiles: vec![],
+            win_size: default_win_size(),
         }
     }
 }

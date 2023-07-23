@@ -99,6 +99,7 @@ pub enum Msg {
     SaveProfile(Profile),
     RunSetCap,
     OpenLibsurviveSetup,
+    SaveWinSize(i32, i32),
     Quit,
     ProcessDevicesLog(Vec<String>),
 }
@@ -195,7 +196,7 @@ impl SimpleComponent for App {
         #[root]
         adw::ApplicationWindow {
             set_title: Some(APP_NAME),
-            set_default_size: (400, 300),
+            set_default_size: (win_size[0], win_size[1]),
             gtk::Box {
                 set_orientation: gtk::Orientation::Vertical,
                 set_hexpand: true,
@@ -213,6 +214,10 @@ impl SimpleComponent for App {
                     model.debug_view.widget(),
                 }
             },
+            connect_close_request[sender] => move |win| {
+                sender.input(Msg::SaveWinSize(win.width(), win.height()));
+                gtk::Inhibit(false)
+            } 
         }
     }
 
@@ -487,7 +492,12 @@ impl SimpleComponent for App {
                     ))
                     .expect("Failed to present Libsurvive Setup Window");
             }
+            Msg::SaveWinSize(w, h) => {
+                self.config.win_size = [w, h];
+                self.config.save();
+            }
             Msg::Quit => {
+                sender.input(Msg::SaveWinSize(self.app_win.width(), self.app_win.height()));
                 self.application.quit();
             }
         }
@@ -499,6 +509,7 @@ impl SimpleComponent for App {
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
         let config = Config::get_config();
+        let win_size = config.win_size.clone();
         let profiles = Self::profiles_list(&config);
         let dependencies_dialog = adw::MessageDialog::builder()
             .modal(true)
