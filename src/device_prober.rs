@@ -1,7 +1,10 @@
 use std::fmt::Display;
 
+use crate::{profile::Profile, profiles::{valve_index::valve_index_profile, wivrn::wivrn_profile}};
+
 #[derive(Debug, PartialEq, Eq)]
 pub enum PhysicalXRDevice {
+    // PCVR
     ValveIndex,
     HTCVive,
     HTCVivePro,
@@ -27,6 +30,10 @@ pub enum PhysicalXRDevice {
     VarjoVR2,
     VarjoVR3,
     RazerHydra,
+    // Standalone
+    OculusQuest,
+    OculusQuest2,
+    OculusQuestPro,
 }
 
 impl Display for PhysicalXRDevice {
@@ -57,7 +64,46 @@ impl Display for PhysicalXRDevice {
             Self::VarjoVR2 => "Varjo VR2",
             Self::VarjoVR3 => "Varjo VR3",
             Self::RazerHydra => "Razer Hydra",
+            Self::OculusQuest => "Oculus Quest",
+            Self::OculusQuest2 => "Oculus Quest 2",
+            Self::OculusQuestPro => "Oculus Quest Pro",
         })
+    }
+}
+
+impl PhysicalXRDevice {
+    pub fn get_default_profile(&self) -> Option<Profile> {
+        match &self {
+            Self::ValveIndex => Some(valve_index_profile()),
+            Self::OculusQuest => Some(wivrn_profile()),
+            Self::OculusQuest2 => Some(wivrn_profile()),
+            Self::OculusQuestPro => Some(wivrn_profile()),
+            _ => None,
+            // Self::HTCVive => "HTC Vive",
+            // Self::HTCVivePro => "HTC Vive Pro",
+            // Self::HTCViveCosmos => "HTC Vive Cosmos",
+            // Self::HTCVivePro2 => "HTC Vive Pro2",
+            // Self::OculusRift => "Oculus Rift",
+            // Self::OculusRiftS => "Oculus Rift S",
+            // Self::PlayStationVR => "PlayStation Vr",
+            // Self::PlayStationVR2 => "PlayStation Vr2",
+            // Self::Pimax4K => "Pimax 4K",
+            // Self::Pimax5KPlus => "Pimax 5K Plus",
+            // Self::Pimax8K => "Pimax 8K",
+            // Self::DellVisor => "Dell Visor",
+            // Self::AcerAH101 => "Acer AH101",
+            // Self::HPWMR => "HP WMR",
+            // Self::HPReverbG1 => "HP Reverb G1",
+            // Self::HPReverbG2 => "HP Reverb G2",
+            // Self::LenovoExplorer => "Lenovo Explorer",
+            // Self::SamsungOdyssey => "Samsung Odyssey",
+            // Self::SamsungOdysseyPlus => "Samsung Odyssey Plus",
+            // Self::VarjoVR1 => "Varjo VR1",
+            // Self::VarjoAero => "Varjo Aero",
+            // Self::VarjoVR2 => "Varjo VR2",
+            // Self::VarjoVR3 => "Varjo VR3",
+            // Self::RazerHydra => "Razer Hydra",
+        }
     }
 }
 
@@ -82,6 +128,7 @@ pub fn get_xr_usb_devices() -> Vec<PhysicalXRDevice> {
     list_usb_devs()
         .into_iter()
         .filter_map(|t| match t {
+            // PCVR
             (0x28de, 0x2102) => Some(PhysicalXRDevice::ValveIndex),
             (0x0bb4, 0x2c87) => Some(PhysicalXRDevice::HTCVive),
             (0x0bb4, 0x0309) => Some(PhysicalXRDevice::HTCVivePro),
@@ -94,6 +141,9 @@ pub fn get_xr_usb_devices() -> Vec<PhysicalXRDevice> {
             (0x054c, 0x09af) => Some(PhysicalXRDevice::PlayStationVR),
             (0x03f0, 0x0c6a) => Some(PhysicalXRDevice::HPReverbG1),
             (0x03f0, 0x0580) => Some(PhysicalXRDevice::HPReverbG2),
+            // Standalone
+            (0x2833, 0x0137) => Some(PhysicalXRDevice::OculusQuest),
+            (0x2833, 0x0186) => Some(PhysicalXRDevice::OculusQuest2),
             _ => None,
         })
         .collect()
