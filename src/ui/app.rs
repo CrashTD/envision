@@ -36,7 +36,7 @@ use crate::ui::build_window::BuildWindowMsg;
 use crate::ui::debug_view::DebugViewInit;
 use crate::ui::libsurvive_setup_window::LibsurviveSetupMsg;
 use crate::ui::main_view::{MainView, MainViewInit, MainViewOutMsg};
-use crate::withclones;
+use crate::{withclones, stateless_action};
 use crate::xr_devices::XRDevices;
 use gtk::prelude::*;
 use relm4::actions::{AccelsPlus, ActionGroupName, RelmAction, RelmActionGroup};
@@ -596,71 +596,56 @@ impl SimpleComponent for App {
 
         let mut actions = RelmActionGroup::<AppActionGroup>::new();
 
-        let buildprofile_action = {
+        {
             withclones![sender];
-            RelmAction::<BuildProfileAction>::new_stateless(move |_| {
+            stateless_action!(actions, BuildProfileAction, {
                 sender.input_sender().emit(Msg::BuildProfile(false));
-            })
-        };
-
-        let buildprofileclean_action = {
+            });
+        }
+        {
             withclones![sender];
-            RelmAction::<BuildProfileCleanAction>::new_stateless(move |_| {
+            stateless_action!(actions, BuildProfileCleanAction, {
                 sender.input_sender().emit(Msg::BuildProfile(true));
-            })
-        };
-
-        let about_action = {
+            });
+        }
+        {
             let abd_sender = model.about_dialog.sender().clone();
-            RelmAction::<AboutAction>::new_stateless(move |_| {
+            stateless_action!(actions, AboutAction, {
                 abd_sender.send(()).unwrap();
-            })
-        };
-
-        let libsurvive_setup_action = {
+            });
+        }
+        {
             withclones![sender];
-            RelmAction::<LibsurviveSetupAction>::new_stateless(move |_| {
+            stateless_action!(actions, LibsurviveSetupAction, {
                 sender.input(Msg::OpenLibsurviveSetup);
-            })
-        };
-
-        let quit_action = {
+            });
+        }
+        {
             withclones![sender];
-            RelmAction::<QuitAction>::new_stateless(move |_| {
+            stateless_action!(actions, QuitAction, {
                 sender.input(Msg::Quit);
-            })
-        };
-
-        let debug_view_toggle_action: RelmAction<DebugViewToggleAction> = {
+            });
+        }
+        {
             withclones![sender];
-            RelmAction::<DebugViewToggleAction>::new_stateful(
+            actions.add_action(RelmAction::<DebugViewToggleAction>::new_stateful(
                 &model.enable_debug_view,
                 move |_, state| {
                     let s = *state;
                     *state = !s;
                     sender.input(Msg::EnableDebugViewChanged(*state));
                 },
-            )
-        };
-
-        actions.add_action(about_action);
-        actions.add_action(quit_action);
-        actions.add_action(buildprofile_action);
-        actions.add_action(buildprofileclean_action);
-        actions.add_action(debug_view_toggle_action);
-        actions.add_action(libsurvive_setup_action);
+            ))
+        }
 
         root.insert_action_group(AppActionGroup::NAME, Some(&actions.into_action_group()));
 
-        model
-            .application
-            .set_accelerators_for_action::<QuitAction>(&["<Control>q"]);
-        model
-            .application
-            .set_accelerators_for_action::<BuildProfileAction>(&["F5"]);
-        model
-            .application
-            .set_accelerators_for_action::<BuildProfileCleanAction>(&["<Control>F5"]);
+        {
+            let app = &model.application;
+            app.set_accelerators_for_action::<QuitAction>(&["<Control>q"]);
+            app.set_accelerators_for_action::<BuildProfileAction>(&["F5"]);
+            app.set_accelerators_for_action::<BuildProfileCleanAction>(&["<Control>F5"]);
+        }
 
         model.main_view.sender().emit(MainViewMsg::UpdateProfiles(
             model.profiles.clone(),
