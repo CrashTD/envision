@@ -12,3 +12,4 @@ pub mod wivrn_conf_editor;
 pub mod devices_box;
 pub mod preference_rows;
 pub mod macros;
+pub mod util;

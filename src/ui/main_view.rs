@@ -10,6 +10,7 @@ use crate::ui::app::{
     LibsurviveSetupAction,
 };
 use crate::ui::profile_editor::ProfileEditorInit;
+use crate::ui::util::limit_dropdown_width;
 use crate::xr_devices::XRDevices;
 use gtk::prelude::*;
 use relm4::adw::traits::MessageDialogExt;
@@ -80,14 +81,16 @@ pub struct MainViewInit {
 
 impl MainView {
     fn create_profile_editor(&mut self, sender: ComponentSender<MainView>, prof: Profile) {
-        self.profile_editor = Some(ProfileEditor::builder()
-            .launch(ProfileEditorInit {
-                root_win: self.root_win.clone(),
-                profile: prof,
-            })
-            .forward(sender.input_sender(), |message| match message {
-                ProfileEditorOutMsg::SaveProfile(p) => MainViewMsg::SaveProfile(p),
-            }));
+        self.profile_editor = Some(
+            ProfileEditor::builder()
+                .launch(ProfileEditorInit {
+                    root_win: self.root_win.clone(),
+                    profile: prof,
+                })
+                .forward(sender.input_sender(), |message| match message {
+                    ProfileEditorOutMsg::SaveProfile(p) => MainViewMsg::SaveProfile(p),
+                }),
+        );
     }
 }
 
@@ -118,7 +121,7 @@ impl SimpleComponent for MainView {
             #[track = "model.changed(Self::enable_debug_view())"]
             set_hexpand: !model.enable_debug_view,
             set_vexpand: true,
-            set_size_request: (270, 350),
+            set_size_request: (360, 350),
             gtk::WindowHandle {
                 set_hexpand: true,
                 set_vexpand: false,
@@ -199,14 +202,22 @@ impl SimpleComponent for MainView {
                     #[name(profiles_dropdown)]
                     gtk::DropDown {
                         set_hexpand: true,
-                        set_tooltip_text: Some("Profiles"),
+                        #[track = "model.changed(Self::selected_profile())"]
+                        set_tooltip_text: Some(format!("Profile: {}", model.selected_profile).as_str()),
                         #[track = "model.changed(Self::profiles())"]
                         set_model: Some(&{
                             let names: Vec<_> = model.profiles.iter().map(|p| p.name.as_str()).collect();
                             gtk::StringList::new(&names)
                         }),
-                        connect_selected_item_notify[sender] => move |this| {
-                            sender.input(MainViewMsg::ProfileSelected(this.selected()));
+                        connect_selected_item_notify[sender] => move |dd| {
+                            sender.input(MainViewMsg::ProfileSelected(dd.selected()));
+                        },
+                        connect_realize => move |dd| {
+                            limit_dropdown_width(
+                                &dd, match model.enable_debug_view {
+                                    true => 18,
+                                    false => -1,
+                                });
                         },
                     },
                     gtk::Button {
@@ -214,21 +225,21 @@ impl SimpleComponent for MainView {
                         set_tooltip_text: Some("Edit Profile"),
                         connect_clicked[sender] => move |_| {
                             sender.input(Self::Input::EditProfile);
-                        }
+                        },
                     },
                     gtk::Button {
                         set_icon_name: "edit-copy-symbolic",
                         set_tooltip_text: Some("Duplicate Profile"),
                         connect_clicked[sender] => move |_| {
                             sender.input(Self::Input::DuplicateProfile);
-                        }
+                        },
                     },
                     gtk::Button {
                         set_icon_name: "list-add-symbolic",
                         set_tooltip_text: Some("Create Profile"),
                         connect_clicked[sender] => move |_| {
                             sender.input(Self::Input::CreateProfile);
-                        }
+                        },
                     },
                     gtk::Button {
                         set_icon_name: "edit-delete-symbolic",
@@ -238,7 +249,7 @@ impl SimpleComponent for MainView {
                         set_sensitive: model.selected_profile.editable,
                         connect_clicked[sender] => move |_| {
                             sender.input(Self::Input::DeleteProfile);
-                        }
+                        },
                     },
                 },
             }
@@ -279,6 +290,13 @@ impl SimpleComponent for MainView {
             }
             Self::Input::EnableDebugViewChanged(val) => {
                 self.set_enable_debug_view(val);
+                limit_dropdown_width(
+                    self.profiles_dropdown.as_ref().unwrap(),
+                    match val {
+                        true => 18,
+                        false => -1,
+                    },
+                )
             }
             Self::Input::UpdateSelectedProfile(prof) => {
                 self.set_selected_profile(prof.clone());
@@ -319,14 +337,21 @@ impl SimpleComponent for MainView {
             Self::Input::EditProfile => {
                 if self.selected_profile.editable {
                     self.create_profile_editor(sender, self.selected_profile.clone());
-                    self.profile_editor.as_ref().unwrap().emit(ProfileEditorMsg::Present);
+                    self.profile_editor
+                        .as_ref()
+                        .unwrap()
+                        .emit(ProfileEditorMsg::Present);
                 } else {
                     self.profile_not_editable_dialog.present();
                 }
             }
             Self::Input::CreateProfile => {
                 self.create_profile_editor(sender, Profile::default());
-                self.profile_editor.as_ref().unwrap().sender().emit(ProfileEditorMsg::Present);
+                self.profile_editor
+                    .as_ref()
+                    .unwrap()
+                    .sender()
+                    .emit(ProfileEditorMsg::Present);
             }
             Self::Input::DeleteProfile => {
                 self.profile_delete_confirm_dialog.present();
@@ -337,7 +362,11 @@ impl SimpleComponent for MainView {
             Self::Input::DuplicateProfile => {
                 if self.selected_profile.can_be_built {
                     self.create_profile_editor(sender, self.selected_profile.create_duplicate());
-                    self.profile_editor.as_ref().unwrap().sender().emit(ProfileEditorMsg::Present);
+                    self.profile_editor
+                        .as_ref()
+                        .unwrap()
+                        .sender()
+                        .emit(ProfileEditorMsg::Present);
                 } else {
                     self.cannot_duplicate_profile_dialog.present();
                 }
