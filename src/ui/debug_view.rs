@@ -1,5 +1,6 @@
 use crate::log_level::LogLevel;
 use crate::log_parser::MonadoLog;
+use crate::withclones;
 use gtk::prelude::*;
 use relm4::prelude::*;
 use relm4::{ComponentSender, SimpleComponent};
@@ -278,11 +279,11 @@ impl SimpleComponent for DebugView {
         model.scrolledwin = Some(widgets.scrolledwin.clone());
 
         {
-            let dd_sender = sender.clone();
+            withclones![sender];
             widgets
                 .log_level_dropdown
                 .connect_selected_notify(move |dd| {
-                    dd_sender.input(Self::Input::LogLevelChanged(
+                    sender.input(Self::Input::LogLevelChanged(
                         LogLevel::iter()
                             .as_slice()
                             .get(dd.selected() as usize)

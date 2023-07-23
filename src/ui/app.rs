@@ -36,6 +36,7 @@ use crate::ui::build_window::BuildWindowMsg;
 use crate::ui::debug_view::DebugViewInit;
 use crate::ui::libsurvive_setup_window::LibsurviveSetupMsg;
 use crate::ui::main_view::{MainView, MainViewInit, MainViewOutMsg};
+use crate::withclones;
 use crate::xr_devices::XRDevices;
 use gtk::prelude::*;
 use relm4::actions::{AccelsPlus, ActionGroupName, RelmAction, RelmActionGroup};
@@ -596,16 +597,16 @@ impl SimpleComponent for App {
         let mut actions = RelmActionGroup::<AppActionGroup>::new();
 
         let buildprofile_action = {
-            let this_sender = sender.clone();
+            withclones![sender];
             RelmAction::<BuildProfileAction>::new_stateless(move |_| {
-                this_sender.input_sender().emit(Msg::BuildProfile(false));
+                sender.input_sender().emit(Msg::BuildProfile(false));
             })
         };
 
         let buildprofileclean_action = {
-            let this_sender = sender.clone();
+            withclones![sender];
             RelmAction::<BuildProfileCleanAction>::new_stateless(move |_| {
-                this_sender.input_sender().emit(Msg::BuildProfile(true));
+                sender.input_sender().emit(Msg::BuildProfile(true));
             })
         };
 
@@ -617,27 +618,27 @@ impl SimpleComponent for App {
         };
 
         let libsurvive_setup_action = {
-            let lss_sender = sender.clone();
+            withclones![sender];
             RelmAction::<LibsurviveSetupAction>::new_stateless(move |_| {
-                lss_sender.input(Msg::OpenLibsurviveSetup);
+                sender.input(Msg::OpenLibsurviveSetup);
             })
         };
 
         let quit_action = {
-            let quit_sender = sender.clone();
+            withclones![sender];
             RelmAction::<QuitAction>::new_stateless(move |_| {
-                quit_sender.input(Msg::Quit);
+                sender.input(Msg::Quit);
             })
         };
 
         let debug_view_toggle_action: RelmAction<DebugViewToggleAction> = {
-            let debugtoggle_sender = sender.clone();
+            withclones![sender];
             RelmAction::<DebugViewToggleAction>::new_stateful(
                 &model.enable_debug_view,
                 move |_, state| {
                     let s = *state;
                     *state = !s;
-                    debugtoggle_sender.input(Msg::EnableDebugViewChanged(*state));
+                    sender.input(Msg::EnableDebugViewChanged(*state));
                 },
             )
         };
@@ -666,11 +667,13 @@ impl SimpleComponent for App {
             model.config.clone(),
         ));
 
-        let timer_sender = sender.clone();
-        glib::timeout_add_local(Duration::from_millis(1000), move || {
-            timer_sender.input(Msg::ClockTicking);
-            return glib::Continue(true);
-        });
+        {
+            withclones![sender];
+            glib::timeout_add_local(Duration::from_millis(1000), move || {
+                sender.input(Msg::ClockTicking);
+                return glib::Continue(true);
+            });
+        }
 
         ComponentParts { model, widgets }
     }
