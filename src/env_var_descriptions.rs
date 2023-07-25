@@ -13,7 +13,8 @@ pub static ENV_VAR_DESCRIPTIONS: Map<&str, &str> = phf_map! {
     "XRT_DEBUG_GUI" => "Set to 1 to enable the Monado debug UI",
     "XRT_JSON_LOG" => "Set to 1 to enable JSON logging for Monado. This enables better log visualization and log level filtering.",
     "LH_DRIVER" => "Lighthouse driver; Valid options are: \"vive\" for the default built-in driver, \"survive\" for Libsurvive, \"steamvr\" for the SteamVR based implementation.",
-    "LH_LOG" => "Lighthouse driver log level. Can be one of: \"trace\", \"debug\", \"info\", \"warn\", \"error\"."
+    "LH_LOG" => "Lighthouse log level. Can be one of: \"trace\", \"debug\", \"info\", \"warn\", \"error\".",
+    "LIGHTHOUSE_LOG" => "Lighthouse driver log level. Can be one of: \"trace\", \"debug\", \"info\", \"warn\", \"error\"."
 };
 
 pub fn env_var_descriptions_as_paragraph() -> String {
