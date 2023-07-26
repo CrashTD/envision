@@ -34,7 +34,7 @@ impl Git {
         Runner::new(
             None,
             "git".into(),
-            vec!["clone".into(), self.repo.clone(), self.dir.clone()],
+            vec!["clone".into(), self.repo.clone(), self.dir.clone(), "--recurse-submodules".into()],
         )
     }
 
