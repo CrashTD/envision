@@ -9,7 +9,6 @@ use crate::{
     withclones,
 };
 use adw::prelude::*;
-use gtk::prelude::*;
 use relm4::{factory::FactoryVecDeque, prelude::*};
 use std::{cell::RefCell, rc::Rc};
 

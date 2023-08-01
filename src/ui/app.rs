@@ -1,4 +1,5 @@
 use super::about_dialog::AboutDialog;
+use super::alert::alert;
 use super::build_window::{BuildStatus, BuildWindow};
 use super::debug_view::{DebugView, DebugViewMsg};
 use super::libsurvive_setup_window::LibsurviveSetupWindow;
@@ -67,13 +68,9 @@ pub struct App {
     #[tracker::do_not_track]
     build_window: Controller<BuildWindow>,
     #[tracker::do_not_track]
-    dependencies_dialog: adw::MessageDialog,
-    #[tracker::do_not_track]
     setcap_confirm_dialog: adw::MessageDialog,
     #[tracker::do_not_track]
     libsurvive_setup_window: Controller<LibsurviveSetupWindow>,
-    #[tracker::do_not_track]
-    profile_runner_failed_dialog: adw::MessageDialog,
 
     #[tracker::do_not_track]
     config: Config,
@@ -150,7 +147,14 @@ impl App {
                     ));
             }
             Err(_) => {
-                self.profile_runner_failed_dialog.present();
+                alert(
+                    "Failed to start profile",
+                    Some(concat!(
+                        "You need to build the current profile before starting it.",
+                        "\n\nYou can do this from the menu."
+                    )),
+                    Some(&self.app_win.clone().upcast::<gtk::Window>()),
+                );
             }
         };
     }
@@ -217,7 +221,7 @@ impl SimpleComponent for App {
             connect_close_request[sender] => move |win| {
                 sender.input(Msg::SaveWinSize(win.width(), win.height()));
                 gtk::Inhibit(false)
-            } 
+            }
         }
     }
 
@@ -395,15 +399,18 @@ impl SimpleComponent for App {
                 if !missing_deps.is_empty() {
                     missing_deps.sort_unstable();
                     missing_deps.dedup(); // dedup only works if sorted, hence the above
-                    self.dependencies_dialog.set_body(
-                        missing_deps
-                            .iter()
-                            .map(|dep| dep.name.clone())
-                            .collect::<Vec<String>>()
-                            .join(", ")
-                            .as_str(),
+                    alert(
+                        "Missing dependencies:",
+                        Some(
+                            missing_deps
+                                .iter()
+                                .map(|dep| dep.name.clone())
+                                .collect::<Vec<String>>()
+                                .join(", ")
+                                .as_str(),
+                        ),
+                        Some(&self.app_win.clone().upcast::<gtk::Window>()),
                     );
-                    self.dependencies_dialog.present();
                     return;
                 }
                 self.build_window
@@ -497,7 +504,10 @@ impl SimpleComponent for App {
                 self.config.save();
             }
             Msg::Quit => {
-                sender.input(Msg::SaveWinSize(self.app_win.width(), self.app_win.height()));
+                sender.input(Msg::SaveWinSize(
+                    self.app_win.width(),
+                    self.app_win.height(),
+                ));
                 self.application.quit();
             }
         }
@@ -511,13 +521,6 @@ impl SimpleComponent for App {
         let config = Config::get_config();
         let win_size = config.win_size.clone();
         let profiles = Self::profiles_list(&config);
-        let dependencies_dialog = adw::MessageDialog::builder()
-            .modal(true)
-            .transient_for(root)
-            .heading("Missing dependencies:")
-            .hide_on_close(true)
-            .build();
-        dependencies_dialog.add_response("ok", "_Ok");
         let setcap_confirm_dialog = adw::MessageDialog::builder()
             .modal(true)
             .transient_for(root)
@@ -542,18 +545,6 @@ impl SimpleComponent for App {
                 }
             });
         }
-
-        let profile_runner_failed_dialog = adw::MessageDialog::builder()
-            .modal(true)
-            .transient_for(root)
-            .heading("Failed to start profile")
-            .body(concat!(
-                "You need to build the current profile before starting it.",
-                "\n\nYou can do this from the menu."
-            ))
-            .hide_on_close(true)
-            .build();
-        profile_runner_failed_dialog.add_response("ok", "_Ok");
 
         let model = App {
             application: init.application,
@@ -592,9 +583,7 @@ impl SimpleComponent for App {
                 .transient_for(root)
                 .launch(())
                 .detach(),
-            dependencies_dialog,
             setcap_confirm_dialog,
-            profile_runner_failed_dialog,
             enable_debug_view: config.debug_view_enabled,
             config,
             tracker: 0,

@@ -10,11 +10,12 @@ use crate::{
 use gtk::prelude::*;
 use relm4::{
     actions::{ActionGroupName, RelmAction, RelmActionGroup},
-    adw::traits::MessageDialogExt,
     new_action_group, new_stateless_action,
     prelude::*,
 };
 use std::thread::JoinHandle;
+
+use super::alert::alert;
 
 #[derive(PartialEq, Eq, Debug, Clone)]
 pub enum InstallWivrnStatus {
@@ -32,7 +33,7 @@ pub struct InstallWivrnBox {
     #[tracker::do_not_track]
     install_runner: Option<Runner>,
     #[tracker::do_not_track]
-    adb_missing_dialog: adw::MessageDialog,
+    root_win: gtk::Window,
 }
 
 #[derive(Debug)]
@@ -188,7 +189,7 @@ impl SimpleComponent for InstallWivrnBox {
             }
             Self::Input::DownloadWivrn(link) => {
                 if !check_dependency(adb_dep()) {
-                    self.adb_missing_dialog.present();
+                    alert("ADB is not installed", Some("Please install ADB on your computer to install WiVRn on your Android headset"), Some(&self.root_win));
                 } else {
                     self.set_install_wivrn_status(InstallWivrnStatus::InProgress);
                     self.download_thread = Some(download_file(link, wivrn_apk_download_path()));
@@ -210,21 +211,12 @@ impl SimpleComponent for InstallWivrnBox {
         root: &Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
-        let adb_missing_dialog = adw::MessageDialog::builder()
-            .modal(true)
-            .transient_for(&init.root_win)
-            .heading("ADB is not installed")
-            .body("Please install ADB on your computer to install WiVRn on your Android headset")
-            .hide_on_close(true)
-            .build();
-        adb_missing_dialog.add_response("ok", "_Ok");
-
         let model = Self {
             selected_profile: init.selected_profile,
             install_wivrn_status: InstallWivrnStatus::Done(None),
             download_thread: None,
             install_runner: None,
-            adb_missing_dialog,
+            root_win: init.root_win,
             tracker: 0,
         };
 

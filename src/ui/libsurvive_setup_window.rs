@@ -1,8 +1,10 @@
 use crate::{profile::Profile, runner::Runner};
-use gtk::{glib, prelude::*};
-use relm4::prelude::*;
 use adw::prelude::*;
+use gtk::glib;
+use relm4::prelude::*;
 use std::{cell::Cell, collections::HashMap, path::Path, rc::Rc, time::Duration};
+
+use super::alert::alert;
 
 const NO_FILE_MSG: &str = "(No file selected)";
 const CALIBRATION_RUN_TIME_SECONDS: f64 = 30.0;
@@ -27,9 +29,6 @@ pub struct LibsurviveSetupWindow {
     page1: Option<adw::StatusPage>,
     #[tracker::do_not_track]
     filefilter_listmodel: gtk::gio::ListStore,
-
-    #[tracker::do_not_track]
-    survive_cli_not_found_dialog: adw::MessageDialog,
 
     #[tracker::do_not_track]
     calibration_running: Rc<Cell<bool>>,
@@ -388,7 +387,18 @@ impl SimpleComponent for LibsurviveSetupWindow {
                             .unwrap()
                             .scroll_to(self.loading_page.as_ref().unwrap(), true);
                     } else {
-                        self.survive_cli_not_found_dialog.present();
+                        let parent = match self.win.as_ref() {
+                            None => None,
+                            Some(w) => Some(w.clone().upcast::<gtk::Window>()),
+                        };
+                        alert(
+                            "Survive CLI not found",
+                            Some(concat!(
+                                "You might need to build this profile first, ",
+                                "or maybe Libsurvive isn't enabled for this profile"
+                            )),
+                            parent.as_ref(),
+                        );
                     }
                 }
             }
@@ -434,7 +444,11 @@ impl SimpleComponent for LibsurviveSetupWindow {
                             let runner = self.calibration_runner.as_mut().unwrap();
                             runner.terminate();
                             let mut n_runner = self.create_calibration_runner(
-                                self.profile.as_ref().unwrap().get_survive_cli_path().unwrap(),
+                                self.profile
+                                    .as_ref()
+                                    .unwrap()
+                                    .get_survive_cli_path()
+                                    .unwrap(),
                             );
                             n_runner.start();
                             self.calibration_runner = Some(n_runner);
@@ -478,17 +492,6 @@ impl SimpleComponent for LibsurviveSetupWindow {
         let json_filter = gtk::FileFilter::new();
         json_filter.add_mime_type("application/json");
 
-        let survive_cli_not_found_dialog = adw::MessageDialog::builder()
-            .modal(true)
-            .hide_on_close(true)
-            .heading("Survive CLI not found")
-            .body(concat!(
-                "You might need to build this profile first, ",
-                "or maybe Libsurvive isn't enabled for this profile"
-            ))
-            .build();
-        survive_cli_not_found_dialog.add_response("ok", "_Ok");
-
         let mut model = LibsurviveSetupWindow {
             win: None,
             progressbar: None,
@@ -506,7 +509,6 @@ impl SimpleComponent for LibsurviveSetupWindow {
             calibration_running: Rc::new(Cell::new(false)),
             first_run_done: false,
             calibration_seconds_elapsed: 0.0,
-            survive_cli_not_found_dialog,
             tracker: 0,
         };
 
@@ -515,9 +517,6 @@ impl SimpleComponent for LibsurviveSetupWindow {
         let widgets = view_output!();
 
         model.win = Some(widgets.win.clone());
-        model
-            .survive_cli_not_found_dialog
-            .set_transient_for(Some(model.win.as_ref().unwrap()));
         model.progressbar = Some(widgets.progressbar.clone());
         model.carousel = Some(widgets.carousel.clone());
         model.loading_page = Some(widgets.loading_page.clone());

@@ -13,3 +13,4 @@ pub mod devices_box;
 pub mod preference_rows;
 pub mod macros;
 pub mod util;
+pub mod alert;
