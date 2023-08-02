@@ -175,10 +175,10 @@ impl Default for Profile {
 impl Profile {
     pub fn get_steam_launch_options(&self) -> String {
         vec![
-            format!(
-                "VR_OVERRIDE={opencomp}/build",
-                opencomp = self.opencomposite_path,
-            ),
+            // format!(
+            //     "VR_OVERRIDE={opencomp}/build",
+            //     opencomp = self.opencomposite_path,
+            // ),
             format!(
                 "XR_RUNTIME_JSON={prefix}/share/openxr/1/openxr_{runtime}.json",
                 prefix = match self.prefix.as_str() {
