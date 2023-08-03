@@ -4,7 +4,7 @@ use super::build_window::{BuildStatus, BuildWindow};
 use super::debug_view::{DebugView, DebugViewMsg};
 use super::libsurvive_setup_window::LibsurviveSetupWindow;
 use super::main_view::MainViewMsg;
-use crate::builders::build_basalt::get_build_basalt_runner;
+use crate::builders::build_basalt::get_build_basalt_runners;
 use crate::builders::build_libsurvive::get_build_libsurvive_runners;
 use crate::builders::build_mercury::get_build_mercury_runner;
 use crate::builders::build_monado::get_build_monado_runners;
@@ -383,7 +383,7 @@ impl SimpleComponent for App {
                     }
                     if profile.features.basalt.enabled {
                         missing_deps.extend(get_missing_basalt_deps());
-                        runners.push(get_build_basalt_runner(&profile));
+                        runners.extend(get_build_basalt_runners(&profile, clean_build));
                     }
                     if profile.features.mercury_enabled {
                         missing_deps.extend(get_missing_mercury_deps());
