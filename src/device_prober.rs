@@ -34,6 +34,11 @@ pub enum PhysicalXRDevice {
     OculusQuest,
     OculusQuest2,
     OculusQuestPro,
+    PicoVRGoblin,
+    PicoNeoCV,
+    PicoG24K,
+    PicoNeo3Pro,
+    Pico4,
 }
 
 impl Display for PhysicalXRDevice {
@@ -67,6 +72,11 @@ impl Display for PhysicalXRDevice {
             Self::OculusQuest => "Oculus Quest",
             Self::OculusQuest2 => "Oculus Quest 2",
             Self::OculusQuestPro => "Oculus Quest Pro",
+            Self::PicoVRGoblin => "Pico VR Goblin",
+            Self::PicoNeoCV => "Pico Neo CV",
+            Self::PicoG24K => "Pico G2 4K",
+            Self::PicoNeo3Pro => "Pico Neo 3 Pro",
+            Self::Pico4 => "PICO 4",
         })
     }
 }
@@ -78,6 +88,11 @@ impl PhysicalXRDevice {
             Self::OculusQuest => Some(wivrn_profile()),
             Self::OculusQuest2 => Some(wivrn_profile()),
             Self::OculusQuestPro => Some(wivrn_profile()),
+            Self::PicoVRGoblin => Some(wivrn_profile()),
+            Self::PicoNeoCV => Some(wivrn_profile()),
+            Self::PicoG24K => Some(wivrn_profile()),
+            Self::PicoNeo3Pro => Some(wivrn_profile()),
+            Self::Pico4 => Some(wivrn_profile()),
             _ => None,
             // Self::HTCVive => "HTC Vive",
             // Self::HTCVivePro => "HTC Vive Pro",
