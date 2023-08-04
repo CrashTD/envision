@@ -1,4 +1,5 @@
 use crate::{
+    checkerr,
     file_utils::{copy_file, deserialize_file, get_writer, set_file_readonly},
     paths::{get_backup_dir, get_xdg_config_dir, get_xdg_data_dir, SYSTEM_PREFIX},
     profile::{Profile, XRServiceType},
@@ -69,13 +70,18 @@ pub fn get_current_active_runtime() -> Option<ActiveRuntime> {
     get_active_runtime_from_path(&get_active_runtime_json_path())
 }
 
-fn dump_active_runtime_to_path(active_runtime: &ActiveRuntime, path_s: &String) {
+fn dump_active_runtime_to_path(
+    active_runtime: &ActiveRuntime,
+    path_s: &String,
+) -> Result<(), serde_json::Error> {
     let writer = get_writer(path_s);
-    serde_json::to_writer_pretty(writer, active_runtime).expect("Unable to save active runtime");
+    serde_json::to_writer_pretty(writer, active_runtime)
 }
 
-pub fn dump_current_active_runtime(active_runtime: &ActiveRuntime) {
-    dump_active_runtime_to_path(active_runtime, &get_active_runtime_json_path());
+pub fn dump_current_active_runtime(
+    active_runtime: &ActiveRuntime,
+) -> Result<(), serde_json::Error> {
+    dump_active_runtime_to_path(active_runtime, &get_active_runtime_json_path())
 }
 
 fn build_steam_active_runtime() -> ActiveRuntime {
@@ -96,9 +102,10 @@ fn build_steam_active_runtime() -> ActiveRuntime {
     }
 }
 
-pub fn set_current_active_runtime_to_steam() {
-    set_file_readonly(&get_active_runtime_json_path(), false);
-    dump_current_active_runtime(&build_steam_active_runtime())
+pub fn set_current_active_runtime_to_steam() -> Result<(), ()> {
+    checkerr!(set_file_readonly(&get_active_runtime_json_path(), false));
+    checkerr!(dump_current_active_runtime(&build_steam_active_runtime()));
+    Ok(())
 }
 
 pub fn build_profile_active_runtime(profile: &Profile) -> ActiveRuntime {
@@ -119,9 +126,9 @@ pub fn build_profile_active_runtime(profile: &Profile) -> ActiveRuntime {
     }
 }
 
-pub fn set_current_active_runtime_to_profile(profile: &Profile) {
+pub fn set_current_active_runtime_to_profile(profile: &Profile) -> Result<(), ()> {
     let dest = get_active_runtime_json_path();
-    set_file_readonly(&dest, false);
+    checkerr!(set_file_readonly(&dest, false));
     backup_steam_active_runtime();
     let pfx = profile.clone().prefix;
     let mut ar = build_profile_active_runtime(profile);
@@ -139,8 +146,9 @@ pub fn set_current_active_runtime_to_profile(profile: &Profile) {
             rels = rel_chain.join("/")
         );
     }
-    dump_current_active_runtime(&ar);
-    set_file_readonly(&dest, true);
+    checkerr!(dump_current_active_runtime(&ar));
+    checkerr!(set_file_readonly(&dest, true));
+    Ok(())
 }
 
 #[cfg(test)]
@@ -175,6 +183,7 @@ mod tests {
                 name: Some("SteamVR".into()),
             },
         };
-        dump_active_runtime_to_path(&ar, &"./target/testout/active_runtime.json.steamvr".into());
+        dump_active_runtime_to_path(&ar, &"./target/testout/active_runtime.json.steamvr".into())
+            .expect("could not dump active runtime to path");
     }
 }

@@ -126,10 +126,23 @@ impl App {
     }
 
     pub fn start_xrservice(&mut self) {
-        self.set_inhibit_session(true);
         let prof = self.get_selected_profile();
-        set_current_active_runtime_to_profile(&prof);
-        set_current_openvrpaths_to_profile(&prof);
+        if set_current_active_runtime_to_profile(&prof).is_err() {
+            alert(
+                "Failed to start XR Service",
+                Some("Error setting current active runtime to profile"),
+                Some(&self.app_win.clone().upcast::<gtk::Window>()),
+            );
+            return;
+        }
+        if set_current_openvrpaths_to_profile(&prof).is_err() {
+            alert(
+                "Failed to start XR Service",
+                Some("Error setting current openvrpaths file to profile"),
+                Some(&self.app_win.clone().upcast::<gtk::Window>()),
+            );
+            return;
+        };
         self.devices_processed = match prof.xrservice_type {
             XRServiceType::Monado => false,
             XRServiceType::Wivrn => true, // no device from log in wivrn
@@ -145,6 +158,7 @@ impl App {
                         true,
                         Some(self.get_selected_profile()),
                     ));
+                self.set_inhibit_session(true);
             }
             Err(_) => {
                 alert(
@@ -159,15 +173,31 @@ impl App {
         };
     }
 
+    pub fn restore_openxr_openvr_files(&self) {
+        if set_current_active_runtime_to_steam().is_err() {
+            alert(
+                "Could not restore Steam active runtime",
+                None,
+                Some(&self.app_win.clone().upcast::<gtk::Window>()),
+            );
+        }
+        if set_current_openvrpaths_to_steam().is_err() {
+            alert(
+                "Could not restore Steam openvrpaths",
+                None,
+                Some(&self.app_win.clone().upcast::<gtk::Window>()),
+            );
+        };
+    }
+
     pub fn shutdown_xrservice(&mut self) {
+        self.set_inhibit_session(false);
         if self.xrservice_runner.is_some() {
             if self.xrservice_runner.as_mut().unwrap().status() == RunnerStatus::Running {
                 self.xrservice_runner.as_mut().unwrap().terminate();
             }
         }
-        set_current_active_runtime_to_steam();
-        set_current_openvrpaths_to_steam();
-        self.set_inhibit_session(false);
+        self.restore_openxr_openvr_files();
         self.main_view
             .sender()
             .emit(MainViewMsg::XRServiceActiveChanged(false, None));
@@ -231,8 +261,7 @@ impl SimpleComponent for App {
                 self.xrservice_runner.as_mut().unwrap().terminate();
             }
         }
-        set_current_active_runtime_to_steam();
-        set_current_openvrpaths_to_steam();
+        self.restore_openxr_openvr_files();
     }
 
     fn update(&mut self, message: Self::Input, sender: ComponentSender<Self>) {

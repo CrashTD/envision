@@ -52,17 +52,17 @@ pub fn deserialize_file<T: serde::de::DeserializeOwned>(path_s: &String) -> Opti
     }
 }
 
-pub fn set_file_readonly(path_s: &String, readonly: bool) {
+pub fn set_file_readonly(path_s: &String, readonly: bool) -> Result<(), std::io::Error> {
     let path = Path::new(&path_s);
     if !path.is_file() {
         println!("WARN: trying to set readonly on a file that does not exist");
-        return;
+        return Ok(());
     }
     let mut perms = fs::metadata(path)
         .expect("Could not get metadata for file")
         .permissions();
     perms.set_readonly(readonly);
-    fs::set_permissions(path, perms).expect("Could not set permissions for file")
+    fs::set_permissions(path, perms)
 }
 
 pub fn setcap_cap_sys_nice_eip(file: String) {

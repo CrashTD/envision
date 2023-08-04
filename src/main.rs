@@ -33,6 +33,7 @@ pub mod runner_pipeline;
 pub mod ui;
 pub mod xr_devices;
 pub mod build_tools;
+pub mod checkerr;
 
 fn restore_steam_xr_files() {
     let active_runtime = get_current_active_runtime();

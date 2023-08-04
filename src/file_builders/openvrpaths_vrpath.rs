@@ -1,4 +1,5 @@
 use crate::{
+    checkerr,
     file_utils::{copy_file, deserialize_file, get_writer, set_file_readonly},
     paths::{get_backup_dir, get_xdg_config_dir, get_xdg_data_dir},
     profile::Profile,
@@ -68,12 +69,15 @@ pub fn get_current_openvrpaths() -> Option<OpenVrPaths> {
     get_openvrpaths_from_path(&get_openvrpaths_vrpath_path())
 }
 
-fn dump_openvrpaths_to_path(ovr_paths: &OpenVrPaths, path_s: &String) {
+fn dump_openvrpaths_to_path(
+    ovr_paths: &OpenVrPaths,
+    path_s: &String,
+) -> Result<(), serde_json::Error> {
     let writer = get_writer(path_s);
-    serde_json::to_writer_pretty(writer, ovr_paths).expect("Unable to save openvrpaths");
+    serde_json::to_writer_pretty(writer, ovr_paths)
 }
 
-pub fn dump_current_openvrpaths(ovr_paths: &OpenVrPaths) {
+pub fn dump_current_openvrpaths(ovr_paths: &OpenVrPaths) -> Result<(), serde_json::Error> {
     dump_openvrpaths_to_path(ovr_paths, &get_openvrpaths_vrpath_path())
 }
 
@@ -96,9 +100,10 @@ fn build_steam_openvrpaths() -> OpenVrPaths {
     }
 }
 
-pub fn set_current_openvrpaths_to_steam() {
-    set_file_readonly(&get_openvrpaths_vrpath_path(), false);
-    dump_current_openvrpaths(&build_steam_openvrpaths())
+pub fn set_current_openvrpaths_to_steam() -> Result<(), ()> {
+    checkerr!(set_file_readonly(&get_openvrpaths_vrpath_path(), false));
+    checkerr!(dump_current_openvrpaths(&build_steam_openvrpaths()));
+    Ok(())
 }
 
 pub fn build_profile_openvrpaths(profile: &Profile) -> OpenVrPaths {
@@ -116,12 +121,13 @@ pub fn build_profile_openvrpaths(profile: &Profile) -> OpenVrPaths {
     }
 }
 
-pub fn set_current_openvrpaths_to_profile(profile: &Profile) {
+pub fn set_current_openvrpaths_to_profile(profile: &Profile) -> Result<(), ()> {
     let dest = get_openvrpaths_vrpath_path();
-    set_file_readonly(&dest, false);
+    checkerr!(set_file_readonly(&dest, false));
     backup_steam_openvrpaths();
-    dump_current_openvrpaths(&build_profile_openvrpaths(profile));
-    set_file_readonly(&dest, true);
+    checkerr!(dump_current_openvrpaths(&build_profile_openvrpaths(profile)));
+    checkerr!(set_file_readonly(&dest, true));
+    Ok(())
 }
 
 #[cfg(test)]
@@ -152,5 +158,6 @@ mod tests {
             version: 1,
         };
         dump_openvrpaths_to_path(&ovrp, &"./target/testout/openvrpaths.vrpath".into())
+            .expect("could not dump openvrpaths to path");
     }
 }
