@@ -8,7 +8,6 @@ use crate::constants::APP_NAME;
 use crate::profile::Profile;
 use crate::ui::app::{
     AboutAction, BuildProfileAction, BuildProfileCleanAction, DebugViewToggleAction,
-    LibsurviveSetupAction,
 };
 use crate::ui::profile_editor::ProfileEditorInit;
 use crate::ui::util::limit_dropdown_width;
@@ -70,6 +69,7 @@ pub enum MainViewOutMsg {
     ProfileSelected(Profile),
     DeleteProfile,
     SaveProfile(Profile),
+    OpenLibsurviveSetup,
 }
 
 pub struct MainViewInit {
@@ -106,7 +106,6 @@ impl SimpleComponent for MainView {
                 "_Debug View" => DebugViewToggleAction,
                 "_Build Profile" => BuildProfileAction,
                 "C_lean Build Profile" => BuildProfileCleanAction,
-                "_Calibrate Lighthouses" => LibsurviveSetupAction,
             },
             section! {
                 "_About" => AboutAction,
@@ -184,6 +183,54 @@ impl SimpleComponent for MainView {
                     model.devices_box.widget(),
                     model.steam_launch_options_box.widget(),
                     model.install_wivrn_box.widget(),
+                    gtk::Box {
+                        set_orientation: gtk::Orientation::Vertical,
+                        set_hexpand: true,
+                        set_vexpand: false,
+                        set_spacing: 12,
+                        set_margin_top: 12,
+                        set_margin_bottom: 12,
+                        #[track = "model.changed(Self::selected_profile())"]
+                        set_visible: model.selected_profile.features.libsurvive.enabled,
+                        gtk::Separator {
+                            set_orientation: gtk::Orientation::Horizontal,
+                            set_hexpand: true,
+                        },
+                        gtk::Label {
+                            add_css_class: "heading",
+                            set_hexpand: true,
+                            set_xalign: 0.0,
+                            set_margin_start: 12,
+                            set_margin_end: 12,
+                            set_label: "Libsurvive Calibration",
+                            set_wrap: true,
+                            set_wrap_mode: gtk::pango::WrapMode::Word,
+                        },
+                        gtk::Label {
+                            add_css_class: "dim-label",
+                            set_hexpand: true,
+                            set_xalign: 0.0,
+                            set_margin_start: 12,
+                            set_margin_end: 12,
+                            set_label: concat!(
+                                "Libsurvive needs to import your SteamVR calibration to work ",
+                                "properly. You need to have used SteamVR with this setup ",
+                                "before to be able to import its calibration."
+                            ),
+                            set_wrap: true,
+                            set_wrap_mode: gtk::pango::WrapMode::Word,
+                        },
+                        gtk::Button {
+                            add_css_class: "suggested-action",
+                            set_label: "Calibrate",
+                            set_margin_start: 12,
+                            set_margin_end: 12,
+                            set_halign: gtk::Align::Start,
+                            connect_clicked[sender] => move |_| {
+                                sender.output(Self::Output::OpenLibsurviveSetup);
+                            }
+                        },
+                    },
                 }
             },
             gtk::Separator {
@@ -367,7 +414,11 @@ impl SimpleComponent for MainView {
                         .sender()
                         .emit(ProfileEditorMsg::Present);
                 } else {
-                    alert("This profile cannot be duplicated", None, Some(&self.root_win));
+                    alert(
+                        "This profile cannot be duplicated",
+                        None,
+                        Some(&self.root_win),
+                    );
                 }
             }
             Self::Input::UpdateDevices(devs) => self

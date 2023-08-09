@@ -592,6 +592,7 @@ impl SimpleComponent for App {
                     MainViewOutMsg::ProfileSelected(uuid) => Msg::ProfileSelected(uuid),
                     MainViewOutMsg::DeleteProfile => Msg::DeleteProfile,
                     MainViewOutMsg::SaveProfile(p) => Msg::SaveProfile(p),
+                    MainViewOutMsg::OpenLibsurviveSetup => Msg::OpenLibsurviveSetup,
                 }),
             debug_view: DebugView::builder()
                 .launch(DebugViewInit {
@@ -645,12 +646,6 @@ impl SimpleComponent for App {
         }
         {
             withclones![sender];
-            stateless_action!(actions, LibsurviveSetupAction, {
-                sender.input(Msg::OpenLibsurviveSetup);
-            });
-        }
-        {
-            withclones![sender];
             stateless_action!(actions, QuitAction, {
                 sender.input(Msg::Quit);
             });
@@ -697,6 +692,5 @@ new_action_group!(pub AppActionGroup, "win");
 new_stateless_action!(pub AboutAction, AppActionGroup, "about");
 new_stateless_action!(pub BuildProfileAction, AppActionGroup, "buildprofile");
 new_stateless_action!(pub BuildProfileCleanAction, AppActionGroup, "buildprofileclean");
-new_stateless_action!(pub LibsurviveSetupAction, AppActionGroup, "libsurvivesetup");
 new_stateless_action!(pub QuitAction, AppActionGroup, "quit");
 new_stateful_action!(pub DebugViewToggleAction, AppActionGroup, "debugviewtoggle", (), bool);
