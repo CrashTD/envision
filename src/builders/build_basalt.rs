@@ -1,6 +1,5 @@
 use crate::{
     build_tools::{cmake::Cmake, git::Git},
-    constants::pkg_data_dir,
     file_utils::rm_rf,
     profile::Profile,
     runner::Runner,
@@ -32,12 +31,22 @@ pub fn get_build_basalt_runners(profile: &Profile, clean_build: bool) -> Vec<Run
         format!("{}/lib", profile.prefix),
     );
 
+    let mut cmake_env: HashMap<String, String> = HashMap::new();
+    cmake_env.insert("CMAKE_BUILD_PARALLEL_LEVEL".into(), "2".into());
+
     let cmake = Cmake {
-        env: None,
+        env: Some(cmake_env),
         vars: Some(cmake_vars),
         source_dir: profile.features.basalt.path.as_ref().unwrap().clone(),
         build_dir: build_dir.clone(),
     };
+    runners.push(Runner::new(None, "bash".into(), vec![
+        "-c".into(),
+        format!(
+            "cd {repo}/thirdparty/Pangolin && git checkout include/pangolin/utils/picojson.h && curl -sSL 'https://aur.archlinux.org/cgit/aur.git/plain/279c17d9c9eb9374c89489b449f92cb93350e8cd.patch?h=basalt-monado-git' -o picojson_fix.patch && git apply picojson_fix.patch &&	sed -i '1s/^/#include <stdint.h>\\n/' include/pangolin/platform.h",
+            repo = git.dir
+        ),
+    ]));
     if !Path::new(&build_dir).is_dir() || clean_build {
         rm_rf(&build_dir);
         runners.push(cmake.get_prepare_runner());
@@ -62,7 +71,7 @@ pub fn get_build_basalt_runners(profile: &Profile, clean_build: bool) -> Vec<Run
         vec![
             "-Ra".into(),
             format!(
-                "{}/basalt/thirdparty/basalt-headers/thirdparty/eigen",
+                "{}/thirdparty/basalt-headers/thirdparty/eigen",
                 profile.features.basalt.path.as_ref().unwrap().clone()
             ),
             format!("{}/share/basalt/thirdparty", profile.prefix),

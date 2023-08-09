@@ -1,5 +1,5 @@
-use std::collections::HashMap;
 use crate::runner::Runner;
+use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
 pub struct Cmake {
@@ -12,8 +12,10 @@ pub struct Cmake {
 impl Cmake {
     pub fn get_prepare_runner(&self) -> Runner {
         let mut args = vec![
-            "-B".into(), self.build_dir.clone(),
-            "-G".into(), "Ninja".into(),
+            "-B".into(),
+            self.build_dir.clone(),
+            "-G".into(),
+            "Ninja".into(),
         ];
         if self.vars.is_some() {
             for (k, v) in self.vars.as_ref().unwrap() {
@@ -21,10 +23,9 @@ impl Cmake {
                     panic!("Cmake vars cannot contain spaces!");
                 }
                 if v.contains(" ") {
-                    args.push(format!("-D{k}=\"{v}\"", k=k, v=v));
-                }
-                else {
-                    args.push(format!("-D{k}={v}", k=k, v=v));
+                    args.push(format!("-D{k}=\"{v}\"", k = k, v = v));
+                } else {
+                    args.push(format!("-D{k}={v}", k = k, v = v));
                 }
             }
         }
@@ -33,14 +34,18 @@ impl Cmake {
     }
 
     pub fn get_build_runner(&self) -> Runner {
-        Runner::new(self.env.clone(), "cmake".into(), vec![
-            "--build".into(), self.build_dir.clone()
-        ])
+        Runner::new(
+            self.env.clone(),
+            "cmake".into(),
+            vec!["--build".into(), self.build_dir.clone()],
+        )
     }
 
     pub fn get_install_runner(&self) -> Runner {
-        Runner::new(self.env.clone(), "cmake".into(), vec![
-            "--install".into(), self.build_dir.clone()
-        ])
+        Runner::new(
+            self.env.clone(),
+            "cmake".into(),
+            vec!["--install".into(), self.build_dir.clone()],
+        )
     }
 }
