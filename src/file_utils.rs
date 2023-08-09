@@ -1,6 +1,6 @@
-use crate::{constants::CMD_NAME, runner::Runner};
+use crate::runner::Runner;
+use nix::{sys::statvfs::{statvfs, FsFlags}, errno::Errno};
 use std::{
-    env,
     fs::{self, copy, create_dir_all, remove_dir_all, File, OpenOptions},
     io::{BufReader, BufWriter},
     path::Path,
@@ -93,6 +93,25 @@ pub fn copy_file(source_s: &String, dest_s: &String) {
             );
         }
     }
-    set_file_readonly(dest_s, false);
+    set_file_readonly(dest_s, false)
+        .expect(format!("Failed to set file {} as rw", dest_s).as_str());
     copy(source, dest).expect(format!("Failed to copy {} to {}", source_s, dest_s).as_str());
+}
+
+pub fn mount_has_nosuid(path_s: &str) -> Result<bool, Errno> {
+    let path = Path::new(path_s);
+    match statvfs(path) {
+        Ok(fstats) => Ok(fstats.flags().contains(FsFlags::ST_NOSUID)),
+        Err(e) => Err(e)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::file_utils::mount_has_nosuid;
+
+    #[test]
+    fn can_get_nosuid() {
+        assert_eq!(mount_has_nosuid("/tmp").expect("Error running statvfs"), true);
+    }
 }

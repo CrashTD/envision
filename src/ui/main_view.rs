@@ -5,6 +5,7 @@ use super::profile_editor::{ProfileEditor, ProfileEditorMsg, ProfileEditorOutMsg
 use super::steam_launch_options_box::{SteamLaunchOptionsBox, SteamLaunchOptionsBoxMsg};
 use crate::config::Config;
 use crate::constants::APP_NAME;
+use crate::file_utils::mount_has_nosuid;
 use crate::profile::Profile;
 use crate::ui::app::{
     AboutAction, BuildProfileAction, BuildProfileCleanAction, DebugViewToggleAction,
@@ -181,6 +182,59 @@ impl SimpleComponent for MainView {
                         },
                     },
                     model.devices_box.widget(),
+                    gtk::Box {
+                        set_orientation: gtk::Orientation::Vertical,
+                        set_hexpand: true,
+                        set_vexpand: false,
+                        set_spacing: 12,
+                        set_margin_top: 12,
+                        set_margin_bottom: 12,
+                        #[track = "model.changed(Self::selected_profile())"]
+                        set_visible: match mount_has_nosuid(model.selected_profile.prefix.as_str()) {
+                            Ok(b) => b,
+                            Err(_) => {
+                                // TODO: handle this error better
+                                println!(
+                                    "Warning: could not get stat on path {}",
+                                    model.selected_profile.prefix);
+                                false
+                            },
+                        },
+                        gtk::Separator {
+                            set_orientation: gtk::Orientation::Horizontal,
+                            set_hexpand: true,
+                        },
+                        gtk::Box {
+                            set_orientation: gtk::Orientation::Horizontal,
+                            set_margin_start: 12,
+                            set_margin_end: 12,
+                            set_spacing: 12,
+                            set_hexpand: true,
+                            gtk::Image {
+                                set_icon_name: Some("dialog-warning-symbolic"),
+                                add_css_class: "warning",
+                            },
+                            gtk::Label {
+                                add_css_class: "warning",
+                                add_css_class: "heading",
+                                set_label: "Warning"
+                            }
+                        },
+                        gtk::Label {
+                            set_label: concat!(
+                                "Your current prefix is inside a partition ",
+                                "mounted with the nosuid option. This will prevent ",
+                                "the Rex2 runtime from acquiring certain privileges ",
+                                "and will cause noticeable stutter when running XR ",
+                                "applications."
+                            ),
+                            set_margin_start: 12,
+                            set_margin_end: 12,
+                            add_css_class: "warning",
+                            set_wrap: true,
+                            set_wrap_mode: gtk::pango::WrapMode::Word,
+                        }
+                    },
                     model.steam_launch_options_box.widget(),
                     model.install_wivrn_box.widget(),
                     gtk::Box {
