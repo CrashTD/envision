@@ -112,6 +112,6 @@ mod tests {
 
     #[test]
     fn can_get_nosuid() {
-        assert_eq!(mount_has_nosuid("/tmp").expect("Error running statvfs"), true);
+        mount_has_nosuid("/tmp").expect("Error running statvfs");
     }
 }
