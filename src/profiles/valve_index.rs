@@ -1,7 +1,10 @@
 use crate::{
     constants::APP_NAME,
     paths::{data_libsurvive_path, data_monado_path, data_opencomposite_path, get_data_dir},
-    profile::{Profile, ProfileFeature, ProfileFeatureType, ProfileFeatures, XRServiceType},
+    profile::{
+        LighthouseDriver, Profile, ProfileFeature, ProfileFeatureType, ProfileFeatures,
+        XRServiceType,
+    },
 };
 use std::collections::HashMap;
 
@@ -37,6 +40,7 @@ pub fn valve_index_profile() -> Profile {
         prefix,
         can_be_built: true,
         editable: false,
+        lighthouse_driver: LighthouseDriver::Survive,
         ..Default::default()
     }
 }

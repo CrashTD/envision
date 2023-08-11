@@ -23,7 +23,7 @@ impl XRServiceType {
         }
     }
 
-    pub fn iter() -> Iter<'static, XRServiceType> {
+    pub fn iter() -> Iter<'static, Self> {
         [Self::Monado, Self::Wivrn].iter()
     }
 
@@ -31,6 +31,14 @@ impl XRServiceType {
         match self {
             Self::Monado => 0,
             Self::Wivrn => 1,
+        }
+    }
+
+    pub fn from_number(i: u32) -> Self {
+        match i {
+            0 => Self::Monado,
+            1 => Self::Wivrn,
+            _ => panic!("XRServiceType index out of bounds"),
         }
     }
 }
@@ -115,6 +123,63 @@ impl Default for ProfileFeatures {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum LighthouseDriver {
+    Vive,
+    Survive,
+    SteamVR,
+}
+
+impl Default for LighthouseDriver {
+    fn default() -> Self {
+        Self::Vive
+    }
+}
+
+impl LighthouseDriver {
+    pub fn from_string(s: String) -> Self {
+        match s.trim().to_lowercase().as_str() {
+            "vive" => Self::Vive,
+            "survive" => Self::Survive,
+            "libsurvive" => Self::Survive,
+            "steam" => Self::SteamVR,
+            "steamvr" => Self::SteamVR,
+            _ => Self::Vive,
+        }
+    }
+
+    pub fn iter() -> Iter<'static, Self> {
+        [Self::Vive, Self::Survive, Self::SteamVR].iter()
+    }
+
+    pub fn as_number(&self) -> u32 {
+        match self {
+            Self::Vive => 0,
+            Self::Survive => 1,
+            Self::SteamVR => 2,
+        }
+    }
+
+    pub fn from_number(i: u32) -> Self {
+        match i {
+            0 => Self::Vive,
+            1 => Self::Survive,
+            2 => Self::SteamVR,
+            _ => panic!("LighthouseDriver index out of bounds"),
+        }
+    }
+}
+
+impl Display for LighthouseDriver {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
+            Self::Vive => "Vive",
+            Self::Survive => "Survive",
+            Self::SteamVR => "SteamVR",
+        })
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Profile {
     pub uuid: String,
@@ -131,6 +196,9 @@ pub struct Profile {
     pub can_be_built: bool,
     pub editable: bool,
     pub pull_on_build: bool,
+    #[serde(default = "LighthouseDriver::default")]
+    /** Only applicable for Monado */
+    pub lighthouse_driver: LighthouseDriver,
 }
 
 impl Display for Profile {
@@ -168,6 +236,7 @@ impl Default for Profile {
             xrservice_repo: None,
             opencomposite_repo: None,
             editable: true,
+            lighthouse_driver: LighthouseDriver::default(),
         }
     }
 }

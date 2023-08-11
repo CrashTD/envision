@@ -6,7 +6,7 @@ use super::steam_launch_options_box::{SteamLaunchOptionsBox, SteamLaunchOptionsB
 use crate::config::Config;
 use crate::constants::APP_NAME;
 use crate::file_utils::mount_has_nosuid;
-use crate::profile::Profile;
+use crate::profile::{Profile, LighthouseDriver};
 use crate::ui::app::{
     AboutAction, BuildProfileAction, BuildProfileCleanAction, DebugViewToggleAction,
 };
@@ -245,7 +245,7 @@ impl SimpleComponent for MainView {
                         set_margin_top: 12,
                         set_margin_bottom: 12,
                         #[track = "model.changed(Self::selected_profile())"]
-                        set_visible: model.selected_profile.features.libsurvive.enabled,
+                        set_visible: model.selected_profile.lighthouse_driver == LighthouseDriver::Survive,
                         gtk::Separator {
                             set_orientation: gtk::Orientation::Horizontal,
                             set_hexpand: true,

@@ -90,6 +90,13 @@ impl Runner {
     }
 
     pub fn xrservice_runner_from_profile(profile: &Profile) -> Self {
+        let mut env = profile.environment.clone();
+        if !env.contains_key("LH_DRIVER") {
+            env.insert(
+                "LH_DRIVER".into(),
+                profile.lighthouse_driver.to_string().to_lowercase(),
+            );
+        }
         Self::new(
             Some(profile.environment.clone()),
             match profile.xrservice_type {
@@ -143,11 +150,7 @@ impl Runner {
             return;
         }
         let mut proc = process.unwrap();
-        let child_pid = Pid::from_raw(
-            proc.id()
-                .try_into()
-                .expect("Could not convert pid to u32"),
-        );
+        let child_pid = Pid::from_raw(proc.id().try_into().expect("Could not convert pid to u32"));
         kill(child_pid, SIGTERM).expect("Could not send sigterm to process");
         self.join_threads();
         proc.wait().expect("Failed to wait for process");

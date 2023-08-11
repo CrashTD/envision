@@ -4,7 +4,7 @@ use super::{
 };
 use crate::{
     env_var_descriptions::env_var_descriptions_as_paragraph,
-    profile::{Profile, XRServiceType},
+    profile::{LighthouseDriver, Profile, XRServiceType},
     ui::preference_rows::{entry_row, path_row, switch_row},
     withclones,
 };
@@ -101,12 +101,28 @@ impl SimpleComponent for ProfileEditor {
                                 .collect::<Vec<String>>(),
                             move |row| {
                                 prof.borrow_mut().xrservice_type =
-                                    match row.selected() {
-                                        0 => XRServiceType::Monado,
-                                        1 => XRServiceType::Wivrn,
-                                        _ => panic!("XRServiceType combo row cannot have more than 2 choices"),
-                                    };
+                                    XRServiceType::from_number(row.selected());
                             },
+                        )
+                    },
+                    add: {
+                        withclones![prof];
+                        &combo_row(
+                            "Lighthouse Driver",
+                            Some(concat!(
+                                "Driver for lighhouse tracked XR devices (ie: Valve Index, HTC Vive...). Only applicable for Monado.\n\n",
+                                "Vive: 3DOF tracking\n\n",
+                                "Survive: 6DOF reverse engineered lighthouse tracking provided by Libsurvive\n\n",
+                                "SteamVR: 6DOF lighthouse tracking using the proprietary SteamVR driver",
+                            )),
+                            model.profile.borrow().lighthouse_driver.to_string().as_str(),
+                            LighthouseDriver::iter()
+                                .map(LighthouseDriver::to_string)
+                                .collect::<Vec<String>>(),
+                            move |row| {
+                                prof.borrow_mut().lighthouse_driver =
+                                    LighthouseDriver::from_number(row.selected());
+                            }
                         )
                     },
                     add: {

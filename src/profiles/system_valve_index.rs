@@ -1,7 +1,7 @@
 use crate::{
     constants::APP_NAME,
     paths::{data_opencomposite_path, SYSTEM_PREFIX},
-    profile::{Profile, ProfileFeatures, XRServiceType},
+    profile::{LighthouseDriver, Profile, ProfileFeatures, XRServiceType},
 };
 use std::collections::HashMap;
 
@@ -25,6 +25,7 @@ pub fn system_valve_index_profile() -> Profile {
         prefix: SYSTEM_PREFIX.into(),
         can_be_built: false,
         editable: false,
+        lighthouse_driver: LighthouseDriver::Survive,
         ..Default::default()
     }
 }
