@@ -34,6 +34,7 @@ pub mod ui;
 pub mod xr_devices;
 pub mod build_tools;
 pub mod checkerr;
+pub mod steamvr_utils;
 
 fn restore_steam_xr_files() {
     let active_runtime = get_current_active_runtime();

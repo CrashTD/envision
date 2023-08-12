@@ -6,7 +6,8 @@ use super::steam_launch_options_box::{SteamLaunchOptionsBox, SteamLaunchOptionsB
 use crate::config::Config;
 use crate::constants::APP_NAME;
 use crate::file_utils::mount_has_nosuid;
-use crate::profile::{Profile, LighthouseDriver};
+use crate::profile::{LighthouseDriver, Profile};
+use crate::steamvr_utils::chaperone_info_exists;
 use crate::ui::app::{
     AboutAction, BuildProfileAction, BuildProfileCleanAction, DebugViewToggleAction,
 };
@@ -227,6 +228,48 @@ impl SimpleComponent for MainView {
                                 "the Rex2 runtime from acquiring certain privileges ",
                                 "and will cause noticeable stutter when running XR ",
                                 "applications."
+                            ),
+                            set_margin_start: 12,
+                            set_margin_end: 12,
+                            add_css_class: "warning",
+                            set_wrap: true,
+                            set_wrap_mode: gtk::pango::WrapMode::Word,
+                        }
+                    },
+                    gtk::Box {
+                        set_orientation: gtk::Orientation::Vertical,
+                        set_hexpand: true,
+                        set_vexpand: false,
+                        set_spacing: 12,
+                        set_margin_top: 12,
+                        set_margin_bottom: 12,
+                        #[track = "model.changed(Self::selected_profile())"]
+                        set_visible: model.selected_profile.lighthouse_driver == LighthouseDriver::SteamVR && !chaperone_info_exists(),
+                        gtk::Separator {
+                            set_orientation: gtk::Orientation::Horizontal,
+                            set_hexpand: true,
+                        },
+                        gtk::Box {
+                            set_orientation: gtk::Orientation::Horizontal,
+                            set_margin_start: 12,
+                            set_margin_end: 12,
+                            set_spacing: 12,
+                            set_hexpand: true,
+                            gtk::Image {
+                                set_icon_name: Some("dialog-warning-symbolic"),
+                                add_css_class: "warning",
+                            },
+                            gtk::Label {
+                                add_css_class: "warning",
+                                add_css_class: "heading",
+                                set_label: "Warning"
+                            }
+                        },
+                        gtk::Label {
+                            set_label: concat!(
+                                "SteamVR room configuration not found.\n",
+                                "To use the SteamVR lighthouse driver, you ",
+                                "will need to run SteamVR and perform the room setup.",
                             ),
                             set_margin_start: 12,
                             set_margin_end: 12,
