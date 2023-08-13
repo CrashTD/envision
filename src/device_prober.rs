@@ -1,6 +1,11 @@
 use std::fmt::Display;
 
-use crate::{profile::Profile, profiles::{valve_index::valve_index_profile, wivrn::wivrn_profile}};
+use crate::{
+    profile::Profile,
+    profiles::{
+        lighthouse::lighthouse_profile, valve_index::valve_index_profile, wivrn::wivrn_profile,
+    },
+};
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum PhysicalXRDevice {
@@ -84,7 +89,17 @@ impl Display for PhysicalXRDevice {
 impl PhysicalXRDevice {
     pub fn get_default_profile(&self) -> Option<Profile> {
         match &self {
-            Self::ValveIndex => Some(valve_index_profile()),
+            Self::ValveIndex => Some(lighthouse_profile()),
+            Self::HTCVive => Some(lighthouse_profile()),
+            Self::HTCVivePro => Some(lighthouse_profile()),
+            Self::HTCVivePro2 => Some(lighthouse_profile()),
+            Self::Pimax4K => Some(lighthouse_profile()),
+            Self::Pimax5KPlus => Some(lighthouse_profile()),
+            Self::Pimax8K => Some(lighthouse_profile()),
+            Self::VarjoVR1 => Some(lighthouse_profile()),
+            Self::VarjoAero => Some(lighthouse_profile()),
+            Self::VarjoVR2 => Some(lighthouse_profile()),
+            Self::VarjoVR3 => Some(lighthouse_profile()),
             Self::OculusQuest => Some(wivrn_profile()),
             Self::OculusQuest2 => Some(wivrn_profile()),
             Self::OculusQuestPro => Some(wivrn_profile()),
@@ -94,17 +109,11 @@ impl PhysicalXRDevice {
             Self::PicoNeo3Pro => Some(wivrn_profile()),
             Self::Pico4 => Some(wivrn_profile()),
             _ => None,
-            // Self::HTCVive => "HTC Vive",
-            // Self::HTCVivePro => "HTC Vive Pro",
             // Self::HTCViveCosmos => "HTC Vive Cosmos",
-            // Self::HTCVivePro2 => "HTC Vive Pro2",
             // Self::OculusRift => "Oculus Rift",
             // Self::OculusRiftS => "Oculus Rift S",
             // Self::PlayStationVR => "PlayStation Vr",
             // Self::PlayStationVR2 => "PlayStation Vr2",
-            // Self::Pimax4K => "Pimax 4K",
-            // Self::Pimax5KPlus => "Pimax 5K Plus",
-            // Self::Pimax8K => "Pimax 8K",
             // Self::DellVisor => "Dell Visor",
             // Self::AcerAH101 => "Acer AH101",
             // Self::HPWMR => "HP WMR",
@@ -113,10 +122,6 @@ impl PhysicalXRDevice {
             // Self::LenovoExplorer => "Lenovo Explorer",
             // Self::SamsungOdyssey => "Samsung Odyssey",
             // Self::SamsungOdysseyPlus => "Samsung Odyssey Plus",
-            // Self::VarjoVR1 => "Varjo VR1",
-            // Self::VarjoAero => "Varjo Aero",
-            // Self::VarjoVR2 => "Varjo VR2",
-            // Self::VarjoVR3 => "Varjo VR3",
             // Self::RazerHydra => "Razer Hydra",
         }
     }

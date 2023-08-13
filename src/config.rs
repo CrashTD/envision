@@ -1,4 +1,7 @@
-use crate::{constants::CMD_NAME, file_utils::get_writer, paths::get_config_dir, profile::Profile};
+use crate::{
+    constants::CMD_NAME, device_prober::get_xr_usb_devices, file_utils::get_writer,
+    paths::get_config_dir, profile::Profile,
+};
 use serde::{Deserialize, Serialize};
 use std::{fs::File, io::BufReader};
 
@@ -29,12 +32,20 @@ impl Default for Config {
 
 impl Config {
     pub fn get_selected_profile(&self, profiles: &Vec<Profile>) -> Profile {
+        let def = || profiles.get(0).expect("No profiles found").clone();
+
         match profiles
             .iter()
             .find(|p| p.uuid == self.selected_profile_uuid)
         {
             Some(p) => p.clone(),
-            None => profiles.get(0).expect("No profiles found").clone(),
+            None => match get_xr_usb_devices().get(0) {
+                Some(dev) => match dev.get_default_profile() {
+                    Some(p) => p,
+                    None => def(),
+                },
+                None => def(),
+            },
         }
     }
 

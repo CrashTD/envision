@@ -28,6 +28,7 @@ use crate::file_builders::openvrpaths_vrpath::{
 use crate::file_utils::setcap_cap_sys_nice_eip;
 use crate::log_parser::MonadoLog;
 use crate::profile::{Profile, XRServiceType};
+use crate::profiles::lighthouse::lighthouse_profile;
 use crate::profiles::system_valve_index::system_valve_index_profile;
 use crate::profiles::valve_index::valve_index_profile;
 use crate::profiles::wivrn::wivrn_profile;
@@ -205,6 +206,7 @@ impl App {
 
     pub fn profiles_list(config: &Config) -> Vec<Profile> {
         let mut profiles = vec![
+            lighthouse_profile(),
             valve_index_profile(),
             system_valve_index_profile(),
             wivrn_profile(),
