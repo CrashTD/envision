@@ -1,6 +1,12 @@
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum XRDevice {
-    Head, Left, Right, Gamepad, Eyes, HandTrackingLeft, HandTrackingRight
+    Head,
+    Left,
+    Right,
+    Gamepad,
+    Eyes,
+    HandTrackingLeft,
+    HandTrackingRight,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -43,7 +49,7 @@ impl XRDevices {
                     break;
                 }
                 match row.trim().split(": ").collect::<Vec<&str>>()[..] {
-                    [_, "<none>"] => {},
+                    [_, "<none>"] => {}
                     ["head", val] => devs.head = Some(val.to_string()),
                     ["left", val] => devs.left = Some(val.to_string()),
                     ["right", val] => devs.right = Some(val.to_string()),

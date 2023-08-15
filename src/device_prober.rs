@@ -2,9 +2,7 @@ use std::fmt::Display;
 
 use crate::{
     profile::Profile,
-    profiles::{
-        lighthouse::lighthouse_profile, wivrn::wivrn_profile,
-    },
+    profiles::{lighthouse::lighthouse_profile, wivrn::wivrn_profile},
 };
 
 #[derive(Debug, PartialEq, Eq)]

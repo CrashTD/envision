@@ -149,10 +149,8 @@ impl SimpleComponent for BuildWindow {
                     let mut n_content = self.content.clone();
                     n_content.push_str(n_lines.as_str());
                     self.set_content(n_content);
-                    self.textbuf.insert(
-                        &mut self.textbuf.end_iter(),
-                        n_lines.as_str()
-                    );
+                    self.textbuf
+                        .insert(&mut self.textbuf.end_iter(), n_lines.as_str());
                     let textbuf = self.textbuf.clone();
                     let textview = self.textview.as_ref().unwrap().clone();
                     if is_at_bottom {

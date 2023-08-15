@@ -1,4 +1,4 @@
-use crate::depcheck::{Dependency, DepType, check_dependencies, DependencyCheckResult};
+use crate::depcheck::{check_dependencies, DepType, Dependency, DependencyCheckResult};
 
 fn libsurvive_deps() -> Vec<Dependency> {
     vec![

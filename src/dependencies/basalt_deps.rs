@@ -1,4 +1,4 @@
-use crate::depcheck::{check_dependencies, Dependency, DependencyCheckResult, DepType};
+use crate::depcheck::{check_dependencies, DepType, Dependency, DependencyCheckResult};
 
 fn basalt_deps() -> Vec<Dependency> {
     vec![

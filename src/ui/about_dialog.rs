@@ -1,4 +1,4 @@
-use crate::constants::{get_developers, APP_NAME, REPO_URL, SINGLE_DEVELOPER, VERSION, APP_ID};
+use crate::constants::{get_developers, APP_ID, APP_NAME, REPO_URL, SINGLE_DEVELOPER, VERSION};
 use relm4::gtk::traits::GtkWindowExt;
 use relm4::prelude::*;
 use relm4::{ComponentParts, SimpleComponent};
