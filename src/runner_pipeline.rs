@@ -35,7 +35,9 @@ impl RunnerPipeline {
         }
         self.has_started = true;
         match self.get_current_runner() {
-            None => { return; },
+            None => {
+                return;
+            }
             Some(runner) => {
                 runner.borrow_mut().start();
             }
@@ -48,7 +50,7 @@ impl RunnerPipeline {
         }
 
         match self.get_current_runner() {
-            None => {},
+            None => {}
             Some(c_runner) => {
                 let (status, log) = {
                     let mut runner = c_runner.borrow_mut();
@@ -56,7 +58,7 @@ impl RunnerPipeline {
                 };
                 self.log.extend(log);
                 match status {
-                    RunnerStatus::Running => {},
+                    RunnerStatus::Running => {}
                     RunnerStatus::Stopped(ecode) => {
                         match ecode {
                             None => {} // should never get here
@@ -64,7 +66,7 @@ impl RunnerPipeline {
                                 self.last_exit_status = Some(0);
                                 self.current_index += 1;
                                 match self.get_current_runner() {
-                                    None => {},
+                                    None => {}
                                     Some(c_runner) => {
                                         c_runner.borrow_mut().start();
                                     }
@@ -91,7 +93,7 @@ impl RunnerPipeline {
     pub fn status(&self) -> RunnerStatus {
         match self.get_current_runner() {
             None => RunnerStatus::Stopped(self.last_exit_status),
-            Some(_) => RunnerStatus::Running
+            Some(_) => RunnerStatus::Running,
         }
     }
 }

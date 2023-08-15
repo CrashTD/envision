@@ -43,7 +43,7 @@ pub fn download_file(url: String, path: String) -> JoinHandle<Result<(), reqwest
                 writer.flush().expect("Failed to flush download writer");
                 Ok(())
             }
-            Err(e) => Err(e)
+            Err(e) => Err(e),
         }
     })
 }

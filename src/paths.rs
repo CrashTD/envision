@@ -1,5 +1,5 @@
-use std::{env, path::Path, fs::create_dir_all};
 use crate::constants::CMD_NAME;
+use std::{env, fs::create_dir_all, path::Path};
 
 pub fn data_opencomposite_path() -> String {
     format!("{data}/opencomposite", data = get_data_dir())

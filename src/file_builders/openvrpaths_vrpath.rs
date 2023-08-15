@@ -125,7 +125,9 @@ pub fn set_current_openvrpaths_to_profile(profile: &Profile) -> Result<(), ()> {
     let dest = get_openvrpaths_vrpath_path();
     checkerr!(set_file_readonly(&dest, false));
     backup_steam_openvrpaths();
-    checkerr!(dump_current_openvrpaths(&build_profile_openvrpaths(profile)));
+    checkerr!(dump_current_openvrpaths(&build_profile_openvrpaths(
+        profile
+    )));
     checkerr!(set_file_readonly(&dest, true));
     Ok(())
 }

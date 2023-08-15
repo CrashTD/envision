@@ -409,10 +409,14 @@ impl SimpleComponent for MainView {
                     .emit(InstallWivrnBoxMsg::ClockTicking);
             }
             Self::Input::StartStopClicked => {
-                sender.output(Self::Output::DoStartStopXRService).expect("Sender output failed");
+                sender
+                    .output(Self::Output::DoStartStopXRService)
+                    .expect("Sender output failed");
             }
             Self::Input::RestartXRService => {
-                sender.output(Self::Output::RestartXRService).expect("Sender output failed");
+                sender
+                    .output(Self::Output::RestartXRService)
+                    .expect("Sender output failed");
             }
             Self::Input::XRServiceActiveChanged(active, profile) => {
                 self.set_xrservice_active(active);
@@ -473,9 +477,11 @@ impl SimpleComponent for MainView {
                 self.set_selected_profile(self.profiles.get(index as usize).unwrap().clone());
             }
             Self::Input::ProfileSelected(position) => {
-                sender.output(MainViewOutMsg::ProfileSelected(
-                    self.profiles.get(position as usize).unwrap().clone(),
-                )).expect("Sender output failed");
+                sender
+                    .output(MainViewOutMsg::ProfileSelected(
+                        self.profiles.get(position as usize).unwrap().clone(),
+                    ))
+                    .expect("Sender output failed");
             }
             Self::Input::EditProfile => {
                 if self.selected_profile.editable {
@@ -500,7 +506,9 @@ impl SimpleComponent for MainView {
                 self.profile_delete_confirm_dialog.present();
             }
             Self::Input::SaveProfile(prof) => {
-                sender.output(Self::Output::SaveProfile(prof)).expect("Sender output failed");
+                sender
+                    .output(Self::Output::SaveProfile(prof))
+                    .expect("Sender output failed");
             }
             Self::Input::DuplicateProfile => {
                 if self.selected_profile.can_be_built {
@@ -570,7 +578,9 @@ impl SimpleComponent for MainView {
             let pdc_sender = sender.clone();
             profile_delete_confirm_dialog.connect_response(None, move |_, res| {
                 if res == "yes" {
-                    pdc_sender.output(Self::Output::DeleteProfile).expect("Sender output failed");
+                    pdc_sender
+                        .output(Self::Output::DeleteProfile)
+                        .expect("Sender output failed");
                 }
             });
         }

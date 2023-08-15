@@ -13,7 +13,9 @@ use relm4::{
 use ui::app::{App, AppInit};
 
 pub mod adb;
+pub mod build_tools;
 pub mod builders;
+pub mod checkerr;
 pub mod config;
 pub mod constants;
 pub mod depcheck;
@@ -30,11 +32,9 @@ pub mod profile;
 pub mod profiles;
 pub mod runner;
 pub mod runner_pipeline;
+pub mod steamvr_utils;
 pub mod ui;
 pub mod xr_devices;
-pub mod build_tools;
-pub mod checkerr;
-pub mod steamvr_utils;
 
 fn restore_steam_xr_files() {
     let active_runtime = get_current_active_runtime();

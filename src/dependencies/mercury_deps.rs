@@ -1,4 +1,4 @@
-use crate::depcheck::{Dependency, DepType, DependencyCheckResult, check_dependencies};
+use crate::depcheck::{check_dependencies, DepType, Dependency, DependencyCheckResult};
 
 fn mercury_deps() -> Vec<Dependency> {
     vec![

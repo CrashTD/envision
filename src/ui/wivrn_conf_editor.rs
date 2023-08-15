@@ -1,4 +1,6 @@
-use crate::file_builders::wivrn_config::{dump_wivrn_config, get_wivrn_config, WivrnConfig, Encoder};
+use crate::file_builders::wivrn_config::{
+    dump_wivrn_config, get_wivrn_config, Encoder, WivrnConfig,
+};
 use adw::prelude::*;
 use relm4::prelude::*;
 
@@ -125,13 +127,15 @@ impl SimpleComponent for WivrnConfEditor {
                 let scalex = self.scalex_entry.as_ref().unwrap().text().parse::<f32>();
                 let scaley = self.scaley_entry.as_ref().unwrap().text().parse::<f32>();
                 if scalex.is_ok() && scaley.is_ok() {
-                    self.conf.scale = Some([scalex.as_ref().unwrap().clone(), scaley.as_ref().unwrap().clone()]);
+                    self.conf.scale = Some([
+                        scalex.as_ref().unwrap().clone(),
+                        scaley.as_ref().unwrap().clone(),
+                    ]);
                 }
                 if scalex.is_ok() || scaley.is_ok() {
                     let scale = scalex.unwrap_or(scaley.unwrap());
                     self.conf.scale = Some([scale, scale]);
-                }
-                else {
+                } else {
                     self.conf.scale = None
                 }
 
@@ -141,14 +145,12 @@ impl SimpleComponent for WivrnConfEditor {
                     enc.bitrate = Some(bitrate.unwrap());
                 }
                 let encoders = Encoder::as_vec();
-                let encoder = encoders.get(
-                    self.encoder_combo.as_ref().unwrap().selected() as usize
-                );
+                let encoder =
+                    encoders.get(self.encoder_combo.as_ref().unwrap().selected() as usize);
                 if encoder.is_some() {
                     enc.encoder = encoder.unwrap().clone();
                 }
                 self.conf.encoders.insert(0, enc);
-                
 
                 dump_wivrn_config(&self.conf);
                 self.win.as_ref().unwrap().close();

@@ -1,8 +1,21 @@
 image: "debian:testing"
 
 stages:
+  - check
   - test
   - deploy
+
+cargo:fmtcheck:
+  image: "rust:slim"
+  stage: check
+  script:
+    - rustup component add rustfmt
+    # Create blank versions of our configured files
+    # so rustfmt does not yell about non-existent files or completely empty files
+    - echo -e "" >> src/constants.rs
+    - rustc -Vv && cargo -Vv
+    - cargo fmt --version
+    - cargo fmt --all -- --check
 
 cargo:test:
   stage: test

@@ -1,5 +1,8 @@
 use crate::runner::Runner;
-use nix::{sys::statvfs::{statvfs, FsFlags}, errno::Errno};
+use nix::{
+    errno::Errno,
+    sys::statvfs::{statvfs, FsFlags},
+};
 use std::{
     fs::{self, copy, create_dir_all, remove_dir_all, File, OpenOptions},
     io::{BufReader, BufWriter},
@@ -102,7 +105,7 @@ pub fn mount_has_nosuid(path_s: &str) -> Result<bool, Errno> {
     let path = Path::new(path_s);
     match statvfs(path) {
         Ok(fstats) => Ok(fstats.flags().contains(FsFlags::ST_NOSUID)),
-        Err(e) => Err(e)
+        Err(e) => Err(e),
     }
 }
 

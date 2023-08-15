@@ -132,7 +132,7 @@ pub fn path_row<F: Fn(Option<String>) + 'static + Clone>(
     row
 }
 
-pub fn combo_row<F: Fn(&adw::ComboRow,) + 'static>(
+pub fn combo_row<F: Fn(&adw::ComboRow) + 'static>(
     title: &str,
     description: Option<&str>,
     value: &str,
