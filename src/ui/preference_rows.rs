@@ -18,8 +18,8 @@ pub fn switch_row<F: Fn(&gtk::Switch, bool) -> glib::signal::Inhibit + 'static>(
         .subtitle_lines(0)
         .build();
 
-    if description.is_some() {
-        row.set_subtitle(description.unwrap());
+    if let Some(d) = description {
+        row.set_subtitle(d);
     }
 
     let switch = gtk::Switch::builder()
@@ -76,8 +76,8 @@ pub fn path_row<F: Fn(Option<String>) + 'static + Clone>(
         .icon_name(GString::from("folder-open-symbolic"))
         .build();
 
-    if description.is_some() {
-        row.set_subtitle(description.unwrap());
+    if let Some(d) = description {
+        row.set_subtitle(d);
     }
 
     let path_label = &gtk::Label::builder()
@@ -111,21 +111,15 @@ pub fn path_row<F: Fn(Option<String>) + 'static + Clone>(
         withclones![path_label];
         row.connect_activated(move |_| {
             withclones![path_label, cb];
-            filedialog.select_folder(
-                root_win.as_ref(),
-                gio::Cancellable::NONE,
-                move |res| match res {
-                    Ok(file) => {
-                        let path = file.path();
-                        if path.is_some() {
-                            let path_s = path.unwrap().to_str().unwrap().to_string();
-                            path_label.set_text(path_s.as_str());
-                            cb(Some(path_s))
-                        }
+            filedialog.select_folder(root_win.as_ref(), gio::Cancellable::NONE, move |res| {
+                if let Ok(file) = res {
+                    if let Some(path) = file.path() {
+                        let path_s = path.to_str().unwrap().to_string();
+                        path_label.set_text(path_s.as_str());
+                        cb(Some(path_s))
                     }
-                    _ => {}
-                },
-            )
+                }
+            })
         });
     }
 
@@ -151,15 +145,12 @@ pub fn combo_row<F: Fn(&adw::ComboRow) + 'static>(
         ))
         .build();
 
-    if description.is_some() {
-        row.set_subtitle(description.unwrap());
+    if let Some(desc) = description {
+        row.set_subtitle(desc);
     }
 
-    let selected = values.iter().position(|v| *v == value.to_string());
-    row.set_selected(match selected {
-        Some(i) => i,
-        None => 0,
-    } as u32);
+    let selected = values.iter().position(|v| v == value);
+    row.set_selected(selected.unwrap_or(0) as u32);
 
     row.connect_selected_item_notify(cb);
 

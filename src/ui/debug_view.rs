@@ -200,12 +200,12 @@ impl SimpleComponent for DebugView {
                 };
                 self.log.extend(n_log.clone());
                 for row in n_log {
-                    let txt = match MonadoLog::from_str(row.as_str()) {
+                    let txt = match MonadoLog::new_from_str(row.as_str()) {
                         Some(o) => match o.level >= self.log_level {
                             false => None,
                             true => Some(format!(
                                 "{lvl}\t[{file}:{func}]\n\t{msg}\n",
-                                lvl = o.level.to_string(),
+                                lvl = o.level,
                                 file = o.file,
                                 func = o.func,
                                 msg = o.message
@@ -213,9 +213,9 @@ impl SimpleComponent for DebugView {
                         },
                         None => Some(row),
                     };
-                    if txt.is_some() {
+                    if let Some(t) = txt {
                         self.textbuf
-                            .insert(&mut self.textbuf.end_iter(), txt.unwrap().as_str());
+                            .insert(&mut self.textbuf.end_iter(), t.as_str());
                     }
                 }
                 let textbuf = self.textbuf.clone();
@@ -284,11 +284,10 @@ impl SimpleComponent for DebugView {
                 .log_level_dropdown
                 .connect_selected_notify(move |dd| {
                     sender.input(Self::Input::LogLevelChanged(
-                        LogLevel::iter()
+                        *LogLevel::iter()
                             .as_slice()
                             .get(dd.selected() as usize)
-                            .unwrap()
-                            .clone(),
+                            .unwrap(),
                     ));
                 });
         }

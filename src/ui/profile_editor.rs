@@ -317,8 +317,8 @@ impl SimpleComponent for ProfileEditor {
                     .guard()
                     .iter()
                     .position(|evr| evr.name == name);
-                if pos.is_some() {
-                    self.env_rows.guard().remove(pos.unwrap());
+                if let Some(p) = pos {
+                    self.env_rows.guard().remove(p);
                 }
             }
             Self::Input::AddEnvVar(name) => {

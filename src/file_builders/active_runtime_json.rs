@@ -33,10 +33,7 @@ fn get_active_runtime_json_path() -> String {
 }
 
 pub fn is_steam(active_runtime: &ActiveRuntime) -> bool {
-    match active_runtime.runtime.valve_runtime_is_steamvr {
-        Some(true) => true,
-        _ => false,
-    }
+    matches!(active_runtime.runtime.valve_runtime_is_steamvr, Some(true))
 }
 
 fn get_backup_steam_active_runtime_path() -> String {
@@ -51,9 +48,8 @@ fn get_backed_up_steam_active_runtime() -> Option<ActiveRuntime> {
 }
 
 fn backup_steam_active_runtime() {
-    let ar = get_current_active_runtime();
-    if ar.is_some() {
-        if is_steam(&ar.unwrap()) {
+    if let Some(ar) = get_current_active_runtime() {
+        if is_steam(&ar) {
             copy_file(
                 &get_active_runtime_json_path(),
                 &get_backup_steam_active_runtime_path(),
@@ -85,9 +81,8 @@ pub fn dump_current_active_runtime(
 }
 
 fn build_steam_active_runtime() -> ActiveRuntime {
-    let backup = get_backed_up_steam_active_runtime();
-    if backup.is_some() {
-        return backup.unwrap();
+    if let Some(backup) = get_backed_up_steam_active_runtime() {
+        return backup;
     }
     ActiveRuntime {
         file_format_version: "1.0.0".into(),

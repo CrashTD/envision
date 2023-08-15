@@ -357,7 +357,7 @@ impl SimpleComponent for MainView {
                         },
                         connect_realize => move |dd| {
                             limit_dropdown_width(
-                                &dd, match model.enable_debug_view {
+                                dd, match model.enable_debug_view {
                                     true => 18,
                                     false => -1,
                                 });

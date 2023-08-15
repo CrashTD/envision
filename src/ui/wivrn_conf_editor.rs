@@ -127,10 +127,7 @@ impl SimpleComponent for WivrnConfEditor {
                 let scalex = self.scalex_entry.as_ref().unwrap().text().parse::<f32>();
                 let scaley = self.scaley_entry.as_ref().unwrap().text().parse::<f32>();
                 if scalex.is_ok() && scaley.is_ok() {
-                    self.conf.scale = Some([
-                        scalex.as_ref().unwrap().clone(),
-                        scaley.as_ref().unwrap().clone(),
-                    ]);
+                    self.conf.scale = Some([*scalex.as_ref().unwrap(), *scaley.as_ref().unwrap()]);
                 }
                 if scalex.is_ok() || scaley.is_ok() {
                     let scale = scalex.unwrap_or(scaley.unwrap());
@@ -141,14 +138,14 @@ impl SimpleComponent for WivrnConfEditor {
 
                 let mut enc = self.conf.encoders.remove(0);
                 let bitrate = self.bitrate_entry.as_ref().unwrap().text().parse::<u32>();
-                if bitrate.is_ok() {
-                    enc.bitrate = Some(bitrate.unwrap());
+                if let Ok(br) = bitrate {
+                    enc.bitrate = Some(br);
                 }
                 let encoders = Encoder::as_vec();
                 let encoder =
                     encoders.get(self.encoder_combo.as_ref().unwrap().selected() as usize);
-                if encoder.is_some() {
-                    enc.encoder = encoder.unwrap().clone();
+                if let Some(e) = encoder {
+                    enc.encoder = e.clone();
                 }
                 self.conf.encoders.insert(0, enc);
 

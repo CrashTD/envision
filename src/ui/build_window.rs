@@ -139,7 +139,7 @@ impl SimpleComponent for BuildWindow {
                 self.set_title(t);
             }
             Self::Input::UpdateContent(c) => {
-                if c.len() > 0 {
+                if !c.is_empty() {
                     let is_at_bottom = {
                         let adj = self.scrolledwin.as_ref().unwrap().vadjustment();
                         (adj.upper() - adj.page_size() - adj.value()) <= 15.0

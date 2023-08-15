@@ -193,10 +193,10 @@ impl App {
 
     pub fn shutdown_xrservice(&mut self) {
         self.set_inhibit_session(false);
-        if self.xrservice_runner.is_some() {
-            if self.xrservice_runner.as_mut().unwrap().status() == RunnerStatus::Running {
-                self.xrservice_runner.as_mut().unwrap().terminate();
-            }
+        if self.xrservice_runner.is_some()
+            && self.xrservice_runner.as_mut().unwrap().status() == RunnerStatus::Running
+        {
+            self.xrservice_runner.as_mut().unwrap().terminate();
         }
         self.restore_openxr_openvr_files();
         self.main_view
@@ -258,10 +258,10 @@ impl SimpleComponent for App {
     }
 
     fn shutdown(&mut self, _widgets: &mut Self::Widgets, _output: relm4::Sender<Self::Output>) {
-        if self.xrservice_runner.is_some() {
-            if self.xrservice_runner.as_mut().unwrap().status() == RunnerStatus::Running {
-                self.xrservice_runner.as_mut().unwrap().terminate();
-            }
+        if self.xrservice_runner.is_some()
+            && self.xrservice_runner.as_mut().unwrap().status() == RunnerStatus::Running
+        {
+            self.xrservice_runner.as_mut().unwrap().terminate();
         }
         self.restore_openxr_openvr_files();
     }
@@ -337,7 +337,7 @@ impl SimpleComponent for App {
             }
             Msg::ProcessDevicesLog(rows) => {
                 for row in rows {
-                    match MonadoLog::from_str(row.as_str()) {
+                    match MonadoLog::new_from_str(row.as_str()) {
                         None => {}
                         Some(parsed) => {
                             if parsed.func == "p_create_system" {
@@ -386,12 +386,11 @@ impl SimpleComponent for App {
                     Some(runner) => match runner.status() {
                         RunnerStatus::Stopped(_) => {}
                         RunnerStatus::Running => {
-                            if self.xrservice_runner.is_some() {
-                                if self.xrservice_runner.as_mut().unwrap().status()
+                            if self.xrservice_runner.is_some()
+                                && self.xrservice_runner.as_mut().unwrap().status()
                                     == RunnerStatus::Running
-                                {
-                                    self.xrservice_runner.as_mut().unwrap().terminate();
-                                }
+                            {
+                                self.xrservice_runner.as_mut().unwrap().terminate();
                             }
                         }
                     },
@@ -464,13 +463,7 @@ impl SimpleComponent for App {
             Msg::DeleteProfile => {
                 let todel = self.get_selected_profile();
                 if todel.editable {
-                    self.config.user_profiles = self
-                        .config
-                        .user_profiles
-                        .iter()
-                        .filter(|p| p.uuid != todel.uuid)
-                        .map(|p| p.clone())
-                        .collect();
+                    self.config.user_profiles.retain(|p| p.uuid != todel.uuid);
                     self.config.save();
                     self.profiles = Self::profiles_list(&self.config);
                     self.main_view
@@ -550,7 +543,7 @@ impl SimpleComponent for App {
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
         let config = Config::get_config();
-        let win_size = config.win_size.clone();
+        let win_size = config.win_size;
         let profiles = Self::profiles_list(&config);
         let setcap_confirm_dialog = adw::MessageDialog::builder()
             .modal(true)
@@ -682,7 +675,7 @@ impl SimpleComponent for App {
             withclones![sender];
             glib::timeout_add_local(Duration::from_millis(1000), move || {
                 sender.input(Msg::ClockTicking);
-                return glib::Continue(true);
+                glib::Continue(true)
             });
         }
 

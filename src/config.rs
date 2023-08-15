@@ -31,7 +31,7 @@ impl Default for Config {
 }
 
 impl Config {
-    pub fn get_selected_profile(&self, profiles: &Vec<Profile>) -> Profile {
+    pub fn get_selected_profile(&self, profiles: &[Profile]) -> Profile {
         let def = || profiles.get(0).expect("No profiles found").clone();
 
         match profiles
@@ -84,12 +84,8 @@ impl Config {
         Self::from_path(Self::config_file_path())
     }
 
-    pub fn set_profiles(&mut self, profiles: &Vec<Profile>) {
-        self.user_profiles = profiles
-            .iter()
-            .filter(|p| p.editable)
-            .map(Profile::clone)
-            .collect();
+    pub fn set_profiles(&mut self, profiles: &[Profile]) {
+        self.user_profiles = profiles.iter().filter(|p| p.editable).cloned().collect();
     }
 }
 

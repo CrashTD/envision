@@ -34,13 +34,8 @@ impl RunnerPipeline {
             return;
         }
         self.has_started = true;
-        match self.get_current_runner() {
-            None => {
-                return;
-            }
-            Some(runner) => {
-                runner.borrow_mut().start();
-            }
+        if let Some(runner) = self.get_current_runner() {
+            runner.borrow_mut().start();
         }
     }
 

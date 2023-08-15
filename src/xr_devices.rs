@@ -9,7 +9,7 @@ pub enum XRDevice {
     HandTrackingRight,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub struct XRDevices {
     pub head: Option<String>,
     pub left: Option<String>,
@@ -20,23 +20,9 @@ pub struct XRDevices {
     pub hand_tracking_right: Option<String>,
 }
 
-impl Default for XRDevices {
-    fn default() -> Self {
-        Self {
-            head: None,
-            left: None,
-            right: None,
-            gamepad: None,
-            eyes: None,
-            hand_tracking_left: None,
-            hand_tracking_right: None,
-        }
-    }
-}
-
 impl XRDevices {
     pub fn from_log_message(s: String) -> Option<Self> {
-        let rows = s.split("\n");
+        let rows = s.split('\n');
         let mut in_section = false;
         let mut devs = Self::default();
         for row in rows {

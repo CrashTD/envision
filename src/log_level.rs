@@ -1,5 +1,5 @@
 use serde::{de::Visitor, Deserialize, Serialize};
-use std::{fmt::Display, slice::Iter};
+use std::{fmt::Display, slice::Iter, str::FromStr};
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Serialize)]
 pub enum LogLevel {
@@ -24,14 +24,21 @@ impl<'de> Visitor<'de> for LogLevelStringVisitor {
     where
         E: serde::de::Error,
     {
-        Ok(LogLevel::from_string(v.to_string()))
+        Ok(LogLevel::from_str(v).unwrap())
     }
 
     fn visit_string<E>(self, v: String) -> Result<Self::Value, E>
     where
         E: serde::de::Error,
     {
-        Ok(LogLevel::from_string(v))
+        Ok(LogLevel::from_str(&v).unwrap())
+    }
+
+    fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        Ok(LogLevel::from_str(v).unwrap())
     }
 }
 
@@ -44,9 +51,9 @@ impl<'de> Deserialize<'de> for LogLevel {
     }
 }
 
-impl LogLevel {
-    pub fn from_string(s: String) -> Self {
-        match s.to_lowercase().as_str() {
+impl FromStr for LogLevel {
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(match s.to_lowercase().as_str() {
             "trace" => Self::Trace,
             "debug" => Self::Debug,
             "info" => Self::Info,
@@ -55,9 +62,13 @@ impl LogLevel {
             "error" => Self::Error,
             "err" => Self::Error,
             _ => Self::Debug,
-        }
+        })
     }
 
+    type Err = ();
+}
+
+impl LogLevel {
     pub fn iter() -> Iter<'static, LogLevel> {
         [
             Self::Trace,

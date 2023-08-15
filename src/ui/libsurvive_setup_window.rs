@@ -366,9 +366,10 @@ impl SimpleComponent for LibsurviveSetupWindow {
                 let path_s = self.steam_lighthouse_path.clone();
                 let lh_path = Path::new(&path_s);
                 if lh_path.is_file() {
-                    let survive_cli_path = self.profile.as_ref().unwrap().get_survive_cli_path();
-                    if survive_cli_path.is_some() {
-                        let mut runner = self.create_calibration_runner(survive_cli_path.unwrap());
+                    if let Some(survive_cli_path) =
+                        self.profile.as_ref().unwrap().get_survive_cli_path()
+                    {
+                        let mut runner = self.create_calibration_runner(survive_cli_path);
                         self.calibration_running.set(true);
                         self.first_run_done = false;
                         self.calibration_seconds_elapsed = 0.0;
@@ -378,7 +379,7 @@ impl SimpleComponent for LibsurviveSetupWindow {
                             let cont = self.calibration_running.clone();
                             glib::timeout_add_local(Duration::from_millis(1000), move || {
                                 timer_sender.input(LibsurviveSetupMsg::TickCalibrationRunner);
-                                return glib::Continue(cont.get());
+                                glib::Continue(cont.get())
                             });
                         }
                         self.calibration_runner = Some(runner);
@@ -387,10 +388,7 @@ impl SimpleComponent for LibsurviveSetupWindow {
                             .unwrap()
                             .scroll_to(self.loading_page.as_ref().unwrap(), true);
                     } else {
-                        let parent = match self.win.as_ref() {
-                            None => None,
-                            Some(w) => Some(w.clone().upcast::<gtk::Window>()),
-                        };
+                        let parent = self.win.as_ref().map(|w| w.clone().upcast::<gtk::Window>());
                         alert(
                             "Survive CLI not found",
                             Some(concat!(
@@ -418,16 +416,14 @@ impl SimpleComponent for LibsurviveSetupWindow {
                 chooser.open(
                     Some(&self.win.as_ref().unwrap().clone()),
                     gtk::gio::Cancellable::NONE,
-                    move |res| match res {
-                        Ok(file) => {
-                            let path = file.path();
-                            if path.is_some() {
+                    move |res| {
+                        if let Ok(file) = res {
+                            if let Some(path) = file.path() {
                                 fd_sender.input(LibsurviveSetupMsg::SetSteamLighthousePath(Some(
-                                    path.unwrap().to_str().unwrap().to_string(),
+                                    path.to_str().unwrap().to_string(),
                                 )))
                             }
                         }
-                        _ => {}
                     },
                 );
             }
@@ -437,42 +433,37 @@ impl SimpleComponent for LibsurviveSetupWindow {
                     (self.calibration_seconds_elapsed / (CALIBRATION_RUN_TIME_SECONDS * 2.0))
                         .min(1.0),
                 );
-                if !self.first_run_done {
-                    if self.calibration_seconds_elapsed >= CALIBRATION_RUN_TIME_SECONDS {
-                        if self.calibration_runner.is_some() {
-                            self.first_run_done = true;
-                            let runner = self.calibration_runner.as_mut().unwrap();
-                            runner.terminate();
-                            let mut n_runner = self.create_calibration_runner(
-                                self.profile
-                                    .as_ref()
-                                    .unwrap()
-                                    .get_survive_cli_path()
-                                    .unwrap(),
-                            );
-                            n_runner.start();
-                            self.calibration_runner = Some(n_runner);
-                        }
-                    }
-                } else {
-                    if self.calibration_seconds_elapsed >= (CALIBRATION_RUN_TIME_SECONDS * 2.0) {
+                if !self.first_run_done
+                    && self.calibration_seconds_elapsed >= CALIBRATION_RUN_TIME_SECONDS
+                {
+                    if self.calibration_runner.is_some() {
+                        self.first_run_done = true;
                         let runner = self.calibration_runner.as_mut().unwrap();
                         runner.terminate();
-                        self.calibration_running.set(false);
-                        self.carousel
-                            .as_ref()
-                            .unwrap()
-                            .scroll_to(self.calibration_done_page.as_ref().unwrap(), true);
+                        let mut n_runner = self.create_calibration_runner(
+                            self.profile
+                                .as_ref()
+                                .unwrap()
+                                .get_survive_cli_path()
+                                .unwrap(),
+                        );
+                        n_runner.start();
+                        self.calibration_runner = Some(n_runner);
                     }
+                } else if self.calibration_seconds_elapsed >= (CALIBRATION_RUN_TIME_SECONDS * 2.0) {
+                    let runner = self.calibration_runner.as_mut().unwrap();
+                    runner.terminate();
+                    self.calibration_running.set(false);
+                    self.carousel
+                        .as_ref()
+                        .unwrap()
+                        .scroll_to(self.calibration_done_page.as_ref().unwrap(), true);
                 }
             }
             Self::Input::Cancel => {
                 if self.calibration_running.get() {
-                    match self.calibration_runner.as_mut() {
-                        Some(runner) => {
-                            runner.terminate();
-                        }
-                        None => {}
+                    if let Some(runner) = self.calibration_runner.as_mut() {
+                        runner.terminate();
                     }
                     self.calibration_running.set(false);
                     self.carousel

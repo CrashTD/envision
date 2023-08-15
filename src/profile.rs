@@ -285,7 +285,7 @@ impl Profile {
         serde_json::from_reader(reader).expect("Faiuled to deserialize profile")
     }
 
-    pub fn dump_profile(&self, path_s: &String) -> () {
+    pub fn dump_profile(&self, path_s: &String) {
         let writer = get_writer(path_s);
         serde_json::to_writer_pretty(writer, self).expect("Could not write profile")
     }

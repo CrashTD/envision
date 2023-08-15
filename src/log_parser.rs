@@ -10,7 +10,7 @@ pub struct MonadoLog {
 }
 
 impl MonadoLog {
-    pub fn from_str(s: &str) -> Option<Self> {
+    pub fn new_from_str(s: &str) -> Option<Self> {
         serde_json::from_str::<Self>(s).ok()
     }
 }

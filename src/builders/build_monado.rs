@@ -15,18 +15,14 @@ pub fn get_build_monado_runners(profile: &Profile, clean_build: bool) -> Vec<Run
         },
         dir: profile.xrservice_path.clone(),
     };
-    match git.clone_or_pull(profile) {
-        Some(r) => runners.push(r),
-        None => {}
-    };
-    match git.get_checkout_ref_runner() {
-        Some(r) => {
-            runners.push(r);
-            if profile.pull_on_build {
-                runners.push(git.get_pull_runner());
-            }
+    if let Some(r) = git.clone_or_pull(profile) {
+        runners.push(r);
+    }
+    if let Some(r) = git.get_checkout_ref_runner() {
+        runners.push(r);
+        if profile.pull_on_build {
+            runners.push(git.get_pull_runner());
         }
-        None => {}
     }
 
     let build_dir = format!("{}/build", profile.xrservice_path);

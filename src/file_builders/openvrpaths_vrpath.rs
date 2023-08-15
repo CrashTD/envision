@@ -28,14 +28,10 @@ fn get_openvrpaths_vrpath_path() -> String {
 }
 
 pub fn is_steam(ovr_paths: &OpenVrPaths) -> bool {
-    ovr_paths
-        .runtime
-        .iter()
-        .find(|rt| {
-            rt.to_lowercase()
-                .ends_with("/steam/steamapps/common/steamvr")
-        })
-        .is_some()
+    ovr_paths.runtime.iter().any(|rt| {
+        rt.to_lowercase()
+            .ends_with("/steam/steamapps/common/steamvr")
+    })
 }
 
 fn get_backup_steam_openvrpaths_path() -> String {
@@ -50,9 +46,8 @@ fn get_backed_up_steam_openvrpaths() -> Option<OpenVrPaths> {
 }
 
 fn backup_steam_openvrpaths() {
-    let openvrpaths = get_current_openvrpaths();
-    if openvrpaths.is_some() {
-        if is_steam(&openvrpaths.unwrap()) {
+    if let Some(openvrpaths) = get_current_openvrpaths() {
+        if is_steam(&openvrpaths) {
             copy_file(
                 &get_openvrpaths_vrpath_path(),
                 &get_backup_steam_openvrpaths_path(),
@@ -82,9 +77,8 @@ pub fn dump_current_openvrpaths(ovr_paths: &OpenVrPaths) -> Result<(), serde_jso
 }
 
 fn build_steam_openvrpaths() -> OpenVrPaths {
-    let backup = get_backed_up_steam_openvrpaths();
-    if backup.is_some() {
-        return backup.unwrap();
+    if let Some(backup) = get_backed_up_steam_openvrpaths() {
+        return backup;
     }
     let datadir = get_xdg_data_dir();
     OpenVrPaths {

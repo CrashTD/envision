@@ -11,13 +11,10 @@ use std::{
 
 pub fn get_writer(path_s: &String) -> BufWriter<std::fs::File> {
     let path = Path::new(path_s);
-    match path.parent() {
-        Some(parent) => {
-            if !parent.is_dir() {
-                create_dir_all(parent).expect("Could not create dir")
-            }
+    if let Some(parent) = path.parent() {
+        if !parent.is_dir() {
+            create_dir_all(parent).expect("Could not create dir")
         }
-        None => {}
     };
     let file = OpenOptions::new()
         .write(true)
@@ -36,14 +33,14 @@ pub fn get_reader(path_s: &String) -> Option<BufReader<File>> {
     match File::open(path) {
         Err(e) => {
             println!("Error opening {}: {}", path_s, e);
-            return None;
+            None
         }
         Ok(fd) => Some(BufReader::new(fd)),
     }
 }
 
 pub fn deserialize_file<T: serde::de::DeserializeOwned>(path_s: &String) -> Option<T> {
-    match get_reader(&path_s) {
+    match get_reader(path_s) {
         None => None,
         Some(reader) => match serde_json::from_reader(reader) {
             Err(e) => {
@@ -79,26 +76,23 @@ pub fn setcap_cap_sys_nice_eip(file: String) {
 }
 
 pub fn rm_rf(path_s: &String) {
-    match remove_dir_all(path_s) {
-        Err(_) => println!("Failed to remove path {}", path_s),
-        Ok(_) => {}
+    if remove_dir_all(path_s).is_err() {
+        println!("Failed to remove path {}", path_s);
     }
 }
 
 pub fn copy_file(source_s: &String, dest_s: &String) {
     let source = Path::new(source_s);
     let dest = Path::new(dest_s);
-    let parent = dest.parent();
-    if parent.is_some() {
-        if !parent.unwrap().is_dir() {
-            create_dir_all(parent.unwrap()).expect(
-                format!("Failed to create dir {}", parent.unwrap().to_str().unwrap()).as_str(),
-            );
+    if let Some(parent) = dest.parent() {
+        if !parent.is_dir() {
+            create_dir_all(parent)
+                .unwrap_or_else(|_| panic!("Failed to create dir {}", parent.to_str().unwrap()));
         }
     }
     set_file_readonly(dest_s, false)
-        .expect(format!("Failed to set file {} as rw", dest_s).as_str());
-    copy(source, dest).expect(format!("Failed to copy {} to {}", source_s, dest_s).as_str());
+        .unwrap_or_else(|_| panic!("Failed to set file {} as rw", dest_s));
+    copy(source, dest).unwrap_or_else(|_| panic!("Failed to copy {} to {}", source_s, dest_s));
 }
 
 pub fn mount_has_nosuid(path_s: &str) -> Result<bool, Errno> {

@@ -39,16 +39,16 @@ pub mod xr_devices;
 fn restore_steam_xr_files() {
     let active_runtime = get_current_active_runtime();
     let openvrpaths = get_current_openvrpaths();
-    if active_runtime.is_some() {
-        if !file_builders::active_runtime_json::is_steam(&active_runtime.unwrap()) {
+    if let Some(ar) = active_runtime {
+        if !file_builders::active_runtime_json::is_steam(&ar) {
             match set_current_active_runtime_to_steam() {
                 Ok(_) => {}
                 Err(_) => println!("Warning: failed to restore active runtime to steam!"),
             };
         }
     }
-    if openvrpaths.is_some() {
-        if !file_builders::openvrpaths_vrpath::is_steam(&openvrpaths.unwrap()) {
+    if let Some(ovrp) = openvrpaths {
+        if !file_builders::openvrpaths_vrpath::is_steam(&ovrp) {
             match set_current_openvrpaths_to_steam() {
                 Ok(_) => {}
                 Err(_) => println!("Warning: failed to restore openvrpaths to steam!"),

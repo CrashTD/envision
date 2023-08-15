@@ -114,11 +114,8 @@ impl Runner {
             .envs(self.environment.clone())
             .stderr(Stdio::piped())
             .stdout(Stdio::piped())
-            .spawn();
-        if cmd.is_err() {
-            return Err(cmd.unwrap_err());
-        }
-        self.process = Some(cmd.unwrap());
+            .spawn()?;
+        self.process = Some(cmd);
         let stdout = self.process.as_mut().unwrap().stdout.take().unwrap();
         let stderr = self.process.as_mut().unwrap().stderr.take().unwrap();
         let stdout_sender = self.sender.clone();
@@ -178,11 +175,8 @@ impl Runner {
     }
 
     fn receive_output(&mut self) {
-        loop {
-            match self.receiver.try_recv() {
-                Ok(data) => self.output.push(data),
-                Err(_) => break,
-            };
+        while let Ok(data) = self.receiver.try_recv() {
+            self.output.push(data);
         }
     }
 
@@ -200,7 +194,7 @@ impl Runner {
         res
     }
 
-    fn save_log(path_s: String, log: &Vec<String>) -> Result<(), std::io::Error> {
+    fn save_log(path_s: String, log: &[String]) -> Result<(), std::io::Error> {
         let mut writer = get_writer(&path_s);
         let log_s = log.concat();
         writer.write_all(log_s.as_ref())

@@ -38,7 +38,7 @@ pub fn download_file(url: String, path: String) -> JoinHandle<Result<(), reqwest
                     .expect("Could not get HTTP response bytes")
                     .chunks(CHUNK_SIZE)
                 {
-                    writer.write(chunk).expect("Failed to write chunk");
+                    writer.write_all(chunk).expect("Failed to write chunk");
                 }
                 writer.flush().expect("Failed to flush download writer");
                 Ok(())

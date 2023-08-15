@@ -6,8 +6,8 @@ pub fn alert(title: &str, msg: Option<&str>, parent: Option<&gtk::Window>) {
         .modal(true)
         .heading(title)
         .build();
-    if msg.is_some() {
-        d.set_body(msg.unwrap());
+    if let Some(m) = msg {
+        d.set_body(m);
     }
     if parent.is_some() {
         d.set_transient_for(parent);

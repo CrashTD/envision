@@ -20,10 +20,7 @@ impl Git {
     fn get_ref(&self) -> Option<String> {
         let mut split = self.repo.split('#');
         split.next().expect("Could not get repo url");
-        match split.next() {
-            None => None,
-            Some(s) => Some(s.into()),
-        }
+        split.next().map(|s| s.into())
     }
 
     pub fn get_reset_runner(&self) -> Runner {
@@ -61,14 +58,13 @@ impl Git {
     }
 
     pub fn get_checkout_ref_runner(&self) -> Option<Runner> {
-        match self.get_ref() {
-            Some(r) => Some(Runner::new(
+        self.get_ref().map(|r| {
+            Runner::new(
                 None,
                 "git".into(),
                 vec!["-C".into(), self.dir.clone(), "checkout".into(), r],
-            )),
-            None => None,
-        }
+            )
+        })
     }
 
     pub fn get_clone_or_not_runner(&self) -> Option<Runner> {

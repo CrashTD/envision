@@ -19,10 +19,10 @@ impl Cmake {
         ];
         if self.vars.is_some() {
             for (k, v) in self.vars.as_ref().unwrap() {
-                if k.contains(" ") {
+                if k.contains(' ') {
                     panic!("Cmake vars cannot contain spaces!");
                 }
-                if v.contains(" ") {
+                if v.contains(' ') {
                     args.push(format!("-D{k}=\"{v}\"", k = k, v = v));
                 } else {
                     args.push(format!("-D{k}={v}", k = k, v = v));

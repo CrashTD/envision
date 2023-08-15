@@ -72,10 +72,7 @@ impl SimpleComponent for InstallWivrnBox {
             set_margin_top: 12,
             set_margin_bottom: 12,
             #[track = "model.changed(Self::selected_profile())"]
-            set_visible: match model.selected_profile.xrservice_type {
-                XRServiceType::Wivrn => true,
-                _ => false,
-            },
+            set_visible: model.selected_profile.xrservice_type == XRServiceType::Wivrn,
             gtk::Separator {
                 set_orientation: gtk::Orientation::Horizontal,
                 set_hexpand: true,
@@ -111,10 +108,7 @@ impl SimpleComponent for InstallWivrnBox {
                 set_margin_end: 12,
                 set_halign: gtk::Align::Start,
                 #[track = "model.changed(Self::install_wivrn_status())"]
-                set_sensitive: match model.install_wivrn_status {
-                    InstallWivrnStatus::InProgress => false,
-                    _ => true,
-                },
+                set_sensitive: model.install_wivrn_status != InstallWivrnStatus::InProgress,
                 set_menu_model: Some(&install_wivrn_menu),
             },
             gtk::Label {
@@ -123,10 +117,7 @@ impl SimpleComponent for InstallWivrnBox {
                 set_margin_end: 12,
                 set_xalign: 0.0,
                 #[track = "model.changed(Self::install_wivrn_status())"]
-                set_visible: match &model.install_wivrn_status {
-                    InstallWivrnStatus::Done(Some(_)) => true,
-                    _ => false,
-                },
+                set_visible: matches!(&model.install_wivrn_status, InstallWivrnStatus::Done(Some(_))),
                 #[track = "model.changed(Self::install_wivrn_status())"]
                 set_label: match &model.install_wivrn_status {
                     InstallWivrnStatus::Done(Some(err)) => err.as_str(),
@@ -139,10 +130,7 @@ impl SimpleComponent for InstallWivrnBox {
                 set_margin_end: 12,
                 set_xalign: 0.0,
                 #[track = "model.changed(Self::install_wivrn_status())"]
-                set_visible: match &model.install_wivrn_status {
-                    InstallWivrnStatus::Success => true,
-                    _ => false,
-                },
+                set_visible: model.install_wivrn_status == InstallWivrnStatus::Success,
                 set_label: "WiVRn Installed Successfully",
             },
         }

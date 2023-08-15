@@ -13,12 +13,9 @@ pub fn limit_dropdown_width(dd: &gtk4::DropDown, chars: i32) {
         if dd_child.is_none() {
             break;
         }
-        match dd_child.clone().unwrap().downcast::<gtk4::Label>() {
-            Ok(label) => {
-                label.set_max_width_chars(chars);
-                label.set_ellipsize(gtk4::pango::EllipsizeMode::End);
-            }
-            _ => {}
+        if let Ok(label) = dd_child.clone().unwrap().downcast::<gtk4::Label>() {
+            label.set_max_width_chars(chars);
+            label.set_ellipsize(gtk4::pango::EllipsizeMode::End);
         }
         let nc = dd_child.unwrap().first_child().clone();
         dd_child = nc;

@@ -80,7 +80,7 @@ pub fn check_dependency(dep: Dependency) -> bool {
             return true;
         }
     }
-    return false;
+    false
 }
 
 pub fn check_dependencies(deps: Vec<Dependency>) -> Vec<DependencyCheckResult> {
