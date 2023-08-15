@@ -181,9 +181,9 @@ impl SimpleComponent for BuildWindow {
     }
 
     fn init(
-        init: Self::Init,
+        _init: Self::Init,
         root: &Self::Root,
-        sender: ComponentSender<Self>,
+        _sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
         let mut model = Self {
             tracker: 0,

@@ -1,7 +1,6 @@
 use crate::file_builders::wivrn_config::{dump_wivrn_config, get_wivrn_config, WivrnConfig, Encoder};
 use adw::prelude::*;
-use gtk::prelude::*;
-use relm4::{factory::FactoryVecDeque, prelude::*};
+use relm4::prelude::*;
 
 #[tracker::track]
 pub struct WivrnConfEditor {
@@ -114,7 +113,7 @@ impl SimpleComponent for WivrnConfEditor {
         }
     }
 
-    fn update(&mut self, message: Self::Input, sender: ComponentSender<Self>) {
+    fn update(&mut self, message: Self::Input, _sender: ComponentSender<Self>) {
         self.reset();
 
         match message {

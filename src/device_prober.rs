@@ -3,7 +3,7 @@ use std::fmt::Display;
 use crate::{
     profile::Profile,
     profiles::{
-        lighthouse::lighthouse_profile, valve_index::valve_index_profile, wivrn::wivrn_profile,
+        lighthouse::lighthouse_profile, wivrn::wivrn_profile,
     },
 };
 

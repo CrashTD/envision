@@ -226,7 +226,7 @@ impl SimpleComponent for DevicesBox {
         }
     }
 
-    fn update(&mut self, message: Self::Input, sender: ComponentSender<Self>) {
+    fn update(&mut self, message: Self::Input, _sender: ComponentSender<Self>) {
         self.reset();
 
         match message {
@@ -237,9 +237,9 @@ impl SimpleComponent for DevicesBox {
     }
 
     fn init(
-        init: Self::Init,
+        _init: Self::Init,
         root: &Self::Root,
-        sender: ComponentSender<Self>,
+        _sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
         let model = Self {
             tracker: 0,

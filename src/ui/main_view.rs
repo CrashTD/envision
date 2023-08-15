@@ -324,7 +324,7 @@ impl SimpleComponent for MainView {
                             set_margin_end: 12,
                             set_halign: gtk::Align::Start,
                             connect_clicked[sender] => move |_| {
-                                sender.output(Self::Output::OpenLibsurviveSetup);
+                                sender.output(Self::Output::OpenLibsurviveSetup).expect("Sender outut failed");
                             }
                         },
                     },
@@ -409,10 +409,10 @@ impl SimpleComponent for MainView {
                     .emit(InstallWivrnBoxMsg::ClockTicking);
             }
             Self::Input::StartStopClicked => {
-                sender.output(Self::Output::DoStartStopXRService);
+                sender.output(Self::Output::DoStartStopXRService).expect("Sender output failed");
             }
             Self::Input::RestartXRService => {
-                sender.output(Self::Output::RestartXRService);
+                sender.output(Self::Output::RestartXRService).expect("Sender output failed");
             }
             Self::Input::XRServiceActiveChanged(active, profile) => {
                 self.set_xrservice_active(active);
@@ -475,7 +475,7 @@ impl SimpleComponent for MainView {
             Self::Input::ProfileSelected(position) => {
                 sender.output(MainViewOutMsg::ProfileSelected(
                     self.profiles.get(position as usize).unwrap().clone(),
-                ));
+                )).expect("Sender output failed");
             }
             Self::Input::EditProfile => {
                 if self.selected_profile.editable {
@@ -500,7 +500,7 @@ impl SimpleComponent for MainView {
                 self.profile_delete_confirm_dialog.present();
             }
             Self::Input::SaveProfile(prof) => {
-                sender.output(Self::Output::SaveProfile(prof));
+                sender.output(Self::Output::SaveProfile(prof)).expect("Sender output failed");
             }
             Self::Input::DuplicateProfile => {
                 if self.selected_profile.can_be_built {
@@ -570,7 +570,7 @@ impl SimpleComponent for MainView {
             let pdc_sender = sender.clone();
             profile_delete_confirm_dialog.connect_response(None, move |_, res| {
                 if res == "yes" {
-                    pdc_sender.output(Self::Output::DeleteProfile);
+                    pdc_sender.output(Self::Output::DeleteProfile).expect("Sender output failed");
                 }
             });
         }

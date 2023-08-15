@@ -98,7 +98,7 @@ impl SimpleComponent for SteamLaunchOptionsBox {
         }
     }
 
-    fn update(&mut self, message: Self::Input, sender: ComponentSender<Self>) {
+    fn update(&mut self, message: Self::Input, _sender: ComponentSender<Self>) {
         self.reset();
 
         match message {
@@ -118,7 +118,7 @@ impl SimpleComponent for SteamLaunchOptionsBox {
     }
 
     fn init(
-        init: Self::Init,
+        _init: Self::Init,
         root: &Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {

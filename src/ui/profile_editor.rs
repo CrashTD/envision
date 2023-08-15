@@ -294,7 +294,7 @@ impl SimpleComponent for ProfileEditor {
             Self::Input::SaveProfile => {
                 let prof = self.profile.borrow();
                 if prof.validate() {
-                    sender.output(ProfileEditorOutMsg::SaveProfile(prof.clone()));
+                    sender.output(ProfileEditorOutMsg::SaveProfile(prof.clone())).expect("Sender output failed");
                     self.win.as_ref().unwrap().close();
                 } else {
                     self.win.as_ref().unwrap().add_toast(

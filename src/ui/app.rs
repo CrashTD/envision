@@ -257,7 +257,7 @@ impl SimpleComponent for App {
         }
     }
 
-    fn shutdown(&mut self, widgets: &mut Self::Widgets, output: relm4::Sender<Self::Output>) {
+    fn shutdown(&mut self, _widgets: &mut Self::Widgets, _output: relm4::Sender<Self::Output>) {
         if self.xrservice_runner.is_some() {
             if self.xrservice_runner.as_mut().unwrap().status() == RunnerStatus::Running {
                 self.xrservice_runner.as_mut().unwrap().terminate();

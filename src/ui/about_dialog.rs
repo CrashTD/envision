@@ -27,9 +27,9 @@ impl SimpleComponent for AboutDialog {
     }
 
     fn init(
-        init: Self::Init,
+        _init: Self::Init,
         root: &Self::Root,
-        sender: relm4::ComponentSender<Self>,
+        _sender: relm4::ComponentSender<Self>,
     ) -> relm4::ComponentParts<Self> {
         let model = AboutDialog {};
         let widgets = root.clone();

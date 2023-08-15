@@ -1,6 +1,5 @@
 use crate::ui::profile_editor::ProfileEditorMsg;
 use adw::prelude::*;
-use gtk::prelude::*;
 use relm4::prelude::*;
 
 #[derive(Debug)]
@@ -77,7 +76,7 @@ impl FactoryComponent for EnvVarModel {
         })
     }
 
-    fn init_model(init: Self::Init, index: &Self::Index, sender: FactorySender<Self>) -> Self {
+    fn init_model(init: Self::Init, _index: &Self::Index, _sender: FactorySender<Self>) -> Self {
         Self {
             name: init.name,
             value: init.value,
