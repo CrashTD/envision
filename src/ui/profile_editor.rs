@@ -90,6 +90,7 @@ impl SimpleComponent for ProfileEditor {
                 },
                 add: xrservicegrp = &adw::PreferencesGroup {
                     set_title: "XR Service",
+                    set_description: Some("When specifying a repository, you can set a specific git ref (branch, tag, commit...) by appending a '#' followed by the ref"),
                     add: {
                         withclones![prof];
                         &combo_row(
@@ -151,7 +152,7 @@ impl SimpleComponent for ProfileEditor {
                 },
                 add: opencompgrp = &adw::PreferencesGroup {
                     set_title: "OpenComposite",
-                    set_description: Some("OpenVR driver built on top of OpenXR"),
+                    set_description: Some("OpenVR driver built on top of OpenXR\n\nWhen specifying a repository, you can set a specific git ref (branch, tag, commit...) by appending a '#' followed by the ref"),
                     add: {
                         withclones![prof];
                         &path_row(
@@ -177,7 +178,7 @@ impl SimpleComponent for ProfileEditor {
                 },
                 add: libsurvivegrp = &adw::PreferencesGroup {
                     set_title: "Libsurvive",
-                    set_description: Some("Lighthouse tracking driver"),
+                    set_description: Some("Lighthouse tracking driver\n\nWhen specifying a repository, you can set a specific git ref (branch, tag, commit...) by appending a '#' followed by the ref"),
                     add: {
                         withclones![prof];
                         &switch_row(
@@ -214,7 +215,7 @@ impl SimpleComponent for ProfileEditor {
                 },
                 add: basaltgrp = &adw::PreferencesGroup {
                     set_title: "Basalt",
-                    set_description: Some("Camera based SLAM tracking driver"),
+                    set_description: Some("Camera based SLAM tracking driver\n\nWhen specifying a repository, you can set a specific git ref (branch, tag, commit...) by appending a '#' followed by the ref"),
                     add: {
                         withclones![prof];
                         &switch_row(
@@ -294,7 +295,9 @@ impl SimpleComponent for ProfileEditor {
             Self::Input::SaveProfile => {
                 let prof = self.profile.borrow();
                 if prof.validate() {
-                    sender.output(ProfileEditorOutMsg::SaveProfile(prof.clone())).expect("Sender output failed");
+                    sender
+                        .output(ProfileEditorOutMsg::SaveProfile(prof.clone()))
+                        .expect("Sender output failed");
                     self.win.as_ref().unwrap().close();
                 } else {
                     self.win.as_ref().unwrap().add_toast(

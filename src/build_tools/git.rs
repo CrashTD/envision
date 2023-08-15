@@ -9,6 +9,23 @@ pub struct Git {
 }
 
 impl Git {
+    fn get_repo(&self) -> String {
+        self.repo
+            .split('#')
+            .next()
+            .expect("Could not get repo url")
+            .into()
+    }
+
+    fn get_ref(&self) -> Option<String> {
+        let mut split = self.repo.split('#');
+        split.next().expect("Could not get repo url");
+        match split.next() {
+            None => None,
+            Some(s) => Some(s.into()),
+        }
+    }
+
     pub fn get_reset_runner(&self) -> Runner {
         Runner::new(
             None,
@@ -34,8 +51,24 @@ impl Git {
         Runner::new(
             None,
             "git".into(),
-            vec!["clone".into(), self.repo.clone(), self.dir.clone(), "--recurse-submodules".into()],
+            vec![
+                "clone".into(),
+                self.get_repo(),
+                self.dir.clone(),
+                "--recurse-submodules".into(),
+            ],
         )
+    }
+
+    pub fn get_checkout_ref_runner(&self) -> Option<Runner> {
+        match self.get_ref() {
+            Some(r) => Some(Runner::new(
+                None,
+                "git".into(),
+                vec!["-C".into(), self.dir.clone(), "checkout".into(), r],
+            )),
+            None => None,
+        }
     }
 
     pub fn get_clone_or_not_runner(&self) -> Option<Runner> {

@@ -19,6 +19,15 @@ pub fn get_build_basalt_runners(profile: &Profile, clean_build: bool) -> Vec<Run
         Some(r) => runners.push(r),
         None => {}
     };
+    match git.get_checkout_ref_runner() {
+        Some(r) => {
+            runners.push(r);
+            if profile.pull_on_build {
+                runners.push(git.get_pull_runner());
+            }
+        }
+        None => {}
+    }
 
     let build_dir = format!("{}/build", profile.features.basalt.path.as_ref().unwrap());
     let mut cmake_vars: HashMap<String, String> = HashMap::new();
