@@ -52,6 +52,18 @@ fn monado_deps() -> Vec<Dependency> {
             dep_type: DepType::Executable,
             filename: "glslc".into(),
         },
+        // duplicate executable, because of different packaging conventions
+        // in different distros
+        Dependency {
+            name: "glslc".into(),
+            dep_type: DepType::Executable,
+            filename: "glslc".into(),
+        },
+        Dependency {
+            name: "glslang-devel".into(),
+            dep_type: DepType::Executable,
+            filename: "glslangValidator".into(),
+        },
         Dependency {
             name: "vulkan-headers".into(),
             dep_type: DepType::Include,
