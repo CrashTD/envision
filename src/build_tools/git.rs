@@ -1,6 +1,6 @@
-use std::path::Path;
-
 use crate::{profile::Profile, runner::Runner};
+use git2::Repository;
+use std::path::Path;
 
 #[derive(Debug, Clone)]
 pub struct Git {
@@ -36,7 +36,22 @@ impl Git {
         )
     }
 
+    fn override_remote_url(&self) -> Result<(), git2::Error> {
+        if let Ok(repo) = Repository::open(&self.dir) {
+            let current_remote_url = self.get_repo();
+            let remote = repo
+                .find_remote("origin")?;
+            if remote.url().unwrap_or("") != current_remote_url {
+                repo.remote_set_url("origin", &current_remote_url)?;
+            }
+        }
+        Ok(())
+    }
+
     pub fn get_pull_runner(&self) -> Runner {
+        if self.override_remote_url().is_err() {
+            println!("Warning: failed to override git repo remote URL!")
+        }
         Runner::new(
             None,
             "git".into(),
