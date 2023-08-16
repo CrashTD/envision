@@ -39,8 +39,7 @@ impl Git {
     fn override_remote_url(&self) -> Result<(), git2::Error> {
         if let Ok(repo) = Repository::open(&self.dir) {
             let current_remote_url = self.get_repo();
-            let remote = repo
-                .find_remote("origin")?;
+            let remote = repo.find_remote("origin")?;
             if remote.url().unwrap_or("") != current_remote_url {
                 repo.remote_set_url("origin", &current_remote_url)?;
             }
