@@ -98,7 +98,7 @@ impl Runner {
             );
         }
         Self::new(
-            Some(profile.environment.clone()),
+            Some(env),
             match profile.xrservice_type {
                 XRServiceType::Monado => format!("{pfx}/bin/monado-service", pfx = profile.prefix),
                 XRServiceType::Wivrn => format!("{pfx}/bin/wivrn-server", pfx = profile.prefix),
