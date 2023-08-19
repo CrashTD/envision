@@ -1,11 +1,12 @@
 use crate::{
     adb::get_adb_install_runner,
+    cmd_runner::CmdRunner,
     depcheck::check_dependency,
     dependencies::adb_dep::adb_dep,
     downloader::download_file,
     paths::wivrn_apk_download_path,
     profile::{Profile, XRServiceType},
-    runner::{CmdRunner, Runner, RunnerStatus},
+    runner::{Runner, RunnerStatus},
 };
 use gtk::prelude::*;
 use relm4::{

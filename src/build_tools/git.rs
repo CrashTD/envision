@@ -1,7 +1,7 @@
 use crate::{
+    cmd_runner::CmdRunner,
     func_runner::{FuncRunner, FuncRunnerOut},
     profile::Profile,
-    runner::CmdRunner,
 };
 use git2::Repository;
 use std::path::Path;

@@ -1,7 +1,4 @@
-use crate::{
-    profile::Profile,
-    runner::{CmdRunner, Runner},
-};
+use crate::{cmd_runner::CmdRunner, profile::Profile, runner::Runner};
 use adw::prelude::*;
 use gtk::glib;
 use relm4::prelude::*;

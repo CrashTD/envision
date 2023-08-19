@@ -1,4 +1,4 @@
-use crate::runner::CmdRunner;
+use crate::cmd_runner::CmdRunner;
 use std::path::Path;
 
 pub fn get_adb_install_runner(apk_path: &String) -> CmdRunner {

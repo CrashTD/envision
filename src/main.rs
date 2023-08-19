@@ -16,6 +16,7 @@ pub mod adb;
 pub mod build_tools;
 pub mod builders;
 pub mod checkerr;
+pub mod cmd_runner;
 pub mod config;
 pub mod constants;
 pub mod depcheck;

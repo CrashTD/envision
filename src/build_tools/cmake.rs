@@ -1,4 +1,4 @@
-use crate::runner::CmdRunner;
+use crate::cmd_runner::CmdRunner;
 use std::collections::HashMap;
 
 #[derive(Debug, Clone)]

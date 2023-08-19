@@ -1,4 +1,4 @@
-use crate::runner::{CmdRunner, Runner};
+use crate::{cmd_runner::CmdRunner, runner::Runner};
 use nix::{
     errno::Errno,
     sys::statvfs::{statvfs, FsFlags},
