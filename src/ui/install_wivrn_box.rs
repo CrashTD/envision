@@ -5,7 +5,7 @@ use crate::{
     downloader::download_file,
     paths::wivrn_apk_download_path,
     profile::{Profile, XRServiceType},
-    runner::{Runner, RunnerStatus},
+    runner::{CmdRunner, Runner, RunnerStatus},
 };
 use gtk::prelude::*;
 use relm4::{
@@ -31,7 +31,7 @@ pub struct InstallWivrnBox {
     #[tracker::do_not_track]
     download_thread: Option<JoinHandle<Result<(), reqwest::Error>>>,
     #[tracker::do_not_track]
-    install_runner: Option<Runner>,
+    install_runner: Option<CmdRunner>,
     #[tracker::do_not_track]
     root_win: gtk::Window,
 }

@@ -25,6 +25,7 @@ pub mod downloader;
 pub mod env_var_descriptions;
 pub mod file_builders;
 pub mod file_utils;
+pub mod func_runner;
 pub mod log_level;
 pub mod log_parser;
 pub mod paths;

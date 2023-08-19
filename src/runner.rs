@@ -18,7 +18,14 @@ use std::{
     vec,
 };
 
-pub struct Runner {
+pub trait Runner {
+    fn start(&mut self);
+    fn status(&mut self) -> RunnerStatus;
+    fn consume_output(&mut self) -> String;
+    fn consume_rows(&mut self) -> Vec<String>;
+}
+
+pub struct CmdRunner {
     pub environment: HashMap<String, String>,
     pub command: String,
     pub args: Vec<String>,
@@ -67,7 +74,7 @@ macro_rules! logger_thread {
     };
 }
 
-impl Runner {
+impl CmdRunner {
     pub fn new(
         environment: Option<HashMap<String, String>>,
         command: String,
@@ -125,10 +132,6 @@ impl Runner {
         Ok(())
     }
 
-    pub fn start(&mut self) {
-        self.try_start().expect("Failed to execute runner");
-    }
-
     fn join_threads(&mut self) {
         loop {
             match self.threads.pop() {
@@ -163,7 +166,39 @@ impl Runner {
         self.join_threads();
     }
 
-    pub fn status(&mut self) -> RunnerStatus {
+    fn receive_output(&mut self) {
+        while let Ok(data) = self.receiver.try_recv() {
+            self.output.push(data);
+        }
+    }
+
+    fn save_log(path_s: String, log: &[String]) -> Result<(), std::io::Error> {
+        let mut writer = get_writer(&path_s);
+        let log_s = log.concat();
+        writer.write_all(log_s.as_ref())
+    }
+
+    pub fn save_output(&mut self, path: String) -> Result<(), std::io::Error> {
+        CmdRunner::save_log(path, &self.output)
+    }
+}
+
+impl Runner for CmdRunner {
+    fn consume_output(&mut self) -> String {
+        self.receive_output();
+        let res = self.output.concat();
+        self.output.clear();
+        res
+    }
+
+    fn consume_rows(&mut self) -> Vec<String> {
+        self.receive_output();
+        let res = self.output.clone();
+        self.output.clear();
+        res
+    }
+
+    fn status(&mut self) -> RunnerStatus {
         match &mut self.process {
             None => RunnerStatus::Stopped(None),
             Some(proc) => match proc.try_wait() {
@@ -174,42 +209,16 @@ impl Runner {
         }
     }
 
-    fn receive_output(&mut self) {
-        while let Ok(data) = self.receiver.try_recv() {
-            self.output.push(data);
-        }
-    }
-
-    pub fn consume_output(&mut self) -> String {
-        self.receive_output();
-        let res = self.output.concat();
-        self.output.clear();
-        res
-    }
-
-    pub fn consume_rows(&mut self) -> Vec<String> {
-        self.receive_output();
-        let res = self.output.clone();
-        self.output.clear();
-        res
-    }
-
-    fn save_log(path_s: String, log: &[String]) -> Result<(), std::io::Error> {
-        let mut writer = get_writer(&path_s);
-        let log_s = log.concat();
-        writer.write_all(log_s.as_ref())
-    }
-
-    pub fn save_output(&mut self, path: String) -> Result<(), std::io::Error> {
-        Runner::save_log(path, &self.output)
+    fn start(&mut self) {
+        self.try_start().expect("Failed to execute runner");
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use super::{CmdRunner, RunnerStatus};
     use crate::profile::Profile;
-
-    use super::{Runner, RunnerStatus};
+    use crate::runner::Runner;
     use core::time;
     use std::{collections::HashMap, thread::sleep};
 
@@ -217,7 +226,7 @@ mod tests {
     fn can_run_command_and_read_env() {
         let mut env = HashMap::new();
         env.insert("REX2TEST".to_string(), "Lorem ipsum dolor".to_string());
-        let mut runner = Runner::new(
+        let mut runner = CmdRunner::new(
             Some(env),
             "bash".into(),
             vec!["-c".into(), "echo \"REX2TEST: $REX2TEST\"".into()],
@@ -232,7 +241,7 @@ mod tests {
 
     #[test]
     fn can_save_log() {
-        let mut runner = Runner::new(
+        let mut runner = CmdRunner::new(
             None,
             "bash".into(),
             vec!["-c".into(), "echo \"Lorem ipsum dolor sit amet\"".into()],
@@ -249,7 +258,7 @@ mod tests {
 
     #[test]
     fn can_create_from_profile() {
-        Runner::xrservice_runner_from_profile(&Profile::load_profile(
+        CmdRunner::xrservice_runner_from_profile(&Profile::load_profile(
             &"./test/files/profile.json".to_string(),
         ));
     }

@@ -1,4 +1,4 @@
-use crate::runner::Runner;
+use crate::runner::{CmdRunner, Runner};
 use nix::{
     errno::Errno,
     sys::statvfs::{statvfs, FsFlags},
@@ -66,7 +66,7 @@ pub fn set_file_readonly(path_s: &String, readonly: bool) -> Result<(), std::io:
 }
 
 pub fn setcap_cap_sys_nice_eip(file: String) {
-    let mut runner = Runner::new(
+    let mut runner = CmdRunner::new(
         None,
         "pkexec".into(),
         vec!["setcap".into(), "CAP_SYS_NICE=eip".into(), file],

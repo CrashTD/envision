@@ -1,8 +1,8 @@
-use crate::{constants::pkg_data_dir, paths::get_cache_dir, profile::Profile, runner::Runner};
+use crate::{constants::pkg_data_dir, paths::get_cache_dir, profile::Profile, runner::CmdRunner};
 
-pub fn get_build_mercury_runner(profile: &Profile) -> Runner {
+pub fn get_build_mercury_runner(profile: &Profile) -> CmdRunner {
     let args = vec![profile.prefix.clone(), get_cache_dir()];
-    Runner::new(
+    CmdRunner::new(
         None,
         format!(
             "{sysdata}/scripts/build_mercury.sh",

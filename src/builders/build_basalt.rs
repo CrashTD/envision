@@ -2,12 +2,12 @@ use crate::{
     build_tools::{cmake::Cmake, git::Git},
     file_utils::rm_rf,
     profile::Profile,
-    runner::Runner,
+    runner::{CmdRunner, Runner},
 };
 use std::{collections::HashMap, path::Path};
 
-pub fn get_build_basalt_runners(profile: &Profile, clean_build: bool) -> Vec<Runner> {
-    let mut runners: Vec<Runner> = vec![];
+pub fn get_build_basalt_runners(profile: &Profile, clean_build: bool) -> Vec<Box<dyn Runner>> {
+    let mut runners: Vec<Box<dyn Runner>> = vec![];
     let git = Git {
         repo: match profile.features.basalt.repo.as_ref() {
             Some(r) => r.clone(),
@@ -15,13 +15,14 @@ pub fn get_build_basalt_runners(profile: &Profile, clean_build: bool) -> Vec<Run
         },
         dir: profile.features.basalt.path.as_ref().unwrap().clone(),
     };
+    runners.push(Box::new(git.get_override_remote_url_runner()));
     if let Some(r) = git.clone_or_pull(profile) {
-        runners.push(r);
+        runners.push(Box::new(r));
     };
     if let Some(r) = git.get_checkout_ref_runner() {
-        runners.push(r);
+        runners.push(Box::new(r));
         if profile.pull_on_build {
-            runners.push(git.get_pull_runner());
+            runners.push(Box::new(git.get_pull_runner()));
         }
     }
 
@@ -45,21 +46,21 @@ pub fn get_build_basalt_runners(profile: &Profile, clean_build: bool) -> Vec<Run
         source_dir: profile.features.basalt.path.as_ref().unwrap().clone(),
         build_dir: build_dir.clone(),
     };
-    runners.push(Runner::new(None, "bash".into(), vec![
+    runners.push(Box::new(CmdRunner::new(None, "bash".into(), vec![
         "-c".into(),
         format!(
             "cd {repo}/thirdparty/Pangolin && git checkout include/pangolin/utils/picojson.h && curl -sSL 'https://aur.archlinux.org/cgit/aur.git/plain/279c17d9c9eb9374c89489b449f92cb93350e8cd.patch?h=basalt-monado-git' -o picojson_fix.patch && git apply picojson_fix.patch &&	sed -i '1s/^/#include <stdint.h>\\n/' include/pangolin/platform.h",
             repo = git.dir
         ),
-    ]));
+    ])));
     if !Path::new(&build_dir).is_dir() || clean_build {
         rm_rf(&build_dir);
-        runners.push(cmake.get_prepare_runner());
+        runners.push(Box::new(cmake.get_prepare_runner()));
     }
-    runners.push(cmake.get_build_runner());
-    runners.push(cmake.get_install_runner());
+    runners.push(Box::new(cmake.get_build_runner()));
+    runners.push(Box::new(cmake.get_install_runner()));
 
-    runners.push(Runner::new(
+    runners.push(Box::new(CmdRunner::new(
         None,
         "mkdir".into(),
         vec![
@@ -69,8 +70,8 @@ pub fn get_build_basalt_runners(profile: &Profile, clean_build: bool) -> Vec<Run
                 profile.prefix
             ),
         ],
-    ));
-    runners.push(Runner::new(
+    )));
+    runners.push(Box::new(CmdRunner::new(
         None,
         "cp".into(),
         vec![
@@ -81,7 +82,7 @@ pub fn get_build_basalt_runners(profile: &Profile, clean_build: bool) -> Vec<Run
             ),
             format!("{}/share/basalt/thirdparty", profile.prefix),
         ],
-    ));
+    )));
 
     runners
 }

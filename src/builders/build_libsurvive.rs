@@ -6,8 +6,8 @@ use crate::{
 };
 use std::{collections::HashMap, path::Path};
 
-pub fn get_build_libsurvive_runners(profile: &Profile, clean_build: bool) -> Vec<Runner> {
-    let mut runners: Vec<Runner> = vec![];
+pub fn get_build_libsurvive_runners(profile: &Profile, clean_build: bool) -> Vec<Box<dyn Runner>> {
+    let mut runners: Vec<Box<dyn Runner>> = vec![];
     let git = Git {
         repo: match profile.features.libsurvive.repo.as_ref() {
             Some(r) => r.clone(),
@@ -15,13 +15,14 @@ pub fn get_build_libsurvive_runners(profile: &Profile, clean_build: bool) -> Vec
         },
         dir: profile.features.libsurvive.path.as_ref().unwrap().clone(),
     };
+    runners.push(Box::new(git.get_override_remote_url_runner()));
     if let Some(r) = git.clone_or_pull(profile) {
-        runners.push(r);
+        runners.push(Box::new(r));
     };
     if let Some(r) = git.get_checkout_ref_runner() {
-        runners.push(r);
+        runners.push(Box::new(r));
         if profile.pull_on_build {
-            runners.push(git.get_pull_runner());
+            runners.push(Box::new(git.get_pull_runner()));
         }
     }
 
@@ -47,10 +48,10 @@ pub fn get_build_libsurvive_runners(profile: &Profile, clean_build: bool) -> Vec
     };
     if !Path::new(&build_dir).is_dir() || clean_build {
         rm_rf(&build_dir);
-        runners.push(cmake.get_prepare_runner());
+        runners.push(Box::new(cmake.get_prepare_runner()));
     }
-    runners.push(cmake.get_build_runner());
-    runners.push(cmake.get_install_runner());
+    runners.push(Box::new(cmake.get_build_runner()));
+    runners.push(Box::new(cmake.get_install_runner()));
 
     runners
 }
