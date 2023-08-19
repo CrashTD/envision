@@ -37,6 +37,7 @@ pub mod runner_pipeline;
 pub mod steamvr_utils;
 pub mod ui;
 pub mod xr_devices;
+pub mod gpu_profile;
 
 fn restore_steam_xr_files() {
     let active_runtime = get_current_active_runtime();

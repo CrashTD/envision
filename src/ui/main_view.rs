@@ -6,6 +6,7 @@ use super::steam_launch_options_box::{SteamLaunchOptionsBox, SteamLaunchOptionsB
 use crate::config::Config;
 use crate::constants::APP_NAME;
 use crate::file_utils::mount_has_nosuid;
+use crate::gpu_profile::{get_gpu_power_profile, GpuPowerProfile, get_set_vr_pow_prof_cmd};
 use crate::profile::{LighthouseDriver, Profile};
 use crate::steamvr_utils::chaperone_info_exists;
 use crate::ui::app::{
@@ -277,6 +278,89 @@ impl SimpleComponent for MainView {
                             set_wrap: true,
                             set_wrap_mode: gtk::pango::WrapMode::Word,
                         }
+                    },
+                    gtk::Box {
+                        set_orientation: gtk::Orientation::Vertical,
+                        set_hexpand: true,
+                        set_vexpand: false,
+                        set_spacing: 12,
+                        set_margin_top: 12,
+                        set_margin_bottom: 12,
+                        // TODO: maybe add manual refresh btn?
+                        #[track = "model.changed(Self::selected_profile())"]
+                        set_visible: get_gpu_power_profile() != Some(GpuPowerProfile::VR),
+                        gtk::Separator {
+                            set_orientation: gtk::Orientation::Horizontal,
+                            set_hexpand: true,
+                        },
+                        gtk::Box {
+                            set_orientation: gtk::Orientation::Horizontal,
+                            set_margin_start: 12,
+                            set_margin_end: 12,
+                            set_spacing: 12,
+                            set_hexpand: true,
+                            gtk::Image {
+                                set_icon_name: Some("dialog-warning-symbolic"),
+                                add_css_class: "warning",
+                            },
+                            gtk::Label {
+                                add_css_class: "warning",
+                                add_css_class: "heading",
+                                set_label: "Warning"
+                            }
+                        },
+                        gtk::Label {
+                            set_label: concat!(
+                                "Your GPU Power Profile is not set to VR. ",
+                                "This will cause noticeable stutter when running XR ",
+                                "applications. Activate the VR profile witrh the ",
+                                "following command:",
+                            ),
+                            set_margin_start: 12,
+                            set_margin_end: 12,
+                            add_css_class: "warning",
+                            set_wrap: true,
+                            set_wrap_mode: gtk::pango::WrapMode::Word,
+                        },
+                        gtk::Box {
+                            set_margin_start: 12,
+                            set_margin_end: 12,
+                            set_orientation: gtk::Orientation::Horizontal,
+                            set_spacing: 6,
+                            gtk::ScrolledWindow {
+                                add_css_class: "card",
+                                set_vscrollbar_policy: gtk::PolicyType::Never,
+                                set_overflow: gtk::Overflow::Hidden,
+                                gtk::TextView {
+                                    set_hexpand: true,
+                                    set_vexpand: false,
+                                    set_monospace: true,
+                                    set_editable: false,
+                                    set_left_margin: 6,
+                                    set_right_margin: 6,
+                                    set_top_margin: 6,
+                                    set_bottom_margin: 18,
+                                    #[wrap(Some)]
+                                    set_buffer: cmdbuf = &gtk::TextBuffer {
+                                        set_text: get_set_vr_pow_prof_cmd().as_str(),
+                                    }
+                                }
+                            },
+                            gtk::Button {
+                                add_css_class: "flat",
+                                add_css_class: "circular",
+                                set_tooltip_text: Some("Copy"),
+                                set_icon_name: "edit-copy-symbolic",
+                                set_vexpand: false,
+                                set_valign: gtk::Align::Center,
+                                connect_clicked => move |_| {
+                                    gtk::gdk::Display::default()
+                                        .expect("Could not find default display")
+                                        .clipboard()
+                                        .set_text(get_set_vr_pow_prof_cmd().as_str());
+                                }
+                            },
+                        },
                     },
                     model.steam_launch_options_box.widget(),
                     model.install_wivrn_box.widget(),
