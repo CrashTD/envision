@@ -1,6 +1,10 @@
+use crate::{
+    cmd_runner::CmdRunner,
+    func_runner::{FuncRunner, FuncRunnerOut},
+    profile::Profile,
+};
+use git2::Repository;
 use std::path::Path;
-
-use crate::{profile::Profile, runner::Runner};
 
 #[derive(Debug, Clone)]
 pub struct Git {
@@ -23,8 +27,8 @@ impl Git {
         split.next().map(|s| s.into())
     }
 
-    pub fn get_reset_runner(&self) -> Runner {
-        Runner::new(
+    pub fn get_reset_runner(&self) -> CmdRunner {
+        CmdRunner::new(
             None,
             "git".into(),
             vec![
@@ -36,16 +40,52 @@ impl Git {
         )
     }
 
-    pub fn get_pull_runner(&self) -> Runner {
-        Runner::new(
+    pub fn get_override_remote_url_runner(&self) -> FuncRunner {
+        let dir = self.dir.clone();
+        let n_remote_url = self.get_repo();
+        FuncRunner::new(Box::new(move || {
+            if let Ok(repo) = Repository::open(dir) {
+                if let Ok(remote) = repo.find_remote("origin") {
+                    if remote.url().unwrap_or("") != n_remote_url {
+                        if repo.remote_set_url("origin", &n_remote_url).is_ok() {
+                            return FuncRunnerOut {
+                                success: true,
+                                out: vec![],
+                            };
+                        }
+                        return FuncRunnerOut {
+                            success: false,
+                            out: vec!["Failed to set origin remote url".into()],
+                        };
+                    }
+                } else {
+                    return FuncRunnerOut {
+                        success: false,
+                        out: vec!["Could not find remote origin".into()],
+                    };
+                }
+                return FuncRunnerOut {
+                    success: true,
+                    out: vec![],
+                };
+            }
+            FuncRunnerOut {
+                success: true,
+                out: vec![],
+            }
+        }))
+    }
+
+    pub fn get_pull_runner(&self) -> CmdRunner {
+        CmdRunner::new(
             None,
             "git".into(),
             vec!["-C".into(), self.dir.clone(), "pull".into()],
         )
     }
 
-    pub fn get_clone_runner(&self) -> Runner {
-        Runner::new(
+    pub fn get_clone_runner(&self) -> CmdRunner {
+        CmdRunner::new(
             None,
             "git".into(),
             vec![
@@ -57,9 +97,9 @@ impl Git {
         )
     }
 
-    pub fn get_checkout_ref_runner(&self) -> Option<Runner> {
+    pub fn get_checkout_ref_runner(&self) -> Option<CmdRunner> {
         self.get_ref().map(|r| {
-            Runner::new(
+            CmdRunner::new(
                 None,
                 "git".into(),
                 vec!["-C".into(), self.dir.clone(), "checkout".into(), r],
@@ -67,7 +107,7 @@ impl Git {
         })
     }
 
-    pub fn get_clone_or_not_runner(&self) -> Option<Runner> {
+    pub fn get_clone_or_not_runner(&self) -> Option<CmdRunner> {
         let path_s = format!("{}/.git", self.dir.clone());
         let path = Path::new(&path_s);
         if path.is_dir() {
@@ -76,7 +116,7 @@ impl Git {
         Some(self.get_clone_runner())
     }
 
-    pub fn clone_or_pull(&self, profile: &Profile) -> Option<Runner> {
+    pub fn clone_or_pull(&self, profile: &Profile) -> Option<CmdRunner> {
         match self.get_clone_or_not_runner() {
             Some(r) => Some(r),
             None => match profile.pull_on_build {

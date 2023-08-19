@@ -1,4 +1,4 @@
-use crate::runner::Runner;
+use crate::cmd_runner::CmdRunner;
 use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
@@ -10,7 +10,7 @@ pub struct Cmake {
 }
 
 impl Cmake {
-    pub fn get_prepare_runner(&self) -> Runner {
+    pub fn get_prepare_runner(&self) -> CmdRunner {
         let mut args = vec![
             "-B".into(),
             self.build_dir.clone(),
@@ -30,19 +30,19 @@ impl Cmake {
             }
         }
         args.push(self.source_dir.clone());
-        Runner::new(self.env.clone(), "cmake".into(), args)
+        CmdRunner::new(self.env.clone(), "cmake".into(), args)
     }
 
-    pub fn get_build_runner(&self) -> Runner {
-        Runner::new(
+    pub fn get_build_runner(&self) -> CmdRunner {
+        CmdRunner::new(
             self.env.clone(),
             "cmake".into(),
             vec!["--build".into(), self.build_dir.clone()],
         )
     }
 
-    pub fn get_install_runner(&self) -> Runner {
-        Runner::new(
+    pub fn get_install_runner(&self) -> CmdRunner {
+        CmdRunner::new(
             self.env.clone(),
             "cmake".into(),
             vec!["--install".into(), self.build_dir.clone()],

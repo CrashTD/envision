@@ -10,6 +10,7 @@ anyhow = "1.0.71"
 gettext-rs = { version = "0.7.0", features = [
     "gettext-system"
 ] }
+git2 = "0.17.2"
 gtk4 = { version = "0.6.6", features = [
     "v4_10",
 ] }

@@ -1,4 +1,4 @@
-use crate::{profile::Profile, runner::Runner};
+use crate::{cmd_runner::CmdRunner, profile::Profile, runner::Runner};
 use adw::prelude::*;
 use gtk::glib;
 use relm4::prelude::*;
@@ -40,7 +40,7 @@ pub struct LibsurviveSetupWindow {
     #[tracker::do_not_track]
     profile: Option<Profile>,
     #[tracker::do_not_track]
-    calibration_runner: Option<Runner>,
+    calibration_runner: Option<CmdRunner>,
 }
 
 #[derive(Debug)]
@@ -54,14 +54,14 @@ pub enum LibsurviveSetupMsg {
 }
 
 impl LibsurviveSetupWindow {
-    fn create_calibration_runner(&mut self, survive_cli_path: String) -> Runner {
+    fn create_calibration_runner(&mut self, survive_cli_path: String) -> CmdRunner {
         let lh_path = self.steam_lighthouse_path.clone();
         let mut env = HashMap::new();
         env.insert(
             "LD_LIBRARY_PATH".to_string(),
             format!("{pfx}/lib", pfx = self.profile.as_ref().unwrap().prefix),
         );
-        Runner::new(
+        CmdRunner::new(
             Some(env),
             survive_cli_path,
             vec!["--steamvr-calibration".into(), lh_path],

@@ -1,9 +1,8 @@
+use crate::runner::{Runner, RunnerStatus};
 use std::cell::RefCell;
 
-use crate::runner::{Runner, RunnerStatus};
-
 pub struct RunnerPipeline {
-    runners: Vec<RefCell<Runner>>,
+    runners: Vec<RefCell<Box<dyn Runner>>>,
     current_index: usize,
     last_exit_status: Option<i32>,
     has_started: bool,
@@ -11,8 +10,8 @@ pub struct RunnerPipeline {
 }
 
 impl RunnerPipeline {
-    pub fn new(runners: Vec<Runner>) -> Self {
-        let mut c_runners: Vec<RefCell<Runner>> = vec![];
+    pub fn new(runners: Vec<Box<dyn Runner>>) -> Self {
+        let mut c_runners: Vec<RefCell<Box<dyn Runner>>> = vec![];
         for runner in runners {
             c_runners.push(RefCell::new(runner));
         }
@@ -25,7 +24,7 @@ impl RunnerPipeline {
         }
     }
 
-    pub fn get_current_runner(&self) -> Option<&RefCell<Runner>> {
+    pub fn get_current_runner(&self) -> Option<&RefCell<Box<dyn Runner>>> {
         self.runners.get(self.current_index)
     }
 

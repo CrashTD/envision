@@ -1,5 +1,6 @@
 use crate::{
     adb::get_adb_install_runner,
+    cmd_runner::CmdRunner,
     depcheck::check_dependency,
     dependencies::adb_dep::adb_dep,
     downloader::download_file,
@@ -31,7 +32,7 @@ pub struct InstallWivrnBox {
     #[tracker::do_not_track]
     download_thread: Option<JoinHandle<Result<(), reqwest::Error>>>,
     #[tracker::do_not_track]
-    install_runner: Option<Runner>,
+    install_runner: Option<CmdRunner>,
     #[tracker::do_not_track]
     root_win: gtk::Window,
 }

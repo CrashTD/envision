@@ -10,6 +10,7 @@ use crate::builders::build_mercury::get_build_mercury_runner;
 use crate::builders::build_monado::get_build_monado_runners;
 use crate::builders::build_opencomposite::get_build_opencomposite_runners;
 use crate::builders::build_wivrn::get_build_wivrn_runners;
+use crate::cmd_runner::CmdRunner;
 use crate::config::Config;
 use crate::constants::APP_NAME;
 use crate::depcheck::check_dependency;
@@ -76,7 +77,7 @@ pub struct App {
     #[tracker::do_not_track]
     config: Config,
     #[tracker::do_not_track]
-    xrservice_runner: Option<Runner>,
+    xrservice_runner: Option<CmdRunner>,
     #[tracker::do_not_track]
     build_pipeline: Option<RunnerPipeline>,
     #[tracker::do_not_track]
@@ -149,7 +150,7 @@ impl App {
             XRServiceType::Wivrn => true, // no device from log in wivrn
         };
         self.debug_view.sender().emit(DebugViewMsg::ClearLog);
-        let mut runner = Runner::xrservice_runner_from_profile(&prof);
+        let mut runner = CmdRunner::xrservice_runner_from_profile(&prof);
         match runner.try_start() {
             Ok(_) => {
                 self.xrservice_runner = Some(runner);
@@ -400,7 +401,7 @@ impl SimpleComponent for App {
             Msg::BuildProfile(clean_build) => {
                 let profile = self.get_selected_profile();
                 let mut missing_deps = vec![];
-                let mut runners: Vec<Runner> = vec![];
+                let mut runners: Vec<Box<dyn Runner>> = vec![];
                 // profile per se can't be built, but we still need opencomp
                 if profile.can_be_built {
                     missing_deps.extend(match profile.xrservice_type {
@@ -417,7 +418,7 @@ impl SimpleComponent for App {
                     }
                     if profile.features.mercury_enabled {
                         missing_deps.extend(get_missing_mercury_deps());
-                        runners.push(get_build_mercury_runner(&profile));
+                        runners.push(Box::new(get_build_mercury_runner(&profile)));
                     }
                     runners.extend(match profile.xrservice_type {
                         XRServiceType::Monado => get_build_monado_runners(&profile, clean_build),
