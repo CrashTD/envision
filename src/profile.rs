@@ -1,7 +1,7 @@
 use crate::{
     file_utils::get_writer,
     paths::{
-        data_monado_path, data_opencomposite_path, get_data_dir, BWRAP_SYSTEM_PREFIX, SYSTEM_PREFIX,
+        data_monado_path, data_opencomposite_path, get_data_dir, BWRAP_SYSTEM_PREFIX, SYSTEM_PREFIX, get_ipc_file_path,
     },
 };
 use serde::{Deserialize, Serialize};
@@ -259,13 +259,7 @@ impl Profile {
                     XRServiceType::Wivrn => "wivrn",
                 }
             ),
-            format!(
-                "PRESSURE_VESSEL_FILESYSTEMS_RW=$XDG_RUNTIME_DIR/{xrservice}_comp_ipc",
-                xrservice = match self.xrservice_type {
-                    XRServiceType::Monado => "monado",
-                    XRServiceType::Wivrn => "wivrn",
-                }
-            ),
+            get_ipc_file_path(&self.xrservice_type),
             "%command%".into(),
         ]
         .join(" ")

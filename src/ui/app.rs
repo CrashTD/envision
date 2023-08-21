@@ -28,6 +28,7 @@ use crate::file_builders::openvrpaths_vrpath::{
 };
 use crate::file_utils::setcap_cap_sys_nice_eip;
 use crate::log_parser::MonadoLog;
+use crate::paths::get_ipc_file_path;
 use crate::profile::{Profile, XRServiceType};
 use crate::profiles::lighthouse::lighthouse_profile;
 use crate::profiles::system_valve_index::system_valve_index_profile;
@@ -48,6 +49,7 @@ use relm4::adw::ResponseAppearance;
 use relm4::gtk::glib;
 use relm4::{new_action_group, new_stateful_action, new_stateless_action, prelude::*};
 use relm4::{ComponentParts, ComponentSender, SimpleComponent};
+use std::fs::remove_file;
 use std::time::Duration;
 
 #[tracker::track]
@@ -147,6 +149,9 @@ impl App {
         };
         self.debug_view.sender().emit(DebugViewMsg::ClearLog);
         self.xr_devices = XRDevices::default();
+        remove_file(&get_ipc_file_path(&prof.xrservice_type))
+            .is_err()
+            .then(|| println!("Failed to remove xrservice IPC file"));
         let mut runner = CmdRunner::xrservice_runner_from_profile(&prof);
         match runner.try_start() {
             Ok(_) => {
@@ -342,9 +347,9 @@ impl SimpleComponent for App {
                                     None => {}
                                     Some(devices) => {
                                         self.xr_devices.merge(devices.clone());
-                                        self.main_view
-                                            .sender()
-                                            .emit(MainViewMsg::UpdateDevices(Some(self.xr_devices.clone())));
+                                        self.main_view.sender().emit(MainViewMsg::UpdateDevices(
+                                            Some(self.xr_devices.clone()),
+                                        ));
                                         break;
                                     }
                                 };
