@@ -7,6 +7,7 @@ pub enum XRDevice {
     Eyes,
     HandTrackingLeft,
     HandTrackingRight,
+    GenericTracker,
 }
 
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
@@ -18,10 +19,13 @@ pub struct XRDevices {
     pub eyes: Option<String>,
     pub hand_tracking_left: Option<String>,
     pub hand_tracking_right: Option<String>,
+    pub generic_trackers: Vec<String>,
 }
 
+const GENERIC_TRACKER_PREFIX: &str = "Found generic tracker device: ";
+
 impl XRDevices {
-    pub fn from_log_message(s: String) -> Option<Self> {
+    pub fn from_log_message(s: &str) -> Option<Self> {
         let rows = s.split('\n');
         let mut in_section = false;
         let mut devs = Self::default();
@@ -53,5 +57,47 @@ impl XRDevices {
             return Some(devs);
         }
         None
+    }
+
+    pub fn merge(&mut self, new: Self) {
+        if new.head.is_some() {
+            self.head = new.head;
+        }
+        if new.left.is_some() {
+            self.left = new.left;
+        }
+        if new.right.is_some() {
+            self.right = new.right;
+        }
+        if new.gamepad.is_some() {
+            self.gamepad = new.gamepad;
+        }
+        if new.eyes.is_some() {
+            self.eyes = new.eyes;
+        }
+        if new.hand_tracking_left.is_some() {
+            self.hand_tracking_left = new.hand_tracking_left;
+        }
+        if new.hand_tracking_right.is_some() {
+            self.hand_tracking_right = new.hand_tracking_right;
+        }
+        if !new.generic_trackers.is_empty() {
+            self.generic_trackers.extend(
+                new.generic_trackers
+                    .iter()
+                    .filter(|t| !self.generic_trackers.contains(t))
+                    .cloned()
+                    .collect::<Vec<String>>(),
+            );
+        }
+    }
+
+    pub fn search_log_for_generic_trackers(&mut self, s: &str) {
+        if s.starts_with(GENERIC_TRACKER_PREFIX) {
+            let n_tracker = s.trim_start_matches(GENERIC_TRACKER_PREFIX);
+            if !self.generic_trackers.contains(&n_tracker.to_string()) {
+                self.generic_trackers.push(n_tracker.into());
+            }
+        }
     }
 }

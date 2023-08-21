@@ -83,7 +83,7 @@ pub struct App {
     #[tracker::do_not_track]
     profiles: Vec<Profile>,
     #[tracker::do_not_track]
-    devices_processed: bool,
+    xr_devices: XRDevices,
 }
 
 #[derive(Debug)]
@@ -100,7 +100,7 @@ pub enum Msg {
     OpenLibsurviveSetup,
     SaveWinSize(i32, i32),
     Quit,
-    ProcessDevicesLog(Vec<String>),
+    ParseLog(Vec<String>),
 }
 
 impl App {
@@ -145,11 +145,8 @@ impl App {
             );
             return;
         };
-        self.devices_processed = match prof.xrservice_type {
-            XRServiceType::Monado => false,
-            XRServiceType::Wivrn => true, // no device from log in wivrn
-        };
         self.debug_view.sender().emit(DebugViewMsg::ClearLog);
+        self.xr_devices = XRDevices::default();
         let mut runner = CmdRunner::xrservice_runner_from_profile(&prof);
         match runner.try_start() {
             Ok(_) => {
@@ -203,6 +200,7 @@ impl App {
         self.main_view
             .sender()
             .emit(MainViewMsg::XRServiceActiveChanged(false, None));
+        self.xr_devices = XRDevices::default();
     }
 
     pub fn profiles_list(config: &Config) -> Vec<Profile> {
@@ -277,9 +275,7 @@ impl SimpleComponent for App {
                     Some(runner) => {
                         let n_rows = runner.consume_rows();
                         if !n_rows.is_empty() {
-                            if !self.devices_processed {
-                                sender.input(Msg::ProcessDevicesLog(n_rows.clone()))
-                            }
+                            sender.input(Msg::ParseLog(n_rows.clone()));
                             self.debug_view
                                 .sender()
                                 .emit(DebugViewMsg::LogUpdated(n_rows));
@@ -336,22 +332,25 @@ impl SimpleComponent for App {
                 };
                 self.main_view.sender().emit(MainViewMsg::ClockTicking);
             }
-            Msg::ProcessDevicesLog(rows) => {
+            Msg::ParseLog(rows) => {
                 for row in rows {
                     match MonadoLog::new_from_str(row.as_str()) {
                         None => {}
                         Some(parsed) => {
                             if parsed.func == "p_create_system" {
-                                match XRDevices::from_log_message(parsed.message) {
+                                match XRDevices::from_log_message(parsed.message.as_str()) {
                                     None => {}
                                     Some(devices) => {
-                                        self.devices_processed = true;
+                                        self.xr_devices.merge(devices.clone());
                                         self.main_view
                                             .sender()
-                                            .emit(MainViewMsg::UpdateDevices(Some(devices)));
+                                            .emit(MainViewMsg::UpdateDevices(Some(self.xr_devices.clone())));
                                         break;
                                     }
                                 };
+                            } else {
+                                self.xr_devices
+                                    .search_log_for_generic_trackers(parsed.message.as_str());
                             }
                         }
                     };
@@ -616,7 +615,7 @@ impl SimpleComponent for App {
             profiles,
             xrservice_runner: None,
             build_pipeline: None,
-            devices_processed: false,
+            xr_devices: XRDevices::default(),
         };
         let widgets = view_output!();
 

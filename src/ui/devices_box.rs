@@ -24,6 +24,13 @@ impl DevicesBox {
                 XRDevice::Eyes => devs.eyes.clone(),
                 XRDevice::HandTrackingLeft => devs.hand_tracking_left.clone(),
                 XRDevice::HandTrackingRight => devs.hand_tracking_right.clone(),
+                XRDevice::GenericTracker => {
+                    if devs.generic_trackers.is_empty() {
+                        return None;
+                    } else {
+                        return Some(devs.generic_trackers.join(", "));
+                    }
+                }
             },
         }
     }
@@ -218,6 +225,28 @@ impl SimpleComponent for DevicesBox {
                     set_hexpand: true,
                     #[track = "model.changed(Self::devices())"]
                     set_label: format!("Hand Tracking Left: {}", match model.get_dev(XRDevice::HandTrackingRight) {
+                        Some(v) => v.clone(),
+                        None => "None".to_string(),
+                    }).as_str(),
+                },
+            },
+            // Generic Trackers
+            gtk::Box {
+                set_orientation: gtk::Orientation::Horizontal,
+                set_hexpand: true,
+                set_spacing: 12,
+                set_margin_start: 12,
+                set_margin_end: 12,
+                #[track = "model.changed(Self::devices())"]
+                set_visible: model.get_dev(XRDevice::GenericTracker).is_some(),
+                gtk::Image {
+                    set_icon_name: Some("emblem-ok-symbolic"),
+                },
+                gtk::Label {
+                    set_xalign: 0.0,
+                    set_hexpand: true,
+                    #[track = "model.changed(Self::devices())"]
+                    set_label: format!("Generic Trackers: {}", match model.get_dev(XRDevice::GenericTracker) {
                         Some(v) => v.clone(),
                         None => "None".to_string(),
                     }).as_str(),
