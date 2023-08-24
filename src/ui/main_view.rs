@@ -6,7 +6,7 @@ use super::steam_launch_options_box::{SteamLaunchOptionsBox, SteamLaunchOptionsB
 use crate::config::Config;
 use crate::constants::APP_NAME;
 use crate::file_utils::mount_has_nosuid;
-use crate::gpu_profile::{get_gpu_power_profile, GpuPowerProfile, get_set_vr_pow_prof_cmd};
+use crate::gpu_profile::{get_gpu_power_profile, get_set_vr_pow_prof_cmd, GpuPowerProfile};
 use crate::profile::{LighthouseDriver, Profile};
 use crate::steamvr_utils::chaperone_info_exists;
 use crate::ui::app::{

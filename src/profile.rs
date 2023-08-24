@@ -1,7 +1,8 @@
 use crate::{
     file_utils::get_writer,
     paths::{
-        data_monado_path, data_opencomposite_path, get_data_dir, BWRAP_SYSTEM_PREFIX, SYSTEM_PREFIX, get_ipc_file_path,
+        data_monado_path, data_opencomposite_path, get_data_dir, get_ipc_file_path,
+        BWRAP_SYSTEM_PREFIX, SYSTEM_PREFIX,
     },
 };
 use serde::{Deserialize, Serialize};

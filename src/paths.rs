@@ -110,7 +110,7 @@ pub fn get_exec_prefix() -> String {
 pub fn get_ipc_file_path(xrservice_type: &XRServiceType) -> String {
     format!(
         "{runtime}/{xrservice}_comp_ipc",
-        runtime=get_xdg_runtime_dir(),
+        runtime = get_xdg_runtime_dir(),
         xrservice = match xrservice_type {
             XRServiceType::Monado => "monado",
             XRServiceType::Wivrn => "wivrn",
