@@ -10,7 +10,8 @@ use crate::gpu_profile::{get_gpu_power_profile, get_set_vr_pow_prof_cmd, GpuPowe
 use crate::profile::{LighthouseDriver, Profile};
 use crate::steamvr_utils::chaperone_info_exists;
 use crate::ui::app::{
-    AboutAction, BuildProfileAction, BuildProfileCleanAction, DebugViewToggleAction,
+    AboutAction, BuildProfileAction, BuildProfileCleanAction, ConfigFbtAction,
+    DebugViewToggleAction,
 };
 use crate::ui::profile_editor::ProfileEditorInit;
 use crate::ui::util::limit_dropdown_width;
@@ -109,6 +110,7 @@ impl SimpleComponent for MainView {
                 "_Debug View" => DebugViewToggleAction,
                 "_Build Profile" => BuildProfileAction,
                 "C_lean Build Profile" => BuildProfileCleanAction,
+                "Configure Full Body _Tracking" => ConfigFbtAction,
             },
             section! {
                 "_About" => AboutAction,

@@ -2,6 +2,7 @@ use super::about_dialog::AboutDialog;
 use super::alert::alert;
 use super::build_window::{BuildStatus, BuildWindow};
 use super::debug_view::{DebugView, DebugViewMsg};
+use super::fbt_config_editor::{FbtConfigEditor, FbtConfigEditorInit, FbtConfigEditorMsg};
 use super::libsurvive_setup_window::LibsurviveSetupWindow;
 use super::main_view::MainViewMsg;
 use crate::builders::build_basalt::get_build_basalt_runners;
@@ -86,6 +87,8 @@ pub struct App {
     profiles: Vec<Profile>,
     #[tracker::do_not_track]
     xr_devices: XRDevices,
+    #[tracker::do_not_track]
+    fbt_config_editor: Option<Controller<FbtConfigEditor>>,
 }
 
 #[derive(Debug)]
@@ -103,6 +106,7 @@ pub enum Msg {
     SaveWinSize(i32, i32),
     Quit,
     ParseLog(Vec<String>),
+    ConfigFbt,
 }
 
 impl App {
@@ -528,6 +532,19 @@ impl SimpleComponent for App {
                     ))
                     .expect("Failed to present Libsurvive Setup Window");
             }
+            Msg::ConfigFbt => {
+                self.fbt_config_editor = Some(
+                    FbtConfigEditor::builder()
+                        .launch(FbtConfigEditorInit {
+                            root_win: self.app_win.clone().upcast::<gtk::Window>(),
+                        })
+                        .detach(),
+                );
+                self.fbt_config_editor
+                    .as_ref()
+                    .unwrap()
+                    .emit(FbtConfigEditorMsg::Present);
+            }
             Msg::SaveWinSize(w, h) => {
                 self.config.win_size = [w, h];
                 self.config.save();
@@ -621,6 +638,7 @@ impl SimpleComponent for App {
             xrservice_runner: None,
             build_pipeline: None,
             xr_devices: XRDevices::default(),
+            fbt_config_editor: None,
         };
         let widgets = view_output!();
 
@@ -636,6 +654,12 @@ impl SimpleComponent for App {
             withclones![sender];
             stateless_action!(actions, BuildProfileCleanAction, {
                 sender.input_sender().emit(Msg::BuildProfile(true));
+            });
+        }
+        {
+            withclones![sender];
+            stateless_action!(actions, ConfigFbtAction, {
+                sender.input_sender().emit(Msg::ConfigFbt);
             });
         }
         {
@@ -692,5 +716,6 @@ new_action_group!(pub AppActionGroup, "win");
 new_stateless_action!(pub AboutAction, AppActionGroup, "about");
 new_stateless_action!(pub BuildProfileAction, AppActionGroup, "buildprofile");
 new_stateless_action!(pub BuildProfileCleanAction, AppActionGroup, "buildprofileclean");
+new_stateless_action!(pub ConfigFbtAction, AppActionGroup, "configfbt");
 new_stateless_action!(pub QuitAction, AppActionGroup, "quit");
 new_stateful_action!(pub DebugViewToggleAction, AppActionGroup, "debugviewtoggle", (), bool);

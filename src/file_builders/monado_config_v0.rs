@@ -1,3 +1,5 @@
+use std::slice::Iter;
+
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -41,11 +43,116 @@ pub enum XrtTrackerRole {
     ViveTrackerHtcxKeyboard,
 }
 
+impl XrtTrackerRole {
+    pub fn to_picker_string(&self) -> &str {
+        match self {
+            Self::ViveTrackerHtcxWaist => "Waist",
+            Self::ViveTrackerHtcxLeftFoot => "Left foot",
+            Self::ViveTrackerHtcxRightFoot => "Right foot",
+            Self::ViveTrackerHtcxHandheldObject => "Handheld object",
+            Self::ViveTrackerHtcxLeftShoulder => "Left shoulder",
+            Self::ViveTrackerHtcxRightShoulder => "Right shoulder",
+            Self::ViveTrackerHtcxLeftElbow => "Left elbow",
+            Self::ViveTrackerHtcxRightElbow => "Right elbow",
+            Self::ViveTrackerHtcxLeftKnee => "Left knee",
+            Self::ViveTrackerHtcxRightKnee => "Right knee",
+            Self::ViveTrackerHtcxChest => "Chest",
+            Self::ViveTrackerHtcxCamera => "Camera",
+            Self::ViveTrackerHtcxKeyboard => "Keyboard",
+        }
+    }
+
+    pub fn from_picker_string(s: &str) -> Self {
+        match s.to_lowercase().trim() {
+            "waist" => Self::ViveTrackerHtcxWaist,
+            "left foot" => Self::ViveTrackerHtcxLeftFoot,
+            "right foot" => Self::ViveTrackerHtcxRightFoot,
+            "handheld object" => Self::ViveTrackerHtcxHandheldObject,
+            "left shoulder" => Self::ViveTrackerHtcxLeftShoulder,
+            "right shoulder" => Self::ViveTrackerHtcxRightShoulder,
+            "left elbow" => Self::ViveTrackerHtcxLeftElbow,
+            "right elbow" => Self::ViveTrackerHtcxRightElbow,
+            "left knee" => Self::ViveTrackerHtcxLeftKnee,
+            "right knee" => Self::ViveTrackerHtcxRightKnee,
+            "chest" => Self::ViveTrackerHtcxChest,
+            "camera" => Self::ViveTrackerHtcxCamera,
+            "keyboard" => Self::ViveTrackerHtcxKeyboard,
+            _ => Self::ViveTrackerHtcxWaist,
+        }
+    }
+
+    pub fn iter() -> Iter<'static, Self> {
+        [
+            Self::ViveTrackerHtcxWaist,
+            Self::ViveTrackerHtcxLeftFoot,
+            Self::ViveTrackerHtcxRightFoot,
+            Self::ViveTrackerHtcxHandheldObject,
+            Self::ViveTrackerHtcxLeftShoulder,
+            Self::ViveTrackerHtcxRightShoulder,
+            Self::ViveTrackerHtcxLeftElbow,
+            Self::ViveTrackerHtcxRightElbow,
+            Self::ViveTrackerHtcxLeftKnee,
+            Self::ViveTrackerHtcxRightKnee,
+            Self::ViveTrackerHtcxChest,
+            Self::ViveTrackerHtcxCamera,
+            Self::ViveTrackerHtcxKeyboard,
+        ]
+        .iter()
+    }
+
+    pub fn to_number(&self) -> u32 {
+        match self {
+            Self::ViveTrackerHtcxWaist => 0,
+            Self::ViveTrackerHtcxLeftFoot => 1,
+            Self::ViveTrackerHtcxRightFoot => 2,
+            Self::ViveTrackerHtcxHandheldObject => 3,
+            Self::ViveTrackerHtcxLeftShoulder => 4,
+            Self::ViveTrackerHtcxRightShoulder => 5,
+            Self::ViveTrackerHtcxLeftElbow => 6,
+            Self::ViveTrackerHtcxRightElbow => 7,
+            Self::ViveTrackerHtcxLeftKnee => 8,
+            Self::ViveTrackerHtcxRightKnee => 9,
+            Self::ViveTrackerHtcxChest => 10,
+            Self::ViveTrackerHtcxCamera => 11,
+            Self::ViveTrackerHtcxKeyboard => 12,
+        }
+    }
+
+    pub fn from_number(n: &u32) -> Self {
+        match n {
+            0 => Self::ViveTrackerHtcxWaist,
+            1 => Self::ViveTrackerHtcxLeftFoot,
+            2 => Self::ViveTrackerHtcxRightFoot,
+            3 => Self::ViveTrackerHtcxHandheldObject,
+            4 => Self::ViveTrackerHtcxLeftShoulder,
+            5 => Self::ViveTrackerHtcxRightShoulder,
+            6 => Self::ViveTrackerHtcxLeftElbow,
+            7 => Self::ViveTrackerHtcxRightElbow,
+            8 => Self::ViveTrackerHtcxLeftKnee,
+            9 => Self::ViveTrackerHtcxRightKnee,
+            10 => Self::ViveTrackerHtcxChest,
+            11 => Self::ViveTrackerHtcxCamera,
+            12 => Self::ViveTrackerHtcxKeyboard,
+            _ => Self::ViveTrackerHtcxWaist,
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct TrackerRole {
     pub device_serial: String,
     pub role: XrtTrackerRole,
     pub xrt_input_name: XrtInputName,
+}
+
+impl Default for TrackerRole {
+    fn default() -> Self {
+        Self {
+            device_serial: "".into(),
+            role: XrtTrackerRole::ViveTrackerHtcxWaist,
+            xrt_input_name: XrtInputName::XrtInputGenericTrackerPose,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]

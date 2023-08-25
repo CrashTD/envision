@@ -5,6 +5,7 @@ pub mod build_window;
 pub mod debug_view;
 pub mod devices_box;
 pub mod factories;
+pub mod fbt_config_editor;
 pub mod install_wivrn_box;
 pub mod libsurvive_setup_window;
 pub mod macros;

@@ -1,11 +1,8 @@
-use super::{
-    factories::env_var_row_factory::{EnvVarModel, EnvVarModelInit},
-    preference_rows::combo_row,
-};
+use super::factories::env_var_row_factory::{EnvVarModel, EnvVarModelInit};
 use crate::{
     env_var_descriptions::env_var_descriptions_as_paragraph,
     profile::{LighthouseDriver, Profile, XRServiceType},
-    ui::preference_rows::{entry_row, path_row, switch_row},
+    ui::preference_rows::{combo_row, entry_row, path_row, switch_row},
     withclones,
 };
 use adw::prelude::*;
