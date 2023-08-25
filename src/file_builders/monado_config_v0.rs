@@ -19,6 +19,26 @@ pub enum XrtTrackerRole {
     ViveTrackerHtcxLeftFoot,
     #[serde(rename = "/user/vive_tracker_htcx/role/right_foot")]
     ViveTrackerHtcxRightFoot,
+    #[serde(rename = "/user/vive_tracker_htcx/role/handheld_object")]
+    ViveTrackerHtcxHandheldObject,
+    #[serde(rename = "/user/vive_tracker_htcx/role/left_shoulder")]
+    ViveTrackerHtcxLeftShoulder,
+    #[serde(rename = "/user/vive_tracker_htcx/role/right_shoulder")]
+    ViveTrackerHtcxRightShoulder,
+    #[serde(rename = "/user/vive_tracker_htcx/role/left_elbow")]
+    ViveTrackerHtcxLeftElbow,
+    #[serde(rename = "/user/vive_tracker_htcx/role/right_elbow")]
+    ViveTrackerHtcxRightElbow,
+    #[serde(rename = "/user/vive_tracker_htcx/role/left_knee")]
+    ViveTrackerHtcxLeftKnee,
+    #[serde(rename = "/user/vive_tracker_htcx/role/right_knee")]
+    ViveTrackerHtcxRightKnee,
+    #[serde(rename = "/user/vive_tracker_htcx/role/chest")]
+    ViveTrackerHtcxChest,
+    #[serde(rename = "/user/vive_tracker_htcx/role/camera")]
+    ViveTrackerHtcxCamera,
+    #[serde(rename = "/user/vive_tracker_htcx/role/keyboard")]
+    ViveTrackerHtcxKeyboard,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
