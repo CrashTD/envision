@@ -1,0 +1,20 @@
+{
+  "$schema": "https://monado.pages.freedesktop.org/monado/config_v0.schema.json",
+  "tracker_roles": [
+    {
+      "device_serial": "LHR-CDF1B4B7",
+      "role": "/user/vive_tracker_htcx/role/waist",
+      "xrt_input_name": "XRT_INPUT_GENERIC_TRACKER_POSE"
+    },
+    {
+      "device_serial": "LHR-9E402ED8",
+      "role": "/user/vive_tracker_htcx/role/left_foot",
+      "xrt_input_name": "XRT_INPUT_GENERIC_TRACKER_POSE"
+    },
+    {
+      "device_serial": "LHR-DE2477F5",
+      "role": "/user/vive_tracker_htcx/role/right_foot",
+      "xrt_input_name": "XRT_INPUT_GENERIC_TRACKER_POSE"
+    }
+  ]
+}
