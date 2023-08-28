@@ -163,6 +163,19 @@ pub struct MonadoConfigV0 {
     pub tracker_roles: Vec<TrackerRole>,
 }
 
+impl MonadoConfigV0 {
+    pub fn has_tracker_serial(&self, serial: &str) -> bool {
+        self.tracker_roles.iter().any(|t| t.device_serial == serial)
+    }
+
+    pub fn get_next_free_xrt_tracker_role(&self) -> XrtTrackerRole {
+        XrtTrackerRole::iter()
+            .find(|role| !self.tracker_roles.iter().any(|et| et.role == **role))
+            .unwrap_or(&XrtTrackerRole::ViveTrackerHtcxHandheldObject)
+            .clone()
+    }
+}
+
 fn get_monado_config_v0_path() -> String {
     format!(
         "{config}/monado/config_v0.json",
@@ -186,6 +199,23 @@ fn dump_monado_config_v0_to_path(config: &MonadoConfigV0, path_s: &String) {
 
 pub fn dump_monado_config_v0(config: &MonadoConfigV0) {
     dump_monado_config_v0_to_path(config, &get_monado_config_v0_path());
+}
+
+pub fn dump_generic_trackers(trackers: &[String]) -> usize {
+    let mut conf = get_monado_config_v0();
+    let mut added: usize = 0;
+    trackers.iter().for_each(|serial| {
+        if conf.has_tracker_serial(serial) {
+            conf.tracker_roles.push(TrackerRole {
+                device_serial: serial.to_string(),
+                role: conf.get_next_free_xrt_tracker_role(),
+                ..TrackerRole::default()
+            });
+            added += 1;
+        }
+    });
+
+    added
 }
 
 #[cfg(test)]

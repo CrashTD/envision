@@ -1,6 +1,11 @@
-use crate::xr_devices::{XRDevice, XRDevices};
+use crate::{
+    file_builders::monado_config_v0::dump_generic_trackers,
+    xr_devices::{XRDevice, XRDevices},
+};
 use gtk::prelude::*;
 use relm4::prelude::*;
+
+use super::alert::alert;
 
 #[tracker::track]
 pub struct DevicesBox {
@@ -10,6 +15,7 @@ pub struct DevicesBox {
 #[derive(Debug)]
 pub enum DevicesBoxMsg {
     UpdateDevices(Option<XRDevices>),
+    DumpGenericTrackers,
 }
 
 impl DevicesBox {
@@ -251,6 +257,16 @@ impl SimpleComponent for DevicesBox {
                         None => "None".to_string(),
                     }).as_str(),
                 },
+                gtk::Button {
+                    set_halign: gtk::Align::Start,
+                    set_hexpand: false,
+                    set_icon_name: "document-save-symbolic",
+                    set_tooltip_text: Some("Save current trackers"),
+                    set_css_classes: &["circular", "flat"],
+                    connect_clicked => move |_| {
+                        sender.input(Self::Input::DumpGenericTrackers);
+                    }
+                },
             },
         }
     }
@@ -262,13 +278,34 @@ impl SimpleComponent for DevicesBox {
             Self::Input::UpdateDevices(devs) => {
                 self.set_devices(devs);
             }
+            Self::Input::DumpGenericTrackers => {
+                if let Some(devs) = self.devices.as_ref() {
+                    let added = dump_generic_trackers(&devs.generic_trackers);
+                    let multi_title = format!("Added {} new trackers", added);
+                    let (title, msg) = match added {
+                        0 => (
+                            "No new trackers found",
+                            "All the currently connected trackers are already present in your configuration"
+                        ),
+                        1 => (
+                            "Added 1 new tracker",
+                            "Edit your configuration to make sure that all the trackers have the appropriate roles assigned"
+                        ),
+                        _ => (
+                            multi_title.as_str(),
+                            "Edit your configuration to make sure that all the trackers have the appropriate roles assigned"
+                        ),
+                    };
+                    alert(title, Some(msg), None);
+                }
+            }
         }
     }
 
     fn init(
         _init: Self::Init,
         root: &Self::Root,
-        _sender: ComponentSender<Self>,
+        sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
         let model = Self {
             tracker: 0,
