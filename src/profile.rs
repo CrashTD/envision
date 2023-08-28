@@ -260,7 +260,10 @@ impl Profile {
                     XRServiceType::Wivrn => "wivrn",
                 }
             ),
-            get_ipc_file_path(&self.xrservice_type),
+            format!(
+                "PRESSURE_VESSEL_FILESYSTEMS_RW={path}",
+                path = get_ipc_file_path(&self.xrservice_type),
+            ),
             "%command%".into(),
         ]
         .join(" ")
