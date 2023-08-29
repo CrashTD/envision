@@ -57,7 +57,7 @@ pub enum MainViewMsg {
     SetSelectedProfile(u32),
     ProfileSelected(u32),
     UpdateSelectedProfile(Profile),
-    TickSelectedProfileTracker,
+    MarkChanged,
     EditProfile,
     CreateProfile,
     DeleteProfile,
@@ -382,7 +382,7 @@ impl SimpleComponent for MainView {
                             set_halign: gtk::Align::Start,
                             set_label: "Refresh",
                             connect_clicked[sender] => move |_| {
-                                sender.input(Self::Input::TickSelectedProfileTracker);
+                                sender.input(Self::Input::MarkChanged);
                             }
                         },
                     },
@@ -559,8 +559,8 @@ impl SimpleComponent for MainView {
                     .sender()
                     .emit(InstallWivrnBoxMsg::UpdateSelectedProfile(prof.clone()));
             }
-            Self::Input::TickSelectedProfileTracker => {
-                self.set_selected_profile(self.selected_profile.clone());
+            Self::Input::MarkChanged => {
+                self.mark_all_changed();
             }
             Self::Input::UpdateProfiles(profiles, config) => {
                 self.set_profiles(profiles);
