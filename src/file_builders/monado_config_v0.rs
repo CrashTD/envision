@@ -215,6 +215,10 @@ pub fn dump_generic_trackers(trackers: &[String]) -> usize {
         }
     });
 
+    if added > 0 {
+        dump_monado_config_v0(&conf);
+    }
+
     added
 }
 
