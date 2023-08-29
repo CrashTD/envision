@@ -289,7 +289,6 @@ impl SimpleComponent for MainView {
                         set_spacing: 12,
                         set_margin_top: 12,
                         set_margin_bottom: 12,
-                        // TODO: maybe add manual refresh btn?
                         #[track = "model.changed(Self::selected_profile())"]
                         set_visible: match get_amd_gpu_power_profile() {
                             None => false,
@@ -378,6 +377,8 @@ impl SimpleComponent for MainView {
                             },
                         },
                         gtk::Button {
+                            set_margin_start: 12,
+                            set_margin_end: 12,
                             set_halign: gtk::Align::Start,
                             set_label: "Refresh",
                             connect_clicked[sender] => move |_| {
