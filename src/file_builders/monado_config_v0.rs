@@ -205,7 +205,7 @@ pub fn dump_generic_trackers(trackers: &[String]) -> usize {
     let mut conf = get_monado_config_v0();
     let mut added: usize = 0;
     trackers.iter().for_each(|serial| {
-        if conf.has_tracker_serial(serial) {
+        if !conf.has_tracker_serial(serial) {
             conf.tracker_roles.push(TrackerRole {
                 device_serial: serial.to_string(),
                 role: conf.get_next_free_xrt_tracker_role(),
