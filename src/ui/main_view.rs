@@ -6,7 +6,7 @@ use super::steam_launch_options_box::{SteamLaunchOptionsBox, SteamLaunchOptionsB
 use crate::config::Config;
 use crate::constants::APP_NAME;
 use crate::file_utils::mount_has_nosuid;
-use crate::gpu_profile::{get_gpu_power_profile, get_set_vr_pow_prof_cmd, GpuPowerProfile};
+use crate::gpu_profile::{get_amd_gpu_power_profile, get_set_amd_vr_pow_prof_cmd, GpuPowerProfile, get_first_amd_gpu, GpuSysDrm};
 use crate::profile::{LighthouseDriver, Profile};
 use crate::steamvr_utils::chaperone_info_exists;
 use crate::ui::app::{
@@ -57,6 +57,7 @@ pub enum MainViewMsg {
     SetSelectedProfile(u32),
     ProfileSelected(u32),
     UpdateSelectedProfile(Profile),
+    TickSelectedProfileTracker,
     EditProfile,
     CreateProfile,
     DeleteProfile,
@@ -290,7 +291,11 @@ impl SimpleComponent for MainView {
                         set_margin_bottom: 12,
                         // TODO: maybe add manual refresh btn?
                         #[track = "model.changed(Self::selected_profile())"]
-                        set_visible: get_gpu_power_profile() != Some(GpuPowerProfile::VR),
+                        set_visible: match get_amd_gpu_power_profile() {
+                            None => false,
+                            Some(GpuPowerProfile::VR) => false,
+                            Some(_) => true,
+                        },
                         gtk::Separator {
                             set_orientation: gtk::Orientation::Horizontal,
                             set_hexpand: true,
@@ -313,7 +318,7 @@ impl SimpleComponent for MainView {
                         },
                         gtk::Label {
                             set_label: concat!(
-                                "Your GPU Power Profile is not set to VR. ",
+                                "Your AMD GPU Power Profile is not set to VR. ",
                                 "This will cause noticeable stutter when running XR ",
                                 "applications. Activate the VR profile witrh the ",
                                 "following command:",
@@ -344,7 +349,14 @@ impl SimpleComponent for MainView {
                                     set_bottom_margin: 18,
                                     #[wrap(Some)]
                                     set_buffer: cmdbuf = &gtk::TextBuffer {
-                                        set_text: get_set_vr_pow_prof_cmd().as_str(),
+                                        set_text: &{
+                                            let mut res = String::new();
+                                            if let Some(GpuSysDrm::Amd(d)) = get_first_amd_gpu() {
+                                                let ds = d.as_str();
+                                                res = get_set_amd_vr_pow_prof_cmd(ds);
+                                            }
+                                            res
+                                        }
                                     }
                                 }
                             },
@@ -356,12 +368,21 @@ impl SimpleComponent for MainView {
                                 set_vexpand: false,
                                 set_valign: gtk::Align::Center,
                                 connect_clicked => move |_| {
-                                    gtk::gdk::Display::default()
-                                        .expect("Could not find default display")
-                                        .clipboard()
-                                        .set_text(get_set_vr_pow_prof_cmd().as_str());
+                                    if let Some(GpuSysDrm::Amd(d)) = get_first_amd_gpu() {
+                                        gtk::gdk::Display::default()
+                                            .expect("Could not find default display")
+                                            .clipboard()
+                                            .set_text(get_set_amd_vr_pow_prof_cmd(d.as_str()).as_str());
+                                    }
                                 }
                             },
+                        },
+                        gtk::Button {
+                            set_halign: gtk::Align::Start,
+                            set_label: "Refresh",
+                            connect_clicked[sender] => move |_| {
+                                sender.input(Self::Input::TickSelectedProfileTracker);
+                            }
                         },
                     },
                     model.steam_launch_options_box.widget(),
@@ -536,6 +557,9 @@ impl SimpleComponent for MainView {
                 self.install_wivrn_box
                     .sender()
                     .emit(InstallWivrnBoxMsg::UpdateSelectedProfile(prof.clone()));
+            }
+            Self::Input::TickSelectedProfileTracker => {
+                self.set_selected_profile(self.selected_profile.clone());
             }
             Self::Input::UpdateProfiles(profiles, config) => {
                 self.set_profiles(profiles);
