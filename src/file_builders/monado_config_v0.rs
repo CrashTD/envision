@@ -155,12 +155,21 @@ impl Default for TrackerRole {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct MonadoConfigV0 {
     #[serde(skip_serializing_if = "Option::is_none", rename = "$schema")]
     _schema: Option<String>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub tracker_roles: Vec<TrackerRole>,
+}
+
+impl Default for MonadoConfigV0 {
+    fn default() -> Self {
+        Self {
+            _schema: Some("https://monado.pages.freedesktop.org/monado/config_v0.schema.json".to_string()),
+            tracker_roles: vec![],
+        }
+    }
 }
 
 impl MonadoConfigV0 {
