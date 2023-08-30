@@ -12,6 +12,8 @@ pub fn system_valve_index_profile() -> Profile {
     environment.insert("XRT_COMPOSITOR_COMPUTE".into(), "1".into());
     environment.insert("SURVIVE_GLOBALSCENESOLVER".into(), "0".into());
     environment.insert("SURVIVE_TIMECODE_OFFSET_MS".into(), "-6.94".into());
+    environment.insert("XRT_DEBUG_GUI".into(), "1".into());
+    environment.insert("XRT_CURATED_GUI".into(), "1".into());
     Profile {
         uuid: "system-valve-index-default".into(),
         name: format!("Valve Index (System) - {name} Default", name = APP_NAME),

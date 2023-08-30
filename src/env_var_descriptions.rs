@@ -10,7 +10,8 @@ pub static ENV_VAR_DESCRIPTIONS: Map<&str, &str> = phf_map! {
     // "SURVIVE_TIMECODE_OFFSET_MS" => "",
     "LD_LIBRARY_PATH" =>
         "Colon-separated list of directories where the dynamic linker will search for shared object libraries.",
-    "XRT_DEBUG_GUI" => "Set to 1 to enable the Monado debug UI",
+    "XRT_DEBUG_GUI" => "Set to 1 to enable the Monado debug UI.",
+    "XRT_CURATED_GUI" => "Set to 1 to enable the Monado preview UI. Requires XRT_DEBUG_GUI=1 to work.",
     "XRT_JSON_LOG" => "Set to 1 to enable JSON logging for Monado. This enables better log visualization and log level filtering.",
     "LH_DRIVER" => "Lighthouse driver, this overrides the \"Lighthouse driver option in the profile\"; Valid options are: \"vive\" for the default built-in driver, \"survive\" for Libsurvive, \"steamvr\" for the SteamVR based implementation.",
     "LH_LOG" => "Lighthouse log level. Can be one of: \"trace\", \"debug\", \"info\", \"warn\", \"error\".",
