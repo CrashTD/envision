@@ -166,7 +166,9 @@ pub struct MonadoConfigV0 {
 impl Default for MonadoConfigV0 {
     fn default() -> Self {
         Self {
-            _schema: Some("https://monado.pages.freedesktop.org/monado/config_v0.schema.json".to_string()),
+            _schema: Some(
+                "https://monado.pages.freedesktop.org/monado/config_v0.schema.json".to_string(),
+            ),
             tracker_roles: vec![],
         }
     }

@@ -8,7 +8,10 @@ fn power_profile_mode_file(card_dir: &str) -> String {
 }
 
 pub fn get_set_amd_vr_pow_prof_cmd(card_dir: &str) -> String {
-    format!("sudo sh -c \"echo '4' > {}\"", power_profile_mode_file(card_dir))
+    format!(
+        "sudo sh -c \"echo '4' > {}\"",
+        power_profile_mode_file(card_dir)
+    )
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -93,9 +96,10 @@ pub enum GpuSysDrm {
 }
 
 fn list_gpus() -> Vec<GpuSysDrm> {
-    let mut res = vec![]; 
+    let mut res = vec![];
 
-    for i in 0..5 {  // arbitrary range, find a better way
+    for i in 0..5 {
+        // arbitrary range, find a better way
         let card_dir = format!("/sys/class/drm/card{}", i);
         let vendor_file = format!("{}/device/vendor", card_dir);
         if let Some(mut reader) = get_reader(&vendor_file) {
@@ -113,7 +117,11 @@ fn list_gpus() -> Vec<GpuSysDrm> {
 }
 
 pub fn get_first_amd_gpu() -> Option<GpuSysDrm> {
-    list_gpus().iter().filter(|g| matches!(g, GpuSysDrm::Amd(_))).next().cloned()
+    list_gpus()
+        .iter()
+        .filter(|g| matches!(g, GpuSysDrm::Amd(_)))
+        .next()
+        .cloned()
 }
 
 pub fn get_amd_gpu_power_profile() -> Option<GpuPowerProfile> {
