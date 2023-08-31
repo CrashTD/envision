@@ -1,5 +1,8 @@
 use nix::{
-    sys::signal::{kill, Signal::{SIGTERM, SIGKILL}},
+    sys::signal::{
+        kill,
+        Signal::{SIGKILL, SIGTERM},
+    },
     unistd::Pid,
 };
 
@@ -16,7 +19,8 @@ use std::{
         mpsc::{sync_channel, Receiver, SyncSender},
         Arc, Mutex,
     },
-    thread::{self, JoinHandle, sleep}, time::Duration,
+    thread::{self, sleep, JoinHandle},
+    time::Duration,
 };
 
 pub struct CmdRunner {
@@ -142,7 +146,8 @@ impl CmdRunner {
         kill(child_pid, SIGTERM).expect("Could not send sigterm to process");
         thread::spawn(move || {
             sleep(Duration::from_secs(2));
-            if kill(child_pid, None).is_ok() { // process is still alive
+            if kill(child_pid, None).is_ok() {
+                // process is still alive
                 kill(child_pid, SIGKILL).expect("Failed to kill process");
             }
         });
