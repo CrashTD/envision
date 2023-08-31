@@ -1,5 +1,5 @@
 use nix::{
-    sys::signal::{kill, Signal::SIGTERM},
+    sys::signal::{kill, Signal::{SIGTERM, SIGKILL}},
     unistd::Pid,
 };
 
@@ -16,7 +16,7 @@ use std::{
         mpsc::{sync_channel, Receiver, SyncSender},
         Arc, Mutex,
     },
-    thread::{self, JoinHandle},
+    thread::{self, JoinHandle, sleep}, time::Duration,
 };
 
 pub struct CmdRunner {
@@ -140,6 +140,12 @@ impl CmdRunner {
         let mut proc = process.unwrap();
         let child_pid = Pid::from_raw(proc.id().try_into().expect("Could not convert pid to u32"));
         kill(child_pid, SIGTERM).expect("Could not send sigterm to process");
+        thread::spawn(move || {
+            sleep(Duration::from_secs(2));
+            if kill(child_pid, None).is_ok() { // process is still alive
+                kill(child_pid, SIGKILL).expect("Failed to kill process");
+            }
+        });
         self.join_threads();
         proc.wait().expect("Failed to wait for process");
     }
