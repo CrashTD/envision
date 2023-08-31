@@ -12,7 +12,7 @@ pub fn lighthouse_profile() -> Profile {
     environment.insert("XRT_JSON_LOG".into(), "1".into());
     environment.insert("XRT_COMPOSITOR_SCALE_PERCENTAGE".into(), "140".into());
     environment.insert("XRT_COMPOSITOR_COMPUTE".into(), "1".into());
-    environment.insert("XRT_DEBUG_GUI".into(), "1".into());
+    environment.insert("XRT_DEBUG_GUI".into(), "0".into());
     environment.insert("XRT_CURATED_GUI".into(), "1".into());
     environment.insert(
         "LD_LIBRARY_PATH".into(),

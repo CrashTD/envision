@@ -13,7 +13,7 @@ pub fn wivrn_profile() -> Profile {
         "LD_LIBRARY_PATH".into(),
         format!("{pfx}/lib:{pfx}/lib64", pfx = prefix),
     );
-    environment.insert("XRT_DEBUG_GUI".into(), "1".into());
+    environment.insert("XRT_DEBUG_GUI".into(), "0".into());
     environment.insert("XRT_CURATED_GUI".into(), "1".into());
     Profile {
         uuid: "wivrn-default".into(),
