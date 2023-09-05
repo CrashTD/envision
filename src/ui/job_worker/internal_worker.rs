@@ -1,20 +1,18 @@
 use crate::{profile::Profile, withclones};
-use nix::{
-    sys::signal::{
-        kill,
-        Signal::{SIGKILL, SIGTERM},
-    },
-    unistd::Pid,
+
+use super::{
+    job::{CmdWorkerData, FuncWorkerOut, WorkerJob},
+    state::JobWorkerState,
 };
-use relm4::{prelude::*, Sender, Worker, WorkerController};
+use nix::unistd::Pid;
+use relm4::{prelude::*, Worker};
 use std::{
-    collections::{HashMap, VecDeque},
+    collections::VecDeque,
     io::{BufRead, BufReader},
     mem,
     process::{Command, Stdio},
     sync::{Arc, Mutex},
-    thread::{self, sleep},
-    time::Duration,
+    thread,
 };
 
 macro_rules! logger_thread {
@@ -44,72 +42,31 @@ macro_rules! logger_thread {
     };
 }
 
-#[derive(Debug, Clone)]
-pub struct CmdWorkerData {
-    pub environment: HashMap<String, String>,
-    pub command: String,
-    pub args: Vec<String>,
-}
-
-#[derive(Debug, Clone, Default)]
-pub struct FuncWorkerOut {
-    pub success: bool,
-    pub out: Vec<String>,
-}
-
-pub struct FuncWorkerData {
-    pub func: Box<dyn FnOnce() -> FuncWorkerOut + Send + Sync + 'static>,
-}
-
-pub enum WorkerJob {
-    Cmd(CmdWorkerData),
-    Func(FuncWorkerData),
-}
-
-impl WorkerJob {
-    pub fn new_cmd(env: Option<HashMap<String, String>>, cmd: String, args: Option<Vec<String>>) -> Self {
-        Self::Cmd(CmdWorkerData { environment: env.unwrap_or_default(), command: cmd, args: args.unwrap_or_default() })
-    }
-
-    pub fn new_func(func: Box<dyn FnOnce() -> FuncWorkerOut + Send + Sync + 'static>) -> Self {
-        Self::Func(FuncWorkerData { func })
-    }
-}
-
 #[derive(Debug)]
-pub enum RunnerWorkerOut {
+pub enum JobWorkerOut {
     Log(Vec<String>),
     Exit(i32),
 }
 
 #[derive(Debug)]
-pub enum RunnerWorkerMsg {
+pub enum JobWorkerMsg {
     Start,
 }
 
-#[derive(Debug, Clone, Default)]
-pub struct RunnerWorkerState {
-    pub current_pid: Option<Pid>,
-    pub exit_status: Option<i32>,
-    pub stop_requested: bool,
-    pub started: bool,
-    pub exited: bool,
-}
-
-pub struct RunnerWorker {
+pub struct InternalJobWorker {
     jobs: VecDeque<WorkerJob>,
-    state: Arc<Mutex<RunnerWorkerState>>,
+    state: Arc<Mutex<JobWorkerState>>,
 }
 
-pub struct RunnerWorkerInit {
+pub struct JobWorkerInit {
     pub jobs: VecDeque<WorkerJob>,
-    pub state: Arc<Mutex<RunnerWorkerState>>,
+    pub state: Arc<Mutex<JobWorkerState>>,
 }
 
-impl Worker for RunnerWorker {
-    type Init = RunnerWorkerInit;
-    type Input = RunnerWorkerMsg;
-    type Output = RunnerWorkerOut;
+impl Worker for InternalJobWorker {
+    type Init = JobWorkerInit;
+    type Input = JobWorkerMsg;
+    type Output = JobWorkerOut;
 
     fn init(init: Self::Init, _sender: ComponentSender<Self>) -> Self {
         Self {
@@ -118,7 +75,7 @@ impl Worker for RunnerWorker {
         }
     }
 
-    fn update(&mut self, msg: RunnerWorkerMsg, sender: ComponentSender<Self>) {
+    fn update(&mut self, msg: JobWorkerMsg, sender: ComponentSender<Self>) {
         // Send the result of the calculation back
         match msg {
             Self::Input::Start => {
@@ -183,11 +140,11 @@ impl Worker for RunnerWorker {
     }
 }
 
-impl RunnerWorker {
+impl InternalJobWorker {
     pub fn xrservice_worker_from_profile(
         prof: &Profile,
-        state: Arc<Mutex<RunnerWorkerState>>,
-    ) -> relm4::WorkerHandle<RunnerWorker> {
+        state: Arc<Mutex<JobWorkerState>>,
+    ) -> relm4::WorkerHandle<InternalJobWorker> {
         let mut env = prof.environment.clone();
         if !env.contains_key("LH_DRIVER") {
             env.insert(
@@ -202,70 +159,6 @@ impl RunnerWorker {
         };
         let mut jobs = VecDeque::new();
         jobs.push_back(WorkerJob::Cmd(data));
-        Self::builder().detach_worker(RunnerWorkerInit { jobs, state })
-    }
-}
-
-pub struct RunnerWorkerWrap {
-    pub worker: WorkerController<RunnerWorker>,
-    pub state: Arc<Mutex<RunnerWorkerState>>,
-}
-
-impl RunnerWorkerWrap {
-    pub fn new<X: 'static, F: (Fn(RunnerWorkerOut) -> X) + 'static>(
-        jobs: VecDeque<WorkerJob>,
-        sender: &Sender<X>,
-        transform: F,
-    ) -> Self {
-        let state = Arc::new(Mutex::new(RunnerWorkerState::default()));
-        let init = RunnerWorkerInit {
-            jobs,
-            state: state.clone(),
-        };
-        Self {
-            worker: RunnerWorker::builder()
-                .detach_worker(init)
-                .forward(sender, transform),
-            state,
-        }
-    }
-
-    pub fn xrservice_worker_wrap_from_profile<
-        X: 'static,
-        F: (Fn(RunnerWorkerOut) -> X) + 'static,
-    >(
-        prof: &Profile,
-        sender: &Sender<X>,
-        transform: F,
-    ) -> Self {
-        let state = Arc::new(Mutex::new(RunnerWorkerState::default()));
-        Self {
-            worker: RunnerWorker::xrservice_worker_from_profile(prof, state.clone())
-                .forward(sender, transform),
-            state,
-        }
-    }
-
-    pub fn start(&self) {
-        self.worker.emit(RunnerWorkerMsg::Start);
-    }
-
-    pub fn stop(&self) {
-        if self.state.lock().unwrap().started && !self.state.lock().unwrap().exited {
-            self.state.lock().unwrap().stop_requested = true;
-            if let Some(pid) = self.state.lock().unwrap().current_pid {
-                kill(pid, SIGTERM).expect("Could not send sigterm to process");
-                let state = self.state.clone();
-                thread::spawn(move || {
-                    sleep(Duration::from_secs(2));
-                    if let Ok(s) = state.lock() {
-                        if s.exited {
-                            // process is still alive
-                            kill(pid, SIGKILL).expect("Failed to kill process");
-                        }
-                    }
-                });
-            }
-        }
+        Self::builder().detach_worker(JobWorkerInit { jobs, state })
     }
 }

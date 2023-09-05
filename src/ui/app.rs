@@ -3,11 +3,11 @@ use super::alert::alert;
 use super::build_window::{BuildStatus, BuildWindow};
 use super::debug_view::{DebugView, DebugViewMsg};
 use super::fbt_config_editor::{FbtConfigEditor, FbtConfigEditorInit, FbtConfigEditorMsg};
+use super::job_worker::internal_worker::JobWorkerOut;
+use super::job_worker::job::WorkerJob;
+use super::job_worker::JobWorker;
 use super::libsurvive_setup_window::LibsurviveSetupWindow;
 use super::main_view::MainViewMsg;
-use super::workers::runner_worker::{
-    RunnerWorkerMsg, RunnerWorkerOut, RunnerWorkerWrap, WorkerJob,
-};
 use crate::builders::build_basalt::get_build_basalt_jobs;
 use crate::builders::build_libsurvive::get_build_libsurvive_jobs;
 use crate::builders::build_mercury::get_build_mercury_job;
@@ -81,11 +81,11 @@ pub struct App {
     #[tracker::do_not_track]
     config: Config,
     #[tracker::do_not_track]
-    xrservice_worker: Option<RunnerWorkerWrap>,
+    xrservice_worker: Option<JobWorker>,
     #[tracker::do_not_track]
     restart_xrservice: bool,
     #[tracker::do_not_track]
-    build_worker: Option<RunnerWorkerWrap>,
+    build_worker: Option<JobWorker>,
     #[tracker::do_not_track]
     profiles: Vec<Profile>,
     #[tracker::do_not_track]
@@ -164,12 +164,12 @@ impl App {
             remove_file(&get_ipc_file_path(&prof.xrservice_type))
                 .is_err()
                 .then(|| println!("Failed to remove xrservice IPC file"));
-            let worker = RunnerWorkerWrap::xrservice_worker_wrap_from_profile(
+            let worker = JobWorker::xrservice_worker_wrap_from_profile(
                 &prof,
                 sender.input_sender(),
                 |msg| match msg {
-                    RunnerWorkerOut::Log(rows) => Msg::OnServiceLog(rows),
-                    RunnerWorkerOut::Exit(code) => Msg::OnServiceExit(code),
+                    JobWorkerOut::Log(rows) => Msg::OnServiceLog(rows),
+                    JobWorkerOut::Exit(code) => Msg::OnServiceExit(code),
                 },
             );
             worker.start();
@@ -417,9 +417,9 @@ impl SimpleComponent for App {
                     .sender()
                     .send(BuildWindowMsg::Present)
                     .unwrap();
-                let worker = RunnerWorkerWrap::new(jobs, sender.input_sender(), |msg| match msg {
-                    RunnerWorkerOut::Log(rows) => Msg::OnBuildLog(rows),
-                    RunnerWorkerOut::Exit(code) => Msg::OnBuildExit(code),
+                let worker = JobWorker::new(jobs, sender.input_sender(), |msg| match msg {
+                    JobWorkerOut::Log(rows) => Msg::OnBuildLog(rows),
+                    JobWorkerOut::Exit(code) => Msg::OnBuildExit(code),
                 });
                 worker.start();
                 self.build_window
