@@ -5,13 +5,15 @@ use super::debug_view::{DebugView, DebugViewMsg};
 use super::fbt_config_editor::{FbtConfigEditor, FbtConfigEditorInit, FbtConfigEditorMsg};
 use super::libsurvive_setup_window::LibsurviveSetupWindow;
 use super::main_view::MainViewMsg;
-use crate::builders::build_basalt::get_build_basalt_runners;
-use crate::builders::build_libsurvive::get_build_libsurvive_runners;
-use crate::builders::build_mercury::get_build_mercury_runner;
-use crate::builders::build_monado::get_build_monado_runners;
-use crate::builders::build_opencomposite::get_build_opencomposite_runners;
-use crate::builders::build_wivrn::get_build_wivrn_runners;
-use crate::cmd_runner::CmdRunner;
+use super::workers::runner_worker::{
+    RunnerWorkerMsg, RunnerWorkerOut, RunnerWorkerWrap, WorkerJob,
+};
+use crate::builders::build_basalt::get_build_basalt_jobs;
+use crate::builders::build_libsurvive::get_build_libsurvive_jobs;
+use crate::builders::build_mercury::get_build_mercury_job;
+use crate::builders::build_monado::get_build_monado_jobs;
+use crate::builders::build_opencomposite::get_build_opencomposite_jobs;
+use crate::builders::build_wivrn::get_build_wivrn_jobs;
 use crate::config::Config;
 use crate::constants::APP_NAME;
 use crate::depcheck::check_dependency;
@@ -35,8 +37,6 @@ use crate::profiles::lighthouse::lighthouse_profile;
 use crate::profiles::system_valve_index::system_valve_index_profile;
 use crate::profiles::valve_index::valve_index_profile;
 use crate::profiles::wivrn::wivrn_profile;
-use crate::runner::{Runner, RunnerStatus};
-use crate::runner_pipeline::RunnerPipeline;
 use crate::ui::build_window::BuildWindowMsg;
 use crate::ui::debug_view::DebugViewInit;
 use crate::ui::libsurvive_setup_window::LibsurviveSetupMsg;
@@ -50,6 +50,7 @@ use relm4::adw::ResponseAppearance;
 use relm4::gtk::glib;
 use relm4::{new_action_group, new_stateful_action, new_stateless_action, prelude::*};
 use relm4::{ComponentParts, ComponentSender, SimpleComponent};
+use std::collections::VecDeque;
 use std::fs::remove_file;
 use std::time::Duration;
 
@@ -80,9 +81,11 @@ pub struct App {
     #[tracker::do_not_track]
     config: Config,
     #[tracker::do_not_track]
-    xrservice_runner: Option<CmdRunner>,
+    xrservice_worker: Option<RunnerWorkerWrap>,
     #[tracker::do_not_track]
-    build_pipeline: Option<RunnerPipeline>,
+    restart_xrservice: bool,
+    #[tracker::do_not_track]
+    build_worker: Option<RunnerWorkerWrap>,
     #[tracker::do_not_track]
     profiles: Vec<Profile>,
     #[tracker::do_not_track]
@@ -93,6 +96,10 @@ pub struct App {
 
 #[derive(Debug)]
 pub enum Msg {
+    OnServiceLog(Vec<String>),
+    OnServiceExit(i32),
+    OnBuildLog(Vec<String>),
+    OnBuildExit(i32),
     ClockTicking,
     BuildProfile(bool),
     EnableDebugViewChanged(bool),
@@ -133,7 +140,7 @@ impl App {
         }
     }
 
-    pub fn start_xrservice(&mut self) {
+    pub fn start_xrservice(&mut self, sender: ComponentSender<Self>) {
         let prof = self.get_selected_profile();
         if set_current_active_runtime_to_profile(&prof).is_err() {
             alert(
@@ -153,32 +160,37 @@ impl App {
         };
         self.debug_view.sender().emit(DebugViewMsg::ClearLog);
         self.xr_devices = XRDevices::default();
-        remove_file(&get_ipc_file_path(&prof.xrservice_type))
-            .is_err()
-            .then(|| println!("Failed to remove xrservice IPC file"));
-        let mut runner = CmdRunner::xrservice_runner_from_profile(&prof);
-        match runner.try_start() {
-            Ok(_) => {
-                self.xrservice_runner = Some(runner);
-                self.main_view
-                    .sender()
-                    .emit(MainViewMsg::XRServiceActiveChanged(
-                        true,
-                        Some(self.get_selected_profile()),
-                    ));
-                self.set_inhibit_session(true);
-            }
-            Err(_) => {
-                alert(
-                    "Failed to start profile",
-                    Some(concat!(
-                        "You need to build the current profile before starting it.",
-                        "\n\nYou can do this from the menu."
-                    )),
-                    Some(&self.app_win.clone().upcast::<gtk::Window>()),
-                );
-            }
-        };
+        if prof.can_start() {
+            remove_file(&get_ipc_file_path(&prof.xrservice_type))
+                .is_err()
+                .then(|| println!("Failed to remove xrservice IPC file"));
+            let worker = RunnerWorkerWrap::xrservice_worker_wrap_from_profile(
+                &prof,
+                sender.input_sender(),
+                |msg| match msg {
+                    RunnerWorkerOut::Log(rows) => Msg::OnServiceLog(rows),
+                    RunnerWorkerOut::Exit(code) => Msg::OnServiceExit(code),
+                },
+            );
+            worker.start();
+            self.xrservice_worker = Some(worker);
+            self.main_view
+                .sender()
+                .emit(MainViewMsg::XRServiceActiveChanged(
+                    true,
+                    Some(self.get_selected_profile()),
+                ));
+            self.set_inhibit_session(true);
+        } else {
+            alert(
+                "Failed to start profile",
+                Some(concat!(
+                    "You need to build the current profile before starting it.",
+                    "\n\nYou can do this from the menu."
+                )),
+                Some(&self.app_win.clone().upcast::<gtk::Window>()),
+            );
+        }
     }
 
     pub fn restore_openxr_openvr_files(&self) {
@@ -200,10 +212,8 @@ impl App {
 
     pub fn shutdown_xrservice(&mut self) {
         self.set_inhibit_session(false);
-        if self.xrservice_runner.is_some()
-            && self.xrservice_runner.as_mut().unwrap().status() == RunnerStatus::Running
-        {
-            self.xrservice_runner.as_mut().unwrap().terminate();
+        if let Some(worker) = self.xrservice_worker.as_ref() {
+            worker.stop();
         }
         self.restore_openxr_openvr_files();
         self.main_view
@@ -266,10 +276,8 @@ impl SimpleComponent for App {
     }
 
     fn shutdown(&mut self, _widgets: &mut Self::Widgets, _output: relm4::Sender<Self::Output>) {
-        if self.xrservice_runner.is_some()
-            && self.xrservice_runner.as_mut().unwrap().status() == RunnerStatus::Running
-        {
-            self.xrservice_runner.as_mut().unwrap().terminate();
+        if let Some(worker) = self.xrservice_worker.as_ref() {
+            worker.stop();
         }
         self.restore_openxr_openvr_files();
     }
@@ -278,67 +286,25 @@ impl SimpleComponent for App {
         self.reset();
 
         match message {
+            Msg::OnServiceLog(rows) => {
+                if !rows.is_empty() {
+                    sender.input(Msg::ParseLog(rows.clone()));
+                    self.debug_view
+                        .sender()
+                        .emit(DebugViewMsg::LogUpdated(rows));
+                }
+            }
+            Msg::OnServiceExit(_) => {
+                self.main_view
+                    .sender()
+                    .emit(MainViewMsg::XRServiceActiveChanged(false, None));
+                self.xrservice_worker = None;
+                if self.restart_xrservice {
+                    self.restart_xrservice = false;
+                    self.start_xrservice(sender);
+                }
+            }
             Msg::ClockTicking => {
-                match &mut self.xrservice_runner {
-                    None => {}
-                    Some(runner) => {
-                        let n_rows = runner.consume_rows();
-                        if !n_rows.is_empty() {
-                            sender.input(Msg::ParseLog(n_rows.clone()));
-                            self.debug_view
-                                .sender()
-                                .emit(DebugViewMsg::LogUpdated(n_rows));
-                        }
-                        match runner.status() {
-                            RunnerStatus::Running => {}
-                            RunnerStatus::Stopped(_) => {
-                                self.main_view
-                                    .sender()
-                                    .emit(MainViewMsg::XRServiceActiveChanged(false, None));
-                            }
-                        };
-                    }
-                };
-                match &mut self.build_pipeline {
-                    None => {}
-                    Some(pipeline) => {
-                        pipeline.update();
-                        self.build_window
-                            .sender()
-                            .emit(BuildWindowMsg::UpdateContent(pipeline.get_log()));
-                        match pipeline.status() {
-                            RunnerStatus::Running | RunnerStatus::Stopped(None) => {}
-                            RunnerStatus::Stopped(Some(code)) => {
-                                self.build_window
-                                    .sender()
-                                    .emit(BuildWindowMsg::UpdateCanClose(true));
-                                self.build_pipeline.take();
-                                match code {
-                                    0 => {
-                                        self.build_window.sender().emit(
-                                            BuildWindowMsg::UpdateBuildStatus(BuildStatus::Done),
-                                        );
-                                        // apparently setcap on wivrn causes issues, so in case
-                                        // it's not monado, we're just skipping this
-                                        if self.get_selected_profile().xrservice_type
-                                            == XRServiceType::Monado
-                                        {
-                                            self.setcap_confirm_dialog.present();
-                                        }
-                                        self.build_window
-                                            .sender()
-                                            .emit(BuildWindowMsg::UpdateCanClose(true));
-                                    }
-                                    errcode => self.build_window.sender().emit(
-                                        BuildWindowMsg::UpdateBuildStatus(BuildStatus::Error(
-                                            format!("Exit status {}", errcode),
-                                        )),
-                                    ),
-                                }
-                            }
-                        }
-                    }
-                };
                 self.main_view.sender().emit(MainViewMsg::ClockTicking);
             }
             Msg::ParseLog(rows) => {
@@ -376,40 +342,35 @@ impl SimpleComponent for App {
                     .sender()
                     .emit(MainViewMsg::EnableDebugViewChanged(val));
             }
-            Msg::DoStartStopXRService => match &mut self.xrservice_runner {
+            Msg::DoStartStopXRService => match &mut self.xrservice_worker {
                 None => {
-                    self.start_xrservice();
+                    self.start_xrservice(sender);
                 }
-                Some(runner) => match runner.status() {
-                    RunnerStatus::Running => {
-                        self.shutdown_xrservice();
-                    }
-                    RunnerStatus::Stopped(_) => {
-                        self.start_xrservice();
-                    }
-                },
+                Some(_) => {
+                    self.shutdown_xrservice();
+                }
             },
-            Msg::RestartXRService => {
-                match &mut self.xrservice_runner {
-                    None => {}
-                    Some(runner) => match runner.status() {
-                        RunnerStatus::Stopped(_) => {}
-                        RunnerStatus::Running => {
-                            if self.xrservice_runner.is_some()
-                                && self.xrservice_runner.as_mut().unwrap().status()
-                                    == RunnerStatus::Running
-                            {
-                                self.xrservice_runner.as_mut().unwrap().terminate();
-                            }
-                        }
-                    },
+            Msg::RestartXRService => match &mut self.xrservice_worker {
+                None => {
+                    self.start_xrservice(sender);
                 }
-                self.start_xrservice();
-            }
+                Some(worker) => {
+                    let status = worker.state.lock().unwrap().exit_status.clone();
+                    match status {
+                        Some(_) => {
+                            self.start_xrservice(sender);
+                        }
+                        None => {
+                            worker.stop();
+                            self.restart_xrservice = true;
+                        }
+                    }
+                }
+            },
             Msg::BuildProfile(clean_build) => {
                 let profile = self.get_selected_profile();
                 let mut missing_deps = vec![];
-                let mut runners: Vec<Box<dyn Runner>> = vec![];
+                let mut jobs = VecDeque::<WorkerJob>::new();
                 // profile per se can't be built, but we still need opencomp
                 if profile.can_be_built {
                     missing_deps.extend(match profile.xrservice_type {
@@ -418,23 +379,23 @@ impl SimpleComponent for App {
                     });
                     if profile.features.libsurvive.enabled {
                         missing_deps.extend(get_missing_libsurvive_deps());
-                        runners.extend(get_build_libsurvive_runners(&profile, clean_build));
+                        jobs.extend(get_build_libsurvive_jobs(&profile, clean_build));
                     }
                     if profile.features.basalt.enabled {
                         missing_deps.extend(get_missing_basalt_deps());
-                        runners.extend(get_build_basalt_runners(&profile, clean_build));
+                        jobs.extend(get_build_basalt_jobs(&profile, clean_build));
                     }
                     if profile.features.mercury_enabled {
                         missing_deps.extend(get_missing_mercury_deps());
-                        runners.push(Box::new(get_build_mercury_runner(&profile)));
+                        jobs.push_back(get_build_mercury_job(&profile));
                     }
-                    runners.extend(match profile.xrservice_type {
-                        XRServiceType::Monado => get_build_monado_runners(&profile, clean_build),
-                        XRServiceType::Wivrn => get_build_wivrn_runners(&profile, clean_build),
+                    jobs.extend(match profile.xrservice_type {
+                        XRServiceType::Monado => get_build_monado_jobs(&profile, clean_build),
+                        XRServiceType::Wivrn => get_build_wivrn_jobs(&profile, clean_build),
                     });
                     // no listed deps for opencomp
                 }
-                runners.extend(get_build_opencomposite_runners(&profile, clean_build));
+                jobs.extend(get_build_opencomposite_jobs(&profile, clean_build));
                 if !missing_deps.is_empty() {
                     missing_deps.sort_unstable();
                     missing_deps.dedup(); // dedup only works if sorted, hence the above
@@ -456,8 +417,11 @@ impl SimpleComponent for App {
                     .sender()
                     .send(BuildWindowMsg::Present)
                     .unwrap();
-                let mut pipeline = RunnerPipeline::new(runners);
-                pipeline.start();
+                let worker = RunnerWorkerWrap::new(jobs, sender.input_sender(), |msg| match msg {
+                    RunnerWorkerOut::Log(rows) => Msg::OnBuildLog(rows),
+                    RunnerWorkerOut::Exit(code) => Msg::OnBuildExit(code),
+                });
+                worker.start();
                 self.build_window
                     .sender()
                     .emit(BuildWindowMsg::UpdateTitle(format!(
@@ -467,7 +431,34 @@ impl SimpleComponent for App {
                 self.build_window
                     .sender()
                     .emit(BuildWindowMsg::UpdateCanClose(false));
-                self.build_pipeline = Some(pipeline);
+                self.build_worker = Some(worker);
+            }
+            Msg::OnBuildLog(rows) => {
+                self.build_window
+                    .sender()
+                    .emit(BuildWindowMsg::UpdateContent(rows));
+            }
+            Msg::OnBuildExit(code) => {
+                match code {
+                    0 => {
+                        self.build_window
+                            .sender()
+                            .emit(BuildWindowMsg::UpdateBuildStatus(BuildStatus::Done));
+                        if self.get_selected_profile().xrservice_type == XRServiceType::Monado {
+                            self.setcap_confirm_dialog.present();
+                        }
+                        self.build_window
+                            .sender()
+                            .emit(BuildWindowMsg::UpdateCanClose(true));
+                    }
+                    errcode => {
+                        self.build_window
+                            .sender()
+                            .emit(BuildWindowMsg::UpdateBuildStatus(BuildStatus::Error(
+                                format!("Exit status {}", errcode),
+                            )));
+                    }
+                };
             }
             Msg::DeleteProfile => {
                 let todel = self.get_selected_profile();
@@ -635,10 +626,11 @@ impl SimpleComponent for App {
             config,
             tracker: 0,
             profiles,
-            xrservice_runner: None,
-            build_pipeline: None,
+            xrservice_worker: None,
+            build_worker: None,
             xr_devices: XRDevices::default(),
             fbt_config_editor: None,
+            restart_xrservice: false,
         };
         let widgets = view_output!();
 

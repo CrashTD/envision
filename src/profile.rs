@@ -319,6 +319,17 @@ impl Profile {
                     .unwrap_or(&"".to_string())
                     .is_empty())
     }
+
+    pub fn xrservice_binary(&self) -> String {
+        match self.xrservice_type {
+            XRServiceType::Monado => format!("{pfx}/bin/monado-service", pfx = self.prefix),
+            XRServiceType::Wivrn => format!("{pfx}/bin/wivrn-server", pfx = self.prefix),
+        }
+    }
+
+    pub fn can_start(&self) -> bool {
+        Path::new(&self.xrservice_binary()).is_file()
+    }
 }
 
 #[cfg(test)]

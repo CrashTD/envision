@@ -1,15 +1,14 @@
+use crate::{
+    file_utils::get_writer,
+    profile::{Profile, XRServiceType},
+    runner::{Runner, RunnerStatus},
+};
 use nix::{
     sys::signal::{
         kill,
         Signal::{SIGKILL, SIGTERM},
     },
     unistd::Pid,
-};
-
-use crate::{
-    file_utils::get_writer,
-    profile::{Profile, XRServiceType},
-    runner::{Runner, RunnerStatus},
 };
 use std::{
     collections::HashMap,

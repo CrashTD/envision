@@ -2,6 +2,7 @@ use crate::{
     cmd_runner::CmdRunner,
     func_runner::{FuncRunner, FuncRunnerOut},
     profile::Profile,
+    ui::workers::runner_worker::{FuncWorkerOut, WorkerJob},
 };
 use git2::Repository;
 use std::path::Path;
@@ -27,6 +28,7 @@ impl Git {
         split.next().map(|s| s.into())
     }
 
+    #[deprecated]
     pub fn get_reset_runner(&self) -> CmdRunner {
         CmdRunner::new(
             None,
@@ -40,6 +42,20 @@ impl Git {
         )
     }
 
+    pub fn get_reset_job(&self) -> WorkerJob {
+        WorkerJob::new_cmd(
+            None,
+            "git".into(),
+            Some(vec![
+                "-C".into(),
+                self.dir.clone(),
+                "reset".into(),
+                "--hard".into(),
+            ]),
+        )
+    }
+
+    #[deprecated]
     pub fn get_override_remote_url_runner(&self) -> FuncRunner {
         let dir = self.dir.clone();
         let n_remote_url = self.get_repo();
@@ -76,6 +92,43 @@ impl Git {
         }))
     }
 
+    pub fn get_override_remote_url_job(&self) -> WorkerJob {
+        let dir = self.dir.clone();
+        let n_remote_url = self.get_repo();
+        WorkerJob::new_func(Box::new(move || {
+            if let Ok(repo) = Repository::open(dir) {
+                if let Ok(remote) = repo.find_remote("origin") {
+                    if remote.url().unwrap_or("") != n_remote_url {
+                        if repo.remote_set_url("origin", &n_remote_url).is_ok() {
+                            return FuncWorkerOut {
+                                success: true,
+                                out: vec![],
+                            };
+                        }
+                        return FuncWorkerOut {
+                            success: false,
+                            out: vec!["Failed to set origin remote url".into()],
+                        };
+                    }
+                } else {
+                    return FuncWorkerOut {
+                        success: false,
+                        out: vec!["Could not find remote origin".into()],
+                    };
+                }
+                return FuncWorkerOut {
+                    success: true,
+                    out: vec![],
+                };
+            }
+            FuncWorkerOut {
+                success: true,
+                out: vec![],
+            }
+        }))
+    }
+
+    #[deprecated]
     pub fn get_pull_runner(&self) -> CmdRunner {
         CmdRunner::new(
             None,
@@ -84,6 +137,15 @@ impl Git {
         )
     }
 
+    pub fn get_pull_job(&self) -> WorkerJob {
+        WorkerJob::new_cmd(
+            None,
+            "git".into(),
+            Some(vec!["-C".into(), self.dir.clone(), "pull".into()]),
+        )
+    }
+
+    #[deprecated]
     pub fn get_clone_runner(&self) -> CmdRunner {
         CmdRunner::new(
             None,
@@ -97,6 +159,20 @@ impl Git {
         )
     }
 
+    pub fn get_clone_job(&self) -> WorkerJob {
+        WorkerJob::new_cmd(
+            None,
+            "git".into(),
+            Some(vec![
+                "clone".into(),
+                self.get_repo(),
+                self.dir.clone(),
+                "--recurse-submodules".into(),
+            ]),
+        )
+    }
+
+    #[deprecated]
     pub fn get_checkout_ref_runner(&self) -> Option<CmdRunner> {
         self.get_ref().map(|r| {
             CmdRunner::new(
@@ -107,6 +183,17 @@ impl Git {
         })
     }
 
+    pub fn get_checkout_ref_job(&self) -> Option<WorkerJob> {
+        self.get_ref().map(|r| {
+            WorkerJob::new_cmd(
+                None,
+                "git".into(),
+                Some(vec!["-C".into(), self.dir.clone(), "checkout".into(), r]),
+            )
+        })
+    }
+
+    #[deprecated]
     pub fn get_clone_or_not_runner(&self) -> Option<CmdRunner> {
         let path_s = format!("{}/.git", self.dir.clone());
         let path = Path::new(&path_s);
@@ -116,6 +203,16 @@ impl Git {
         Some(self.get_clone_runner())
     }
 
+    pub fn get_clone_or_not_job(&self) -> Option<WorkerJob> {
+        let path_s = format!("{}/.git", self.dir.clone());
+        let path = Path::new(&path_s);
+        if path.is_dir() {
+            return None;
+        }
+        Some(self.get_clone_job())
+    }
+
+    #[deprecated]
     pub fn clone_or_pull(&self, profile: &Profile) -> Option<CmdRunner> {
         match self.get_clone_or_not_runner() {
             Some(r) => Some(r),
@@ -123,6 +220,16 @@ impl Git {
                 true => Some(self.get_pull_runner()),
                 false => None,
             },
+        }
+    }
+
+    pub fn get_clone_or_pull_job(&self, profile: &Profile) -> Option<WorkerJob> {
+        match self.get_clone_or_not_job() {
+            Some(j) => Some(j),
+            None => match profile.pull_on_build {
+                true => Some(self.get_pull_job()),
+                false => None,
+            }
         }
     }
 }
