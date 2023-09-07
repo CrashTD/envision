@@ -1,4 +1,7 @@
-use super::factories::env_var_row_factory::{EnvVarModel, EnvVarModelInit};
+use super::{
+    alert::alert,
+    factories::env_var_row_factory::{EnvVarModel, EnvVarModelInit},
+};
 use crate::{
     env_var_descriptions::env_var_descriptions_as_paragraph,
     profile::{LighthouseDriver, Profile, XRServiceType},
@@ -12,10 +15,8 @@ use std::{cell::RefCell, rc::Rc};
 #[tracker::track]
 pub struct ProfileEditor {
     profile: Rc<RefCell<Profile>>,
-
     #[tracker::do_not_track]
-    win: Option<adw::PreferencesWindow>,
-
+    win: Option<adw::Window>,
     #[tracker::do_not_track]
     env_rows: FactoryVecDeque<EnvVarModel>,
 }
@@ -47,237 +48,246 @@ impl SimpleComponent for ProfileEditor {
 
     view! {
         #[name(win)]
-        adw::PreferencesWindow {
+        adw::Window {
             set_modal: true,
             set_transient_for: Some(&init.root_win),
             #[track = "model.changed(Self::profile())"]
             set_title: Some(model.profile.borrow().name.as_str()),
-            add: mainpage = &adw::PreferencesPage {
-                add: maingrp = &adw::PreferencesGroup {
-                    set_title: "General",
-                    add: {
-                        withclones![prof];
-                        &entry_row("Profile Name", model.profile.borrow().name.as_str(), move |row| {
-                            prof.borrow_mut().name = row.text().to_string();
-                        })
-                    },
-                    add: {
-                        withclones![prof];
-                        &switch_row(
-                            "Update on Build", None,
-                            model.profile.borrow().pull_on_build,
-                            move |_, state| {
-                                prof.borrow_mut().pull_on_build = state;
-                                gtk::Inhibit(false)
-                            }
-                        )
-                    },
-                    add: {
-                        withclones![prof];
-                        &path_row(
-                            "Install Prefix",
-                            None,
-                            Some(model.profile.borrow().prefix.clone()),
-                            Some(init.root_win.clone()),
-                            move |n_path| {
-                                prof.borrow_mut().prefix = n_path.unwrap_or_default()
-                            },
-                        )
-                    },
-                },
-                add: xrservicegrp = &adw::PreferencesGroup {
-                    set_title: "XR Service",
-                    set_description: Some("When specifying a repository, you can set a specific git ref (branch, tag, commit...) by appending a '#' followed by the ref"),
-                    add: {
-                        withclones![prof];
-                        &combo_row(
-                            "XR Service Type",
-                            Some("Monado is for PCVR headsets, while WiVRn is for Andorid standalone headsets"),
-                            model.profile.borrow().xrservice_type.to_string().as_str(),
-                            XRServiceType::iter()
-                                .map(XRServiceType::to_string)
-                                .collect::<Vec<String>>(),
-                            move |row| {
-                                prof.borrow_mut().xrservice_type =
-                                    XRServiceType::from_number(row.selected());
-                            },
-                        )
-                    },
-                    add: {
-                        withclones![prof];
-                        &combo_row(
-                            "Lighthouse Driver",
-                            Some(concat!(
-                                "Driver for lighhouse tracked XR devices (ie: Valve Index, HTC Vive...). Only applicable for Monado.\n\n",
-                                "Vive: 3DOF tracking\n\n",
-                                "Survive: 6DOF reverse engineered lighthouse tracking provided by Libsurvive\n\n",
-                                "SteamVR: 6DOF lighthouse tracking using the proprietary SteamVR driver",
-                            )),
-                            model.profile.borrow().lighthouse_driver.to_string().as_str(),
-                            LighthouseDriver::iter()
-                                .map(LighthouseDriver::to_string)
-                                .collect::<Vec<String>>(),
-                            move |row| {
-                                prof.borrow_mut().lighthouse_driver =
-                                    LighthouseDriver::from_number(row.selected());
-                            }
-                        )
-                    },
-                    add: {
-                        withclones![prof];
-                        &path_row(
-                            "XR Service Path",
-                            None,
-                            Some(model.profile.borrow().xrservice_path.clone()),
-                            Some(init.root_win.clone()),
-                            move |n_path| {
-                                prof.borrow_mut().xrservice_path = n_path.unwrap_or_default()
-                            },
-                        )
-                    },
-                    add: {
-                        withclones![prof];
-                        &entry_row(
-                            "XR Service Repo",
-                            model.profile.borrow().xrservice_repo.clone().unwrap_or_default().as_str(),
-                            move |row| {
-                                let n_val = row.text().to_string();
-                                prof.borrow_mut().xrservice_repo = (!n_val.is_empty()).then_some(n_val);
-                            }
-                        )
-                    },
-                },
-                add: opencompgrp = &adw::PreferencesGroup {
-                    set_title: "OpenComposite",
-                    set_description: Some("OpenVR driver built on top of OpenXR\n\nWhen specifying a repository, you can set a specific git ref (branch, tag, commit...) by appending a '#' followed by the ref"),
-                    add: {
-                        withclones![prof];
-                        &path_row(
-                            "OpenComposite Path", None,
-                            Some(model.profile.borrow().opencomposite_path.clone()),
-                            Some(init.root_win.clone()),
-                            move |n_path| {
-                                prof.borrow_mut().opencomposite_path = n_path.unwrap_or_default();
-                            }
-                        )
-                    },
-                    add: {
-                        withclones![prof];
-                        &entry_row(
-                            "OpenComposite Repo",
-                            model.profile.borrow().opencomposite_repo.clone().unwrap_or_default().as_str(),
-                            move |row| {
-                                let n_val = row.text().to_string();
-                                prof.borrow_mut().opencomposite_repo = (!n_val.is_empty()).then_some(n_val);
-                            }
-                        )
-                    },
-                },
-                add: libsurvivegrp = &adw::PreferencesGroup {
-                    set_title: "Libsurvive",
-                    set_description: Some("Lighthouse tracking driver\n\nWhen specifying a repository, you can set a specific git ref (branch, tag, commit...) by appending a '#' followed by the ref"),
-                    add: {
-                        withclones![prof];
-                        &switch_row(
-                            "Enable Libsurvive", None,
-                            model.profile.borrow().features.libsurvive.enabled,
-                            move |_, state| {
-                                prof.borrow_mut().features.libsurvive.enabled = state;
-                                gtk::Inhibit(false)
-                            }
-                        )
-                    },
-                    add: {
-                        withclones![prof];
-                        &path_row(
-                            "Libsurvive Path", None,
-                            model.profile.borrow().features.libsurvive.path.clone(),
-                            Some(init.root_win.clone()),
-                            move |n_path| {
-                                prof.borrow_mut().features.libsurvive.path = n_path;
-                            }
-                        )
-                    },
-                    add: {
-                        withclones![prof];
-                        &entry_row(
-                            "Libsurvive Repo",
-                            model.profile.borrow().features.libsurvive.repo.clone().unwrap_or_default().as_str(),
-                            move |row| {
-                                let n_val = row.text().to_string();
-                                prof.borrow_mut().features.libsurvive.repo = (!n_val.is_empty()).then_some(n_val);
-                            }
-                        )
-                    },
-                },
-                add: basaltgrp = &adw::PreferencesGroup {
-                    set_title: "Basalt",
-                    set_description: Some("Camera based SLAM tracking driver\n\nWhen specifying a repository, you can set a specific git ref (branch, tag, commit...) by appending a '#' followed by the ref"),
-                    add: {
-                        withclones![prof];
-                        &switch_row(
-                            "Enable Basalt", None,
-                            model.profile.borrow().features.basalt.enabled,
-                            move |_, state| {
-                                prof.borrow_mut().features.basalt.enabled = state;
-                                gtk::Inhibit(false)
-                            }
-                        )
-                    },
-                    add: {
-                        withclones![prof];
-                        &path_row(
-                            "Basalt Path", None,
-                            model.profile.borrow().features.basalt.path.clone(),
-                            Some(init.root_win.clone()),
-                            move |n_path| {
-                                prof.borrow_mut().features.basalt.path = n_path;
-                            }
-                        )
-                    },
-                    add: {
-                        withclones![prof];
-                        &entry_row(
-                            "Basalt Repo",
-                            model.profile.borrow().features.basalt.repo.clone().unwrap_or_default().as_str(),
-                            move |row| {
-                                let n_val = row.text().to_string();
-                                prof.borrow_mut().features.basalt.repo = n_val.is_empty().then_some(n_val);
-                            }
-                        )
-                    },
-                },
-                add: mercurygrp = &adw::PreferencesGroup {
-                    set_title: "Mercury",
-                    set_description: Some("Camera and OpenCV based hand tracking driver"),
-                    add: {
-                        withclones![prof];
-                        &switch_row(
-                            "Enable Mercury", None,
-                            model.profile.borrow().features.mercury_enabled,
-                            move |_, state| {
-                                prof.borrow_mut().features.mercury_enabled = state;
-                                gtk::Inhibit(false)
-                            }
-                        )
-                    },
-                },
-                add: model.env_rows.widget(),
-                add: save_grp = &adw::PreferencesGroup {
-                    add: save_box = &gtk::Box {
-                        set_orientation: gtk::Orientation::Vertical,
-                        set_hexpand: true,
-                        gtk::Button {
-                            set_halign: gtk::Align::Center,
+            set_default_height: 500,
+            set_default_width: 600,
+            gtk::Box {
+                set_orientation: gtk::Orientation::Vertical,
+                set_hexpand: true,
+                set_vexpand: true,
+                gtk::WindowHandle {
+                    set_hexpand: true,
+                    set_vexpand: false,
+                    adw::HeaderBar {
+                        set_vexpand: false,
+                        add_css_class: "flat",
+                        pack_end: save_btn = &gtk::Button {
                             set_label: "Save",
-                            add_css_class: "pill",
                             add_css_class: "suggested-action",
                             connect_clicked[sender] => move |_| {
                                 sender.input(Self::Input::SaveProfile);
                             },
                         },
-                    }
+                    },
                 },
+                adw::PreferencesPage {
+                    set_hexpand: true,
+                    set_vexpand: true,
+                    add: maingrp = &adw::PreferencesGroup {
+                        set_title: "General",
+                        add: {
+                            withclones![prof];
+                            &entry_row("Profile Name", model.profile.borrow().name.as_str(), move |row| {
+                                prof.borrow_mut().name = row.text().to_string();
+                            })
+                        },
+                        add: {
+                            withclones![prof];
+                            &switch_row(
+                                "Update on Build", None,
+                                model.profile.borrow().pull_on_build,
+                                move |_, state| {
+                                    prof.borrow_mut().pull_on_build = state;
+                                    gtk::Inhibit(false)
+                                }
+                            )
+                        },
+                        add: {
+                            withclones![prof];
+                            &path_row(
+                                "Install Prefix",
+                                None,
+                                Some(model.profile.borrow().prefix.clone()),
+                                Some(init.root_win.clone()),
+                                move |n_path| {
+                                    prof.borrow_mut().prefix = n_path.unwrap_or_default()
+                                },
+                            )
+                        },
+                    },
+                    add: xrservicegrp = &adw::PreferencesGroup {
+                        set_title: "XR Service",
+                        set_description: Some("When specifying a repository, you can set a specific git ref (branch, tag, commit...) by appending a '#' followed by the ref"),
+                        add: {
+                            withclones![prof];
+                            &combo_row(
+                                "XR Service Type",
+                                Some("Monado is for PCVR headsets, while WiVRn is for Andorid standalone headsets"),
+                                model.profile.borrow().xrservice_type.to_string().as_str(),
+                                XRServiceType::iter()
+                                    .map(XRServiceType::to_string)
+                                    .collect::<Vec<String>>(),
+                                move |row| {
+                                    prof.borrow_mut().xrservice_type =
+                                        XRServiceType::from_number(row.selected());
+                                },
+                            )
+                        },
+                        add: {
+                            withclones![prof];
+                            &combo_row(
+                                "Lighthouse Driver",
+                                Some(concat!(
+                                    "Driver for lighhouse tracked XR devices (ie: Valve Index, HTC Vive...). Only applicable for Monado.\n\n",
+                                    "Vive: 3DOF tracking\n\n",
+                                    "Survive: 6DOF reverse engineered lighthouse tracking provided by Libsurvive\n\n",
+                                    "SteamVR: 6DOF lighthouse tracking using the proprietary SteamVR driver",
+                                )),
+                                model.profile.borrow().lighthouse_driver.to_string().as_str(),
+                                LighthouseDriver::iter()
+                                    .map(LighthouseDriver::to_string)
+                                    .collect::<Vec<String>>(),
+                                move |row| {
+                                    prof.borrow_mut().lighthouse_driver =
+                                        LighthouseDriver::from_number(row.selected());
+                                }
+                            )
+                        },
+                        add: {
+                            withclones![prof];
+                            &path_row(
+                                "XR Service Path",
+                                None,
+                                Some(model.profile.borrow().xrservice_path.clone()),
+                                Some(init.root_win.clone()),
+                                move |n_path| {
+                                    prof.borrow_mut().xrservice_path = n_path.unwrap_or_default()
+                                },
+                            )
+                        },
+                        add: {
+                            withclones![prof];
+                            &entry_row(
+                                "XR Service Repo",
+                                model.profile.borrow().xrservice_repo.clone().unwrap_or_default().as_str(),
+                                move |row| {
+                                    let n_val = row.text().to_string();
+                                    prof.borrow_mut().xrservice_repo = (!n_val.is_empty()).then_some(n_val);
+                                }
+                            )
+                        },
+                    },
+                    add: opencompgrp = &adw::PreferencesGroup {
+                        set_title: "OpenComposite",
+                        set_description: Some("OpenVR driver built on top of OpenXR\n\nWhen specifying a repository, you can set a specific git ref (branch, tag, commit...) by appending a '#' followed by the ref"),
+                        add: {
+                            withclones![prof];
+                            &path_row(
+                                "OpenComposite Path", None,
+                                Some(model.profile.borrow().opencomposite_path.clone()),
+                                Some(init.root_win.clone()),
+                                move |n_path| {
+                                    prof.borrow_mut().opencomposite_path = n_path.unwrap_or_default();
+                                }
+                            )
+                        },
+                        add: {
+                            withclones![prof];
+                            &entry_row(
+                                "OpenComposite Repo",
+                                model.profile.borrow().opencomposite_repo.clone().unwrap_or_default().as_str(),
+                                move |row| {
+                                    let n_val = row.text().to_string();
+                                    prof.borrow_mut().opencomposite_repo = (!n_val.is_empty()).then_some(n_val);
+                                }
+                            )
+                        },
+                    },
+                    add: libsurvivegrp = &adw::PreferencesGroup {
+                        set_title: "Libsurvive",
+                        set_description: Some("Lighthouse tracking driver\n\nWhen specifying a repository, you can set a specific git ref (branch, tag, commit...) by appending a '#' followed by the ref"),
+                        add: {
+                            withclones![prof];
+                            &switch_row(
+                                "Enable Libsurvive", None,
+                                model.profile.borrow().features.libsurvive.enabled,
+                                move |_, state| {
+                                    prof.borrow_mut().features.libsurvive.enabled = state;
+                                    gtk::Inhibit(false)
+                                }
+                            )
+                        },
+                        add: {
+                            withclones![prof];
+                            &path_row(
+                                "Libsurvive Path", None,
+                                model.profile.borrow().features.libsurvive.path.clone(),
+                                Some(init.root_win.clone()),
+                                move |n_path| {
+                                    prof.borrow_mut().features.libsurvive.path = n_path;
+                                }
+                            )
+                        },
+                        add: {
+                            withclones![prof];
+                            &entry_row(
+                                "Libsurvive Repo",
+                                model.profile.borrow().features.libsurvive.repo.clone().unwrap_or_default().as_str(),
+                                move |row| {
+                                    let n_val = row.text().to_string();
+                                    prof.borrow_mut().features.libsurvive.repo = (!n_val.is_empty()).then_some(n_val);
+                                }
+                            )
+                        },
+                    },
+                    add: basaltgrp = &adw::PreferencesGroup {
+                        set_title: "Basalt",
+                        set_description: Some("Camera based SLAM tracking driver\n\nWhen specifying a repository, you can set a specific git ref (branch, tag, commit...) by appending a '#' followed by the ref"),
+                        add: {
+                            withclones![prof];
+                            &switch_row(
+                                "Enable Basalt", None,
+                                model.profile.borrow().features.basalt.enabled,
+                                move |_, state| {
+                                    prof.borrow_mut().features.basalt.enabled = state;
+                                    gtk::Inhibit(false)
+                                }
+                            )
+                        },
+                        add: {
+                            withclones![prof];
+                            &path_row(
+                                "Basalt Path", None,
+                                model.profile.borrow().features.basalt.path.clone(),
+                                Some(init.root_win.clone()),
+                                move |n_path| {
+                                    prof.borrow_mut().features.basalt.path = n_path;
+                                }
+                            )
+                        },
+                        add: {
+                            withclones![prof];
+                            &entry_row(
+                                "Basalt Repo",
+                                model.profile.borrow().features.basalt.repo.clone().unwrap_or_default().as_str(),
+                                move |row| {
+                                    let n_val = row.text().to_string();
+                                    prof.borrow_mut().features.basalt.repo = n_val.is_empty().then_some(n_val);
+                                }
+                            )
+                        },
+                    },
+                    add: mercurygrp = &adw::PreferencesGroup {
+                        set_title: "Mercury",
+                        set_description: Some("Camera and OpenCV based hand tracking driver"),
+                        add: {
+                            withclones![prof];
+                            &switch_row(
+                                "Enable Mercury", None,
+                                model.profile.borrow().features.mercury_enabled,
+                                move |_, state| {
+                                    prof.borrow_mut().features.mercury_enabled = state;
+                                    gtk::Inhibit(false)
+                                }
+                            )
+                        },
+                    },
+                    add: model.env_rows.widget(),
+                }
             }
         }
     }
@@ -297,10 +307,10 @@ impl SimpleComponent for ProfileEditor {
                         .expect("Sender output failed");
                     self.win.as_ref().unwrap().close();
                 } else {
-                    self.win.as_ref().unwrap().add_toast(
-                        adw::Toast::builder()
-                            .title("Profile failed validation")
-                            .build(),
+                    alert(
+                        "Profile validation failed",
+                        Some("Check the values you set and try again"),
+                        Some(&self.win.as_ref().unwrap().clone().upcast::<gtk::Window>()),
                     );
                 }
             }

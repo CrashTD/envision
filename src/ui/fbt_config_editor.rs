@@ -14,7 +14,7 @@ pub struct FbtConfigEditor {
     monado_config_v0: MonadoConfigV0,
 
     #[tracker::do_not_track]
-    win: Option<adw::PreferencesWindow>,
+    win: Option<adw::Window>,
 
     #[tracker::do_not_track]
     tracker_role_groups: FactoryVecDeque<TrackerRoleModel>,
@@ -41,12 +41,30 @@ impl SimpleComponent for FbtConfigEditor {
 
     view! {
         #[name(win)]
-        adw::PreferencesWindow {
+        adw::Window {
             set_title: Some("Full Body Trackers"),
             set_modal: true,
             set_transient_for: Some(&init.root_win),
-            set_search_enabled: false,
-            add: model.tracker_role_groups.widget(),
+            set_default_height: 500,
+            set_default_width: 600,
+            gtk::Box {
+                set_vexpand: true,
+                set_hexpand: true,
+                set_orientation: gtk::Orientation::Vertical,
+                gtk::WindowHandle {
+                    set_vexpand: false,
+                    set_hexpand: true,
+                    #[name(headerbar)]
+                    adw::HeaderBar {
+                        set_vexpand: false,
+                        set_hexpand: true,
+                        add_css_class: "flat",
+                        pack_start: &add_btn,
+                        pack_end: &save_btn,
+                    },
+                },
+                append: model.tracker_role_groups.widget(),
+            },
         }
     }
 
@@ -94,18 +112,13 @@ impl SimpleComponent for FbtConfigEditor {
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
         let page = adw::PreferencesPage::builder().build();
-        let grp = adw::PreferencesGroup::builder().build();
         let add_btn = gtk::Button::builder()
-            .label("Add Tracker")
-            .margin_bottom(12)
-            .css_classes(["pill"])
-            .halign(gtk::Align::Center)
+            .tooltip_text("Add Tracker")
+            .icon_name("list-add-symbolic")
             .build();
         let save_btn = gtk::Button::builder()
             .label("Save")
-            .margin_bottom(12)
-            .halign(gtk::Align::Center)
-            .css_classes(["suggested-action", "pill"])
+            .css_classes(["suggested-action"])
             .build();
         {
             withclones![sender];
@@ -119,9 +132,6 @@ impl SimpleComponent for FbtConfigEditor {
                 sender.input(Self::Input::Save);
             });
         };
-        grp.add(&save_btn);
-        grp.add(&add_btn);
-        page.add(&grp);
 
         let mut model = Self {
             win: None,
@@ -134,6 +144,21 @@ impl SimpleComponent for FbtConfigEditor {
 
         let widgets = view_output!();
         model.win = Some(widgets.win.clone());
+
+        widgets.headerbar.pack_start(&add_btn);
+        widgets.headerbar.pack_end(&save_btn);
+        {
+            let win = widgets.win.clone();
+            let sc = gtk::ShortcutController::new();
+            sc.add_shortcut(gtk::Shortcut::new(
+                gtk::ShortcutTrigger::parse_string("Escape"),
+                Some(gtk::CallbackAction::new(move |_, _| {
+                    win.close();
+                    true
+                })),
+            ));
+            widgets.win.add_controller(sc);
+        }
 
         ComponentParts { model, widgets }
     }
