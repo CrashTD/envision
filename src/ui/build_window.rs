@@ -140,11 +140,6 @@ impl SimpleComponent for BuildWindow {
             }
             Self::Input::UpdateContent(c) => {
                 if !c.is_empty() {
-                    let is_at_bottom = {
-                        let adj = self.scrolledwin.as_ref().unwrap().vadjustment();
-                        (adj.upper() - adj.page_size() - adj.value()) <= 15.0
-                    };
-
                     let n_lines = c.concat();
                     let mut n_content = self.content.clone();
                     n_content.push_str(n_lines.as_str());
@@ -153,12 +148,10 @@ impl SimpleComponent for BuildWindow {
                         .insert(&mut self.textbuf.end_iter(), n_lines.as_str());
                     let textbuf = self.textbuf.clone();
                     let textview = self.textview.as_ref().unwrap().clone();
-                    if is_at_bottom {
-                        gtk::glib::idle_add_local_once(move || {
-                            let end_mark = textbuf.create_mark(None, &textbuf.end_iter(), false);
-                            textview.scroll_mark_onscreen(&end_mark);
-                        });
-                    }
+                    gtk::glib::idle_add_local_once(move || {
+                        let end_mark = textbuf.create_mark(None, &textbuf.end_iter(), false);
+                        textview.scroll_mark_onscreen(&end_mark);
+                    });
                 }
             }
             Self::Input::UpdateBuildStatus(status) => {

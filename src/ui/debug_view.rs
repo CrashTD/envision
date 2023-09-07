@@ -194,10 +194,6 @@ impl SimpleComponent for DebugView {
                 }
             }
             Self::Input::LogUpdated(n_log) => {
-                let is_at_bottom = {
-                    let adj = self.scrolledwin.as_ref().unwrap().vadjustment();
-                    (adj.upper() - adj.page_size() - adj.value()) <= 15.0
-                };
                 self.log.extend(n_log.clone());
                 for row in n_log {
                     let txt = match MonadoLog::new_from_str(row.as_str()) {
@@ -218,9 +214,9 @@ impl SimpleComponent for DebugView {
                             .insert(&mut self.textbuf.end_iter(), t.as_str());
                     }
                 }
-                let textbuf = self.textbuf.clone();
-                let textview = self.textview.as_ref().unwrap().clone();
-                if is_at_bottom && !self.searchbar.as_ref().unwrap().is_search_mode() {
+                if !self.searchbar.as_ref().unwrap().is_search_mode() {
+                    let textbuf = self.textbuf.clone();
+                    let textview = self.textview.as_ref().unwrap().clone();
                     gtk::glib::idle_add_local_once(move || {
                         let end_mark = textbuf.create_mark(None, &textbuf.end_iter(), false);
                         textview.scroll_mark_onscreen(&end_mark);
