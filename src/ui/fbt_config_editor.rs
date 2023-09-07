@@ -45,6 +45,7 @@ impl SimpleComponent for FbtConfigEditor {
             set_title: Some("Full Body Trackers"),
             set_modal: true,
             set_transient_for: Some(&init.root_win),
+            set_search_enabled: false,
             add: model.tracker_role_groups.widget(),
         }
     }
