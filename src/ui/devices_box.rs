@@ -2,8 +2,8 @@ use crate::{
     file_builders::monado_config_v0::dump_generic_trackers,
     xr_devices::{XRDevice, XRDevices},
 };
-use gtk::prelude::*;
 use adw::prelude::*;
+use gtk::prelude::*;
 use relm4::prelude::*;
 
 use super::alert::alert;
