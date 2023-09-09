@@ -30,6 +30,7 @@ pub struct MainView {
     xrservice_active: bool,
     enable_debug_view: bool,
     profiles: Vec<Profile>,
+    #[no_eq]
     selected_profile: Profile,
     #[tracker::do_not_track]
     profiles_dropdown: Option<gtk::DropDown>,
@@ -60,7 +61,6 @@ pub enum MainViewMsg {
     SetSelectedProfile(u32),
     ProfileSelected(u32),
     UpdateSelectedProfile(Profile),
-    MarkChanged,
     EditProfile,
     CreateProfile,
     DeleteProfile,
@@ -384,8 +384,8 @@ impl SimpleComponent for MainView {
                             set_margin_end: 12,
                             set_halign: gtk::Align::Start,
                             set_label: "Refresh",
-                            connect_clicked[sender] => move |_| {
-                                sender.input(Self::Input::MarkChanged);
+                            connect_clicked[sender, profiles_dropdown] => move |_| {
+                                sender.input(Self::Input::SetSelectedProfile(profiles_dropdown.selected()));
                             }
                         },
                     },
@@ -561,9 +561,6 @@ impl SimpleComponent for MainView {
                 self.install_wivrn_box
                     .sender()
                     .emit(InstallWivrnBoxMsg::UpdateSelectedProfile(prof.clone()));
-            }
-            Self::Input::MarkChanged => {
-                self.mark_all_changed();
             }
             Self::Input::UpdateProfiles(profiles, config) => {
                 self.set_profiles(profiles);
