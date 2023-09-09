@@ -70,7 +70,7 @@ impl JobWorker {
                 thread::spawn(move || {
                     sleep(Duration::from_secs(2));
                     if let Ok(s) = state.lock() {
-                        if s.exited {
+                        if !s.exited {
                             // process is still alive
                             kill(pid, SIGKILL).expect("Failed to kill process");
                         }
