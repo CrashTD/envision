@@ -185,6 +185,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "envision"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "gettext-rs",
+ "git2",
+ "gtk4",
+ "libusb",
+ "nix",
+ "phf",
+ "phf_macros",
+ "relm4",
+ "relm4-components",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "sourceview5",
+ "tracker",
+ "uuid",
+]
+
+[[package]]
 name = "equivalent"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1530,28 +1552,6 @@ dependencies = [
  "wasm-bindgen-futures",
  "web-sys",
  "winreg",
-]
-
-[[package]]
-name = "rex2"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "gettext-rs",
- "git2",
- "gtk4",
- "libusb",
- "nix",
- "phf",
- "phf_macros",
- "relm4",
- "relm4-components",
- "reqwest",
- "serde",
- "serde_json",
- "sourceview5",
- "tracker",
- "uuid",
 ]
 
 [[package]]

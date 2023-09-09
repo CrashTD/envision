@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <gresources>
-  <gresource prefix="/org/gabmus/rex2/">
+  <gresource prefix="/org/gabmus/envision/">
     <file compressed="true">style.css</file>
 
-    <file compressed="true" preprocess="xml-stripblanks">icons/org.gabmus.rex2.svg</file>
-    <file compressed="true" preprocess="xml-stripblanks">icons/org.gabmus.rex2-symbolic.svg</file>
+    <file compressed="true" preprocess="xml-stripblanks">icons/org.gabmus.envision.svg</file>
+    <file compressed="true" preprocess="xml-stripblanks">icons/org.gabmus.envision-symbolic.svg</file>
   </gresource>
 </gresources>

@@ -346,7 +346,7 @@ mod tests {
         assert_eq!(profile.name, "Demo profile");
         assert_eq!(profile.xrservice_path, "/home/user/monado");
         assert_eq!(profile.opencomposite_path, "/home/user/opencomposite");
-        assert_eq!(profile.prefix, "/home/user/rex2prefix");
+        assert_eq!(profile.prefix, "/home/user/envisionprefix");
         assert_eq!(
             profile.features.libsurvive.path.as_deref(),
             Some("/home/user/libsurvive")
@@ -389,7 +389,7 @@ mod tests {
                 mercury_enabled: false,
             },
             environment: env,
-            prefix: String::from("/home/user/rex2prefix"),
+            prefix: String::from("/home/user/envisionprefix"),
             editable: true,
             ..Default::default()
         };

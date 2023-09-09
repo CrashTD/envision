@@ -77,7 +77,7 @@ fn main() -> Result<()> {
     }
 
     let provider = gtk::CssProvider::new();
-    provider.load_from_resource("/org/gabmus/rex2/style.css");
+    provider.load_from_resource("/org/gabmus/envision/style.css");
     if let Some(display) = gdk::Display::default() {
         gtk::style_context_add_provider_for_display(
             &display,
@@ -90,7 +90,7 @@ fn main() -> Result<()> {
     let main_app = adw::Application::builder()
         .application_id(APP_ID)
         .flags(gio::ApplicationFlags::empty())
-        .resource_base_path("/org/gabmus/rex2")
+        .resource_base_path("/org/gabmus/envision")
         .build();
     let app = RelmApp::from_app(main_app.clone());
     app.run::<App>(AppInit {

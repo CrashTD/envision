@@ -223,18 +223,18 @@ mod tests {
     #[test]
     fn can_run_command_and_read_env() {
         let mut env = HashMap::new();
-        env.insert("REX2TEST".to_string(), "Lorem ipsum dolor".to_string());
+        env.insert("ENVISIONTEST".to_string(), "Lorem ipsum dolor".to_string());
         let mut runner = CmdRunner::new(
             Some(env),
             "bash".into(),
-            vec!["-c".into(), "echo \"REX2TEST: $REX2TEST\"".into()],
+            vec!["-c".into(), "echo \"ENVISIONTEST: $ENVISIONTEST\"".into()],
         );
         runner.start();
         sleep(time::Duration::from_millis(1000)); // TODO: ugly, fix
         runner.terminate();
         assert_eq!(runner.status(), RunnerStatus::Stopped(Some(0)));
         let out = runner.consume_output();
-        assert_eq!(out, "REX2TEST: Lorem ipsum dolor\n");
+        assert_eq!(out, "ENVISIONTEST: Lorem ipsum dolor\n");
     }
 
     #[test]

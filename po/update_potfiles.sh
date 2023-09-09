@@ -1,6 +1,6 @@
 #!/bin/bash
 
-APPID="org.gabmus.rex2"
+APPID="org.gabmus.envision"
 
 rm po/POTFILES.in po/POTFILES.in.in
 

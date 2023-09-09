@@ -1,4 +1,4 @@
-# Rex2
+# Envision
 
 # IMPORTANT NOTES!
 
@@ -6,32 +6,30 @@ This is still highly experimental software, while it's unlikely that anything ba
 
 Also consider that due to the unstable nature of the app, it's possible to encounter unexpected behavior that while in VR might cause motion sickness or physical injury. **Be very careful while in VR using this app!**
 
-"Rex2" is a temporary name for the project and will probably change soon.
-
 ---
 
-![](./data/icons/org.gabmus.rex2.svg)
+![](./data/icons/org.gabmus.envision.svg)
 
 UI for building, configuring and running Monado, the open source OpenXR runtime.
 
-Download the latest AppImage snapshot: [GitLab Pipelines](https://gitlab.com/gabmus/rex2/-/pipelines)
+Download the latest AppImage snapshot: [GitLab Pipelines](https://gitlab.com/gabmus/envision/-/pipelines)
 
 ## Running
 
 ```bash
-git clone https://gitlab.com/gabmus/rex2
-cd rex2
+git clone https://gitlab.com/gabmusenvision/
+cdenvision 
 meson setup build -Dprefix="$PWD/build/localprefix" -Dprofile=development
 ninja -C build
 ninja -C build install
-./build/localprefix/bin/rex2
+./build/localprefix/bin/envision
 ```
 
 ## Build AppImage
 
 ```bash
-git clone https://gitlab.com/gabmus/rex2
-cd rex2
+git clone https://gitlab.com/gabmus/envision
+cd envision
 ./dist/appimage/build_appimage.sh
 ```
 
@@ -41,6 +39,6 @@ cd rex2
 
 If you see this warning:
 
-> Your current prefix is inside a partition mounted with the nosuid option. This will prevent the Rex2 runtime from acquiring certain privileges and will cause noticeable stutter when running XR applications.
+> Your current prefix is inside a partition mounted with the nosuid option. This will prevent the Envision runtime from acquiring certain privileges and will cause noticeable stutter when running XR applications.
 
 And you're using systemd-homed to manage your home partition, you need to disable it using homectl. To do so, log out, log in as root in a tty and run: `homectl update <username> --nosuid=false`.

@@ -18,7 +18,7 @@ cp dist/appimage/linuxdeploy-plugin-gtk.sh ./
     --appdir AppDir \
     --plugin gtk \
     --output appimage \
-    --icon-file AppDir/usr/share/icons/hicolor/scalable/apps/org.gabmus.rex2.Devel.svg \
-    --desktop-file AppDir/usr/share/applications/org.gabmus.rex2.Devel.desktop
+    --icon-file AppDir/usr/share/icons/hicolor/scalable/apps/org.gabmus.envision.Devel.svg \
+    --desktop-file AppDir/usr/share/applications/org.gabmus.envision.Devel.desktop
 
 rm ./linuxdeploy-plugin-gtk.sh

@@ -17,7 +17,7 @@ pub fn get_developers() -> Vec<String> {
 }
 
 pub fn pkg_data_dir() -> String {
-    format!("{}/share/rex2", get_exec_prefix())
+    format!("{}/share/{}", get_exec_prefix(), CMD_NAME)
 }
 
 pub fn resources() -> String {

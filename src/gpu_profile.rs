@@ -17,6 +17,7 @@ pub fn get_set_amd_vr_pow_prof_cmd(card_dir: &str) -> String {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum GpuPowerProfile {
     // 3D Full Screen, inverted cause can't start with number
+    BootupDefault,
     Fullscreen3D,
     PowerSaving,
     Video,
@@ -61,6 +62,9 @@ impl FromStr for GpuPowerProfile {
         }
         if s.contains("3d_full_screen") {
             return Ok(Self::Fullscreen3D);
+        }
+        if s.contains("bootup_default") {
+            return Ok(Self::BootupDefault);
         }
         if s.contains("power_saving") {
             return Ok(Self::PowerSaving);

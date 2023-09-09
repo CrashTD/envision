@@ -1,5 +1,5 @@
 project(
-  'rex2',
+  'envision',
   'rust',
   version: '0.1.0',
   meson_version: '>= 0.59',
@@ -9,10 +9,10 @@ project(
 i18n = import('i18n')
 gnome = import('gnome')
 
-base_id = 'org.gabmus.rex2'
-pretty_name = 'Rex2'
-upstream_repo = 'https://gitlab.com/gabmus/rex2'
-author = 'The Rex2 Team'
+base_id = 'org.gabmus.envision'
+pretty_name = 'Envision'
+upstream_repo = 'https://gitlab.com/gabmus/envision'
+author = 'The Envision Team'
 description = 'GUI for Monado'  # temporary
 
 dependency('glib-2.0', version: '>= 2.66')

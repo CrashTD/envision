@@ -11,7 +11,7 @@ const CHUNK_SIZE: usize = 1024;
 
 fn headers() -> HeaderMap {
     let mut headers = HeaderMap::new();
-    headers.insert(USER_AGENT, "org.gabmus.rex2/1.0".parse().unwrap());
+    headers.insert(USER_AGENT, "org.gabmus.envision/1.0".parse().unwrap());
     headers
 }
 
