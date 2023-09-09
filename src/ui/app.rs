@@ -484,14 +484,15 @@ impl SimpleComponent for App {
                         self.profiles.remove(index);
                     }
                 }
-                self.profiles.push(prof);
+                self.profiles.push(prof.clone());
                 self.profiles.sort_unstable_by(|a, b| a.name.cmp(&b.name));
                 self.config.set_profiles(&self.profiles);
+                self.config.selected_profile_uuid = prof.uuid;
                 self.config.save();
                 self.main_view.sender().emit(MainViewMsg::UpdateProfiles(
                     self.profiles.clone(),
                     self.config.clone(),
-                ))
+                ));
             }
             Msg::RunSetCap => {
                 if !check_dependency(pkexec_dep()) {
