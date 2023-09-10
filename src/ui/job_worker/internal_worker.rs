@@ -10,6 +10,7 @@ use std::{
     collections::VecDeque,
     io::{BufRead, BufReader},
     mem,
+    os::unix::process::ExitStatusExt,
     process::{Command, Stdio},
     sync::{Arc, Mutex},
     thread,
@@ -105,7 +106,15 @@ impl Worker for InternalJobWorker {
                                 let stderr_sender = sender.clone();
                                 let stdout_logger = logger_thread!(stdout, stdout_sender);
                                 let stderr_logger = logger_thread!(stderr, stderr_sender);
-                                cmd.wait().expect("Failed to wait for process");
+                                let status = cmd.wait().expect("Failed to wait for process");
+                                if !status.success() {
+                                    self.state.lock().unwrap().exit_status = Some(
+                                        status
+                                            .code()
+                                            .unwrap_or_else(|| status.signal().unwrap_or(-1337)),
+                                    );
+                                    break;
+                                }
                                 stdout_logger.join().expect("Failed to join reader thread");
                                 stderr_logger.join().expect("Failed to join reader thread");
                             } else {

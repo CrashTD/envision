@@ -182,6 +182,9 @@ impl SimpleComponent for BuildWindow {
                     BuildStatus::Error(_) => label.add_css_class("error"),
                     _ => {}
                 }
+                if status != BuildStatus::Building {
+                    sender.input(Self::Input::UpdateCanClose(true));
+                }
                 self.set_build_status(status);
             }
             Self::Input::UpdateCanClose(val) => {
