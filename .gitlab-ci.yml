@@ -42,4 +42,4 @@ appimage:
     - bash ./dist/appimage/build_appimage.sh
   artifacts:
     paths:
-      - Rex2-*.AppImage
+      - Envision-*.AppImage
