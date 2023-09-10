@@ -104,21 +104,56 @@ pub fn set_current_active_runtime_to_steam() -> Result<(), ()> {
 }
 
 pub fn build_profile_active_runtime(profile: &Profile) -> ActiveRuntime {
+    let build_oxr_so_path = |lib64: bool| {
+        format!(
+            "{prefix}/{libdir}/libopenxr_{xrservice}.so",
+            prefix = profile.prefix,
+            xrservice = match profile.xrservice_type {
+                XRServiceType::Monado => "monado",
+                XRServiceType::Wivrn => "wivrn",
+            },
+            libdir = match lib64 {
+                true => "lib64",
+                false => "lib",
+            }
+        )
+    };
+
+    let mut oxr_so = build_oxr_so_path(false);
+
+    if !Path::new(&oxr_so).is_file() {
+        let alt = build_oxr_so_path(true);
+        if Path::new(&alt).is_file() {
+            oxr_so = alt;
+        }
+    }
+
     ActiveRuntime {
         file_format_version: "1.0.0".into(),
         runtime: ActiveRuntimeInnerRuntime {
             name: None,
             valve_runtime_is_steamvr: None,
-            library_path: format!(
-                "{prefix}/lib/libopenxr_{xrservice}.so",
-                prefix = profile.prefix,
-                xrservice = match profile.xrservice_type {
-                    XRServiceType::Monado => "monado",
-                    XRServiceType::Wivrn => "wivrn",
-                }
-            ),
+            library_path: oxr_so,
         },
     }
+}
+
+// for system installs
+fn relativize_active_runtime_lib_path(ar: &ActiveRuntime, dest: &str) -> ActiveRuntime {
+    let mut res = ar.clone();
+    let path = Path::new(dest);
+    let mut rel_chain = path
+        .components()
+        .map(|_| String::from(".."))
+        .collect::<Vec<String>>();
+    rel_chain.pop();
+    rel_chain.pop();
+    res.runtime.library_path = format!(
+        "{rels}{fullpath}",
+        rels = rel_chain.join("/"),
+        fullpath = ar.runtime.library_path
+    );
+    res
 }
 
 pub fn set_current_active_runtime_to_profile(profile: &Profile) -> Result<(), ()> {
@@ -129,17 +164,7 @@ pub fn set_current_active_runtime_to_profile(profile: &Profile) -> Result<(), ()
     let mut ar = build_profile_active_runtime(profile);
     // hack: relativize libopenxr_monado.so path for system installs
     if pfx == SYSTEM_PREFIX {
-        let path = Path::new(&dest);
-        let mut rel_chain = path
-            .components()
-            .map(|_| String::from(".."))
-            .collect::<Vec<String>>();
-        rel_chain.pop();
-        rel_chain.pop();
-        ar.runtime.library_path = format!(
-            "{rels}/usr/lib/libopenxr_monado.so",
-            rels = rel_chain.join("/")
-        );
+        ar = relativize_active_runtime_lib_path(&ar, &dest);
     }
     checkerr!(dump_current_active_runtime(&ar));
     checkerr!(set_file_readonly(&dest, true));
@@ -149,8 +174,8 @@ pub fn set_current_active_runtime_to_profile(profile: &Profile) -> Result<(), ()
 #[cfg(test)]
 mod tests {
     use super::{
-        dump_active_runtime_to_path, get_active_runtime_from_path, ActiveRuntime,
-        ActiveRuntimeInnerRuntime,
+        dump_active_runtime_to_path, get_active_runtime_from_path,
+        relativize_active_runtime_lib_path, ActiveRuntime, ActiveRuntimeInnerRuntime,
     };
 
     #[test]
@@ -180,5 +205,25 @@ mod tests {
         };
         dump_active_runtime_to_path(&ar, &"./target/testout/active_runtime.json.steamvr".into())
             .expect("could not dump active runtime to path");
+    }
+
+    #[test]
+    fn can_relativize_path() {
+        let ar = ActiveRuntime {
+            file_format_version: "1.0.0".into(),
+            runtime: ActiveRuntimeInnerRuntime {
+                valve_runtime_is_steamvr: None,
+                library_path: "/usr/lib64/libopenxr_monado.so".into(),
+                name: None,
+            },
+        };
+        let relativized = relativize_active_runtime_lib_path(
+            &ar,
+            "/home/user/.config/openxr/1/active_runtime.json",
+        );
+        assert_eq!(
+            relativized.runtime.library_path,
+            "../../../../../usr/lib64/libopenxr_monado.so"
+        );
     }
 }
