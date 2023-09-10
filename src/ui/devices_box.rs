@@ -3,7 +3,6 @@ use crate::{
     xr_devices::{XRDevice, XRDevices},
 };
 use adw::prelude::*;
-use gtk::prelude::*;
 use relm4::prelude::*;
 
 use super::alert::alert;
@@ -41,6 +40,10 @@ impl DevicesBox {
             },
         }
     }
+
+    fn get_dev_or_none(&self, key: XRDevice) -> String {
+        self.get_dev(key).unwrap_or("None".into())
+    }
 }
 
 #[relm4::component(pub)]
@@ -71,11 +74,9 @@ impl SimpleComponent for DevicesBox {
                     }),
                     #[track = "model.changed(Self::devices())"]
                     set_class_active: ("error", model.get_dev(XRDevice::Head).is_none()),
+                    set_title: "Head",
                     #[track = "model.changed(Self::devices())"]
-                    set_title: format!("Head: {}", match model.get_dev(XRDevice::Head) {
-                        Some(v) => v.clone(),
-                        None => "None".to_string(),
-                    }).as_str(),
+                    set_subtitle: model.get_dev_or_none(XRDevice::Head).as_str(),
                     // TODO: status icon with popover
                 },
                 // Left
@@ -87,11 +88,9 @@ impl SimpleComponent for DevicesBox {
                     }),
                     #[track = "model.changed(Self::devices())"]
                     set_class_active: ("error", model.get_dev(XRDevice::Left).is_none()),
+                    set_title: "Left",
                     #[track = "model.changed(Self::devices())"]
-                    set_title: format!("Left: {}", match model.get_dev(XRDevice::Left) {
-                        Some(v) => v.clone(),
-                        None => "None".to_string(),
-                    }).as_str(),
+                    set_subtitle: model.get_dev_or_none(XRDevice::Left).as_str(),
                     // TODO: status icon with popover
                 },
                 // Right
@@ -103,11 +102,9 @@ impl SimpleComponent for DevicesBox {
                     }),
                     #[track = "model.changed(Self::devices())"]
                     set_class_active: ("error", model.get_dev(XRDevice::Right).is_none()),
+                    set_title: "Right",
                     #[track = "model.changed(Self::devices())"]
-                    set_title: format!("Right: {}", match model.get_dev(XRDevice::Right) {
-                        Some(v) => v.clone(),
-                        None => "None".to_string(),
-                    }).as_str(),
+                    set_subtitle: model.get_dev_or_none(XRDevice::Right).as_str(),
                     // TODO: status icon with popover
                 },
                 // Gamepad
@@ -115,55 +112,45 @@ impl SimpleComponent for DevicesBox {
                     #[track = "model.changed(Self::devices())"]
                     set_visible: model.get_dev(XRDevice::Gamepad).is_some(),
                     set_icon_name: Some("emblem-ok-symbolic"),
+                    set_title: "Gamepad",
                     #[track = "model.changed(Self::devices())"]
-                    set_title: format!("Gamepad: {}", match model.get_dev(XRDevice::Gamepad) {
-                        Some(v) => v.clone(),
-                        None => "None".to_string(),
-                    }).as_str(),
+                    set_subtitle: model.get_dev_or_none(XRDevice::Gamepad).as_str(),
                 },
                 // Eyes
                 adw::ActionRow {
                     #[track = "model.changed(Self::devices())"]
                     set_visible: model.get_dev(XRDevice::Eyes).is_some(),
                     set_icon_name: Some("emblem-ok-symbolic"),
+                    set_title: "Eye Tracking",
                     #[track = "model.changed(Self::devices())"]
-                    set_title: format!("Eye Tracking: {}", match model.get_dev(XRDevice::Eyes) {
-                        Some(v) => v.clone(),
-                        None => "None".to_string(),
-                    }).as_str(),
+                    set_subtitle: model.get_dev_or_none(XRDevice::Eyes).as_str(),
                 },
                 // Hand Tracking Left
                 adw::ActionRow {
                     #[track = "model.changed(Self::devices())"]
                     set_visible: model.get_dev(XRDevice::HandTrackingLeft).is_some(),
                     set_icon_name: Some("emblem-ok-symbolic"),
+                    set_title: "Hand Tracking Left",
                     #[track = "model.changed(Self::devices())"]
-                    set_title: format!("Hand Tracking Left: {}", match model.get_dev(XRDevice::HandTrackingLeft) {
-                        Some(v) => v.clone(),
-                        None => "None".to_string(),
-                    }).as_str(),
+                    set_subtitle: model.get_dev_or_none(XRDevice::HandTrackingLeft).as_str(),
                 },
                 // Hand Tracking Right
                 adw::ActionRow {
                     #[track = "model.changed(Self::devices())"]
                     set_visible: model.get_dev(XRDevice::HandTrackingRight).is_some(),
                     set_icon_name: Some("emblem-ok-symbolic"),
+                    set_title: "Hand Tracking Right",
                     #[track = "model.changed(Self::devices())"]
-                    set_title: format!("Hand Tracking Left: {}", match model.get_dev(XRDevice::HandTrackingRight) {
-                        Some(v) => v.clone(),
-                        None => "None".to_string(),
-                    }).as_str(),
+                    set_subtitle: model.get_dev_or_none(XRDevice::HandTrackingRight).as_str(),
                 },
                 // Generic Trackers
                 adw::ActionRow {
                     #[track = "model.changed(Self::devices())"]
                     set_visible: model.get_dev(XRDevice::GenericTracker).is_some(),
                     set_icon_name: Some("emblem-ok-symbolic"),
+                    set_title: "Generic Trackers",
                     #[track = "model.changed(Self::devices())"]
-                    set_title: format!("Generic Trackers: {}", match model.get_dev(XRDevice::GenericTracker) {
-                        Some(v) => v.clone(),
-                        None => "None".to_string(),
-                    }).as_str(),
+                    set_subtitle: model.get_dev_or_none(XRDevice::GenericTracker).as_str(),
                     add_suffix: save_trackers_btn = &gtk::Button {
                         set_halign: gtk::Align::Center,
                         set_valign: gtk::Align::Center,
