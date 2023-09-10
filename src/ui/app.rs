@@ -37,7 +37,7 @@ use crate::profiles::lighthouse::lighthouse_profile;
 use crate::profiles::system_valve_index::system_valve_index_profile;
 use crate::profiles::valve_index::valve_index_profile;
 use crate::profiles::wivrn::wivrn_profile;
-use crate::ui::build_window::BuildWindowMsg;
+use crate::ui::build_window::{BuildWindowMsg, BuildWindowOutMsg};
 use crate::ui::debug_view::DebugViewInit;
 use crate::ui::libsurvive_setup_window::LibsurviveSetupMsg;
 use crate::ui::main_view::{MainView, MainViewInit, MainViewOutMsg};
@@ -102,6 +102,7 @@ pub enum Msg {
     OnBuildExit(i32),
     ClockTicking,
     BuildProfile(bool),
+    CancelBuild,
     EnableDebugViewChanged(bool),
     DoStartStopXRService,
     RestartXRService,
@@ -460,6 +461,11 @@ impl SimpleComponent for App {
                     }
                 };
             }
+            Msg::CancelBuild => {
+                if let Some(w) = self.build_worker.as_ref() {
+                    w.stop();
+                }
+            }
             Msg::DeleteProfile => {
                 let todel = self.get_selected_profile();
                 if todel.editable {
@@ -617,7 +623,9 @@ impl SimpleComponent for App {
             build_window: BuildWindow::builder()
                 .transient_for(root)
                 .launch(())
-                .detach(),
+                .forward(sender.input_sender(), |msg| match msg {
+                    BuildWindowOutMsg::CancelBuild => Msg::CancelBuild,
+                }),
             libsurvive_setup_window: LibsurviveSetupWindow::builder()
                 .transient_for(root)
                 .launch(())

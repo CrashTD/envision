@@ -36,11 +36,16 @@ pub enum BuildWindowMsg {
     UpdateCanClose(bool),
 }
 
+#[derive(Debug)]
+pub enum BuildWindowOutMsg {
+    CancelBuild,
+}
+
 #[relm4::component(pub)]
 impl SimpleComponent for BuildWindow {
     type Init = ();
     type Input = BuildWindowMsg;
-    type Output = ();
+    type Output = BuildWindowOutMsg;
 
     view! {
         #[name(win)]
@@ -87,7 +92,21 @@ impl SimpleComponent for BuildWindow {
                         set_wrap: true,
                         set_wrap_mode: gtk::pango::WrapMode::Word,
                         set_justify: gtk::Justification::Center,
-                    }
+                    },
+                    gtk::Button {
+                        #[track = "model.changed(BuildWindow::build_status())"]
+                        set_visible: match &model.build_status {
+                            BuildStatus::Building => true,
+                            _ => false,
+                        },
+                        add_css_class: "destructive-action",
+                        add_css_class: "circular",
+                        set_icon_name: "window-close-symbolic",
+                        set_tooltip_text: Some("Cancel build"),
+                        connect_clicked[sender] => move |_| {
+                            sender.output(Self::Output::CancelBuild);
+                        }
+                    },
                 },
                 #[name(scrolledwin)]
                 gtk::ScrolledWindow {
@@ -174,7 +193,7 @@ impl SimpleComponent for BuildWindow {
     fn init(
         _init: Self::Init,
         root: &Self::Root,
-        _sender: ComponentSender<Self>,
+        sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
         let mut model = Self {
             tracker: 0,
