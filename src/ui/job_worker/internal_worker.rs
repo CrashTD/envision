@@ -93,6 +93,7 @@ impl Worker for InternalJobWorker {
                             if let Ok(mut cmd) = Command::new(data.command)
                                 .args(data.args)
                                 .envs(data.environment)
+                                .stdin(Stdio::piped())
                                 .stderr(Stdio::piped())
                                 .stdout(Stdio::piped())
                                 .spawn()
@@ -102,6 +103,7 @@ impl Worker for InternalJobWorker {
                                 ));
                                 let stdout = cmd.stdout.take().unwrap();
                                 let stderr = cmd.stderr.take().unwrap();
+                                let stdin = cmd.stdin.take().unwrap();
                                 let stdout_sender = sender.clone();
                                 let stderr_sender = sender.clone();
                                 let stdout_logger = logger_thread!(stdout, stdout_sender);
