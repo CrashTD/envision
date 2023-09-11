@@ -69,14 +69,23 @@ impl SimpleComponent for DevicesBox {
                 adw::ActionRow {
                     #[track = "model.changed(Self::devices())"]
                     set_icon_name: Some(match model.get_dev(XRDevice::Head) {
-                        Some(_) => "emblem-ok-symbolic",
+                        Some(name) => match name.as_str() {
+                            "Simulated HMD" => "dialog-warning-symbolic",
+                            _ => "emblem-ok-symbolic",
+                        },
                         None => "dialog-question-symbolic",
                     }),
                     #[track = "model.changed(Self::devices())"]
                     set_class_active: ("error", model.get_dev(XRDevice::Head).is_none()),
+                    #[track = "model.changed(Self::devices())"]
+                    set_class_active: ("warning", model.get_dev(XRDevice::Head)
+                        .is_some_and(|name| name == "Simulated HMD")),
                     set_title: "Head",
                     #[track = "model.changed(Self::devices())"]
-                    set_subtitle: model.get_dev_or_none(XRDevice::Head).as_str(),
+                    set_subtitle: match model.get_dev_or_none(XRDevice::Head).as_str() {
+                        "Simulated HMD" => "No HMD detected (Simulated HMD)",
+                        s => s,
+                    },
                     // TODO: status icon with popover
                 },
                 // Left
