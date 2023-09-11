@@ -57,6 +57,7 @@ impl Display for XRServiceType {
 pub enum ProfileFeatureType {
     Libsurvive,
     Basalt,
+    OpenHmd,
 }
 
 impl ProfileFeatureType {
@@ -78,6 +79,7 @@ impl Display for ProfileFeatureType {
         f.write_str(match self {
             Self::Libsurvive => "Libsurvive",
             Self::Basalt => "Basalt",
+            Self::OpenHmd => "OpenHMD",
         })
     }
 }
@@ -101,24 +103,44 @@ impl Default for ProfileFeature {
     }
 }
 
+impl ProfileFeature {
+    pub fn default_libsurvive() -> Self {
+        Self {
+            feature_type: ProfileFeatureType::Libsurvive,
+            ..Default::default()
+        }
+    }
+
+    pub fn default_basalt() -> Self {
+        Self {
+            feature_type: ProfileFeatureType::Basalt,
+            ..Default::default()
+        }
+    }
+
+    pub fn default_openhmd() -> Self {
+        Self {
+            feature_type: ProfileFeatureType::OpenHmd,
+            ..Default::default()
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ProfileFeatures {
     pub libsurvive: ProfileFeature,
     pub basalt: ProfileFeature,
+    #[serde(default = "ProfileFeature::default_openhmd")]
+    pub openhmd: ProfileFeature,
     pub mercury_enabled: bool,
 }
 
 impl Default for ProfileFeatures {
     fn default() -> Self {
         Self {
-            libsurvive: ProfileFeature {
-                feature_type: ProfileFeatureType::Libsurvive,
-                ..Default::default()
-            },
-            basalt: ProfileFeature {
-                feature_type: ProfileFeatureType::Basalt,
-                ..Default::default()
-            },
+            libsurvive: ProfileFeature::default_libsurvive(),
+            basalt: ProfileFeature::default_basalt(),
+            openhmd: ProfileFeature::default_openhmd(),
             mercury_enabled: false,
         }
     }
@@ -216,17 +238,7 @@ impl Default for Profile {
             xrservice_path: data_monado_path(),
             xrservice_type: XRServiceType::Monado,
             opencomposite_path: data_opencomposite_path(),
-            features: ProfileFeatures {
-                libsurvive: ProfileFeature {
-                    feature_type: ProfileFeatureType::Libsurvive,
-                    ..Default::default()
-                },
-                basalt: ProfileFeature {
-                    feature_type: ProfileFeatureType::Basalt,
-                    ..Default::default()
-                },
-                mercury_enabled: false,
-            },
+            features: ProfileFeatures::default(),
             environment: HashMap::new(),
             prefix: format!(
                 "{data}/prefixes/default_profile_prefix",
@@ -318,6 +330,14 @@ impl Profile {
                     .as_ref()
                     .unwrap_or(&"".to_string())
                     .is_empty())
+            && (!self.features.openhmd.enabled
+                || !self
+                    .features
+                    .openhmd
+                    .path
+                    .as_ref()
+                    .unwrap_or(&"".to_string())
+                    .is_empty())
     }
 
     pub fn xrservice_binary(&self) -> String {
@@ -382,10 +402,8 @@ mod tests {
                     path: Some(String::from("/home/user/libsurvive")),
                     repo: None,
                 },
-                basalt: ProfileFeature {
-                    feature_type: ProfileFeatureType::Basalt,
-                    ..Default::default()
-                },
+                basalt: ProfileFeature::default_basalt(),
+                openhmd: ProfileFeature::default_openhmd(),
                 mercury_enabled: false,
             },
             environment: env,

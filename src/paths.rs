@@ -17,6 +17,10 @@ pub fn data_libsurvive_path() -> String {
     format!("{data}/libsurvive", data = get_data_dir())
 }
 
+pub fn data_openhmd_path() -> String {
+    format!("{data}/openhmd", data = get_data_dir())
+}
+
 pub fn wivrn_apk_download_path() -> String {
     format!("{cache}/wivrn.apk", cache = get_cache_dir())
 }

@@ -13,6 +13,7 @@ use crate::builders::build_libsurvive::get_build_libsurvive_jobs;
 use crate::builders::build_mercury::get_build_mercury_job;
 use crate::builders::build_monado::get_build_monado_jobs;
 use crate::builders::build_opencomposite::get_build_opencomposite_jobs;
+use crate::builders::build_openhmd::get_build_openhmd_jobs;
 use crate::builders::build_wivrn::get_build_wivrn_jobs;
 use crate::config::Config;
 use crate::constants::APP_NAME;
@@ -21,6 +22,7 @@ use crate::dependencies::basalt_deps::get_missing_basalt_deps;
 use crate::dependencies::libsurvive_deps::get_missing_libsurvive_deps;
 use crate::dependencies::mercury_deps::get_missing_mercury_deps;
 use crate::dependencies::monado_deps::get_missing_monado_deps;
+use crate::dependencies::openhmd_deps::get_missing_openhmd_deps;
 use crate::dependencies::pkexec_dep::pkexec_dep;
 use crate::dependencies::wivrn_deps::get_missing_wivrn_deps;
 use crate::file_builders::active_runtime_json::{
@@ -34,6 +36,7 @@ use crate::log_parser::MonadoLog;
 use crate::paths::get_ipc_file_path;
 use crate::profile::{Profile, XRServiceType};
 use crate::profiles::lighthouse::lighthouse_profile;
+use crate::profiles::openhmd::openhmd_profile;
 use crate::profiles::system_valve_index::system_valve_index_profile;
 use crate::profiles::valve_index::valve_index_profile;
 use crate::profiles::wivrn::wivrn_profile;
@@ -229,6 +232,7 @@ impl App {
             valve_index_profile(),
             system_valve_index_profile(),
             wivrn_profile(),
+            openhmd_profile(),
         ];
         profiles.extend(config.user_profiles.clone());
         profiles.sort_unstable_by(|a, b| a.name.cmp(&b.name));
@@ -381,6 +385,10 @@ impl SimpleComponent for App {
                     if profile.features.libsurvive.enabled {
                         missing_deps.extend(get_missing_libsurvive_deps());
                         jobs.extend(get_build_libsurvive_jobs(&profile, clean_build));
+                    }
+                    if profile.features.openhmd.enabled {
+                        missing_deps.extend(get_missing_openhmd_deps());
+                        jobs.extend(get_build_openhmd_jobs(&profile, clean_build));
                     }
                     if profile.features.basalt.enabled {
                         missing_deps.extend(get_missing_basalt_deps());
