@@ -234,6 +234,43 @@ impl SimpleComponent for ProfileEditor {
                             )
                         },
                     },
+                    add: openhmdgrp = &adw::PreferencesGroup {
+                        set_title: "OpenHMD",
+                        set_description: Some("Legacy driver for older Oculus HMDs\n\nWhen specifying a repository, you can set a specific git ref (branch, tag, commit...) by appending a '#' followed by the ref"),
+                        add: {
+                            withclones![prof];
+                            &switch_row(
+                                "Enable OpenHMD", None,
+                                model.profile.borrow().features.openhmd.enabled,
+                                move |_, state| {
+                                    prof.borrow_mut().features.openhmd.enabled = state;
+                                    gtk::Inhibit(false)
+                                }
+                            )
+                        },
+                        add: {
+                            withclones![prof];
+                            &path_row(
+                                "OpenHMD Path", None,
+                                model.profile.borrow().features.openhmd.path.clone(),
+                                Some(init.root_win.clone()),
+                                move |n_path| {
+                                    prof.borrow_mut().features.openhmd.path = n_path;
+                                }
+                            )
+                        },
+                        add: {
+                            withclones![prof];
+                            &entry_row(
+                                "OpenHMD Repo",
+                                model.profile.borrow().features.openhmd.repo.clone().unwrap_or_default().as_str(),
+                                move |row| {
+                                    let n_val = row.text().to_string();
+                                    prof.borrow_mut().features.openhmd.repo = (!n_val.is_empty()).then_some(n_val);
+                                }
+                            )
+                        },
+                    },
                     add: basaltgrp = &adw::PreferencesGroup {
                         set_title: "Basalt",
                         set_description: Some("Camera based SLAM tracking driver\n\nWhen specifying a repository, you can set a specific git ref (branch, tag, commit...) by appending a '#' followed by the ref"),
