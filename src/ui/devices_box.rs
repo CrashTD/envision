@@ -78,8 +78,7 @@ impl SimpleComponent for DevicesBox {
                     #[track = "model.changed(Self::devices())"]
                     set_class_active: ("error", model.get_dev(XRDevice::Head).is_none()),
                     #[track = "model.changed(Self::devices())"]
-                    set_class_active: ("warning", model.get_dev(XRDevice::Head)
-                        .is_some_and(|name| name == "Simulated HMD")),
+                    set_class_active: ("warning", model.get_dev_or_none(XRDevice::Head) == "Simulated HMD"),
                     set_title: "Head",
                     #[track = "model.changed(Self::devices())"]
                     set_subtitle: match model.get_dev_or_none(XRDevice::Head).as_str() {
