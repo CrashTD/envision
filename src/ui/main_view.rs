@@ -17,7 +17,7 @@ use crate::ui::app::{
     DebugViewToggleAction,
 };
 use crate::ui::profile_editor::ProfileEditorInit;
-use crate::ui::util::limit_dropdown_width;
+use crate::ui::util::{limit_dropdown_width, warning_heading};
 use crate::xr_devices::XRDevices;
 use gtk::prelude::*;
 use relm4::adw::traits::MessageDialogExt;
@@ -151,7 +151,7 @@ impl SimpleComponent for MainView {
                 set_hexpand: true,
                 set_vexpand: true,
                 gtk::Box {
-                    set_spacing: 12,
+                    set_spacing: 6,
                     set_margin_top: 12,
                     set_margin_bottom: 12,
                     set_orientation: gtk::Orientation::Vertical,
@@ -195,8 +195,9 @@ impl SimpleComponent for MainView {
                         set_hexpand: true,
                         set_vexpand: false,
                         set_spacing: 12,
-                        set_margin_top: 12,
-                        set_margin_bottom: 12,
+                        set_margin_all: 12,
+                        add_css_class: "card",
+                        add_css_class: "padded",
                         #[track = "model.changed(Self::selected_profile())"]
                         set_visible: match mount_has_nosuid(model.selected_profile.prefix.as_str()) {
                             Ok(b) => b,
@@ -208,26 +209,7 @@ impl SimpleComponent for MainView {
                                 false
                             },
                         },
-                        gtk::Separator {
-                            set_orientation: gtk::Orientation::Horizontal,
-                            set_hexpand: true,
-                        },
-                        gtk::Box {
-                            set_orientation: gtk::Orientation::Horizontal,
-                            set_margin_start: 12,
-                            set_margin_end: 12,
-                            set_spacing: 12,
-                            set_hexpand: true,
-                            gtk::Image {
-                                set_icon_name: Some("dialog-warning-symbolic"),
-                                add_css_class: "warning",
-                            },
-                            gtk::Label {
-                                add_css_class: "warning",
-                                add_css_class: "heading",
-                                set_label: "Warning"
-                            }
-                        },
+                        warning_heading(),
                         gtk::Label {
                             set_label: concat!(
                                 "Your current prefix is inside a partition ",
@@ -236,9 +218,8 @@ impl SimpleComponent for MainView {
                                 "and will cause noticeable stutter when running XR ",
                                 "applications."
                             ),
-                            set_margin_start: 12,
-                            set_margin_end: 12,
                             add_css_class: "warning",
+                            set_xalign: 0.0,
                             set_wrap: true,
                             set_wrap_mode: gtk::pango::WrapMode::Word,
                         }
@@ -248,39 +229,20 @@ impl SimpleComponent for MainView {
                         set_hexpand: true,
                         set_vexpand: false,
                         set_spacing: 12,
-                        set_margin_top: 12,
-                        set_margin_bottom: 12,
+                        set_margin_all: 12,
+                        add_css_class: "card",
+                        add_css_class: "padded",
                         #[track = "model.changed(Self::selected_profile())"]
                         set_visible: model.selected_profile.lighthouse_driver == LighthouseDriver::SteamVR && !chaperone_info_exists(),
-                        gtk::Separator {
-                            set_orientation: gtk::Orientation::Horizontal,
-                            set_hexpand: true,
-                        },
-                        gtk::Box {
-                            set_orientation: gtk::Orientation::Horizontal,
-                            set_margin_start: 12,
-                            set_margin_end: 12,
-                            set_spacing: 12,
-                            set_hexpand: true,
-                            gtk::Image {
-                                set_icon_name: Some("dialog-warning-symbolic"),
-                                add_css_class: "warning",
-                            },
-                            gtk::Label {
-                                add_css_class: "warning",
-                                add_css_class: "heading",
-                                set_label: "Warning"
-                            }
-                        },
+                        warning_heading(),
                         gtk::Label {
                             set_label: concat!(
                                 "SteamVR room configuration not found.\n",
                                 "To use the SteamVR lighthouse driver, you ",
                                 "will need to run SteamVR and perform the room setup.",
                             ),
-                            set_margin_start: 12,
-                            set_margin_end: 12,
                             add_css_class: "warning",
+                            set_xalign: 0.0,
                             set_wrap: true,
                             set_wrap_mode: gtk::pango::WrapMode::Word,
                         }
@@ -290,34 +252,16 @@ impl SimpleComponent for MainView {
                         set_hexpand: true,
                         set_vexpand: false,
                         set_spacing: 12,
-                        set_margin_top: 12,
-                        set_margin_bottom: 12,
+                        set_margin_all: 12,
+                        add_css_class: "card",
+                        add_css_class: "padded",
                         #[track = "model.changed(Self::selected_profile())"]
                         set_visible: match get_amd_gpu_power_profile() {
                             None => false,
                             Some(GpuPowerProfile::VR) => false,
                             Some(_) => true,
                         },
-                        gtk::Separator {
-                            set_orientation: gtk::Orientation::Horizontal,
-                            set_hexpand: true,
-                        },
-                        gtk::Box {
-                            set_orientation: gtk::Orientation::Horizontal,
-                            set_margin_start: 12,
-                            set_margin_end: 12,
-                            set_spacing: 12,
-                            set_hexpand: true,
-                            gtk::Image {
-                                set_icon_name: Some("dialog-warning-symbolic"),
-                                add_css_class: "warning",
-                            },
-                            gtk::Label {
-                                add_css_class: "warning",
-                                add_css_class: "heading",
-                                set_label: "Warning"
-                            }
-                        },
+                        warning_heading(),
                         gtk::Label {
                             set_label: concat!(
                                 "Your AMD GPU Power Profile is not set to VR. ",
@@ -325,15 +269,12 @@ impl SimpleComponent for MainView {
                                 "applications. Activate the VR profile witrh the ",
                                 "following command:",
                             ),
-                            set_margin_start: 12,
-                            set_margin_end: 12,
                             add_css_class: "warning",
+                            set_xalign: 0.0,
                             set_wrap: true,
                             set_wrap_mode: gtk::pango::WrapMode::Word,
                         },
                         gtk::Box {
-                            set_margin_start: 12,
-                            set_margin_end: 12,
                             set_orientation: gtk::Orientation::Horizontal,
                             set_spacing: 6,
                             gtk::ScrolledWindow {
@@ -380,8 +321,6 @@ impl SimpleComponent for MainView {
                             },
                         },
                         gtk::Button {
-                            set_margin_start: 12,
-                            set_margin_end: 12,
                             set_halign: gtk::Align::Start,
                             set_label: "Refresh",
                             connect_clicked[sender, profiles_dropdown] => move |_| {
@@ -396,20 +335,15 @@ impl SimpleComponent for MainView {
                         set_hexpand: true,
                         set_vexpand: false,
                         set_spacing: 12,
-                        set_margin_top: 12,
-                        set_margin_bottom: 12,
+                        set_margin_all: 12,
+                        add_css_class: "card",
+                        add_css_class: "padded",
                         #[track = "model.changed(Self::selected_profile())"]
                         set_visible: model.selected_profile.lighthouse_driver == LighthouseDriver::Survive,
-                        gtk::Separator {
-                            set_orientation: gtk::Orientation::Horizontal,
-                            set_hexpand: true,
-                        },
                         gtk::Label {
                             add_css_class: "heading",
                             set_hexpand: true,
                             set_xalign: 0.0,
-                            set_margin_start: 12,
-                            set_margin_end: 12,
                             set_label: "Libsurvive Calibration",
                             set_wrap: true,
                             set_wrap_mode: gtk::pango::WrapMode::Word,
@@ -417,22 +351,18 @@ impl SimpleComponent for MainView {
                         gtk::Label {
                             add_css_class: "dim-label",
                             set_hexpand: true,
-                            set_xalign: 0.0,
-                            set_margin_start: 12,
-                            set_margin_end: 12,
                             set_label: concat!(
                                 "Libsurvive needs to import your SteamVR calibration to work ",
                                 "properly. You need to have used SteamVR with this setup ",
                                 "before to be able to import its calibration."
                             ),
+                            set_xalign: 0.0,
                             set_wrap: true,
                             set_wrap_mode: gtk::pango::WrapMode::Word,
                         },
                         gtk::Button {
                             add_css_class: "suggested-action",
                             set_label: "Calibrate",
-                            set_margin_start: 12,
-                            set_margin_end: 12,
                             set_halign: gtk::Align::Start,
                             connect_clicked[sender] => move |_| {
                                 sender.output(Self::Output::OpenLibsurviveSetup).expect("Sender outut failed");

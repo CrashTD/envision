@@ -27,20 +27,15 @@ impl SimpleComponent for SteamLaunchOptionsBox {
             set_hexpand: true,
             set_vexpand: false,
             set_spacing: 12,
-            set_margin_top: 12,
-            set_margin_bottom: 12,
+            set_margin_all: 12,
+            add_css_class: "card",
+            add_css_class: "padded",
             #[track = "model.changed(Self::xrservice_active())"]
             set_visible: model.xrservice_active,
-            gtk::Separator {
-                set_orientation: gtk::Orientation::Horizontal,
-                set_hexpand: true,
-            },
             gtk::Label {
                 add_css_class: "heading",
                 set_hexpand: true,
                 set_xalign: 0.0,
-                set_margin_start: 12,
-                set_margin_end: 12,
                 set_label: "Steam Launch Options",
                 set_wrap: true,
                 set_wrap_mode: gtk::pango::WrapMode::Word,
@@ -48,19 +43,15 @@ impl SimpleComponent for SteamLaunchOptionsBox {
             gtk::Label {
                 add_css_class: "dim-label",
                 set_hexpand: true,
-                set_xalign: 0.0,
-                set_margin_start: 12,
-                set_margin_end: 12,
                 set_label: format!(
                     "Set this string in the launch options of Steam games, so that they can pick up the {app} runtime correctly",
                     app = APP_NAME)
                     .as_str(),
+                set_xalign: 0.0,
                 set_wrap: true,
                 set_wrap_mode: gtk::pango::WrapMode::Word,
             },
             gtk::Box {
-                set_margin_start: 12,
-                set_margin_end: 12,
                 set_orientation: gtk::Orientation::Horizontal,
                 set_spacing: 6,
                 gtk::ScrolledWindow {

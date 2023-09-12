@@ -21,3 +21,26 @@ pub fn limit_dropdown_width(dd: &gtk4::DropDown, chars: i32) {
         dd_child = nc;
     }
 }
+
+pub fn warning_heading() -> gtk4::Box {
+    let b = gtk4::Box::builder()
+        .orientation(gtk4::Orientation::Horizontal)
+        .spacing(12)
+        .hexpand(true)
+        .build();
+
+    b.append(
+        &gtk4::Image::builder()
+            .css_classes(["warning"])
+            .icon_name("dialog-warning-symbolic")
+            .build(),
+    );
+    b.append(
+        &gtk4::Label::builder()
+            .css_classes(["warning", "heading"])
+            .label("Warning")
+            .build(),
+    );
+
+    b
+}

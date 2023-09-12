@@ -70,20 +70,15 @@ impl SimpleComponent for InstallWivrnBox {
         gtk::Box {
             set_orientation: gtk::Orientation::Vertical,
             set_spacing: 12,
-            set_margin_top: 12,
-            set_margin_bottom: 12,
+            set_margin_all: 12,
+            add_css_class: "card",
+            add_css_class: "padded",
             #[track = "model.changed(Self::selected_profile())"]
             set_visible: model.selected_profile.xrservice_type == XRServiceType::Wivrn,
-            gtk::Separator {
-                set_orientation: gtk::Orientation::Horizontal,
-                set_hexpand: true,
-            },
             gtk::Label {
                 add_css_class: "heading",
                 set_hexpand: true,
                 set_xalign: 0.0,
-                set_margin_start: 12,
-                set_margin_end: 12,
                 set_label: "Install WiVRn APK",
                 set_wrap: true,
                 set_wrap_mode: gtk::pango::WrapMode::Word,
@@ -91,22 +86,18 @@ impl SimpleComponent for InstallWivrnBox {
             gtk::Label {
                 add_css_class: "dim-label",
                 set_hexpand: true,
-                set_xalign: 0.0,
-                set_margin_start: 12,
-                set_margin_end: 12,
                 set_label: concat!(
                     "Install the WiVRn APK on your standalong Android headset. ",
                     "You will need to enable Developer Mode on your headset, ",
                     "then press the \"Install WiVRn\" button."
                 ),
+                set_xalign: 0.0,
                 set_wrap: true,
                 set_wrap_mode: gtk::pango::WrapMode::Word,
             },
             gtk::MenuButton {
                 add_css_class: "suggested-action",
                 set_label: "Install WiVRn",
-                set_margin_start: 12,
-                set_margin_end: 12,
                 set_halign: gtk::Align::Start,
                 #[track = "model.changed(Self::install_wivrn_status())"]
                 set_sensitive: model.install_wivrn_status != InstallWivrnStatus::InProgress,
@@ -114,8 +105,6 @@ impl SimpleComponent for InstallWivrnBox {
             },
             gtk::Label {
                 add_css_class: "error",
-                set_margin_start: 12,
-                set_margin_end: 12,
                 set_xalign: 0.0,
                 #[track = "model.changed(Self::install_wivrn_status())"]
                 set_visible: matches!(&model.install_wivrn_status, InstallWivrnStatus::Done(Some(_))),
@@ -127,8 +116,6 @@ impl SimpleComponent for InstallWivrnBox {
             },
             gtk::Label {
                 add_css_class: "success",
-                set_margin_start: 12,
-                set_margin_end: 12,
                 set_xalign: 0.0,
                 #[track = "model.changed(Self::install_wivrn_status())"]
                 set_visible: model.install_wivrn_status == InstallWivrnStatus::Success,
