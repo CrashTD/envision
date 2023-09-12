@@ -8,9 +8,9 @@ use crate::{
 };
 use std::collections::HashMap;
 
-pub fn valve_index_profile() -> Profile {
+pub fn survive_profile() -> Profile {
     let data_dir = get_data_dir();
-    let prefix = format!("{data}/prefixes/valve_index_default", data = data_dir);
+    let prefix = format!("{data}/prefixes/survive_default", data = data_dir);
     let mut environment: HashMap<String, String> = HashMap::new();
     environment.insert("XRT_JSON_LOG".into(), "1".into());
     environment.insert("XRT_COMPOSITOR_SCALE_PERCENTAGE".into(), "140".into());
@@ -24,8 +24,8 @@ pub fn valve_index_profile() -> Profile {
         format!("{pfx}/lib:{pfx}/lib64", pfx = prefix),
     );
     Profile {
-        uuid: "valve-index-default".into(),
-        name: format!("Valve Index - {name} Default", name = APP_NAME),
+        uuid: "survive-default".into(),
+        name: format!("Survive - {name} Default", name = APP_NAME),
         xrservice_path: data_monado_path(),
         xrservice_type: XRServiceType::Monado,
         opencomposite_path: data_opencomposite_path(),

@@ -37,8 +37,7 @@ use crate::paths::get_ipc_file_path;
 use crate::profile::{Profile, XRServiceType};
 use crate::profiles::lighthouse::lighthouse_profile;
 use crate::profiles::openhmd::openhmd_profile;
-use crate::profiles::system_valve_index::system_valve_index_profile;
-use crate::profiles::valve_index::valve_index_profile;
+use crate::profiles::survive::survive_profile;
 use crate::profiles::wivrn::wivrn_profile;
 use crate::ui::build_window::{BuildWindowMsg, BuildWindowOutMsg};
 use crate::ui::debug_view::DebugViewInit;
@@ -229,8 +228,7 @@ impl App {
     pub fn profiles_list(config: &Config) -> Vec<Profile> {
         let mut profiles = vec![
             lighthouse_profile(),
-            valve_index_profile(),
-            system_valve_index_profile(),
+            survive_profile(),
             wivrn_profile(),
             openhmd_profile(),
         ];
