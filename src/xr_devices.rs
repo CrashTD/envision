@@ -1,3 +1,7 @@
+use std::slice::Iter;
+
+use crate::profile::Profile;
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum XRDevice {
     Head,
@@ -8,6 +12,35 @@ pub enum XRDevice {
     HandTrackingLeft,
     HandTrackingRight,
     GenericTracker,
+}
+
+impl XRDevice {
+    pub fn iter() -> Iter<'static, Self> {
+        [
+            Self::Head,
+            Self::Left,
+            Self::Right,
+            Self::Gamepad,
+            Self::Eyes,
+            Self::HandTrackingLeft,
+            Self::HandTrackingRight,
+            Self::GenericTracker,
+        ]
+        .iter()
+    }
+
+    pub fn to_monado_str(&self) -> &str {
+        match self {
+            Self::Head => "head",
+            Self::Left => "left",
+            Self::Right => "right",
+            Self::Gamepad => "gamepad",
+            Self::Eyes => "eyes",
+            Self::HandTrackingLeft => "hand_tracking.left",
+            Self::HandTrackingRight => "hand_tracking.right",
+            Self::GenericTracker => "generic_tracker",
+        }
+    }
 }
 
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
@@ -25,6 +58,41 @@ pub struct XRDevices {
 const GENERIC_TRACKER_PREFIX: &str = "Found generic tracker device: ";
 
 impl XRDevices {
+    fn set_device(&mut self, dev: &XRDevice, name: String) {
+        match dev {
+            XRDevice::Head => self.head = Some(name),
+            XRDevice::Left => self.left = Some(name),
+            XRDevice::Right => self.right = Some(name),
+            XRDevice::Gamepad => self.gamepad = Some(name),
+            XRDevice::Eyes => self.eyes = Some(name),
+            XRDevice::HandTrackingLeft => self.hand_tracking_left = Some(name),
+            XRDevice::HandTrackingRight => self.hand_tracking_right = Some(name),
+            _ => {}
+        }
+    }
+
+    pub fn from_libmonado(prof: &Profile) -> Self {
+        let mut res = Self::default();
+        if let Some(libmonado_path) = prof.libmonado_so() {
+            if let Ok(monado) = libmonado_rs::Monado::create(libmonado_path) {
+                [
+                    XRDevice::Head,
+                    XRDevice::Left,
+                    XRDevice::Right,
+                    XRDevice::Gamepad,
+                    XRDevice::Eyes,
+                ]
+                .iter()
+                .for_each(|xrd| {
+                    if let Ok(dev) = monado.device_from_role(xrd.to_monado_str()) {
+                        res.set_device(&xrd, dev.name);
+                    }
+                });
+            }
+        }
+        res
+    }
+
     pub fn from_log_message(s: &str) -> Option<Self> {
         let rows = s.split('\n');
         let mut in_section = false;

@@ -309,27 +309,37 @@ impl SimpleComponent for App {
             }
             Msg::ClockTicking => {
                 self.main_view.sender().emit(MainViewMsg::ClockTicking);
+                if let Some(w) = self.xrservice_worker.as_ref() {
+                    if w.state.lock().unwrap().exit_status.is_none() {
+                        self.xr_devices.merge(XRDevices::from_libmonado(&self.get_selected_profile()));
+                        self.main_view.sender().emit(MainViewMsg::UpdateDevices(
+                            Some(self.xr_devices.clone()),
+                        ));
+                    }
+                }
             }
             Msg::ParseLog(rows) => {
                 for row in rows {
                     match MonadoLog::new_from_str(row.as_str()) {
                         None => {}
                         Some(parsed) => {
-                            if parsed.func == "p_create_system" {
-                                match XRDevices::from_log_message(parsed.message.as_str()) {
-                                    None => {}
-                                    Some(devices) => {
-                                        self.xr_devices.merge(devices.clone());
-                                        self.main_view.sender().emit(MainViewMsg::UpdateDevices(
-                                            Some(self.xr_devices.clone()),
-                                        ));
-                                        break;
-                                    }
-                                };
-                            } else {
-                                self.xr_devices
-                                    .search_log_for_generic_trackers(parsed.message.as_str());
-                            }
+                            // if parsed.func == "p_create_system" {
+                            //     match XRDevices::from_log_message(parsed.message.as_str()) {
+                            //         None => {}
+                            //         Some(devices) => {
+                            //             self.xr_devices.merge(devices.clone());
+                            //             self.main_view.sender().emit(MainViewMsg::UpdateDevices(
+                            //                 Some(self.xr_devices.clone()),
+                            //             ));
+                            //             break;
+                            //         }
+                            //     };
+                            // } else {
+                            //     self.xr_devices
+                            //         .search_log_for_generic_trackers(parsed.message.as_str());
+                            // }
+                            self.xr_devices
+                                .search_log_for_generic_trackers(parsed.message.as_str());
                         }
                     };
                 }

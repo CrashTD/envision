@@ -17,6 +17,7 @@ gtk4 = { version = "0.7.2", features = [
 libadwaita = { version = "0.5.2", features = [
     "v1_3"
 ] }
+libmonado-rs = { git = "https://github.com/technobaboo/libmonado-rs", version = "0.1.0" }
 libusb = "0.3.0"
 nix = { version = "0.26.4", features = [
     "fs"

@@ -350,6 +350,23 @@ impl Profile {
     pub fn can_start(&self) -> bool {
         Path::new(&self.xrservice_binary()).is_file()
     }
+
+    pub fn libmonado_so(&self) -> Option<String> {
+        let mut res = format!("{}/lib/libmonado.so", self.prefix);
+        if Path::new(&res).is_file() {
+            return Some(res);
+        }
+        res = format!("{}/lib64/libmonado.so", self.prefix);
+        if Path::new(&res).is_file() {
+            return Some(res);
+        }
+
+        None
+    }
+
+    pub fn has_libmonado(&self) -> bool {
+        self.libmonado_so().is_some()
+    }
 }
 
 #[cfg(test)]
