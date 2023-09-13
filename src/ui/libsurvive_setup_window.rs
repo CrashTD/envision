@@ -74,14 +74,14 @@ impl LibsurviveSetupWindow {
         calibration_running: &Rc<Cell<bool>>,
         progressbar: &gtk::ProgressBar,
         page1: &adw::StatusPage,
-    ) -> gtk::Inhibit {
+    ) -> gtk::glib::Propagation {
         if calibration_running.get() {
-            return gtk::Inhibit(true);
+            return gtk::glib::Propagation::Stop;
         }
         carousel.scroll_to(page1, true);
         progressbar.set_fraction(0.0);
         sender.input(LibsurviveSetupMsg::SetSteamLighthousePath(None));
-        gtk::Inhibit(false)
+        gtk::glib::Propagation::Proceed
     }
 }
 
@@ -379,7 +379,10 @@ impl SimpleComponent for LibsurviveSetupWindow {
                             let cont = self.calibration_running.clone();
                             glib::timeout_add_local(Duration::from_millis(1000), move || {
                                 timer_sender.input(LibsurviveSetupMsg::TickCalibrationRunner);
-                                glib::Continue(cont.get())
+                                match cont.get() {
+                                    true => glib::ControlFlow::Continue,
+                                    false => glib::ControlFlow::Break,
+                                }
                             });
                         }
                         self.calibration_runner = Some(runner);

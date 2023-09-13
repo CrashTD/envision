@@ -4,10 +4,9 @@ use gtk::{
     glib::{self, GString},
 };
 use relm4::prelude::*;
-
 use crate::withclones;
 
-pub fn switch_row<F: Fn(&gtk::Switch, bool) -> glib::signal::Inhibit + 'static>(
+pub fn switch_row<F: Fn(&gtk::Switch, bool) -> glib::Propagation + 'static>(
     title: &str,
     description: Option<&str>,
     value: bool,

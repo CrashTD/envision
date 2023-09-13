@@ -273,7 +273,7 @@ impl SimpleComponent for App {
             },
             connect_close_request[sender] => move |win| {
                 sender.input(Msg::SaveWinSize(win.width(), win.height()));
-                gtk::Inhibit(false)
+                gtk::glib::Propagation::Proceed
             }
         }
     }
@@ -711,7 +711,7 @@ impl SimpleComponent for App {
             withclones![sender];
             glib::timeout_add_local(Duration::from_millis(1000), move || {
                 sender.input(Msg::ClockTicking);
-                glib::Continue(true)
+                glib::ControlFlow::Continue
             });
         }
 

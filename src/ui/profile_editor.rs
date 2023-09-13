@@ -92,7 +92,7 @@ impl SimpleComponent for ProfileEditor {
                                 model.profile.borrow().pull_on_build,
                                 move |_, state| {
                                     prof.borrow_mut().pull_on_build = state;
-                                    gtk::Inhibit(false)
+                                    gtk::glib::Propagation::Proceed
                                 }
                             )
                         },
@@ -207,7 +207,7 @@ impl SimpleComponent for ProfileEditor {
                                 model.profile.borrow().features.libsurvive.enabled,
                                 move |_, state| {
                                     prof.borrow_mut().features.libsurvive.enabled = state;
-                                    gtk::Inhibit(false)
+                                    gtk::glib::Propagation::Proceed
                                 }
                             )
                         },
@@ -244,7 +244,7 @@ impl SimpleComponent for ProfileEditor {
                                 model.profile.borrow().features.openhmd.enabled,
                                 move |_, state| {
                                     prof.borrow_mut().features.openhmd.enabled = state;
-                                    gtk::Inhibit(false)
+                                    gtk::glib::Propagation::Proceed
                                 }
                             )
                         },
@@ -281,7 +281,7 @@ impl SimpleComponent for ProfileEditor {
                                 model.profile.borrow().features.basalt.enabled,
                                 move |_, state| {
                                     prof.borrow_mut().features.basalt.enabled = state;
-                                    gtk::Inhibit(false)
+                                    gtk::glib::Propagation::Proceed
                                 }
                             )
                         },
@@ -318,7 +318,7 @@ impl SimpleComponent for ProfileEditor {
                                 model.profile.borrow().features.mercury_enabled,
                                 move |_, state| {
                                     prof.borrow_mut().features.mercury_enabled = state;
-                                    gtk::Inhibit(false)
+                                    gtk::glib::Propagation::Proceed
                                 }
                             )
                         },
