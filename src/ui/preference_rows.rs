@@ -1,10 +1,10 @@
+use crate::withclones;
 use adw::prelude::*;
 use gtk::{
     gio,
     glib::{self, GString},
 };
 use relm4::prelude::*;
-use crate::withclones;
 
 pub fn switch_row<F: Fn(&gtk::Switch, bool) -> glib::Propagation + 'static>(
     title: &str,
