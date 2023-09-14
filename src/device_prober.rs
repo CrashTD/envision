@@ -33,6 +33,7 @@ pub enum PhysicalXRDevice {
     VarjoVR2,
     VarjoVR3,
     RazerHydra,
+    BigscreenBeyond,
     // Standalone
     OculusQuest,
     OculusQuest2,
@@ -72,6 +73,7 @@ impl Display for PhysicalXRDevice {
             Self::VarjoVR2 => "Varjo VR2",
             Self::VarjoVR3 => "Varjo VR3",
             Self::RazerHydra => "Razer Hydra",
+            Self::BigscreenBeyond => "Bigscreen Beyond",
             Self::OculusQuest => "Oculus Quest",
             Self::OculusQuest2 => "Oculus Quest 2",
             Self::OculusQuestPro => "Oculus Quest Pro",
@@ -98,6 +100,7 @@ impl PhysicalXRDevice {
             Self::VarjoAero => Some(lighthouse_profile()),
             Self::VarjoVR2 => Some(lighthouse_profile()),
             Self::VarjoVR3 => Some(lighthouse_profile()),
+            Self::BigscreenBeyond => Some(lighthouse_profile()),
             Self::OculusQuest => Some(wivrn_profile()),
             Self::OculusQuest2 => Some(wivrn_profile()),
             Self::OculusQuestPro => Some(wivrn_profile()),
@@ -161,6 +164,7 @@ pub fn get_xr_usb_devices() -> Vec<PhysicalXRDevice> {
             (0x03f0, 0x0c6a) => Some(PhysicalXRDevice::HPReverbG1),
             (0x03f0, 0x0580) => Some(PhysicalXRDevice::HPReverbG2),
             (0x04b4, 0x6504) => Some(PhysicalXRDevice::LenovoExplorer),
+            (0x35bd, 0x0101) => Some(PhysicalXRDevice::BigscreenBeyond),
             (0x04e8, 0x7312) => Some(PhysicalXRDevice::SamsungOdysseyPlus),
             (0x04e8, 0x7084) => Some(PhysicalXRDevice::SamsungOdysseyPlus),
             // Standalone
