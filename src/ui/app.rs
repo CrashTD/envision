@@ -318,13 +318,11 @@ impl SimpleComponent for App {
                         state.exit_status.is_none() && !state.stop_requested
                     } {
                         if let Some(monado) = self.libmonado.as_ref() {
-                            self.xr_devices
-                                .merge(XRDevices::from_libmonado(monado));
+                            self.xr_devices.merge(XRDevices::from_libmonado(monado));
                             self.main_view
                                 .sender()
                                 .emit(MainViewMsg::UpdateDevices(Some(self.xr_devices.clone())));
-                        }
-                        else {
+                        } else {
                             if let Some(so) = self.get_selected_profile().libmonado_so() {
                                 self.libmonado = libmonado_rs::Monado::create(so).ok();
                                 if self.libmonado.is_some() {
