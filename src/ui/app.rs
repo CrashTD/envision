@@ -94,6 +94,8 @@ pub struct App {
     xr_devices: XRDevices,
     #[tracker::do_not_track]
     fbt_config_editor: Option<Controller<FbtConfigEditor>>,
+    #[tracker::do_not_track]
+    libmonado: Option<libmonado_rs::Monado>,
 }
 
 #[derive(Debug)]
@@ -218,6 +220,7 @@ impl App {
         if let Some(worker) = self.xrservice_worker.as_ref() {
             worker.stop();
         }
+        self.libmonado = None;
         self.restore_openxr_openvr_files();
         self.main_view
             .sender()
@@ -310,12 +313,25 @@ impl SimpleComponent for App {
             Msg::ClockTicking => {
                 self.main_view.sender().emit(MainViewMsg::ClockTicking);
                 if let Some(w) = self.xrservice_worker.as_ref() {
-                    if w.state.lock().unwrap().exit_status.is_none() {
-                        self.xr_devices
-                            .merge(XRDevices::from_libmonado(&self.get_selected_profile()));
-                        self.main_view
-                            .sender()
-                            .emit(MainViewMsg::UpdateDevices(Some(self.xr_devices.clone())));
+                    if {
+                        let state = w.state.lock().unwrap();
+                        state.exit_status.is_none() && !state.stop_requested
+                    } {
+                        if let Some(monado) = self.libmonado.as_ref() {
+                            self.xr_devices
+                                .merge(XRDevices::from_libmonado(monado));
+                            self.main_view
+                                .sender()
+                                .emit(MainViewMsg::UpdateDevices(Some(self.xr_devices.clone())));
+                        }
+                        else {
+                            if let Some(so) = self.get_selected_profile().libmonado_so() {
+                                self.libmonado = libmonado_rs::Monado::create(so).ok();
+                                if self.libmonado.is_some() {
+                                    sender.input(Msg::ClockTicking);
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -657,6 +673,7 @@ impl SimpleComponent for App {
             xr_devices: XRDevices::default(),
             fbt_config_editor: None,
             restart_xrservice: false,
+            libmonado: None,
         };
         let widgets = view_output!();
 

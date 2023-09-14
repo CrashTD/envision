@@ -71,25 +71,21 @@ impl XRDevices {
         }
     }
 
-    pub fn from_libmonado(prof: &Profile) -> Self {
+    pub fn from_libmonado(monado: &libmonado_rs::Monado) -> Self {
         let mut res = Self::default();
-        if let Some(libmonado_path) = prof.libmonado_so() {
-            if let Ok(monado) = libmonado_rs::Monado::create(libmonado_path) {
-                [
-                    XRDevice::Head,
-                    XRDevice::Left,
-                    XRDevice::Right,
-                    XRDevice::Gamepad,
-                    XRDevice::Eyes,
-                ]
-                .iter()
-                .for_each(|xrd| {
-                    if let Ok(dev) = monado.device_from_role(xrd.to_monado_str()) {
-                        res.set_device(&xrd, dev.name);
-                    }
-                });
+        [
+            XRDevice::Head,
+            XRDevice::Left,
+            XRDevice::Right,
+            XRDevice::Gamepad,
+            XRDevice::Eyes,
+        ]
+        .iter()
+        .for_each(|xrd| {
+            if let Ok(dev) = monado.device_from_role(xrd.to_monado_str()) {
+                res.set_device(&xrd, dev.name);
             }
-        }
+        });
         res
     }
 
