@@ -30,6 +30,7 @@ pub mod func_runner;
 pub mod gpu_profile;
 pub mod log_level;
 pub mod log_parser;
+pub mod monado_utils;
 pub mod paths;
 pub mod profile;
 pub mod profiles;
@@ -38,7 +39,6 @@ pub mod runner_pipeline;
 pub mod steamvr_utils;
 pub mod ui;
 pub mod xr_devices;
-pub mod monado_utils;
 
 fn restore_steam_xr_files() {
     let active_runtime = get_current_active_runtime();

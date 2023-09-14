@@ -311,10 +311,11 @@ impl SimpleComponent for App {
                 self.main_view.sender().emit(MainViewMsg::ClockTicking);
                 if let Some(w) = self.xrservice_worker.as_ref() {
                     if w.state.lock().unwrap().exit_status.is_none() {
-                        self.xr_devices.merge(XRDevices::from_libmonado(&self.get_selected_profile()));
-                        self.main_view.sender().emit(MainViewMsg::UpdateDevices(
-                            Some(self.xr_devices.clone()),
-                        ));
+                        self.xr_devices
+                            .merge(XRDevices::from_libmonado(&self.get_selected_profile()));
+                        self.main_view
+                            .sender()
+                            .emit(MainViewMsg::UpdateDevices(Some(self.xr_devices.clone())));
                     }
                 }
             }
