@@ -1,5 +1,4 @@
 use std::slice::Iter;
-
 use crate::profile::Profile;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
