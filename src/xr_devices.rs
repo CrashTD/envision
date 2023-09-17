@@ -1,8 +1,9 @@
-use std::slice::Iter;
-use crate::profile::Profile;
+use std::{fmt::Display, slice::Iter};
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum XRDevice {
+const GENERIC_TRACKER_PREFIX: &str = "Found generic tracker device: ";
+
+#[derive(Debug, Clone, PartialEq, Eq, Copy)]
+pub enum XRDeviceType {
     Head,
     Left,
     Right,
@@ -13,7 +14,34 @@ pub enum XRDevice {
     GenericTracker,
 }
 
-impl XRDevice {
+impl Display for XRDeviceType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
+            Self::Head => "Head",
+            Self::Left => "Left",
+            Self::Right => "Right",
+            Self::Gamepad => "Gamepad",
+            Self::Eyes => "Eye Tracking",
+            Self::HandTrackingLeft => "Hand tracking left",
+            Self::HandTrackingRight => "Hand tracking right",
+            Self::GenericTracker => "Generic tracker",
+        })
+    }
+}
+
+impl PartialOrd for XRDeviceType {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.as_number().cmp(&other.as_number()))
+    }
+}
+
+impl Ord for XRDeviceType {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.partial_cmp(other).unwrap()
+    }
+}
+
+impl XRDeviceType {
     pub fn iter() -> Iter<'static, Self> {
         [
             Self::Head,
@@ -40,58 +68,108 @@ impl XRDevice {
             Self::GenericTracker => "generic_tracker",
         }
     }
-}
 
-#[derive(Debug, Default, Clone, PartialEq, Eq)]
-pub struct XRDevices {
-    pub head: Option<String>,
-    pub left: Option<String>,
-    pub right: Option<String>,
-    pub gamepad: Option<String>,
-    pub eyes: Option<String>,
-    pub hand_tracking_left: Option<String>,
-    pub hand_tracking_right: Option<String>,
-    pub generic_trackers: Vec<String>,
-}
-
-const GENERIC_TRACKER_PREFIX: &str = "Found generic tracker device: ";
-
-impl XRDevices {
-    fn set_device(&mut self, dev: &XRDevice, name: String) {
-        match dev {
-            XRDevice::Head => self.head = Some(name),
-            XRDevice::Left => self.left = Some(name),
-            XRDevice::Right => self.right = Some(name),
-            XRDevice::Gamepad => self.gamepad = Some(name),
-            XRDevice::Eyes => self.eyes = Some(name),
-            XRDevice::HandTrackingLeft => self.hand_tracking_left = Some(name),
-            XRDevice::HandTrackingRight => self.hand_tracking_right = Some(name),
-            _ => {}
+    pub fn as_number(&self) -> u32 {
+        match self {
+            Self::Head => 0,
+            Self::Left => 1,
+            Self::Right => 2,
+            Self::Gamepad => 3,
+            Self::Eyes => 4,
+            Self::HandTrackingLeft => 5,
+            Self::HandTrackingRight => 6,
+            Self::GenericTracker => 7,
         }
     }
 
-    pub fn from_libmonado(monado: &libmonado_rs::Monado) -> Self {
-        let mut res = Self::default();
+    pub fn from_monado_str(s: &str) -> Option<Self> {
+        match s {
+            "head" => Some(Self::Head),
+            "left" => Some(Self::Left),
+            "right" => Some(Self::Right),
+            "gamepad" => Some(Self::Gamepad),
+            "eyes" => Some(Self::Eyes),
+            "hand_tracking.left" => Some(Self::HandTrackingLeft),
+            "hand_tracking.right" => Some(Self::HandTrackingRight),
+            _ => None,
+        }
+    }
+
+    pub fn from_display_str(s: &str) -> Self {
+        match s {
+            "Head" => Self::Head,
+            "Left" => Self::Left,
+            "Right" => Self::Right,
+            "Gamepad" => Self::Gamepad,
+            "Eye Tracking" => Self::Eyes,
+            "Hand tracking left" => Self::HandTrackingLeft,
+            "Hand tracking right" => Self::HandTrackingRight,
+            "Generic tracker" => Self::GenericTracker,
+            _ => Self::GenericTracker,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct XRDevice {
+    pub dev_type: XRDeviceType,
+    pub name: String,
+    pub id: String,
+    pub battery: f32, // battery percentage, from 0 to 1 maybe
+                      // still need to implement it in monado & gui
+}
+
+impl Default for XRDevice {
+    fn default() -> Self {
+        Self {
+            dev_type: XRDeviceType::GenericTracker,
+            name: String::default(),
+            id: String::default(),
+            battery: f32::default(),
+        }
+    }
+}
+
+impl XRDevice {
+    pub fn generic_tracker_from_log_row(s: &str) -> Option<Self> {
+        if s.starts_with(GENERIC_TRACKER_PREFIX) {
+            let n_tracker = s.trim_start_matches(GENERIC_TRACKER_PREFIX);
+            return Some(Self {
+                dev_type: XRDeviceType::GenericTracker,
+                id: n_tracker.into(),
+                ..Default::default()
+            });
+        }
+        None
+    }
+
+    pub fn from_libmonado(monado: &libmonado_rs::Monado) -> Vec<Self> {
+        let mut res = vec![];
         [
-            XRDevice::Head,
-            XRDevice::Left,
-            XRDevice::Right,
-            XRDevice::Gamepad,
-            XRDevice::Eyes,
+            XRDeviceType::Head,
+            XRDeviceType::Left,
+            XRDeviceType::Right,
+            XRDeviceType::Gamepad,
+            XRDeviceType::Eyes,
         ]
         .iter()
         .for_each(|xrd| {
             if let Ok(dev) = monado.device_from_role(xrd.to_monado_str()) {
-                res.set_device(&xrd, dev.name);
+                res.push(Self {
+                    name: dev.name,
+                    id: dev.id.to_string(),
+                    dev_type: xrd.clone(),
+                    ..Default::default()
+                })
             }
         });
         res
     }
 
-    pub fn from_log_message(s: &str) -> Option<Self> {
+    pub fn from_log_message(s: &str) -> Vec<Self> {
+        let mut res = vec![];
         let rows = s.split('\n');
         let mut in_section = false;
-        let mut devs = Self::default();
         for row in rows {
             if !in_section && row.starts_with("\tIn roles:") {
                 in_section = true;
@@ -103,64 +181,58 @@ impl XRDevices {
                 }
                 match row.trim().split(": ").collect::<Vec<&str>>()[..] {
                     [_, "<none>"] => {}
-                    ["head", val] => devs.head = Some(val.to_string()),
-                    ["left", val] => devs.left = Some(val.to_string()),
-                    ["right", val] => devs.right = Some(val.to_string()),
-                    ["gamepad", val] => devs.gamepad = Some(val.to_string()),
-                    ["eyes", val] => devs.eyes = Some(val.to_string()),
-                    ["hand_tracking.left", val] => devs.hand_tracking_left = Some(val.to_string()),
-                    ["hand_tracking.right", val] => {
-                        devs.hand_tracking_right = Some(val.to_string())
+                    [dev_type_s, name] => {
+                        if let Some(xrdt) = XRDeviceType::from_monado_str(dev_type_s) {
+                            res.push(Self {
+                                dev_type: xrdt,
+                                name: name.to_string(),
+                                ..Default::default()
+                            });
+                        }
                     }
                     _ => {}
                 }
             }
         }
-        if in_section {
-            return Some(devs);
-        }
-        None
+        res
     }
 
-    pub fn merge(&mut self, new: Self) {
-        if new.head.is_some() {
-            self.head = new.head;
+    pub fn merge(old: &[Self], new: &[Self]) -> Vec<Self> {
+        if old.is_empty() {
+            return Vec::from(new);
         }
-        if new.left.is_some() {
-            self.left = new.left;
-        }
-        if new.right.is_some() {
-            self.right = new.right;
-        }
-        if new.gamepad.is_some() {
-            self.gamepad = new.gamepad;
-        }
-        if new.eyes.is_some() {
-            self.eyes = new.eyes;
-        }
-        if new.hand_tracking_left.is_some() {
-            self.hand_tracking_left = new.hand_tracking_left;
-        }
-        if new.hand_tracking_right.is_some() {
-            self.hand_tracking_right = new.hand_tracking_right;
-        }
-        if !new.generic_trackers.is_empty() {
-            self.generic_trackers.extend(
-                new.generic_trackers
-                    .iter()
-                    .filter(|t| !self.generic_trackers.contains(t))
-                    .cloned()
-                    .collect::<Vec<String>>(),
-            );
-        }
-    }
-
-    pub fn search_log_for_generic_trackers(&mut self, s: &str) {
-        if s.starts_with(GENERIC_TRACKER_PREFIX) {
-            let n_tracker = s.trim_start_matches(GENERIC_TRACKER_PREFIX);
-            if !self.generic_trackers.contains(&n_tracker.to_string()) {
-                self.generic_trackers.push(n_tracker.into());
+        let new_dev_types = new
+            .iter()
+            .filter_map(|d| {
+                if d.dev_type == XRDeviceType::GenericTracker {
+                    return None;
+                }
+                Some(d.dev_type)
+            })
+            .collect::<Vec<XRDeviceType>>();
+        let mut res = old
+            .iter()
+            .filter(|d| !new_dev_types.contains(&d.dev_type))
+            .map(Self::clone)
+            .collect::<Vec<Self>>();
+        let old_tracker_ids = old
+            .iter()
+            .filter_map(|d| {
+                if d.dev_type == XRDeviceType::GenericTracker {
+                    return Some(d.id.clone());
+                }
+                None
+            })
+            .collect::<Vec<String>>();
+        for n_dev in new {
+            if n_dev.dev_type == XRDeviceType::GenericTracker {
+                if !old_tracker_ids.contains(&n_dev.id) {
+                    res.push(n_dev.clone());
+                }
+            } else {
+                res.push(n_dev.clone());
             }
         }
+        res
     }
 }
