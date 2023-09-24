@@ -1,48 +1,43 @@
+use super::{
+    alert::alert,
+    factories::device_row_factory::{DeviceRowModel, DeviceRowModelInit, DeviceRowState},
+};
 use crate::{
     file_builders::monado_config_v0::dump_generic_trackers,
-    xr_devices::{XRDevice, XRDevices},
+    xr_devices::{XRDevice, XRDeviceType},
 };
 use adw::prelude::*;
-use relm4::prelude::*;
-
-use super::alert::alert;
+use relm4::{factory::FactoryVecDeque, prelude::*, Sender};
 
 #[tracker::track]
 pub struct DevicesBox {
-    devices: Option<XRDevices>,
+    devices: Vec<XRDevice>,
+
+    #[tracker::do_not_track]
+    device_rows: FactoryVecDeque<DeviceRowModel>,
 }
 
 #[derive(Debug)]
 pub enum DevicesBoxMsg {
-    UpdateDevices(Option<XRDevices>),
+    UpdateDevices(Vec<XRDevice>),
     DumpGenericTrackers,
 }
 
 impl DevicesBox {
-    fn get_dev(&self, key: XRDevice) -> Option<String> {
-        match &self.devices {
-            None => None,
-            Some(devs) => match key {
-                XRDevice::Head => devs.head.clone(),
-                XRDevice::Left => devs.left.clone(),
-                XRDevice::Right => devs.right.clone(),
-                XRDevice::Gamepad => devs.gamepad.clone(),
-                XRDevice::Eyes => devs.eyes.clone(),
-                XRDevice::HandTrackingLeft => devs.hand_tracking_left.clone(),
-                XRDevice::HandTrackingRight => devs.hand_tracking_right.clone(),
-                XRDevice::GenericTracker => {
-                    if devs.generic_trackers.is_empty() {
-                        return None;
-                    } else {
-                        return Some(devs.generic_trackers.join(", "));
-                    }
-                }
-            },
-        }
-    }
+    fn create_save_trackers_btn(sender: Sender<DevicesBoxMsg>) -> gtk::Button {
+        let btn = gtk::Button::builder()
+            .halign(gtk::Align::Center)
+            .valign(gtk::Align::Center)
+            .icon_name("document-save-symbolic")
+            .tooltip_text("Save current trackers")
+            .css_classes(["circular", "flat"])
+            .build();
 
-    fn get_dev_or_none(&self, key: XRDevice) -> String {
-        self.get_dev(key).unwrap_or("None".into())
+        btn.connect_clicked(move |_| {
+            sender.emit(DevicesBoxMsg::DumpGenericTrackers);
+        });
+
+        btn
     }
 }
 
@@ -60,147 +55,129 @@ impl SimpleComponent for DevicesBox {
             set_spacing: 12,
             set_margin_top: 12,
             #[track = "model.changed(Self::devices())"]
-            set_visible: model.devices.is_some(),
-            gtk::ListBox {
-                add_css_class: "boxed-list",
-                set_selection_mode: gtk::SelectionMode::None,
-                set_margin_all: 12,
-                // Head
-                adw::ActionRow {
-                    #[track = "model.changed(Self::devices())"]
-                    set_icon_name: Some(match model.get_dev(XRDevice::Head) {
-                        Some(name) => match name.as_str() {
-                            "Simulated HMD" => "dialog-warning-symbolic",
-                            _ => "emblem-ok-symbolic",
-                        },
-                        None => "dialog-question-symbolic",
-                    }),
-                    #[track = "model.changed(Self::devices())"]
-                    set_class_active: ("error", model.get_dev(XRDevice::Head).is_none()),
-                    #[track = "model.changed(Self::devices())"]
-                    set_class_active: ("warning", model.get_dev_or_none(XRDevice::Head) == "Simulated HMD"),
-                    set_title: "Head",
-                    #[track = "model.changed(Self::devices())"]
-                    set_subtitle: match model.get_dev_or_none(XRDevice::Head).as_str() {
-                        "Simulated HMD" => "No HMD detected (Simulated HMD)",
-                        s => s,
-                    },
-                    // TODO: status icon with popover
-                },
-                // Left
-                adw::ActionRow {
-                    #[track = "model.changed(Self::devices())"]
-                    set_icon_name: Some(match model.get_dev(XRDevice::Left) {
-                        Some(_) => "emblem-ok-symbolic",
-                        None => "dialog-question-symbolic",
-                    }),
-                    #[track = "model.changed(Self::devices())"]
-                    set_class_active: ("error", model.get_dev(XRDevice::Left).is_none()),
-                    set_title: "Left",
-                    #[track = "model.changed(Self::devices())"]
-                    set_subtitle: model.get_dev_or_none(XRDevice::Left).as_str(),
-                    // TODO: status icon with popover
-                },
-                // Right
-                adw::ActionRow {
-                    #[track = "model.changed(Self::devices())"]
-                    set_icon_name: Some(match model.get_dev(XRDevice::Right) {
-                        Some(_) => "emblem-ok-symbolic",
-                        None => "dialog-question-symbolic",
-                    }),
-                    #[track = "model.changed(Self::devices())"]
-                    set_class_active: ("error", model.get_dev(XRDevice::Right).is_none()),
-                    set_title: "Right",
-                    #[track = "model.changed(Self::devices())"]
-                    set_subtitle: model.get_dev_or_none(XRDevice::Right).as_str(),
-                    // TODO: status icon with popover
-                },
-                // Gamepad
-                adw::ActionRow {
-                    #[track = "model.changed(Self::devices())"]
-                    set_visible: model.get_dev(XRDevice::Gamepad).is_some(),
-                    set_icon_name: Some("emblem-ok-symbolic"),
-                    set_title: "Gamepad",
-                    #[track = "model.changed(Self::devices())"]
-                    set_subtitle: model.get_dev_or_none(XRDevice::Gamepad).as_str(),
-                },
-                // Eyes
-                adw::ActionRow {
-                    #[track = "model.changed(Self::devices())"]
-                    set_visible: model.get_dev(XRDevice::Eyes).is_some(),
-                    set_icon_name: Some("emblem-ok-symbolic"),
-                    set_title: "Eye Tracking",
-                    #[track = "model.changed(Self::devices())"]
-                    set_subtitle: model.get_dev_or_none(XRDevice::Eyes).as_str(),
-                },
-                // Hand Tracking Left
-                adw::ActionRow {
-                    #[track = "model.changed(Self::devices())"]
-                    set_visible: model.get_dev(XRDevice::HandTrackingLeft).is_some(),
-                    set_icon_name: Some("emblem-ok-symbolic"),
-                    set_title: "Hand Tracking Left",
-                    #[track = "model.changed(Self::devices())"]
-                    set_subtitle: model.get_dev_or_none(XRDevice::HandTrackingLeft).as_str(),
-                },
-                // Hand Tracking Right
-                adw::ActionRow {
-                    #[track = "model.changed(Self::devices())"]
-                    set_visible: model.get_dev(XRDevice::HandTrackingRight).is_some(),
-                    set_icon_name: Some("emblem-ok-symbolic"),
-                    set_title: "Hand Tracking Right",
-                    #[track = "model.changed(Self::devices())"]
-                    set_subtitle: model.get_dev_or_none(XRDevice::HandTrackingRight).as_str(),
-                },
-                // Generic Trackers
-                adw::ActionRow {
-                    #[track = "model.changed(Self::devices())"]
-                    set_visible: model.get_dev(XRDevice::GenericTracker).is_some(),
-                    set_icon_name: Some("emblem-ok-symbolic"),
-                    set_title: "Generic Trackers",
-                    #[track = "model.changed(Self::devices())"]
-                    set_subtitle: model.get_dev_or_none(XRDevice::GenericTracker).as_str(),
-                    add_suffix: save_trackers_btn = &gtk::Button {
-                        set_halign: gtk::Align::Center,
-                        set_valign: gtk::Align::Center,
-                        set_icon_name: "document-save-symbolic",
-                        set_tooltip_text: Some("Save current trackers"),
-                        set_css_classes: &["circular", "flat"],
-                        connect_clicked => move |_| {
-                            sender.input(Self::Input::DumpGenericTrackers);
-                        }
-                    },
-                },
-            }
+            set_visible: !model.devices.is_empty(),
+
+            append: &devices_listbox,
         }
     }
 
-    fn update(&mut self, message: Self::Input, _sender: ComponentSender<Self>) {
+    fn update(&mut self, message: Self::Input, sender: ComponentSender<Self>) {
         self.reset();
 
         match message {
             Self::Input::UpdateDevices(devs) => {
                 self.set_devices(devs);
+                let mut guard = self.device_rows.guard();
+                guard.clear();
+                if !self.devices.is_empty() {
+                    let mut has_head = false;
+                    let mut has_left = false;
+                    let mut has_right = false;
+                    let mut models: Vec<DeviceRowModelInit> = vec![];
+                    let mut generic: Vec<&XRDevice> = vec![];
+                    for dev in &self.devices {
+                        match dev.dev_type {
+                            XRDeviceType::Head => {
+                                has_head = true;
+                                let mut init = DeviceRowModelInit::from_xr_device(&dev);
+                                if dev.name == "Simulated HMD" {
+                                    init.state = Some(DeviceRowState::Warning);
+                                    init.subtitle = Some("No HMD detected (Simulated HMD)".into());
+                                }
+                                models.push(init);
+                            }
+                            XRDeviceType::Left => {
+                                has_left = true;
+                                models.push(DeviceRowModelInit::from_xr_device(&dev));
+                            }
+                            XRDeviceType::Right => {
+                                has_right = true;
+                                models.push(DeviceRowModelInit::from_xr_device(&dev));
+                            }
+                            XRDeviceType::GenericTracker => {
+                                generic.push(dev);
+                            }
+                            _ => {
+                                models.push(DeviceRowModelInit::from_xr_device(&dev));
+                            }
+                        };
+                    }
+                    if !generic.is_empty() {
+                        models.push(DeviceRowModelInit {
+                            title: Some(XRDeviceType::GenericTracker.to_string()),
+                            subtitle: Some(
+                                generic
+                                    .iter()
+                                    .map(|d| d.id.as_str())
+                                    .collect::<Vec<&str>>()
+                                    .join(", "),
+                            ),
+                            suffix: Some(
+                                Self::create_save_trackers_btn(sender.input_sender().clone())
+                                    .upcast::<gtk::Widget>(),
+                            ),
+                            ..Default::default()
+                        });
+                    }
+                    if !has_right {
+                        models.push(DeviceRowModelInit::new_missing(XRDeviceType::Right));
+                    }
+                    if !has_left {
+                        models.push(DeviceRowModelInit::new_missing(XRDeviceType::Left));
+                    }
+                    if !has_head {
+                        models.push(DeviceRowModelInit::new_missing(XRDeviceType::Head));
+                    }
+
+                    models.sort_by(|m1, m2| {
+                        let dt1 = XRDeviceType::from_display_str(
+                            m1.title.as_ref().unwrap_or(&String::new()),
+                        );
+                        let dt2 = XRDeviceType::from_display_str(
+                            m2.title.as_ref().unwrap_or(&String::new()),
+                        );
+                        dt1.cmp(&dt2)
+                    });
+
+                    for model in models {
+                        guard.push_back(model);
+                    }
+                }
             }
             Self::Input::DumpGenericTrackers => {
-                if let Some(devs) = self.devices.as_ref() {
-                    let added = dump_generic_trackers(&devs.generic_trackers);
-                    let multi_title = format!("Added {} new trackers", added);
-                    let (title, msg) = match added {
-                        0 => (
-                            "No new trackers found",
-                            "All the currently connected trackers are already present in your configuration"
+                let added = dump_generic_trackers(
+                    &self
+                        .devices
+                        .iter()
+                        .filter(|d| d.dev_type == XRDeviceType::GenericTracker)
+                        .map(|d| d.id.clone())
+                        .collect::<Vec<String>>(),
+                );
+                let multi_title = format!("Added {} new trackers", added);
+                let (title, msg) = match added {
+                    0 => (
+                        "No new trackers found",
+                        concat!(
+                            "All the currently connected trackers ",
+                            "are already present in your configuration"
                         ),
-                        1 => (
-                            "Added 1 new tracker",
-                            "Edit your configuration to make sure that all the trackers have the appropriate roles assigned"
+                    ),
+                    1 => (
+                        "Added 1 new tracker",
+                        concat!(
+                            "Edit your configuration to make sure that ",
+                            "all the trackers have the appropriate roles assigned"
                         ),
-                        _ => (
-                            multi_title.as_str(),
-                            "Edit your configuration to make sure that all the trackers have the appropriate roles assigned"
+                    ),
+                    _ => (
+                        multi_title.as_str(),
+                        concat!(
+                            "Edit your configuration to make sure that ",
+                            "all the trackers have the appropriate roles assigned"
                         ),
-                    };
-                    alert(title, Some(msg), None);
-                }
+                    ),
+                };
+                alert(title, Some(msg), None);
             }
         }
     }
@@ -210,9 +187,19 @@ impl SimpleComponent for DevicesBox {
         root: &Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
+        let devices_listbox = gtk::ListBox::builder()
+            .css_classes(["boxed-list"])
+            .selection_mode(gtk::SelectionMode::None)
+            .margin_start(12)
+            .margin_end(12)
+            .margin_top(12)
+            .margin_bottom(12)
+            .build();
+
         let model = Self {
             tracker: 0,
-            devices: None,
+            devices: vec![],
+            device_rows: FactoryVecDeque::new(devices_listbox.clone(), sender.input_sender()),
         };
 
         let widgets = view_output!();

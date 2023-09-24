@@ -23,7 +23,11 @@ cargo:test:
     - echo 'deb http://deb.debian.org/debian experimental main' > /etc/apt/sources.list.d/experimental.list
     - apt-get update
     - apt-get -t experimental install libgtk-4-dev libadwaita-1-dev libgtksourceview-5-dev libssl-dev -y
-    - apt-get install rust-all cargo meson ninja-build git desktop-file-utils gettext libjxl-dev file libusb-dev libusb-1.0-0-dev -y
+    - apt-get install meson ninja-build git desktop-file-utils gettext libjxl-dev file libusb-dev libusb-1.0-0-dev curl -y
+    - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs -o /tmp/rustup.sh
+    - chmod +x /tmp/rustup.sh
+    - /tmp/rustup.sh -y
+    - source "$HOME/.cargo/env"
     - rustc --version && cargo --version  # Print version info for debugging
     - meson setup build -Dprefix="$PWD/build/localprefix" -Dprofile=development
     - ninja -C build
@@ -38,7 +42,11 @@ appimage:
     - echo 'deb http://deb.debian.org/debian experimental main' > /etc/apt/sources.list.d/experimental.list
     - apt-get update
     - apt-get -t experimental install libgtk-4-dev libadwaita-1-dev libgtksourceview-5-dev libssl-dev -y
-    - apt-get install rust-all cargo meson ninja-build git desktop-file-utils gettext libjxl-dev file libusb-dev libusb-1.0-0-dev -y
+    - apt-get install meson ninja-build git desktop-file-utils gettext libjxl-dev file libusb-dev libusb-1.0-0-dev curl -y
+    - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs -o /tmp/rustup.sh
+    - chmod +x /tmp/rustup.sh
+    - /tmp/rustup.sh -y
+    - source "$HOME/.cargo/env"
     - bash ./dist/appimage/build_appimage.sh
   artifacts:
     paths:

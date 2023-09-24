@@ -30,6 +30,7 @@ pub mod func_runner;
 pub mod gpu_profile;
 pub mod log_level;
 pub mod log_parser;
+pub mod monado_utils;
 pub mod paths;
 pub mod profile;
 pub mod profiles;

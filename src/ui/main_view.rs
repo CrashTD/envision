@@ -18,7 +18,7 @@ use crate::ui::app::{
 };
 use crate::ui::profile_editor::ProfileEditorInit;
 use crate::ui::util::{limit_dropdown_width, warning_heading};
-use crate::xr_devices::XRDevices;
+use crate::xr_devices::XRDevice;
 use gtk::prelude::*;
 use relm4::adw::traits::MessageDialogExt;
 use relm4::adw::ResponseAppearance;
@@ -66,7 +66,7 @@ pub enum MainViewMsg {
     DeleteProfile,
     DuplicateProfile,
     SaveProfile(Profile),
-    UpdateDevices(Option<XRDevices>),
+    UpdateDevices(Vec<XRDevice>),
 }
 
 #[derive(Debug)]
@@ -462,7 +462,7 @@ impl SimpleComponent for MainView {
             Self::Input::XRServiceActiveChanged(active, profile) => {
                 self.set_xrservice_active(active);
                 if !active {
-                    sender.input(Self::Input::UpdateDevices(None));
+                    sender.input(Self::Input::UpdateDevices(vec![]));
                 }
                 self.steam_launch_options_box
                     .sender()

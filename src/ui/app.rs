@@ -3,6 +3,7 @@ use super::alert::alert;
 use super::build_window::{BuildStatus, BuildWindow};
 use super::debug_view::{DebugView, DebugViewMsg};
 use super::fbt_config_editor::{FbtConfigEditor, FbtConfigEditorInit, FbtConfigEditorMsg};
+use super::feature_flags::FF_LIBMONADO_DEVICE_ENUMERATION_ENABLED;
 use super::job_worker::internal_worker::JobWorkerOut;
 use super::job_worker::job::WorkerJob;
 use super::job_worker::JobWorker;
@@ -43,7 +44,7 @@ use crate::ui::build_window::{BuildWindowMsg, BuildWindowOutMsg};
 use crate::ui::debug_view::DebugViewInit;
 use crate::ui::libsurvive_setup_window::LibsurviveSetupMsg;
 use crate::ui::main_view::{MainView, MainViewInit, MainViewOutMsg};
-use crate::xr_devices::XRDevices;
+use crate::xr_devices::XRDevice;
 use crate::{stateless_action, withclones};
 use gtk::prelude::*;
 use relm4::actions::{AccelsPlus, ActionGroupName, RelmAction, RelmActionGroup};
@@ -91,9 +92,11 @@ pub struct App {
     #[tracker::do_not_track]
     profiles: Vec<Profile>,
     #[tracker::do_not_track]
-    xr_devices: XRDevices,
+    xr_devices: Vec<XRDevice>,
     #[tracker::do_not_track]
     fbt_config_editor: Option<Controller<FbtConfigEditor>>,
+    #[tracker::do_not_track]
+    libmonado: Option<libmonado_rs::Monado>,
 }
 
 #[derive(Debug)]
@@ -162,7 +165,7 @@ impl App {
             return;
         };
         self.debug_view.sender().emit(DebugViewMsg::ClearLog);
-        self.xr_devices = XRDevices::default();
+        self.xr_devices = vec![];
         if prof.can_start() {
             remove_file(&get_ipc_file_path(&prof.xrservice_type))
                 .is_err()
@@ -218,11 +221,12 @@ impl App {
         if let Some(worker) = self.xrservice_worker.as_ref() {
             worker.stop();
         }
+        self.libmonado = None;
         self.restore_openxr_openvr_files();
         self.main_view
             .sender()
             .emit(MainViewMsg::XRServiceActiveChanged(false, None));
-        self.xr_devices = XRDevices::default();
+        self.xr_devices = vec![];
     }
 
     pub fn profiles_list(config: &Config) -> Vec<Profile> {
@@ -309,26 +313,49 @@ impl SimpleComponent for App {
             }
             Msg::ClockTicking => {
                 self.main_view.sender().emit(MainViewMsg::ClockTicking);
+                if *FF_LIBMONADO_DEVICE_ENUMERATION_ENABLED {
+                    if let Some(w) = self.xrservice_worker.as_ref() {
+                        if {
+                            let state = w.state.lock().unwrap();
+                            state.exit_status.is_none() && !state.stop_requested
+                        } {
+                            if let Some(monado) = self.libmonado.as_ref() {
+                                self.xr_devices = XRDevice::merge(
+                                    &self.xr_devices,
+                                    &XRDevice::from_libmonado(monado),
+                                );
+                                self.main_view
+                                    .sender()
+                                    .emit(MainViewMsg::UpdateDevices(self.xr_devices.clone()));
+                            } else {
+                                if let Some(so) = self.get_selected_profile().libmonado_so() {
+                                    self.libmonado = libmonado_rs::Monado::create(so).ok();
+                                    if self.libmonado.is_some() {
+                                        sender.input(Msg::ClockTicking);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
             Msg::ParseLog(rows) => {
                 for row in rows {
                     match MonadoLog::new_from_str(row.as_str()) {
                         None => {}
                         Some(parsed) => {
-                            if parsed.func == "p_create_system" {
-                                match XRDevices::from_log_message(parsed.message.as_str()) {
-                                    None => {}
-                                    Some(devices) => {
-                                        self.xr_devices.merge(devices.clone());
-                                        self.main_view.sender().emit(MainViewMsg::UpdateDevices(
-                                            Some(self.xr_devices.clone()),
-                                        ));
-                                        break;
-                                    }
-                                };
-                            } else {
-                                self.xr_devices
-                                    .search_log_for_generic_trackers(parsed.message.as_str());
+                            if !*FF_LIBMONADO_DEVICE_ENUMERATION_ENABLED
+                                && parsed.func == "p_create_system"
+                            {
+                                let n_devs = XRDevice::from_log_message(parsed.message.as_str());
+                                self.xr_devices = XRDevice::merge(&self.xr_devices, &n_devs);
+                                self.main_view
+                                    .sender()
+                                    .emit(MainViewMsg::UpdateDevices(self.xr_devices.clone()));
+                            } else if let Some(tracker) =
+                                XRDevice::generic_tracker_from_log_row(parsed.message.as_str())
+                            {
+                                self.xr_devices.push(tracker);
                             }
                         }
                     };
@@ -364,7 +391,7 @@ impl SimpleComponent for App {
                             self.start_xrservice(sender);
                         }
                         None => {
-                            worker.stop();
+                            self.shutdown_xrservice();
                             self.restart_xrservice = true;
                         }
                     }
@@ -643,9 +670,10 @@ impl SimpleComponent for App {
             profiles,
             xrservice_worker: None,
             build_worker: None,
-            xr_devices: XRDevices::default(),
+            xr_devices: vec![],
             fbt_config_editor: None,
             restart_xrservice: false,
+            libmonado: None,
         };
         let widgets = view_output!();
 
