@@ -1,5 +1,5 @@
 use adw::prelude::*;
-use relm4::prelude::*;
+use relm4::{factory::AsyncFactoryComponent, prelude::*, AsyncFactorySender};
 
 use crate::{
     ui::devices_box::DevicesBoxMsg,
@@ -72,13 +72,12 @@ impl DeviceRowModelInit {
     }
 }
 
-#[relm4::factory(pub)]
-impl FactoryComponent for DeviceRowModel {
+#[relm4::factory(async pub)]
+impl AsyncFactoryComponent for DeviceRowModel {
     type Init = DeviceRowModelInit;
     type Input = ();
     type Output = ();
     type CommandOutput = ();
-    type Widgets = DeviceRowModelWidgets;
     type ParentInput = DevicesBoxMsg;
     type ParentWidget = gtk::ListBox;
 
@@ -95,10 +94,10 @@ impl FactoryComponent for DeviceRowModel {
 
     fn init_widgets(
         &mut self,
-        _index: &Self::Index,
+        _index: &DynamicIndex,
         root: &Self::Root,
         _returned_widget: &<Self::ParentWidget as relm4::factory::FactoryView>::ReturnedWidget,
-        _sender: FactorySender<Self>,
+        _sender: AsyncFactorySender<Self>,
     ) -> Self::Widgets {
         let widgets = view_output!();
 
@@ -113,7 +112,11 @@ impl FactoryComponent for DeviceRowModel {
         widgets
     }
 
-    fn init_model(init: Self::Init, _index: &Self::Index, _sender: FactorySender<Self>) -> Self {
+    async fn init_model(
+        init: Self::Init,
+        _index: &DynamicIndex,
+        _sender: AsyncFactorySender<Self>,
+    ) -> Self {
         Self {
             title: init.title.unwrap_or_default(),
             subtitle: init.subtitle.unwrap_or_default(),

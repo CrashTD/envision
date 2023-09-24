@@ -9,7 +9,7 @@ use crate::{
     withclones,
 };
 use adw::prelude::*;
-use relm4::{factory::FactoryVecDeque, prelude::*};
+use relm4::{factory::AsyncFactoryVecDeque, prelude::*};
 use std::{cell::RefCell, rc::Rc};
 
 #[tracker::track]
@@ -18,7 +18,7 @@ pub struct ProfileEditor {
     #[tracker::do_not_track]
     win: Option<adw::Window>,
     #[tracker::do_not_track]
-    env_rows: FactoryVecDeque<EnvVarModel>,
+    env_rows: AsyncFactoryVecDeque<EnvVarModel>,
 }
 
 #[derive(Debug)]
@@ -360,7 +360,7 @@ impl SimpleComponent for ProfileEditor {
                     .env_rows
                     .guard()
                     .iter()
-                    .position(|evr| evr.name == name);
+                    .position(|evr| evr.unwrap().name == name);
                 if let Some(p) = pos {
                     self.env_rows.guard().remove(p);
                 }
@@ -415,7 +415,7 @@ impl SimpleComponent for ProfileEditor {
         let mut model = Self {
             profile,
             win: None,
-            env_rows: FactoryVecDeque::new(
+            env_rows: AsyncFactoryVecDeque::new(
                 adw::PreferencesGroup::builder()
                     .title("Environment Variables")
                     .description(env_var_descriptions_as_paragraph())

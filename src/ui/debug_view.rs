@@ -16,7 +16,6 @@ pub enum SearchDirection {
 pub enum DebugViewMsg {
     LogUpdated(Vec<String>),
     ClearLog,
-    EnableDebugViewChanged(bool),
     FilterLog(SearchDirection),
     LogLevelChanged(LogLevel),
 }
@@ -45,13 +44,9 @@ pub struct DebugView {
     search_mark: Option<gtk::TextMark>,
     #[tracker::do_not_track]
     log_level: LogLevel,
-
-    enable_debug_view: bool,
 }
 
-pub struct DebugViewInit {
-    pub enable_debug_view: bool,
-}
+pub struct DebugViewInit {}
 
 #[relm4::component(pub)]
 impl SimpleComponent for DebugView {
@@ -64,34 +59,23 @@ impl SimpleComponent for DebugView {
             set_orientation: gtk::Orientation::Vertical,
             set_hexpand: true,
             set_vexpand: true,
-            #[track = "model.changed(DebugView::enable_debug_view())"]
-            set_visible: model.enable_debug_view,
-            gtk::WindowHandle {
+            adw::HeaderBar {
                 set_hexpand: true,
                 set_vexpand: false,
-                adw::HeaderBar {
-                    #[wrap(Some)]
-                    set_title_widget: title_label = &gtk::Label {
-                        set_label: "Debug View",
-                        add_css_class: "title",
-                    },
-                    pack_end: search_toggle = &gtk::ToggleButton {
-                        set_icon_name: "edit-find-symbolic",
-                        set_tooltip_text: Some("Filter Log"),
-                    },
-                    pack_start: log_level_dropdown = &gtk::DropDown::from_strings(
-                        LogLevel::iter()
-                            .map(|lvl| lvl.to_string())
-                            .collect::<Vec<String>>()
-                            .iter()
-                            .map(|s| s.as_str())
-                            .collect::<Vec<&str>>()
-                            .as_slice()
-                    ),
+                add_css_class: "flat",
+                #[wrap(Some)]
+                set_title_widget: title_label = &adw::WindowTitle {
+                    set_title: "Debug View",
                 },
+                pack_end: search_toggle = &gtk::ToggleButton {
+                    set_icon_name: "edit-find-symbolic",
+                    set_tooltip_text: Some("Filter Log"),
+                },
+                pack_start: &log_level_dropdown,
             },
             #[name(searchbar)]
             gtk::SearchBar {
+                set_margin_start: 1,
                 set_hexpand: true,
                 #[chain(flags(gtk::glib::BindingFlags::BIDIRECTIONAL).build())]
                 bind_property: ("search-mode-enabled", &search_toggle, "active"),
@@ -131,8 +115,10 @@ impl SimpleComponent for DebugView {
             gtk::ScrolledWindow {
                 set_hexpand: true,
                 set_vexpand: true,
+                add_css_class: "undershoot-top",
                 #[name(textview)]
                 sourceview5::View {
+                    set_margin_start: 1,
                     set_hexpand: true,
                     set_vexpand: true,
                     set_editable: false,
@@ -227,21 +213,21 @@ impl SimpleComponent for DebugView {
                 self.log = vec![];
                 self.textbuf.set_text("");
             }
-            Self::Input::EnableDebugViewChanged(val) => self.set_enable_debug_view(val),
         }
     }
 
     fn init(
-        init: Self::Init,
+        _init: Self::Init,
         root: &Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
         let textbuf = sourceview5::Buffer::builder()
             .highlight_syntax(false)
             .build();
-        match &sourceview5::StyleSchemeManager::new().scheme("Adwaita-dark") {
-            Some(scheme) => textbuf.set_style_scheme(Some(scheme)),
-            None => {}
+        if let Some(scheme) = &sourceview5::StyleSchemeManager::new().scheme("Adwaita-dark") {
+            textbuf.set_style_scheme(Some(scheme));
+        } else {
+            println!("gtksourceview style scheme not found")
         }
         let search_settings = sourceview5::SearchSettings::builder()
             .wrap_around(true)
@@ -251,12 +237,36 @@ impl SimpleComponent for DebugView {
             .buffer(&textbuf)
             .settings(&search_settings)
             .build();
+
+        let log_level_dropdown = gtk::DropDown::from_strings(
+            LogLevel::iter()
+                .map(|lvl| lvl.to_string())
+                .collect::<Vec<String>>()
+                .iter()
+                .map(|s| s.as_str())
+                .collect::<Vec<&str>>()
+                .as_slice(),
+        );
+        if let Some(btn) = log_level_dropdown.first_child() {
+            btn.add_css_class("flat");
+        }
+        {
+            withclones![sender];
+            log_level_dropdown.connect_selected_notify(move |dd| {
+                sender.input(Self::Input::LogLevelChanged(
+                    *LogLevel::iter()
+                        .as_slice()
+                        .get(dd.selected() as usize)
+                        .unwrap(),
+                ));
+            });
+        }
+
         let mut model = Self {
             tracker: 0,
             log: vec![],
             textbuf,
             textview: None,
-            enable_debug_view: init.enable_debug_view,
             searchbar: None,
             search_entry: None,
             dropdown: None,
@@ -271,22 +281,8 @@ impl SimpleComponent for DebugView {
         model.searchbar = Some(widgets.searchbar.clone());
         model.search_entry = Some(widgets.search_entry.clone());
         model.textview = Some(widgets.textview.clone());
-        model.dropdown = Some(widgets.log_level_dropdown.clone());
+        model.dropdown = Some(log_level_dropdown.clone());
         model.scrolledwin = Some(widgets.scrolledwin.clone());
-
-        {
-            withclones![sender];
-            widgets
-                .log_level_dropdown
-                .connect_selected_notify(move |dd| {
-                    sender.input(Self::Input::LogLevelChanged(
-                        *LogLevel::iter()
-                            .as_slice()
-                            .get(dd.selected() as usize)
-                            .unwrap(),
-                    ));
-                });
-        }
 
         ComponentParts { model, widgets }
     }

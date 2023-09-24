@@ -73,6 +73,8 @@ pub struct App {
     #[tracker::do_not_track]
     debug_view: Controller<DebugView>,
     #[tracker::do_not_track]
+    split_view: Option<adw::OverlaySplitView>,
+    #[tracker::do_not_track]
     about_dialog: Controller<AboutDialog>,
     #[tracker::do_not_track]
     build_window: Controller<BuildWindow>,
@@ -258,21 +260,23 @@ impl SimpleComponent for App {
         adw::ApplicationWindow {
             set_title: Some(APP_NAME),
             set_default_size: (win_size[0], win_size[1]),
+            set_width_request: 390,
             gtk::Box {
                 set_orientation: gtk::Orientation::Vertical,
                 set_hexpand: true,
                 set_vexpand: true,
-                gtk::Box {
-                    set_orientation: gtk::Orientation::Horizontal,
+                #[name = "split_view"]
+                adw::OverlaySplitView {
                     set_hexpand: true,
                     set_vexpand: true,
-                    model.main_view.widget(),
-                    gtk::Separator {
-                        set_orientation: gtk::Orientation::Vertical,
-                        #[track = "model.changed(App::enable_debug_view())"]
-                        set_visible: model.enable_debug_view,
-                    },
-                    model.debug_view.widget(),
+                    set_content: Some(model.main_view.widget()),
+                    set_sidebar: Some(model.debug_view.widget()),
+                    set_sidebar_position: gtk::PackType::End,
+                    set_show_sidebar: model.config.debug_view_enabled,
+                    set_sidebar_width_fraction: 1.0,
+                    // stupid way to make sidebar hexpand
+                    set_max_sidebar_width: 999999.9,
+                    set_pin_sidebar: true,
                 }
             },
             connect_close_request[sender] => move |win| {
@@ -365,9 +369,7 @@ impl SimpleComponent for App {
                 self.set_enable_debug_view(val);
                 self.config.debug_view_enabled = val;
                 self.config.save();
-                self.debug_view
-                    .sender()
-                    .emit(DebugViewMsg::EnableDebugViewChanged(val));
+                self.split_view.clone().unwrap().set_show_sidebar(val);
                 self.main_view
                     .sender()
                     .emit(MainViewMsg::EnableDebugViewChanged(val));
@@ -623,7 +625,7 @@ impl SimpleComponent for App {
             });
         }
 
-        let model = App {
+        let mut model = App {
             application: init.application,
             app_win: root.clone(),
             inhibit_id: None,
@@ -642,13 +644,12 @@ impl SimpleComponent for App {
                     MainViewOutMsg::SaveProfile(p) => Msg::SaveProfile(p),
                     MainViewOutMsg::OpenLibsurviveSetup => Msg::OpenLibsurviveSetup,
                 }),
-            debug_view: DebugView::builder()
-                .launch(DebugViewInit {
-                    enable_debug_view: config.debug_view_enabled,
-                })
-                .forward(sender.input_sender(), |message| match message {
+            debug_view: DebugView::builder().launch(DebugViewInit {}).forward(
+                sender.input_sender(),
+                |message| match message {
                     _ => Msg::ClockTicking,
-                }),
+                },
+            ),
             about_dialog: AboutDialog::builder()
                 .transient_for(root)
                 .launch(())
@@ -663,6 +664,7 @@ impl SimpleComponent for App {
                 .transient_for(root)
                 .launch(())
                 .detach(),
+            split_view: None,
             setcap_confirm_dialog,
             enable_debug_view: config.debug_view_enabled,
             config,
@@ -742,6 +744,8 @@ impl SimpleComponent for App {
                 glib::ControlFlow::Continue
             });
         }
+
+        model.split_view = Some(widgets.split_view.clone());
 
         ComponentParts { model, widgets }
     }

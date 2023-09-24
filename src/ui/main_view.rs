@@ -123,37 +123,36 @@ impl SimpleComponent for MainView {
     }
 
     view! {
-        gtk::Box {
-            set_orientation: gtk::Orientation::Vertical,
+        // TODO: refactor with adw.toolbarview
+        adw::ToolbarView {
+            set_top_bar_style: adw::ToolbarStyle::Flat,
+            set_bottom_bar_style: adw::ToolbarStyle::Flat,
             #[track = "model.changed(Self::enable_debug_view())"]
             set_hexpand: !model.enable_debug_view,
             set_vexpand: true,
             set_size_request: (360, 350),
-            gtk::WindowHandle {
+            add_top_bar: top_bar = &adw::HeaderBar {
                 set_hexpand: true,
                 set_vexpand: false,
-                adw::HeaderBar {
-                    #[wrap(Some)]
-                    set_title_widget: title_label = &gtk::Label {
-                        set_label: APP_NAME,
-                        add_css_class: "title",
-                    },
-                    pack_end: menu_btn = &gtk::MenuButton {
-                        set_icon_name: "open-menu-symbolic",
-                        set_menu_model: Some(&app_menu),
-                    },
-                    #[track = "model.changed(Self::enable_debug_view())"]
-                    set_show_end_title_buttons: !model.enable_debug_view,
+                #[wrap(Some)]
+                set_title_widget: title_label = &adw::WindowTitle {
+                    set_title: APP_NAME,
                 },
+                pack_end: menu_btn = &gtk::MenuButton {
+                    set_icon_name: "open-menu-symbolic",
+                    set_menu_model: Some(&app_menu),
+                },
+                #[track = "model.changed(Self::enable_debug_view())"]
+                set_show_end_title_buttons: !model.enable_debug_view,
             },
-            gtk::ScrolledWindow {
+            #[wrap(Some)]
+            set_content: content = &gtk::ScrolledWindow {
                 set_hscrollbar_policy: gtk::PolicyType::Never,
                 set_hexpand: true,
                 set_vexpand: true,
                 gtk::Box {
-                    set_spacing: 6,
-                    set_margin_top: 12,
-                    set_margin_bottom: 12,
+                    set_spacing: 12,
+                    set_margin_all: 12,
                     set_orientation: gtk::Orientation::Vertical,
                     gtk::Box {
                         set_halign: gtk::Align::Center,
@@ -195,7 +194,6 @@ impl SimpleComponent for MainView {
                         set_hexpand: true,
                         set_vexpand: false,
                         set_spacing: 12,
-                        set_margin_all: 12,
                         add_css_class: "card",
                         add_css_class: "padded",
                         #[track = "model.changed(Self::selected_profile())"]
@@ -229,7 +227,6 @@ impl SimpleComponent for MainView {
                         set_hexpand: true,
                         set_vexpand: false,
                         set_spacing: 12,
-                        set_margin_all: 12,
                         add_css_class: "card",
                         add_css_class: "padded",
                         #[track = "model.changed(Self::selected_profile())"]
@@ -252,7 +249,6 @@ impl SimpleComponent for MainView {
                         set_hexpand: true,
                         set_vexpand: false,
                         set_spacing: 12,
-                        set_margin_all: 12,
                         add_css_class: "card",
                         add_css_class: "padded",
                         #[track = "model.changed(Self::selected_profile())"]
@@ -335,7 +331,6 @@ impl SimpleComponent for MainView {
                         set_hexpand: true,
                         set_vexpand: false,
                         set_spacing: 12,
-                        set_margin_all: 12,
                         add_css_class: "card",
                         add_css_class: "padded",
                         #[track = "model.changed(Self::selected_profile())"]
@@ -371,15 +366,10 @@ impl SimpleComponent for MainView {
                     },
                 }
             },
-            gtk::Separator {
-                set_orientation: gtk::Orientation::Horizontal,
-                set_hexpand: true,
-            },
-            gtk::Box {
+            add_bottom_bar: bottom_bar = &gtk::Box {
                 set_orientation: gtk::Orientation::Horizontal,
                 set_spacing: 12,
-                add_css_class: "toolbar",
-                add_css_class: "view",
+                set_margin_all: 12,
                 gtk::Box {
                     set_orientation: gtk::Orientation::Horizontal,
                     add_css_class: "linked",

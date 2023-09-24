@@ -5,7 +5,7 @@ use crate::{
     withclones,
 };
 use adw::prelude::*;
-use relm4::prelude::*;
+use relm4::{factory::AsyncFactoryComponent, prelude::*, AsyncFactorySender};
 
 #[derive(Debug)]
 pub struct TrackerRoleModel {
@@ -30,13 +30,12 @@ pub enum TrackerRoleModelOutMsg {
     Delete(usize),
 }
 
-#[relm4::factory(pub)]
-impl FactoryComponent for TrackerRoleModel {
+#[relm4::factory(async pub)]
+impl AsyncFactoryComponent for TrackerRoleModel {
     type Init = TrackerRoleModelInit;
     type Input = TrackerRoleModelMsg;
     type Output = TrackerRoleModelOutMsg;
     type CommandOutput = ();
-    type Widgets = TrackerRoleModelWidgets;
     type ParentInput = FbtConfigEditorMsg;
     type ParentWidget = adw::PreferencesPage;
 
@@ -90,7 +89,7 @@ impl FactoryComponent for TrackerRoleModel {
         })
     }
 
-    fn update(&mut self, message: Self::Input, sender: FactorySender<Self>) {
+    async fn update(&mut self, message: Self::Input, sender: AsyncFactorySender<Self>) {
         match message {
             Self::Input::Changed(r) => {
                 self.tracker_role = r;
@@ -100,7 +99,11 @@ impl FactoryComponent for TrackerRoleModel {
         }
     }
 
-    fn init_model(init: Self::Init, _index: &Self::Index, _sender: FactorySender<Self>) -> Self {
+    async fn init_model(
+        init: Self::Init,
+        _index: &DynamicIndex,
+        _sender: AsyncFactorySender<Self>,
+    ) -> Self {
         Self {
             index: init.index,
             tracker_role: init.tracker_role.unwrap_or_else(|| TrackerRole::default()),

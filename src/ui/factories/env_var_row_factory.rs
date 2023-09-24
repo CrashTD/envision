@@ -1,6 +1,6 @@
 use crate::ui::profile_editor::ProfileEditorMsg;
 use adw::prelude::*;
-use relm4::prelude::*;
+use relm4::{factory::AsyncFactoryComponent, prelude::*, AsyncFactorySender};
 
 #[derive(Debug)]
 pub struct EnvVarModel {
@@ -25,13 +25,12 @@ pub enum EnvVarModelOutMsg {
     Delete(String),
 }
 
-#[relm4::factory(pub)]
-impl FactoryComponent for EnvVarModel {
+#[relm4::factory(async pub)]
+impl AsyncFactoryComponent for EnvVarModel {
     type Init = EnvVarModelInit;
     type Input = EnvVarModelMsg;
     type Output = EnvVarModelOutMsg;
     type CommandOutput = ();
-    type Widgets = EnvVarModelWidgets;
     type ParentInput = ProfileEditorMsg;
     type ParentWidget = adw::PreferencesGroup;
 
@@ -55,7 +54,7 @@ impl FactoryComponent for EnvVarModel {
         }
     }
 
-    fn update(&mut self, message: Self::Input, sender: FactorySender<Self>) {
+    async fn update(&mut self, message: Self::Input, sender: AsyncFactorySender<Self>) {
         match message {
             Self::Input::Changed(val) => {
                 self.value = val.clone();
@@ -76,7 +75,11 @@ impl FactoryComponent for EnvVarModel {
         })
     }
 
-    fn init_model(init: Self::Init, _index: &Self::Index, _sender: FactorySender<Self>) -> Self {
+    async fn init_model(
+        init: Self::Init,
+        _index: &DynamicIndex,
+        _sender: AsyncFactorySender<Self>,
+    ) -> Self {
         Self {
             name: init.name,
             value: init.value,

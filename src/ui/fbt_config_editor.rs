@@ -7,7 +7,10 @@ use crate::{
     withclones,
 };
 use adw::prelude::*;
-use relm4::{factory::FactoryVecDeque, prelude::*};
+use relm4::{
+    factory::{AsyncFactoryVecDeque, FactoryVecDeque},
+    prelude::*,
+};
 
 #[tracker::track]
 pub struct FbtConfigEditor {
@@ -17,7 +20,7 @@ pub struct FbtConfigEditor {
     win: Option<adw::Window>,
 
     #[tracker::do_not_track]
-    tracker_role_groups: FactoryVecDeque<TrackerRoleModel>,
+    tracker_role_groups: AsyncFactoryVecDeque<TrackerRoleModel>,
 }
 
 #[derive(Debug)]
@@ -137,7 +140,7 @@ impl SimpleComponent for FbtConfigEditor {
             win: None,
             tracker: 0,
             monado_config_v0: get_monado_config_v0(),
-            tracker_role_groups: FactoryVecDeque::new(page, sender.input_sender()),
+            tracker_role_groups: AsyncFactoryVecDeque::new(page, sender.input_sender()),
         };
 
         model.populate_tracker_roles();

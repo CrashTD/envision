@@ -27,7 +27,6 @@ impl SimpleComponent for SteamLaunchOptionsBox {
             set_hexpand: true,
             set_vexpand: false,
             set_spacing: 12,
-            set_margin_all: 12,
             add_css_class: "card",
             add_css_class: "padded",
             #[track = "model.changed(Self::xrservice_active())"]

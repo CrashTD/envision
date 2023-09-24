@@ -7,14 +7,14 @@ use crate::{
     xr_devices::{XRDevice, XRDeviceType},
 };
 use adw::prelude::*;
-use relm4::{factory::FactoryVecDeque, prelude::*, Sender};
+use relm4::{factory::AsyncFactoryVecDeque, prelude::*, Sender};
 
 #[tracker::track]
 pub struct DevicesBox {
     devices: Vec<XRDevice>,
 
     #[tracker::do_not_track]
-    device_rows: FactoryVecDeque<DeviceRowModel>,
+    device_rows: AsyncFactoryVecDeque<DeviceRowModel>,
 }
 
 #[derive(Debug)]
@@ -53,10 +53,8 @@ impl SimpleComponent for DevicesBox {
             set_hexpand: true,
             set_vexpand: false,
             set_spacing: 12,
-            set_margin_top: 12,
             #[track = "model.changed(Self::devices())"]
             set_visible: !model.devices.is_empty(),
-
             append: &devices_listbox,
         }
     }
@@ -190,16 +188,12 @@ impl SimpleComponent for DevicesBox {
         let devices_listbox = gtk::ListBox::builder()
             .css_classes(["boxed-list"])
             .selection_mode(gtk::SelectionMode::None)
-            .margin_start(12)
-            .margin_end(12)
-            .margin_top(12)
-            .margin_bottom(12)
             .build();
 
         let model = Self {
             tracker: 0,
             devices: vec![],
-            device_rows: FactoryVecDeque::new(devices_listbox.clone(), sender.input_sender()),
+            device_rows: AsyncFactoryVecDeque::new(devices_listbox.clone(), sender.input_sender()),
         };
 
         let widgets = view_output!();

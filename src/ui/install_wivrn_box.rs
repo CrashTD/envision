@@ -70,7 +70,6 @@ impl SimpleComponent for InstallWivrnBox {
         gtk::Box {
             set_orientation: gtk::Orientation::Vertical,
             set_spacing: 12,
-            set_margin_all: 12,
             add_css_class: "card",
             add_css_class: "padded",
             #[track = "model.changed(Self::selected_profile())"]
