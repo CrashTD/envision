@@ -53,82 +53,83 @@ impl SimpleComponent for BuildWindow {
             set_modal: true,
             set_default_size: (520, 400),
             set_hide_on_close: true,
-            gtk::Box {
+            adw::ToolbarView {
+                set_top_bar_style: adw::ToolbarStyle::Flat,
+                set_bottom_bar_style: adw::ToolbarStyle::Flat,
                 set_vexpand: true,
                 set_hexpand: true,
-                set_orientation: gtk::Orientation::Vertical,
-                set_spacing: 12,
-                gtk::WindowHandle {
-                    set_vexpand: false,
-                    set_hexpand: true,
-                    adw::HeaderBar {
-                        set_show_end_title_buttons: false,
-                        set_show_start_title_buttons: false,
-                        add_css_class: "flat",
-                        #[wrap(Some)]
-                        set_title_widget: title_label = &gtk::Label {
-                            #[track = "model.changed(BuildWindow::title())"]
-                            set_markup: &model.title,
-                            add_css_class: "title",
-                        },
-                    }
-                },
-                gtk::Box {
-                    set_orientation: gtk::Orientation::Horizontal,
-                    set_hexpand: true,
-                    set_halign: gtk::Align::Center,
-                    set_spacing: 12,
-                    #[name(build_status_label)]
-                    gtk::Label {
-                        #[track = "model.changed(BuildWindow::build_status())"]
-                        set_markup: match &model.build_status {
-                            BuildStatus::Building => "Build in progress...".to_string(),
-                            BuildStatus::Done => "Build done, you can close this window".to_string(),
-                            BuildStatus::Error(code) => {
-                                format!("Build failed: \"{c}\"", c = code)
-                            }
-                        }.as_str(),
-                        add_css_class: "title-2",
-                        set_wrap: true,
-                        set_wrap_mode: gtk::pango::WrapMode::Word,
-                        set_justify: gtk::Justification::Center,
-                    },
-                    gtk::Button {
-                        #[track = "model.changed(BuildWindow::build_status())"]
-                        set_visible: match &model.build_status {
-                            BuildStatus::Building => true,
-                            _ => false,
-                        },
-                        add_css_class: "destructive-action",
-                        add_css_class: "circular",
-                        set_icon_name: "window-close-symbolic",
-                        set_tooltip_text: Some("Cancel build"),
-                        connect_clicked[sender] => move |_| {
-                            sender.output(Self::Output::CancelBuild);
-                        }
+                add_top_bar: top_bar = &adw::HeaderBar {
+                    set_show_end_title_buttons: false,
+                    set_show_start_title_buttons: false,
+                    #[wrap(Some)]
+                    set_title_widget: title_label = &adw::WindowTitle {
+                        #[track = "model.changed(BuildWindow::title())"]
+                        set_title: &model.title,
                     },
                 },
-                #[name(scrolledwin)]
-                gtk::ScrolledWindow {
-                    set_hexpand: true,
+                #[wrap(Some)]
+                set_content: content = &gtk::Box {
+                    set_orientation: gtk::Orientation::Vertical,
                     set_vexpand: true,
+                    set_hexpand: true,
                     set_margin_all: 12,
-                    add_css_class: "card",
-                    set_overflow: gtk::Overflow::Hidden,
-                    #[name(textview)]
-                    gtk::TextView {
+                    gtk::Box {
+                        set_orientation: gtk::Orientation::Horizontal,
+                        set_hexpand: true,
+                        set_halign: gtk::Align::Center,
+                        set_spacing: 12,
+                        #[name(build_status_label)]
+                        gtk::Label {
+                            #[track = "model.changed(BuildWindow::build_status())"]
+                            set_markup: match &model.build_status {
+                                BuildStatus::Building => "Build in progress...".to_string(),
+                                BuildStatus::Done => "Build done, you can close this window".to_string(),
+                                BuildStatus::Error(code) => {
+                                    format!("Build failed: \"{c}\"", c = code)
+                                }
+                            }.as_str(),
+                            add_css_class: "title-2",
+                            set_wrap: true,
+                            set_wrap_mode: gtk::pango::WrapMode::Word,
+                            set_justify: gtk::Justification::Center,
+                        },
+                        gtk::Button {
+                            #[track = "model.changed(BuildWindow::build_status())"]
+                            set_visible: match &model.build_status {
+                                BuildStatus::Building => true,
+                                _ => false,
+                            },
+                            add_css_class: "destructive-action",
+                            add_css_class: "circular",
+                            set_icon_name: "window-close-symbolic",
+                            set_tooltip_text: Some("Cancel build"),
+                            connect_clicked[sender] => move |_| {
+                                sender.output(Self::Output::CancelBuild);
+                            }
+                        },
+                    },
+                    #[name(scrolledwin)]
+                    gtk::ScrolledWindow {
                         set_hexpand: true,
                         set_vexpand: true,
-                        set_editable: false,
-                        set_monospace: true,
-                        set_left_margin: 6,
-                        set_right_margin: 6,
-                        set_top_margin: 6,
-                        set_bottom_margin: 6,
-                        set_buffer: Some(&model.textbuf),
+                        set_margin_all: 12,
+                        add_css_class: "card",
+                        set_overflow: gtk::Overflow::Hidden,
+                        #[name(textview)]
+                        gtk::TextView {
+                            set_hexpand: true,
+                            set_vexpand: true,
+                            set_editable: false,
+                            set_monospace: true,
+                            set_left_margin: 6,
+                            set_right_margin: 6,
+                            set_top_margin: 6,
+                            set_bottom_margin: 6,
+                            set_buffer: Some(&model.textbuf),
+                        },
                     },
                 },
-                gtk::Button {
+                add_bottom_bar: bottom_bar = &gtk::Button {
                     add_css_class: "pill",
                     set_halign: gtk::Align::Center,
                     set_label: "Close",

@@ -55,26 +55,22 @@ impl SimpleComponent for ProfileEditor {
             set_title: Some(model.profile.borrow().name.as_str()),
             set_default_height: 500,
             set_default_width: 600,
-            gtk::Box {
-                set_orientation: gtk::Orientation::Vertical,
+            adw::ToolbarView {
+                set_top_bar_style: adw::ToolbarStyle::Flat,
                 set_hexpand: true,
                 set_vexpand: true,
-                gtk::WindowHandle {
-                    set_hexpand: true,
+                add_top_bar: top_bar = &adw::HeaderBar {
                     set_vexpand: false,
-                    adw::HeaderBar {
-                        set_vexpand: false,
-                        add_css_class: "flat",
-                        pack_end: save_btn = &gtk::Button {
-                            set_label: "Save",
-                            add_css_class: "suggested-action",
-                            connect_clicked[sender] => move |_| {
-                                sender.input(Self::Input::SaveProfile);
-                            },
+                    pack_end: save_btn = &gtk::Button {
+                        set_label: "Save",
+                        add_css_class: "suggested-action",
+                        connect_clicked[sender] => move |_| {
+                            sender.input(Self::Input::SaveProfile);
                         },
                     },
                 },
-                adw::PreferencesPage {
+                #[wrap(Some)]
+                set_content: pref_page = &adw::PreferencesPage {
                     set_hexpand: true,
                     set_vexpand: true,
                     add: maingrp = &adw::PreferencesGroup {

@@ -97,24 +97,18 @@ impl SimpleComponent for LibsurviveSetupWindow {
             set_modal: true,
             set_default_size: (520, 400),
             set_hide_on_close: true,
-            gtk::Box {
-                set_orientation: gtk::Orientation::Vertical,
-                set_hexpand: true,
-                set_vexpand: true,
-                set_spacing: 12,
-                set_margin_all: 12,
-                gtk::WindowHandle {
-                    adw::HeaderBar {
-                        add_css_class: "flat",
-                        #[wrap(Some)]
-                        set_title_widget: title_label = &gtk::Label {
-                            set_label: "Setup Lighthouses",
-                            add_css_class: "title",
-                        },
-                    }
+            adw::ToolbarView {
+                set_top_bar_style: adw::ToolbarStyle::Flat,
+                set_bottom_bar_style: adw::ToolbarStyle::Flat,
+                add_top_bar: top_bar = &adw::HeaderBar {
+                    add_css_class: "flat",
+                    #[wrap(Some)]
+                    set_title_widget: title_label = &adw::WindowTitle {
+                        set_title: "Setup Lighthouses",
+                    },
                 },
-                #[name(carousel)]
-                adw::Carousel {
+                #[wrap(Some)]
+                set_content: carousel = &adw::Carousel {
                     set_allow_long_swipes: false,
                     set_allow_scroll_wheel: false,
                     set_allow_mouse_drag: false,
@@ -344,7 +338,9 @@ impl SimpleComponent for LibsurviveSetupWindow {
                         }
                     },
                 },
-                adw::CarouselIndicatorDots {
+                add_bottom_bar: dots = &adw::CarouselIndicatorDots {
+                    set_margin_top: 12,
+                    set_margin_bottom: 12,
                     set_carousel: Some(&carousel),
                 }
             }

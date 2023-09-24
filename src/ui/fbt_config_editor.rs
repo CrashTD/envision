@@ -7,10 +7,7 @@ use crate::{
     withclones,
 };
 use adw::prelude::*;
-use relm4::{
-    factory::{AsyncFactoryVecDeque, FactoryVecDeque},
-    prelude::*,
-};
+use relm4::{factory::AsyncFactoryVecDeque, prelude::*};
 
 #[tracker::track]
 pub struct FbtConfigEditor {
@@ -50,23 +47,16 @@ impl SimpleComponent for FbtConfigEditor {
             set_transient_for: Some(&init.root_win),
             set_default_height: 500,
             set_default_width: 600,
-            gtk::Box {
-                set_vexpand: true,
-                set_hexpand: true,
-                set_orientation: gtk::Orientation::Vertical,
-                gtk::WindowHandle {
+            adw::ToolbarView {
+                set_top_bar_style: adw::ToolbarStyle::Flat,
+                add_top_bar: headerbar = &adw::HeaderBar {
                     set_vexpand: false,
                     set_hexpand: true,
-                    #[name(headerbar)]
-                    adw::HeaderBar {
-                        set_vexpand: false,
-                        set_hexpand: true,
-                        add_css_class: "flat",
-                        pack_start: &add_btn,
-                        pack_end: &save_btn,
-                    },
+                    add_css_class: "flat",
+                    pack_start: &add_btn,
+                    pack_end: &save_btn,
                 },
-                append: model.tracker_role_groups.widget(),
+                set_content: Some(&model.tracker_role_groups.widget().clone().upcast::<gtk::Widget>()),
             },
         }
     }

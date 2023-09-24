@@ -72,8 +72,8 @@ pub fn path_row<F: Fn(Option<String>) + 'static + Clone>(
         .title(title)
         .subtitle_lines(0)
         .activatable(true)
-        .icon_name(GString::from("folder-open-symbolic"))
         .build();
+    row.add_prefix(&gtk::Image::from_icon_name("folder-open-symbolic"));
 
     if let Some(d) = description {
         row.set_subtitle(d);
