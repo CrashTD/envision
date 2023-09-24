@@ -14,6 +14,7 @@ git2 = "0.17.2"
 gtk4 = { version = "0.7.2", features = [
     "v4_10",
 ] }
+lazy_static = "1.4.0"
 libadwaita = { version = "0.5.2", features = [
     "v1_3"
 ] }

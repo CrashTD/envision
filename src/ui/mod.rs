@@ -16,3 +16,4 @@ pub mod profile_editor;
 pub mod steam_launch_options_box;
 pub mod util;
 pub mod wivrn_conf_editor;
+pub mod feature_flags;

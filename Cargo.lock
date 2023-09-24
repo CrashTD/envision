@@ -289,6 +289,7 @@ dependencies = [
  "gettext-rs",
  "git2",
  "gtk4",
+ "lazy_static",
  "libadwaita",
  "libmonado-rs",
  "libusb",
