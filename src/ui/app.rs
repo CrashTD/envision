@@ -311,7 +311,8 @@ impl SimpleComponent for App {
                     .emit(MainViewMsg::XRServiceActiveChanged(false, None));
                 if let Some(worker) = self.xrservice_worker.as_ref() {
                     if let Some(code) = worker.exit_code() {
-                        if code != 0 && code != 15 {  // 15 is SIGTERM
+                        if code != 0 && code != 15 {
+                            // 15 is SIGTERM
                             sender.input(Msg::OnServiceLog(vec![format!(
                                 "{} exited with code {}",
                                 self.get_selected_profile().xrservice_type,
