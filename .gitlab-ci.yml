@@ -25,6 +25,7 @@ cargo:test:
     - apt-get -t experimental install libgtk-4-dev libadwaita-1-dev libgtksourceview-5-dev libssl-dev -y
     - apt-get install meson ninja-build git desktop-file-utils gettext libjxl-dev file libusb-dev libusb-1.0-0-dev curl -y
     - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs -O rustup.sh
+    - chmod +x rustup.sh
     - ./rustup.sh -y
     - rustc --version && cargo --version  # Print version info for debugging
     - meson setup build -Dprefix="$PWD/build/localprefix" -Dprofile=development
@@ -42,6 +43,7 @@ appimage:
     - apt-get -t experimental install libgtk-4-dev libadwaita-1-dev libgtksourceview-5-dev libssl-dev -y
     - apt-get install meson ninja-build git desktop-file-utils gettext libjxl-dev file libusb-dev libusb-1.0-0-dev curl -y
     - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs -O rustup.sh
+    - chmod +x rustup.sh
     - ./rustup.sh -y
     - bash ./dist/appimage/build_appimage.sh
   artifacts:
