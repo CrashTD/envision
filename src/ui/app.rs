@@ -309,6 +309,17 @@ impl SimpleComponent for App {
                 self.main_view
                     .sender()
                     .emit(MainViewMsg::XRServiceActiveChanged(false, None));
+                if let Some(worker) = self.xrservice_worker.as_ref() {
+                    if let Some(code) = worker.exit_code() {
+                        if code != 0 && code != 15 {  // 15 is SIGTERM
+                            sender.input(Msg::OnServiceLog(vec![format!(
+                                "{} exited with code {}",
+                                self.get_selected_profile().xrservice_type,
+                                code
+                            )]));
+                        }
+                    }
+                }
                 self.xrservice_worker = None;
                 if self.restart_xrservice {
                     self.restart_xrservice = false;

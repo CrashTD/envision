@@ -79,4 +79,12 @@ impl JobWorker {
             }
         }
     }
+
+    pub fn exit_code(&self) -> Option<i32> {
+        if let Ok(state) = self.state.lock() {
+            return state.exit_status;
+        }
+
+        None
+    }
 }
