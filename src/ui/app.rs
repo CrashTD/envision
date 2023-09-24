@@ -351,9 +351,7 @@ impl SimpleComponent for App {
                                 self.xr_devices = XRDevice::merge(&self.xr_devices, &n_devs);
                                 self.main_view
                                     .sender()
-                                    .emit(MainViewMsg::UpdateDevices(
-                                        self.xr_devices.clone(),
-                                    ));
+                                    .emit(MainViewMsg::UpdateDevices(self.xr_devices.clone()));
                             } else if let Some(tracker) =
                                 XRDevice::generic_tracker_from_log_row(parsed.message.as_str())
                             {
