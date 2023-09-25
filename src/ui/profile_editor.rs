@@ -107,7 +107,13 @@ impl SimpleComponent for ProfileEditor {
                     },
                     add: xrservicegrp = &adw::PreferencesGroup {
                         set_title: "XR Service",
-                        set_description: Some("When specifying a repository, you can set a specific git ref (branch, tag, commit...) by appending a '#' followed by the ref"),
+                        set_description: Some(concat!(
+                            "When specifying a repository, you can set a ",
+                            "specific git ref (branch, tag, commit...) by ",
+                            "appending a '#' followed by the ref.\n\n",
+                            "For launch options, you can insert %command% as ",
+                            "a placeholder for the actual XR Service command."
+                        )),
                         add: {
                             withclones![prof];
                             &combo_row(
@@ -121,6 +127,16 @@ impl SimpleComponent for ProfileEditor {
                                     prof.borrow_mut().xrservice_type =
                                         XRServiceType::from_number(row.selected());
                                 },
+                            )
+                        },
+                        add: {
+                            withclones![prof];
+                            &entry_row(
+                                "XR Service Launch Options",
+                                model.profile.borrow().xrservice_launch_options.as_str(),
+                                move |row| {
+                                    prof.borrow_mut().xrservice_launch_options = row.text().trim().to_string();
+                                }
                             )
                         },
                         add: {

@@ -222,6 +222,8 @@ pub struct Profile {
     #[serde(default = "LighthouseDriver::default")]
     /** Only applicable for Monado */
     pub lighthouse_driver: LighthouseDriver,
+    #[serde(default = "String::default")]
+    pub xrservice_launch_options: String,
 }
 
 impl Display for Profile {
@@ -250,6 +252,7 @@ impl Default for Profile {
             opencomposite_repo: None,
             editable: true,
             lighthouse_driver: LighthouseDriver::default(),
+            xrservice_launch_options: String::default(),
         }
     }
 }

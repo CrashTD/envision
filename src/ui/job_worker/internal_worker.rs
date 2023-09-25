@@ -151,6 +151,8 @@ impl Worker for InternalJobWorker {
     }
 }
 
+const LAUNCH_OPTS_CMD_PLACEHOLDER: &str = "%command%";
+
 impl InternalJobWorker {
     pub fn xrservice_worker_from_profile(
         prof: &Profile,
@@ -163,10 +165,28 @@ impl InternalJobWorker {
                 prof.lighthouse_driver.to_string().to_lowercase(),
             );
         }
+        let launch_opts = prof.xrservice_launch_options.trim();
+        let (command, args) = match launch_opts.is_empty() {
+            false => (
+                "sh".into(),
+                vec![
+                    "-c".into(),
+                    match launch_opts.contains(LAUNCH_OPTS_CMD_PLACEHOLDER) {
+                        true => launch_opts.replacen(
+                            LAUNCH_OPTS_CMD_PLACEHOLDER,
+                            prof.xrservice_binary().as_str(),
+                            1,
+                        ),
+                        false => format!("{} {}", prof.xrservice_binary(), launch_opts),
+                    },
+                ],
+            ),
+            true => (prof.xrservice_binary(), vec![]),
+        };
         let data = CmdWorkerData {
             environment: env,
-            command: prof.xrservice_binary(),
-            args: vec![],
+            command,
+            args,
         };
         let mut jobs = VecDeque::new();
         jobs.push_back(WorkerJob::Cmd(data));
