@@ -43,6 +43,7 @@ pub enum PhysicalXRDevice {
     PicoG24K,
     PicoNeo3Pro,
     Pico4,
+    LynxR1,
 }
 
 impl Display for PhysicalXRDevice {
@@ -82,6 +83,7 @@ impl Display for PhysicalXRDevice {
             Self::PicoG24K => "Pico G2 4K",
             Self::PicoNeo3Pro => "Pico Neo 3 Pro",
             Self::Pico4 => "PICO 4",
+            Self::LynxR1 => "Lynx R1",
         })
     }
 }
@@ -109,6 +111,7 @@ impl PhysicalXRDevice {
             Self::PicoG24K => Some(wivrn_profile()),
             Self::PicoNeo3Pro => Some(wivrn_profile()),
             Self::Pico4 => Some(wivrn_profile()),
+            Self::LynxR1 => Some(wivrn_profile()),
             _ => None,
             // Self::HTCViveCosmos => "HTC Vive Cosmos",
             // Self::OculusRift => "Oculus Rift",
