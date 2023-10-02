@@ -295,7 +295,7 @@ impl SimpleComponent for MainView {
                                                 res = get_set_amd_vr_pow_prof_cmd(ds);
                                             }
                                             res
-                                        }
+                                        },
                                         set_enable_undo: false,
                                     }
                                 }
