@@ -223,6 +223,7 @@ impl SimpleComponent for DebugView {
     ) -> ComponentParts<Self> {
         let textbuf = sourceview5::Buffer::builder()
             .highlight_syntax(false)
+            .enable_undo(false)
             .build();
         if let Some(scheme) = &sourceview5::StyleSchemeManager::new().scheme("Adwaita-dark") {
             textbuf.set_style_scheme(Some(scheme));

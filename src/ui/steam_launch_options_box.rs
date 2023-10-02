@@ -70,6 +70,7 @@ impl SimpleComponent for SteamLaunchOptionsBox {
                         set_buffer: cmdbuf = &gtk::TextBuffer {
                             #[track = "model.changed(Self::launch_options())"]
                             set_text: model.launch_options.as_str(),
+                            set_enable_undo: false,
                         }
                     }
                 },

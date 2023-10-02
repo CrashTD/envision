@@ -204,7 +204,7 @@ impl SimpleComponent for BuildWindow {
             title: "".into(),
             content: "".into(),
             can_close: false,
-            textbuf: gtk::TextBuffer::builder().build(),
+            textbuf: gtk::TextBuffer::builder().enable_undo(false).build(),
             textview: None,
             build_status: BuildStatus::Building,
             win: None,

@@ -296,6 +296,7 @@ impl SimpleComponent for MainView {
                                             }
                                             res
                                         }
+                                        set_enable_undo: false,
                                     }
                                 }
                             },
