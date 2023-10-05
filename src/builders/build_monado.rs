@@ -41,6 +41,7 @@ pub fn get_build_monado_jobs(profile: &Profile, clean_build: bool) -> VecDeque<W
     let mut cmake_vars: HashMap<String, String> = HashMap::new();
     cmake_vars.insert("CMAKE_BUILD_TYPE".into(), "Release".into());
     cmake_vars.insert("XRT_HAVE_SYSTEM_CJSON".into(), "NO".into());
+    cmake_vars.insert("XRT_FEATURE_TRACING".into(), "ON".into());
     cmake_vars.insert("CMAKE_LIBDIR".into(), format!("{}/lib", profile.prefix));
     cmake_vars.insert("CMAKE_INSTALL_PREFIX".into(), profile.prefix.clone());
     cmake_vars.insert(
