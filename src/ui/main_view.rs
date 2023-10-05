@@ -262,7 +262,7 @@ impl SimpleComponent for MainView {
                             set_label: concat!(
                                 "Your AMD GPU Power Profile is not set to VR. ",
                                 "This will cause noticeable stutter when running XR ",
-                                "applications. Activate the VR profile witrh the ",
+                                "applications. Activate the VR profile with the ",
                                 "following command:",
                             ),
                             add_css_class: "warning",
