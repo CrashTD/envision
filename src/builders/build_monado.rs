@@ -9,7 +9,11 @@ use std::{
     path::Path,
 };
 
-pub fn get_build_monado_jobs(profile: &Profile, clean_build: bool) -> VecDeque<WorkerJob> {
+pub fn get_build_monado_jobs(
+    profile: &Profile,
+    clean_build: bool,
+    debug_build: bool,
+) -> VecDeque<WorkerJob> {
     let mut jobs = VecDeque::<WorkerJob>::new();
 
     let git = Git {
@@ -39,17 +43,36 @@ pub fn get_build_monado_jobs(profile: &Profile, clean_build: bool) -> VecDeque<W
         format!("{}/lib/pkgconfig", profile.prefix),
     );
     let mut cmake_vars: HashMap<String, String> = HashMap::new();
-    cmake_vars.insert("CMAKE_BUILD_TYPE".into(), "Release".into());
+    cmake_vars.insert(
+        "CMAKE_BUILD_TYPE".into(),
+        (if debug_build { "Debug" } else { "Release" }).into(),
+    );
     cmake_vars.insert("XRT_HAVE_SYSTEM_CJSON".into(), "NO".into());
     cmake_vars.insert("CMAKE_LIBDIR".into(), format!("{}/lib", profile.prefix));
     cmake_vars.insert("CMAKE_INSTALL_PREFIX".into(), profile.prefix.clone());
     cmake_vars.insert(
         "CMAKE_C_FLAGS".into(),
-        format!("-Wl,-rpath='{}/lib'", profile.prefix),
+        format!(
+            "-Wl,-rpath='{}/lib'{}",
+            profile.prefix,
+            if debug_build {
+                " -g -march=native -O3 -fno-omit-frame-pointer"
+            } else {
+                ""
+            }
+        ),
     );
     cmake_vars.insert(
         "CMAKE_CXX_FLAGS".into(),
-        format!("-Wl,-rpath='{}/lib'", profile.prefix),
+        format!(
+            "-Wl,-rpath='{}/lib'{}",
+            profile.prefix,
+            if debug_build {
+                " -g -march=native -O3 -fno-omit-frame-pointer"
+            } else {
+                ""
+            }
+        ),
     );
     profile.xrservice_cmake_flags.iter().for_each(|(k, v)| {
         if k == "CMAKE_C_FLAGS" || k == "CMAKE_CXX_FLAGS" {

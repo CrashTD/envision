@@ -157,6 +157,7 @@ impl InternalJobWorker {
     pub fn xrservice_worker_from_profile(
         prof: &Profile,
         state: Arc<Mutex<JobWorkerState>>,
+        debug: bool,
     ) -> relm4::WorkerHandle<InternalJobWorker> {
         let mut env = prof.environment.clone();
         if !env.contains_key("LH_DRIVER") {
@@ -165,7 +166,18 @@ impl InternalJobWorker {
                 prof.lighthouse_driver.to_string().to_lowercase(),
             );
         }
-        let launch_opts = prof.xrservice_launch_options.trim();
+        let mut launch_opts = prof.xrservice_launch_options.trim();
+        let debug_launch_opts = if debug {
+            if launch_opts.contains(LAUNCH_OPTS_CMD_PLACEHOLDER) {
+                format!("{} {}", "gdb -batch -ex run -ex bt --args", launch_opts)
+            } else {
+                format!(
+                    "{} {} {}",
+                    "gdb -batch -ex run -ex bt --args", LAUNCH_OPTS_CMD_PLACEHOLDER, launch_opts
+                )
+            }
+        } else {String::default()};
+        launch_opts = if debug { debug_launch_opts.as_str() } else { launch_opts };
         let (command, args) = match launch_opts.is_empty() {
             false => (
                 "sh".into(),

@@ -13,8 +13,8 @@ use crate::gpu_profile::{
 use crate::profile::{LighthouseDriver, Profile};
 use crate::steamvr_utils::chaperone_info_exists;
 use crate::ui::app::{
-    AboutAction, BuildProfileAction, BuildProfileCleanAction, ConfigFbtAction,
-    DebugViewToggleAction,
+    AboutAction, BuildProfileAction, BuildProfileCleanAction, BuildProfileCleanDebugAction,
+    BuildProfileDebugAction, ConfigFbtAction, DebugViewToggleAction,
 };
 use crate::ui::profile_editor::ProfileEditorInit;
 use crate::ui::util::{limit_dropdown_width, warning_heading};
@@ -54,6 +54,7 @@ pub struct MainView {
 pub enum MainViewMsg {
     ClockTicking,
     StartStopClicked,
+    StartWithDebug,
     RestartXRService,
     XRServiceActiveChanged(bool, Option<Profile>),
     EnableDebugViewChanged(bool),
@@ -73,6 +74,7 @@ pub enum MainViewMsg {
 pub enum MainViewOutMsg {
     EnableDebugViewChanged(bool),
     DoStartStopXRService,
+    StartWithDebug,
     RestartXRService,
     ProfileSelected(Profile),
     DeleteProfile,
@@ -117,6 +119,10 @@ impl SimpleComponent for MainView {
                 "Configure Full Body _Tracking" => ConfigFbtAction,
             },
             section! {
+                "Build Profile with Debug Symbols" => BuildProfileDebugAction,
+                "Clean Build Profile with Debug Symbols" => BuildProfileCleanDebugAction,
+            },
+            section! {
                 "_About" => AboutAction,
             }
         }
@@ -155,14 +161,13 @@ impl SimpleComponent for MainView {
                     set_margin_all: 12,
                     set_orientation: gtk::Orientation::Vertical,
                     gtk::Box {
-                        set_halign: gtk::Align::Center,
+                        set_hexpand: true,
                         set_orientation: gtk::Orientation::Horizontal,
-                        set_spacing: 12,
+                        add_css_class: "linked",
                         gtk::Button {
-                            add_css_class: "pill",
                             add_css_class: "suggested-action",
                             add_css_class: "destructive-action",
-                            set_halign: gtk::Align::Center,
+                            set_hexpand: true,
                             #[track = "model.changed(Self::xrservice_active())"]
                             set_class_active: ("suggested-action", !model.xrservice_active),
                             #[track = "model.changed(Self::xrservice_active())"]
@@ -175,8 +180,14 @@ impl SimpleComponent for MainView {
                             },
                         },
                         gtk::Button {
-                            add_css_class: "circular",
-                            add_css_class: "flat",
+                            set_label: "Start with GDB",
+                            #[track = "model.changed(Self::xrservice_active()) || model.changed(Self::enable_debug_view())"]
+                            set_visible: model.enable_debug_view && !model.xrservice_active,
+                            connect_clicked[sender] => move |_| {
+                                sender.input(MainViewMsg::StartWithDebug);
+                            },
+                        },
+                        gtk::Button {
                             set_halign: gtk::Align::Center,
                             set_valign: gtk::Align::Center,
                             set_icon_name: "view-refresh-symbolic",
@@ -443,6 +454,11 @@ impl SimpleComponent for MainView {
             Self::Input::StartStopClicked => {
                 sender
                     .output(Self::Output::DoStartStopXRService)
+                    .expect("Sender output failed");
+            }
+            Self::Input::StartWithDebug => {
+                sender
+                    .output(Self::Output::StartWithDebug)
                     .expect("Sender output failed");
             }
             Self::Input::RestartXRService => {

@@ -48,10 +48,11 @@ impl JobWorker {
         prof: &Profile,
         sender: &Sender<X>,
         transform: F,
+        debug: bool
     ) -> Self {
         let state = Arc::new(Mutex::new(JobWorkerState::default()));
         Self {
-            worker: InternalJobWorker::xrservice_worker_from_profile(prof, state.clone())
+            worker: InternalJobWorker::xrservice_worker_from_profile(prof, state.clone(), debug)
                 .forward(sender, transform),
             state,
         }

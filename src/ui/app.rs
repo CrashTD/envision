@@ -108,10 +108,11 @@ pub enum Msg {
     OnBuildLog(Vec<String>),
     OnBuildExit(i32),
     ClockTicking,
-    BuildProfile(bool),
+    BuildProfile(bool, bool),
     CancelBuild,
     EnableDebugViewChanged(bool),
     DoStartStopXRService,
+    StartWithDebug,
     RestartXRService,
     ProfileSelected(Profile),
     DeleteProfile,
@@ -148,7 +149,7 @@ impl App {
         }
     }
 
-    pub fn start_xrservice(&mut self, sender: ComponentSender<Self>) {
+    pub fn start_xrservice(&mut self, sender: ComponentSender<Self>, debug: bool) {
         let prof = self.get_selected_profile();
         if set_current_active_runtime_to_profile(&prof).is_err() {
             alert(
@@ -179,6 +180,7 @@ impl App {
                     JobWorkerOut::Log(rows) => Msg::OnServiceLog(rows),
                     JobWorkerOut::Exit(code) => Msg::OnServiceExit(code),
                 },
+                debug
             );
             worker.start();
             self.xrservice_worker = Some(worker);
@@ -324,7 +326,7 @@ impl SimpleComponent for App {
                 self.xrservice_worker = None;
                 if self.restart_xrservice {
                     self.restart_xrservice = false;
-                    self.start_xrservice(sender);
+                    self.start_xrservice(sender, false);
                 }
             }
             Msg::ClockTicking => {
@@ -388,21 +390,24 @@ impl SimpleComponent for App {
             }
             Msg::DoStartStopXRService => match &mut self.xrservice_worker {
                 None => {
-                    self.start_xrservice(sender);
+                    self.start_xrservice(sender, false);
                 }
                 Some(_) => {
                     self.shutdown_xrservice();
                 }
             },
+            Msg::StartWithDebug => {
+                self.start_xrservice(sender, true)
+            }
             Msg::RestartXRService => match &mut self.xrservice_worker {
                 None => {
-                    self.start_xrservice(sender);
+                    self.start_xrservice(sender, false);
                 }
                 Some(worker) => {
                     let status = worker.state.lock().unwrap().exit_status.clone();
                     match status {
                         Some(_) => {
-                            self.start_xrservice(sender);
+                            self.start_xrservice(sender, false);
                         }
                         None => {
                             self.shutdown_xrservice();
@@ -411,7 +416,7 @@ impl SimpleComponent for App {
                     }
                 }
             },
-            Msg::BuildProfile(clean_build) => {
+            Msg::BuildProfile(clean_build, debug_build) => {
                 let profile = self.get_selected_profile();
                 let mut missing_deps = vec![];
                 let mut jobs = VecDeque::<WorkerJob>::new();
@@ -438,8 +443,8 @@ impl SimpleComponent for App {
                         jobs.push_back(get_build_mercury_job(&profile));
                     }
                     jobs.extend(match profile.xrservice_type {
-                        XRServiceType::Monado => get_build_monado_jobs(&profile, clean_build),
-                        XRServiceType::Wivrn => get_build_wivrn_jobs(&profile, clean_build),
+                        XRServiceType::Monado => get_build_monado_jobs(&profile, clean_build, debug_build),
+                        XRServiceType::Wivrn => get_build_wivrn_jobs(&profile, clean_build, debug_build),
                     });
                     // no listed deps for opencomp
                 }
@@ -650,6 +655,7 @@ impl SimpleComponent for App {
                 .forward(sender.input_sender(), |message| match message {
                     MainViewOutMsg::EnableDebugViewChanged(val) => Msg::EnableDebugViewChanged(val),
                     MainViewOutMsg::DoStartStopXRService => Msg::DoStartStopXRService,
+                    MainViewOutMsg::StartWithDebug => Msg::StartWithDebug,
                     MainViewOutMsg::RestartXRService => Msg::RestartXRService,
                     MainViewOutMsg::ProfileSelected(uuid) => Msg::ProfileSelected(uuid),
                     MainViewOutMsg::DeleteProfile => Msg::DeleteProfile,
@@ -696,13 +702,25 @@ impl SimpleComponent for App {
         {
             withclones![sender];
             stateless_action!(actions, BuildProfileAction, {
-                sender.input_sender().emit(Msg::BuildProfile(false));
+                sender.input_sender().emit(Msg::BuildProfile(false, false));
             });
         }
         {
             withclones![sender];
             stateless_action!(actions, BuildProfileCleanAction, {
-                sender.input_sender().emit(Msg::BuildProfile(true));
+                sender.input_sender().emit(Msg::BuildProfile(true, false));
+            });
+        }
+        {
+            withclones![sender];
+            stateless_action!(actions, BuildProfileDebugAction, {
+                sender.input_sender().emit(Msg::BuildProfile(false, true));
+            });
+        }
+        {
+            withclones![sender];
+            stateless_action!(actions, BuildProfileCleanDebugAction, {
+                sender.input_sender().emit(Msg::BuildProfile(true, true));
             });
         }
         {
@@ -767,6 +785,8 @@ new_action_group!(pub AppActionGroup, "win");
 new_stateless_action!(pub AboutAction, AppActionGroup, "about");
 new_stateless_action!(pub BuildProfileAction, AppActionGroup, "buildprofile");
 new_stateless_action!(pub BuildProfileCleanAction, AppActionGroup, "buildprofileclean");
+new_stateless_action!(pub BuildProfileDebugAction, AppActionGroup, "buildprofiledebug");
+new_stateless_action!(pub BuildProfileCleanDebugAction, AppActionGroup, "buildprofilecleandebug");
 new_stateless_action!(pub ConfigFbtAction, AppActionGroup, "configfbt");
 new_stateless_action!(pub QuitAction, AppActionGroup, "quit");
 new_stateful_action!(pub DebugViewToggleAction, AppActionGroup, "debugviewtoggle", (), bool);
