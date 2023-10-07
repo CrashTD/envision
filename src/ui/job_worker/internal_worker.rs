@@ -176,8 +176,14 @@ impl InternalJobWorker {
                     "gdb -batch -ex run -ex bt --args", LAUNCH_OPTS_CMD_PLACEHOLDER, launch_opts
                 )
             }
-        } else {String::default()};
-        launch_opts = if debug { debug_launch_opts.as_str() } else { launch_opts };
+        } else {
+            String::default()
+        };
+        launch_opts = if debug {
+            debug_launch_opts.as_str()
+        } else {
+            launch_opts
+        };
         let (command, args) = match launch_opts.is_empty() {
             false => (
                 "sh".into(),

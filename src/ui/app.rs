@@ -180,7 +180,7 @@ impl App {
                     JobWorkerOut::Log(rows) => Msg::OnServiceLog(rows),
                     JobWorkerOut::Exit(code) => Msg::OnServiceExit(code),
                 },
-                debug
+                debug,
             );
             worker.start();
             self.xrservice_worker = Some(worker);
@@ -396,9 +396,7 @@ impl SimpleComponent for App {
                     self.shutdown_xrservice();
                 }
             },
-            Msg::StartWithDebug => {
-                self.start_xrservice(sender, true)
-            }
+            Msg::StartWithDebug => self.start_xrservice(sender, true),
             Msg::RestartXRService => match &mut self.xrservice_worker {
                 None => {
                     self.start_xrservice(sender, false);
@@ -443,8 +441,12 @@ impl SimpleComponent for App {
                         jobs.push_back(get_build_mercury_job(&profile));
                     }
                     jobs.extend(match profile.xrservice_type {
-                        XRServiceType::Monado => get_build_monado_jobs(&profile, clean_build, debug_build),
-                        XRServiceType::Wivrn => get_build_wivrn_jobs(&profile, clean_build, debug_build),
+                        XRServiceType::Monado => {
+                            get_build_monado_jobs(&profile, clean_build, debug_build)
+                        }
+                        XRServiceType::Wivrn => {
+                            get_build_wivrn_jobs(&profile, clean_build, debug_build)
+                        }
                     });
                     // no listed deps for opencomp
                 }

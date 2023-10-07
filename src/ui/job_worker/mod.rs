@@ -48,7 +48,7 @@ impl JobWorker {
         prof: &Profile,
         sender: &Sender<X>,
         transform: F,
-        debug: bool
+        debug: bool,
     ) -> Self {
         let state = Arc::new(Mutex::new(JobWorkerState::default()));
         Self {
