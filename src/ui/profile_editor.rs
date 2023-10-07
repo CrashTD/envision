@@ -1,6 +1,6 @@
 use super::{
     alert::alert,
-    factories::env_var_row_factory::{EnvVarModel, EnvVarModelInit},
+    factories::env_var_row_factory::{EnvVarModel, EnvVarModelInit, VarType},
 };
 use crate::{
     env_var_descriptions::env_var_descriptions_as_paragraph,
@@ -19,6 +19,8 @@ pub struct ProfileEditor {
     win: Option<adw::Window>,
     #[tracker::do_not_track]
     env_rows: AsyncFactoryVecDeque<EnvVarModel>,
+    #[tracker::do_not_track]
+    xrservice_cmake_flags_rows: AsyncFactoryVecDeque<EnvVarModel>,
 }
 
 #[derive(Debug)]
@@ -26,7 +28,10 @@ pub enum ProfileEditorMsg {
     Present,
     EnvVarChanged(String, String),
     EnvVarDelete(String),
+    XrServiceCmakeFlagsChanged(String, String),
+    XrServiceCmakeFlagsDelete(String),
     AddEnvVar(String),
+    AddXrServiceCmakeFlag(String),
     SaveProfile,
 }
 
@@ -112,7 +117,7 @@ impl SimpleComponent for ProfileEditor {
                             "specific git ref (branch, tag, commit...) by ",
                             "appending a '#' followed by the ref.\n\n",
                             "For launch options, you can insert %command% as ",
-                            "a placeholder for the actual XR Service command."
+                            "a placeholder for the actual XR Service command.",
                         )),
                         add: {
                             withclones![prof];
@@ -183,6 +188,7 @@ impl SimpleComponent for ProfileEditor {
                             )
                         },
                     },
+                    add: model.xrservice_cmake_flags_rows.widget(),
                     add: opencompgrp = &adw::PreferencesGroup {
                         set_title: "OpenComposite",
                         set_description: Some("OpenVR driver built on top of OpenXR\n\nWhen specifying a repository, you can set a specific git ref (branch, tag, commit...) by appending a '#' followed by the ref"),
@@ -377,6 +383,26 @@ impl SimpleComponent for ProfileEditor {
                     self.env_rows.guard().remove(p);
                 }
             }
+            Self::Input::XrServiceCmakeFlagsChanged(name, value) => {
+                self.profile
+                    .borrow_mut()
+                    .xrservice_cmake_flags
+                    .insert(name, value);
+            }
+            Self::Input::XrServiceCmakeFlagsDelete(name) => {
+                self.profile
+                    .borrow_mut()
+                    .xrservice_cmake_flags
+                    .remove(&name);
+                let pos = self
+                    .xrservice_cmake_flags_rows
+                    .guard()
+                    .iter()
+                    .position(|evr| evr.unwrap().name == name);
+                if let Some(p) = pos {
+                    self.xrservice_cmake_flags_rows.guard().remove(p);
+                }
+            }
             Self::Input::AddEnvVar(name) => {
                 let mut prof = self.profile.borrow_mut();
                 if !prof.environment.contains_key(&name) {
@@ -384,7 +410,22 @@ impl SimpleComponent for ProfileEditor {
                     self.env_rows.guard().push_back(EnvVarModelInit {
                         name,
                         value: "".to_string(),
+                        var_type: VarType::EnvVar,
                     });
+                }
+            }
+            Self::Input::AddXrServiceCmakeFlag(name) => {
+                let mut prof = self.profile.borrow_mut();
+                if !prof.xrservice_cmake_flags.contains_key(&name) {
+                    prof.xrservice_cmake_flags
+                        .insert(name.clone(), "".to_string());
+                    self.xrservice_cmake_flags_rows
+                        .guard()
+                        .push_back(EnvVarModelInit {
+                            name,
+                            value: "".to_string(),
+                            var_type: VarType::XrServiceCmakeFlags,
+                        });
                 }
             }
         }
@@ -395,31 +436,53 @@ impl SimpleComponent for ProfileEditor {
         root: &Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
-        let add_env_popover = gtk::Popover::builder().build();
-        let add_env_popover_box = gtk::Box::builder()
-            .orientation(gtk::Orientation::Horizontal)
-            .css_classes(["linked"])
-            .build();
-        let add_env_name_entry = gtk::Entry::builder()
-            .placeholder_text("Env Var Name...")
-            .build();
-        let add_env_btn = gtk::Button::builder()
-            .css_classes(["suggested-action"])
-            .icon_name("list-add-symbolic")
-            .tooltip_text("Add Env Var")
-            .build();
-        add_env_popover_box.append(&add_env_name_entry);
-        add_env_popover_box.append(&add_env_btn);
-        add_env_popover.set_child(Some(&add_env_popover_box));
+        let (add_env_var_btn, add_cmake_flag_btn) = {
+            macro_rules! add_var_btn {
+                ($name:expr, $event:expr) => {{
+                    let popover = gtk::Popover::builder().build();
+                    let popover_box = gtk::Box::builder()
+                        .orientation(gtk::Orientation::Horizontal)
+                        .css_classes(["linked"])
+                        .build();
+                    let name_entry = gtk::Entry::builder()
+                        .placeholder_text(format!("{} Name...", $name))
+                        .build();
+                    let add_btn = gtk::Button::builder()
+                        .css_classes(["suggested-action"])
+                        .icon_name("list-add-symbolic")
+                        .tooltip_text("Add Env Var")
+                        .build();
+                    popover_box.append(&name_entry);
+                    popover_box.append(&add_btn);
+                    popover.set_child(Some(&popover_box));
 
-        let add_env_var_btn = gtk::MenuButton::builder()
-            .icon_name("list-add-symbolic")
-            .tooltip_text("Add Environment Variable")
-            .css_classes(["flat"])
-            .popover(&add_env_popover)
-            .valign(gtk::Align::Start)
-            .halign(gtk::Align::End)
-            .build();
+                    let btn = gtk::MenuButton::builder()
+                        .icon_name("list-add-symbolic")
+                        .tooltip_text("Add Environment Variable")
+                        .css_classes(["flat"])
+                        .popover(&popover)
+                        .valign(gtk::Align::Start)
+                        .halign(gtk::Align::End)
+                        .build();
+
+                    withclones![sender, name_entry, popover];
+                    add_btn.connect_clicked(move |_| {
+                        let key_gstr = name_entry.text();
+                        let key = key_gstr.trim();
+                        if !key.is_empty() {
+                            popover.popdown();
+                            name_entry.set_text("");
+                            sender.input($event(key.to_string()));
+                        }
+                    });
+                    btn
+                }};
+            }
+            (
+                add_var_btn!("Env Var", Self::Input::AddEnvVar),
+                add_var_btn!("XR Service CMake Flag", Self::Input::AddXrServiceCmakeFlag),
+            )
+        };
 
         let profile = Rc::new(RefCell::new(init.profile));
         let prof = profile.clone();
@@ -435,6 +498,13 @@ impl SimpleComponent for ProfileEditor {
                     .build(),
                 sender.input_sender(),
             ),
+            xrservice_cmake_flags_rows: AsyncFactoryVecDeque::new(
+                adw::PreferencesGroup::builder()
+                    .title("XR Service CMake Flags")
+                    .header_suffix(&add_cmake_flag_btn)
+                    .build(),
+                sender.input_sender(),
+            ),
             tracker: 0,
         };
         {
@@ -444,25 +514,24 @@ impl SimpleComponent for ProfileEditor {
                 guard.push_back(EnvVarModelInit {
                     name: k.clone(),
                     value: v.clone(),
+                    var_type: VarType::EnvVar,
+                });
+            }
+        }
+        {
+            let mut guard = model.xrservice_cmake_flags_rows.guard();
+            guard.clear();
+            for (k, v) in prof.borrow().xrservice_cmake_flags.iter() {
+                guard.push_back(EnvVarModelInit {
+                    name: k.clone(),
+                    value: v.clone(),
+                    var_type: VarType::XrServiceCmakeFlags,
                 });
             }
         }
 
         let widgets = view_output!();
         model.win = Some(widgets.win.clone());
-
-        {
-            withclones![sender, add_env_name_entry, add_env_popover];
-            add_env_btn.connect_clicked(move |_| {
-                let name_gstr = add_env_name_entry.text();
-                let name = name_gstr.trim();
-                if !name.is_empty() {
-                    add_env_popover.popdown();
-                    add_env_name_entry.set_text("");
-                    sender.input(Self::Input::AddEnvVar(name.to_string()));
-                }
-            });
-        }
 
         ComponentParts { model, widgets }
     }

@@ -51,6 +51,13 @@ pub fn get_build_monado_jobs(profile: &Profile, clean_build: bool) -> VecDeque<W
         "CMAKE_CXX_FLAGS".into(),
         format!("-Wl,-rpath='{}/lib'", profile.prefix),
     );
+    profile.xrservice_cmake_flags.iter().for_each(|(k, v)| {
+        if k == "CMAKE_C_FLAGS" || k == "CMAKE_CXX_FLAGS" {
+            cmake_vars.insert(k.clone(), format!("{} {}", cmake_vars.get(k).unwrap(), v));
+        } else {
+            cmake_vars.insert(k.clone(), v.clone());
+        }
+    });
 
     let cmake = Cmake {
         env: Some(env),

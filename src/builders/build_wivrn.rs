@@ -39,6 +39,13 @@ pub fn get_build_wivrn_jobs(profile: &Profile, clean_build: bool) -> VecDeque<Wo
     cmake_vars.insert("XRT_HAVE_SYSTEM_CJSON".into(), "NO".into());
     cmake_vars.insert("WIVRN_BUILD_CLIENT".into(), "OFF".into());
     cmake_vars.insert("CMAKE_INSTALL_PREFIX".into(), profile.prefix.clone());
+    profile.xrservice_cmake_flags.iter().for_each(|(k, v)| {
+        if k == "CMAKE_C_FLAGS" || k == "CMAKE_CXX_FLAGS" {
+            cmake_vars.insert(k.clone(), format!("{} {}", cmake_vars.get(k).unwrap(), v));
+        } else {
+            cmake_vars.insert(k.clone(), v.clone());
+        }
+    });
 
     let cmake = Cmake {
         env: None,
