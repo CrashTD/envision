@@ -17,8 +17,8 @@ Download the latest AppImage snapshot: [GitLab Pipelines](https://gitlab.com/gab
 ## Running
 
 ```bash
-git clone https://gitlab.com/gabmusenvision/
-cdenvision 
+git clone https://gitlab.com/gabmus/envision/
+cd envision 
 meson setup build -Dprefix="$PWD/build/localprefix" -Dprofile=development
 ninja -C build
 ninja -C build install
