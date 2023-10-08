@@ -1,4 +1,8 @@
-use crate::depcheck::{check_dependencies, DepType, Dependency, DependencyCheckResult};
+use crate::{
+    depcheck::{check_dependencies, DepType, Dependency, DependencyCheckResult},
+    linux_distro::LinuxDistro,
+};
+use std::collections::HashMap;
 
 fn mercury_deps() -> Vec<Dependency> {
     vec![
@@ -6,21 +10,28 @@ fn mercury_deps() -> Vec<Dependency> {
             name: "opencv".into(),
             dep_type: DepType::SharedObject,
             filename: "libopencv_core.so".into(),
+            packages: HashMap::from([
+                (LinuxDistro::Arch, "opencv".into()),
+                (LinuxDistro::Debian, "libopencv-dev".into()),
+            ]),
         },
         Dependency {
             name: "opencv-dev".into(),
             dep_type: DepType::Include,
             filename: "opencv4/opencv2/core/base.hpp".into(),
-        },
-        Dependency {
-            name: "opencv-dev".into(),
-            dep_type: DepType::Include,
-            filename: "opencv4/opencv2/core/base.hpp".into(),
+            packages: HashMap::from([
+                (LinuxDistro::Arch, "opencv".into()),
+                (LinuxDistro::Debian, "libopencv-dev".into()),
+            ]),
         },
         Dependency {
             name: "git-lfs".into(),
             dep_type: DepType::Executable,
             filename: "git-lfs".into(),
+            packages: HashMap::from([
+                (LinuxDistro::Arch, "git-lfs".into()),
+                (LinuxDistro::Debian, "git-lfs".into()),
+            ]),
         },
     ]
 }

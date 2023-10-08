@@ -33,6 +33,7 @@ use crate::file_builders::openvrpaths_vrpath::{
     set_current_openvrpaths_to_profile, set_current_openvrpaths_to_steam,
 };
 use crate::file_utils::setcap_cap_sys_nice_eip;
+use crate::linux_distro::get_distro;
 use crate::log_parser::MonadoLog;
 use crate::paths::get_ipc_file_path;
 use crate::profile::{Profile, XRServiceType};
@@ -454,12 +455,22 @@ impl SimpleComponent for App {
                 if !missing_deps.is_empty() {
                     missing_deps.sort_unstable();
                     missing_deps.dedup(); // dedup only works if sorted, hence the above
+                    let distro = get_distro();
                     alert(
                         "Missing dependencies:",
                         Some(
                             missing_deps
                                 .iter()
-                                .map(|dep| dep.name.clone())
+                                .map(|dep| {
+                                    if let Some(d) = distro {
+                                        return dep
+                                            .packages
+                                            .get(&d)
+                                            .unwrap_or_else(|| &dep.name)
+                                            .clone();
+                                    }
+                                    dep.name.clone()
+                                })
                                 .collect::<Vec<String>>()
                                 .join(", ")
                                 .as_str(),

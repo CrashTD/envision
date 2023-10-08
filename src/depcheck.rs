@@ -1,4 +1,6 @@
-use std::{env, fmt::Display, path::Path};
+use std::{collections::HashMap, env, fmt::Display, path::Path};
+
+use crate::linux_distro::LinuxDistro;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum DepType {
@@ -12,6 +14,7 @@ pub struct Dependency {
     pub name: String,
     pub dep_type: DepType,
     pub filename: String,
+    pub packages: HashMap<LinuxDistro, String>,
 }
 
 impl Ord for Dependency {
@@ -94,6 +97,8 @@ pub fn check_dependencies(deps: Vec<Dependency>) -> Vec<DependencyCheckResult> {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashMap;
+
     use super::{check_dependency, DepType, Dependency};
 
     #[test]
@@ -102,6 +107,7 @@ mod tests {
             name: "libc".into(),
             dep_type: DepType::SharedObject,
             filename: "libc.so".into(),
+            packages: HashMap::new(),
         };
 
         assert!(check_dependency(libc_dep));
@@ -113,6 +119,7 @@ mod tests {
             name: "ls".into(),
             dep_type: DepType::Executable,
             filename: ("ls".into()),
+            packages: HashMap::new(),
         };
 
         assert!(check_dependency(libc_dep));
@@ -124,6 +131,7 @@ mod tests {
             name: "fakedep".into(),
             dep_type: DepType::SharedObject,
             filename: "fakedep.so".into(),
+            packages: HashMap::new(),
         };
 
         assert!(!check_dependency(fake_dep));

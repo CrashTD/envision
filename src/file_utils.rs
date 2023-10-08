@@ -25,7 +25,7 @@ pub fn get_writer(path_s: &String) -> BufWriter<std::fs::File> {
     BufWriter::new(file)
 }
 
-pub fn get_reader(path_s: &String) -> Option<BufReader<File>> {
+pub fn get_reader(path_s: &str) -> Option<BufReader<File>> {
     let path = Path::new(&path_s);
     if !(path.is_file() || path.is_symlink()) {
         return None;

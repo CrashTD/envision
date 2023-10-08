@@ -1,28 +1,10 @@
-use crate::depcheck::{check_dependencies, DepType, Dependency, DependencyCheckResult};
+use crate::{
+    depcheck::{check_dependencies, Dependency, DependencyCheckResult},
+    dependencies::common::{dep_cmake, dep_eigen, dep_git, dep_ninja},
+};
 
 fn libsurvive_deps() -> Vec<Dependency> {
-    vec![
-        Dependency {
-            name: "eigen".into(),
-            dep_type: DepType::Include,
-            filename: "eigen3/Eigen/src/Core/EigenBase.h".into(),
-        },
-        Dependency {
-            name: "cmake".into(),
-            dep_type: DepType::Executable,
-            filename: "cmake".into(),
-        },
-        Dependency {
-            name: "git".into(),
-            dep_type: DepType::Executable,
-            filename: "git".into(),
-        },
-        Dependency {
-            name: "ninja".into(),
-            dep_type: DepType::Executable,
-            filename: "ninja".into(),
-        },
-    ]
+    vec![dep_eigen(), dep_cmake(), dep_git(), dep_ninja()]
 }
 
 pub fn check_libsurvive_deps() -> Vec<DependencyCheckResult> {
