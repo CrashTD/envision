@@ -156,226 +156,229 @@ impl SimpleComponent for MainView {
                 set_hscrollbar_policy: gtk::PolicyType::Never,
                 set_hexpand: true,
                 set_vexpand: true,
-                gtk::Box {
-                    set_spacing: 12,
-                    set_margin_all: 12,
-                    set_orientation: gtk::Orientation::Vertical,
+                adw::Clamp {
+                    set_maximum_size: 600,
                     gtk::Box {
-                        set_hexpand: true,
-                        set_orientation: gtk::Orientation::Horizontal,
-                        add_css_class: "linked",
-                        gtk::Button {
-                            add_css_class: "suggested-action",
-                            add_css_class: "destructive-action",
-                            set_hexpand: true,
-                            #[track = "model.changed(Self::xrservice_active())"]
-                            set_class_active: ("suggested-action", !model.xrservice_active),
-                            #[track = "model.changed(Self::xrservice_active())"]
-                            set_label: match model.xrservice_active {
-                                true => "Stop",
-                                false => "Start",
-                            },
-                            connect_clicked[sender] => move |_| {
-                                sender.input(MainViewMsg::StartStopClicked);
-                            },
-                        },
-                        gtk::Button {
-                            set_label: "Start with GDB",
-                            #[track = "model.changed(Self::xrservice_active()) || model.changed(Self::enable_debug_view())"]
-                            set_visible: model.enable_debug_view && !model.xrservice_active,
-                            connect_clicked[sender] => move |_| {
-                                sender.input(MainViewMsg::StartWithDebug);
-                            },
-                        },
-                        gtk::Button {
-                            set_halign: gtk::Align::Center,
-                            set_valign: gtk::Align::Center,
-                            set_icon_name: "view-refresh-symbolic",
-                            set_tooltip_text: Some("Restart"),
-                            #[track = "model.changed(Self::xrservice_active())"]
-                            set_visible: model.xrservice_active,
-                            connect_clicked[sender] => move |_| {
-                                sender.input(MainViewMsg::RestartXRService)
-                            },
-                        },
-                    },
-                    model.devices_box.widget(),
-                    gtk::Box {
-                        set_orientation: gtk::Orientation::Vertical,
-                        set_hexpand: true,
-                        set_vexpand: false,
                         set_spacing: 12,
-                        add_css_class: "card",
-                        add_css_class: "padded",
-                        #[track = "model.changed(Self::selected_profile())"]
-                        set_visible: match mount_has_nosuid(model.selected_profile.prefix.as_str()) {
-                            Ok(b) => b,
-                            Err(_) => {
-                                // TODO: handle this error better
-                                println!(
-                                    "Warning: could not get stat on path {}",
-                                    model.selected_profile.prefix);
-                                false
-                            },
-                        },
-                        warning_heading(),
-                        gtk::Label {
-                            set_label: concat!(
-                                "Your current prefix is inside a partition ",
-                                "mounted with the nosuid option. This will prevent ",
-                                "the Envision runtime from acquiring certain privileges ",
-                                "and will cause noticeable stutter when running XR ",
-                                "applications."
-                            ),
-                            add_css_class: "warning",
-                            set_xalign: 0.0,
-                            set_wrap: true,
-                            set_wrap_mode: gtk::pango::WrapMode::Word,
-                        }
-                    },
-                    gtk::Box {
+                        set_margin_all: 12,
                         set_orientation: gtk::Orientation::Vertical,
-                        set_hexpand: true,
-                        set_vexpand: false,
-                        set_spacing: 12,
-                        add_css_class: "card",
-                        add_css_class: "padded",
-                        #[track = "model.changed(Self::selected_profile())"]
-                        set_visible: model.selected_profile.lighthouse_driver == LighthouseDriver::SteamVR && !chaperone_info_exists(),
-                        warning_heading(),
-                        gtk::Label {
-                            set_label: concat!(
-                                "SteamVR room configuration not found.\n",
-                                "To use the SteamVR lighthouse driver, you ",
-                                "will need to run SteamVR and perform the room setup.",
-                            ),
-                            add_css_class: "warning",
-                            set_xalign: 0.0,
-                            set_wrap: true,
-                            set_wrap_mode: gtk::pango::WrapMode::Word,
-                        }
-                    },
-                    gtk::Box {
-                        set_orientation: gtk::Orientation::Vertical,
-                        set_hexpand: true,
-                        set_vexpand: false,
-                        set_spacing: 12,
-                        add_css_class: "card",
-                        add_css_class: "padded",
-                        #[track = "model.changed(Self::selected_profile())"]
-                        set_visible: match get_amd_gpu_power_profile() {
-                            None => false,
-                            Some(GpuPowerProfile::VR) => false,
-                            Some(_) => true,
-                        },
-                        warning_heading(),
-                        gtk::Label {
-                            set_label: concat!(
-                                "Your AMD GPU Power Profile is not set to VR. ",
-                                "This will cause noticeable stutter when running XR ",
-                                "applications. Activate the VR profile with the ",
-                                "following command:",
-                            ),
-                            add_css_class: "warning",
-                            set_xalign: 0.0,
-                            set_wrap: true,
-                            set_wrap_mode: gtk::pango::WrapMode::Word,
-                        },
                         gtk::Box {
+                            set_hexpand: true,
                             set_orientation: gtk::Orientation::Horizontal,
-                            set_spacing: 6,
-                            gtk::ScrolledWindow {
-                                add_css_class: "card",
-                                set_vscrollbar_policy: gtk::PolicyType::Never,
-                                set_overflow: gtk::Overflow::Hidden,
-                                gtk::TextView {
-                                    set_hexpand: true,
-                                    set_vexpand: false,
-                                    set_monospace: true,
-                                    set_editable: false,
-                                    set_left_margin: 6,
-                                    set_right_margin: 6,
-                                    set_top_margin: 6,
-                                    set_bottom_margin: 18,
-                                    #[wrap(Some)]
-                                    set_buffer: cmdbuf = &gtk::TextBuffer {
-                                        set_text: &{
-                                            let mut res = String::new();
-                                            if let Some(GpuSysDrm::Amd(d)) = get_first_amd_gpu() {
-                                                let ds = d.as_str();
-                                                res = get_set_amd_vr_pow_prof_cmd(ds);
-                                            }
-                                            res
-                                        },
-                                        set_enable_undo: false,
-                                    }
-                                }
+                            add_css_class: "linked",
+                            gtk::Button {
+                                add_css_class: "suggested-action",
+                                add_css_class: "destructive-action",
+                                set_hexpand: true,
+                                #[track = "model.changed(Self::xrservice_active())"]
+                                set_class_active: ("suggested-action", !model.xrservice_active),
+                                #[track = "model.changed(Self::xrservice_active())"]
+                                set_label: match model.xrservice_active {
+                                    true => "Stop",
+                                    false => "Start",
+                                },
+                                connect_clicked[sender] => move |_| {
+                                    sender.input(MainViewMsg::StartStopClicked);
+                                },
                             },
                             gtk::Button {
-                                add_css_class: "flat",
-                                add_css_class: "circular",
-                                set_tooltip_text: Some("Copy"),
-                                set_icon_name: "edit-copy-symbolic",
-                                set_vexpand: false,
+                                set_label: "Start with GDB",
+                                #[track = "model.changed(Self::xrservice_active()) || model.changed(Self::enable_debug_view())"]
+                                set_visible: model.enable_debug_view && !model.xrservice_active,
+                                connect_clicked[sender] => move |_| {
+                                    sender.input(MainViewMsg::StartWithDebug);
+                                },
+                            },
+                            gtk::Button {
+                                set_halign: gtk::Align::Center,
                                 set_valign: gtk::Align::Center,
-                                connect_clicked => move |_| {
-                                    if let Some(GpuSysDrm::Amd(d)) = get_first_amd_gpu() {
-                                        gtk::gdk::Display::default()
-                                            .expect("Could not find default display")
-                                            .clipboard()
-                                            .set_text(get_set_amd_vr_pow_prof_cmd(d.as_str()).as_str());
+                                set_icon_name: "view-refresh-symbolic",
+                                set_tooltip_text: Some("Restart"),
+                                #[track = "model.changed(Self::xrservice_active())"]
+                                set_visible: model.xrservice_active,
+                                connect_clicked[sender] => move |_| {
+                                    sender.input(MainViewMsg::RestartXRService)
+                                },
+                            },
+                        },
+                        model.devices_box.widget(),
+                        gtk::Box {
+                            set_orientation: gtk::Orientation::Vertical,
+                            set_hexpand: true,
+                            set_vexpand: false,
+                            set_spacing: 12,
+                            add_css_class: "card",
+                            add_css_class: "padded",
+                            #[track = "model.changed(Self::selected_profile())"]
+                            set_visible: match mount_has_nosuid(model.selected_profile.prefix.as_str()) {
+                                Ok(b) => b,
+                                Err(_) => {
+                                    // TODO: handle this error better
+                                    println!(
+                                        "Warning: could not get stat on path {}",
+                                        model.selected_profile.prefix);
+                                    false
+                                },
+                            },
+                            warning_heading(),
+                            gtk::Label {
+                                set_label: concat!(
+                                    "Your current prefix is inside a partition ",
+                                    "mounted with the nosuid option. This will prevent ",
+                                    "the Envision runtime from acquiring certain privileges ",
+                                    "and will cause noticeable stutter when running XR ",
+                                    "applications."
+                                ),
+                                add_css_class: "warning",
+                                set_xalign: 0.0,
+                                set_wrap: true,
+                                set_wrap_mode: gtk::pango::WrapMode::Word,
+                            }
+                        },
+                        gtk::Box {
+                            set_orientation: gtk::Orientation::Vertical,
+                            set_hexpand: true,
+                            set_vexpand: false,
+                            set_spacing: 12,
+                            add_css_class: "card",
+                            add_css_class: "padded",
+                            #[track = "model.changed(Self::selected_profile())"]
+                            set_visible: model.selected_profile.lighthouse_driver == LighthouseDriver::SteamVR && !chaperone_info_exists(),
+                            warning_heading(),
+                            gtk::Label {
+                                set_label: concat!(
+                                    "SteamVR room configuration not found.\n",
+                                    "To use the SteamVR lighthouse driver, you ",
+                                    "will need to run SteamVR and perform the room setup.",
+                                ),
+                                add_css_class: "warning",
+                                set_xalign: 0.0,
+                                set_wrap: true,
+                                set_wrap_mode: gtk::pango::WrapMode::Word,
+                            }
+                        },
+                        gtk::Box {
+                            set_orientation: gtk::Orientation::Vertical,
+                            set_hexpand: true,
+                            set_vexpand: false,
+                            set_spacing: 12,
+                            add_css_class: "card",
+                            add_css_class: "padded",
+                            #[track = "model.changed(Self::selected_profile())"]
+                            set_visible: match get_amd_gpu_power_profile() {
+                                None => false,
+                                Some(GpuPowerProfile::VR) => false,
+                                Some(_) => true,
+                            },
+                            warning_heading(),
+                            gtk::Label {
+                                set_label: concat!(
+                                    "Your AMD GPU Power Profile is not set to VR. ",
+                                    "This will cause noticeable stutter when running XR ",
+                                    "applications. Activate the VR profile with the ",
+                                    "following command:",
+                                ),
+                                add_css_class: "warning",
+                                set_xalign: 0.0,
+                                set_wrap: true,
+                                set_wrap_mode: gtk::pango::WrapMode::Word,
+                            },
+                            gtk::Box {
+                                set_orientation: gtk::Orientation::Horizontal,
+                                set_spacing: 6,
+                                gtk::ScrolledWindow {
+                                    add_css_class: "card",
+                                    set_vscrollbar_policy: gtk::PolicyType::Never,
+                                    set_overflow: gtk::Overflow::Hidden,
+                                    gtk::TextView {
+                                        set_hexpand: true,
+                                        set_vexpand: false,
+                                        set_monospace: true,
+                                        set_editable: false,
+                                        set_left_margin: 6,
+                                        set_right_margin: 6,
+                                        set_top_margin: 6,
+                                        set_bottom_margin: 18,
+                                        #[wrap(Some)]
+                                        set_buffer: cmdbuf = &gtk::TextBuffer {
+                                            set_text: &{
+                                                let mut res = String::new();
+                                                if let Some(GpuSysDrm::Amd(d)) = get_first_amd_gpu() {
+                                                    let ds = d.as_str();
+                                                    res = get_set_amd_vr_pow_prof_cmd(ds);
+                                                }
+                                                res
+                                            },
+                                            set_enable_undo: false,
+                                        }
                                     }
+                                },
+                                gtk::Button {
+                                    add_css_class: "flat",
+                                    add_css_class: "circular",
+                                    set_tooltip_text: Some("Copy"),
+                                    set_icon_name: "edit-copy-symbolic",
+                                    set_vexpand: false,
+                                    set_valign: gtk::Align::Center,
+                                    connect_clicked => move |_| {
+                                        if let Some(GpuSysDrm::Amd(d)) = get_first_amd_gpu() {
+                                            gtk::gdk::Display::default()
+                                                .expect("Could not find default display")
+                                                .clipboard()
+                                                .set_text(get_set_amd_vr_pow_prof_cmd(d.as_str()).as_str());
+                                        }
+                                    }
+                                },
+                            },
+                            gtk::Button {
+                                set_halign: gtk::Align::Start,
+                                set_label: "Refresh",
+                                connect_clicked[sender, profiles_dropdown] => move |_| {
+                                    sender.input(Self::Input::SetSelectedProfile(profiles_dropdown.selected()));
                                 }
                             },
                         },
-                        gtk::Button {
-                            set_halign: gtk::Align::Start,
-                            set_label: "Refresh",
-                            connect_clicked[sender, profiles_dropdown] => move |_| {
-                                sender.input(Self::Input::SetSelectedProfile(profiles_dropdown.selected()));
-                            }
-                        },
-                    },
-                    model.steam_launch_options_box.widget(),
-                    model.install_wivrn_box.widget(),
-                    gtk::Box {
-                        set_orientation: gtk::Orientation::Vertical,
-                        set_hexpand: true,
-                        set_vexpand: false,
-                        set_spacing: 12,
-                        add_css_class: "card",
-                        add_css_class: "padded",
-                        #[track = "model.changed(Self::selected_profile())"]
-                        set_visible: model.selected_profile.lighthouse_driver == LighthouseDriver::Survive,
-                        gtk::Label {
-                            add_css_class: "heading",
+                        model.steam_launch_options_box.widget(),
+                        model.install_wivrn_box.widget(),
+                        gtk::Box {
+                            set_orientation: gtk::Orientation::Vertical,
                             set_hexpand: true,
-                            set_xalign: 0.0,
-                            set_label: "Libsurvive Calibration",
-                            set_wrap: true,
-                            set_wrap_mode: gtk::pango::WrapMode::Word,
+                            set_vexpand: false,
+                            set_spacing: 12,
+                            add_css_class: "card",
+                            add_css_class: "padded",
+                            #[track = "model.changed(Self::selected_profile())"]
+                            set_visible: model.selected_profile.lighthouse_driver == LighthouseDriver::Survive,
+                            gtk::Label {
+                                add_css_class: "heading",
+                                set_hexpand: true,
+                                set_xalign: 0.0,
+                                set_label: "Libsurvive Calibration",
+                                set_wrap: true,
+                                set_wrap_mode: gtk::pango::WrapMode::Word,
+                            },
+                            gtk::Label {
+                                add_css_class: "dim-label",
+                                set_hexpand: true,
+                                set_label: concat!(
+                                    "Libsurvive needs to import your SteamVR calibration to work ",
+                                    "properly. You need to have used SteamVR with this setup ",
+                                    "before to be able to import its calibration."
+                                ),
+                                set_xalign: 0.0,
+                                set_wrap: true,
+                                set_wrap_mode: gtk::pango::WrapMode::Word,
+                            },
+                            gtk::Button {
+                                add_css_class: "suggested-action",
+                                set_label: "Calibrate",
+                                set_halign: gtk::Align::Start,
+                                connect_clicked[sender] => move |_| {
+                                    sender.output(Self::Output::OpenLibsurviveSetup).expect("Sender outut failed");
+                                }
+                            },
                         },
-                        gtk::Label {
-                            add_css_class: "dim-label",
-                            set_hexpand: true,
-                            set_label: concat!(
-                                "Libsurvive needs to import your SteamVR calibration to work ",
-                                "properly. You need to have used SteamVR with this setup ",
-                                "before to be able to import its calibration."
-                            ),
-                            set_xalign: 0.0,
-                            set_wrap: true,
-                            set_wrap_mode: gtk::pango::WrapMode::Word,
-                        },
-                        gtk::Button {
-                            add_css_class: "suggested-action",
-                            set_label: "Calibrate",
-                            set_halign: gtk::Align::Start,
-                            connect_clicked[sender] => move |_| {
-                                sender.output(Self::Output::OpenLibsurviveSetup).expect("Sender outut failed");
-                            }
-                        },
-                    },
+                    }
                 }
             },
             add_bottom_bar: bottom_bar = &gtk::Box {
