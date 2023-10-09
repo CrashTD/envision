@@ -50,21 +50,28 @@ impl Display for DependencyCheckResult {
 
 fn shared_obj_paths() -> Vec<String> {
     vec![
-        "/lib".to_string(),
-        "/usr/lib".to_string(),
-        "/usr/lib64".to_string(),
-        "/usr/local/lib".to_string(),
-        "/usr/local/lib64".to_string(),
-        "/usr/lib/x86_64-linux-gnu".to_string(),
-        "/usr/lib/aarch64-linux-gnu".to_string(),
-        "/lib/x86_64-linux-gnu".to_string(),
-        "/lib/aarch64-linux-gnu".to_string(),
-        "/app/lib".to_string(),
+        "/lib".into(),
+        "/usr/lib".into(),
+        "/usr/lib64".into(),
+        "/usr/local/lib".into(),
+        "/usr/local/lib64".into(),
+        "/usr/lib/x86_64-linux-gnu".into(),
+        "/usr/lib/aarch64-linux-gnu".into(),
+        "/lib/x86_64-linux-gnu".into(),
+        "/lib/aarch64-linux-gnu".into(),
+        "/app/lib".into(),
     ]
 }
 
 fn include_paths() -> Vec<String> {
-    vec!["/usr/include".to_string(), "/usr/local/include".to_string()]
+    vec![
+        "/usr/include".into(),
+        "/usr/local/include".into(),
+        // fedora puts avcodec here
+        "/usr/include/ffmpeg".into(),
+        "/usr/include/x86_64-linux-gnu".into(),
+        "/usr/include/aarch64-linux-gnu".into(),
+    ]
 }
 
 pub fn check_dependency(dep: Dependency) -> bool {

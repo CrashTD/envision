@@ -8,6 +8,7 @@ pub enum LinuxDistro {
     Arch,
     Debian,
     Fedora,
+    Gentoo,
 }
 
 pub fn get_distro() -> Option<LinuxDistro> {
@@ -26,11 +27,15 @@ pub fn get_distro() -> Option<LinuxDistro> {
                 || buf.contains("ubuntu")
                 || buf.contains("mint")
                 || buf.contains("elementary")
+                || buf.contains("pop")
             {
                 return Some(LinuxDistro::Debian);
             }
             if buf.contains("fedora") || buf.contains("nobara") {
                 return Some(LinuxDistro::Fedora);
+            }
+            if buf.contains("gentoo") {
+                return Some(LinuxDistro::Gentoo);
             }
             if buf.contains("alpine") || buf.contains("postmarket") {
                 return Some(LinuxDistro::Alpine);
