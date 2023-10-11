@@ -191,6 +191,9 @@ impl App {
                     true,
                     Some(self.get_selected_profile()),
                 ));
+            self.debug_view
+                .sender()
+                .emit(DebugViewMsg::XRServiceActiveChanged(true));
             self.set_inhibit_session(true);
         } else {
             alert(
@@ -231,6 +234,9 @@ impl App {
         self.main_view
             .sender()
             .emit(MainViewMsg::XRServiceActiveChanged(false, None));
+        self.debug_view
+            .sender()
+            .emit(DebugViewMsg::XRServiceActiveChanged(false));
         self.xr_devices = vec![];
     }
 
@@ -312,6 +318,9 @@ impl SimpleComponent for App {
                 self.main_view
                     .sender()
                     .emit(MainViewMsg::XRServiceActiveChanged(false, None));
+                self.debug_view
+                    .sender()
+                    .emit(DebugViewMsg::XRServiceActiveChanged(false));
                 if let Some(worker) = self.xrservice_worker.as_ref() {
                     if let Some(code) = worker.exit_code() {
                         if code != 0 && code != 15 {

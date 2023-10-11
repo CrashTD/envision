@@ -18,12 +18,12 @@ pub enum DebugViewMsg {
     ClearLog,
     FilterLog(SearchDirection),
     LogLevelChanged(LogLevel),
+    XRServiceActiveChanged(bool),
 }
 
 #[tracker::track]
 pub struct DebugView {
-    #[tracker::do_not_track]
-    log: Vec<String>,
+    xrservice_active: bool,
     #[tracker::do_not_track]
     textbuf: sourceview5::Buffer,
     #[tracker::do_not_track]
@@ -133,12 +133,14 @@ impl SimpleComponent for DebugView {
         self.reset();
 
         match message {
+            Self::Input::XRServiceActiveChanged(active) => {
+                self.set_xrservice_active(active);
+                if let Some(dropdown) = self.dropdown.as_ref() {
+                    dropdown.set_sensitive(!active);
+                }
+            }
             Self::Input::LogLevelChanged(lvl) => {
                 self.log_level = lvl;
-                let log = self.log.clone();
-                self.log = vec![];
-                self.textbuf.set_text("");
-                sender.input(Self::Input::LogUpdated(log));
             }
             Self::Input::FilterLog(direction) => {
                 let searchbar = self.searchbar.as_ref().unwrap().clone();
@@ -180,7 +182,6 @@ impl SimpleComponent for DebugView {
                 }
             }
             Self::Input::LogUpdated(n_log) => {
-                self.log.extend(n_log.clone());
                 for row in n_log {
                     let txt = match MonadoLog::new_from_str(row.as_str()) {
                         Some(o) => match o.level >= self.log_level {
@@ -210,7 +211,6 @@ impl SimpleComponent for DebugView {
                 }
             }
             Self::Input::ClearLog => {
-                self.log = vec![];
                 self.textbuf.set_text("");
             }
         }
@@ -264,8 +264,8 @@ impl SimpleComponent for DebugView {
         }
 
         let mut model = Self {
+            xrservice_active: false,
             tracker: 0,
-            log: vec![],
             textbuf,
             textview: None,
             searchbar: None,
