@@ -48,6 +48,8 @@ pub struct DebugView {
 
 pub struct DebugViewInit {}
 
+const MAX_SCROLLBACK: i32 = 2000;
+
 #[relm4::component(pub)]
 impl SimpleComponent for DebugView {
     type Init = DebugViewInit;
@@ -208,6 +210,12 @@ impl SimpleComponent for DebugView {
                         let end_mark = textbuf.create_mark(None, &textbuf.end_iter(), false);
                         textview.scroll_mark_onscreen(&end_mark);
                     });
+                }
+                while self.textbuf.line_count() > MAX_SCROLLBACK {
+                    let mut start = self.textbuf.start_iter();
+                    let mut end = self.textbuf.start_iter();
+                    end.forward_line();
+                    self.textbuf.delete(&mut start, &mut end);
                 }
             }
             Self::Input::ClearLog => {
