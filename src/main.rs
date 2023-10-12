@@ -1,3 +1,5 @@
+use std::env;
+
 use anyhow::Result;
 use constants::{resources, APP_ID, APP_NAME, GETTEXT_PACKAGE, LOCALE_DIR};
 use file_builders::{
@@ -5,6 +7,7 @@ use file_builders::{
     openvrpaths_vrpath::{get_current_openvrpaths, set_current_openvrpaths_to_steam},
 };
 use gettextrs::LocaleCategory;
+use gtk::prelude::ObjectExt;
 use relm4::{
     adw,
     gtk::{self, gdk, gio, glib},
@@ -91,8 +94,8 @@ fn main() -> Result<()> {
 
     let main_app = adw::Application::builder()
         .application_id(APP_ID)
-        .flags(gio::ApplicationFlags::empty())
-        .resource_base_path("/org/gabmus/envision")
+        .flags(gio::ApplicationFlags::FLAGS_NONE)
+        .resource_base_path(format!("/{}", APP_ID.replace(".", "/")))
         .build();
     let app = RelmApp::from_app(main_app.clone());
     app.run::<App>(AppInit {
