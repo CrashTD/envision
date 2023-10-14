@@ -1,6 +1,6 @@
 use crate::{
     depcheck::{check_dependencies, DepType, Dependency, DependencyCheckResult},
-    dependencies::common::{dep_eigen, dep_git, dep_glslang_validator, dep_cmake},
+    dependencies::common::{dep_cmake, dep_eigen, dep_git, dep_glslang_validator, dep_ninja},
     linux_distro::LinuxDistro,
 };
 use std::collections::HashMap;
@@ -9,6 +9,7 @@ fn wivrn_deps() -> Vec<Dependency> {
     // TODO: populate!
     vec![
         dep_cmake(),
+        dep_ninja(),
         dep_git(),
         Dependency {
             name: "x264-dev".into(),
