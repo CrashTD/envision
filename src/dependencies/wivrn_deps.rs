@@ -1,6 +1,6 @@
 use crate::{
     depcheck::{check_dependencies, DepType, Dependency, DependencyCheckResult},
-    dependencies::common::{dep_eigen, dep_glslang_validator},
+    dependencies::common::{dep_eigen, dep_git, dep_glslang_validator},
     linux_distro::LinuxDistro,
 };
 use std::collections::HashMap;
@@ -8,6 +8,7 @@ use std::collections::HashMap;
 fn wivrn_deps() -> Vec<Dependency> {
     // TODO: populate!
     vec![
+        dep_git(),
         Dependency {
             name: "x264-dev".into(),
             dep_type: DepType::Include,
