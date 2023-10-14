@@ -105,6 +105,8 @@ impl SimpleComponent for InstallWivrnBox {
             gtk::Label {
                 add_css_class: "error",
                 set_xalign: 0.0,
+                set_wrap: true,
+                set_wrap_mode: gtk::pango::WrapMode::Word,
                 #[track = "model.changed(Self::install_wivrn_status())"]
                 set_visible: matches!(&model.install_wivrn_status, InstallWivrnStatus::Done(Some(_))),
                 #[track = "model.changed(Self::install_wivrn_status())"]
@@ -144,6 +146,9 @@ impl SimpleComponent for InstallWivrnBox {
                 }
                 if self.install_runner.is_some() {
                     let runner = self.install_runner.as_mut().unwrap();
+                    let output = runner.consume_output().to_lowercase();
+                    let fallback_msg =
+                        |code: i32| Some(format!("ADB exited with code \"{}\"", code));
                     match runner.status() {
                         RunnerStatus::Running => {}
                         RunnerStatus::Stopped(status) => {
@@ -151,12 +156,22 @@ impl SimpleComponent for InstallWivrnBox {
                             self.set_install_wivrn_status(match status {
                                 None | Some(0) => InstallWivrnStatus::Success,
                                 Some(255) => {
-                                    InstallWivrnStatus::Done(Some("You need to authorize this computer to run developer commands in your headset. Authorize it and try again.".into()))
+                                    InstallWivrnStatus::Done(Some(concat!(
+                                        "You need to authorize this computer to run developer ",
+                                        "commands in your headset. Authorize it and try again.",
+                                    ).into()))
                                 }
-                                Some(err_code) => InstallWivrnStatus::Done(Some(format!(
-                                    "ADB exited with code \"{c}\"",
-                                    c = err_code
-                                ))),
+                                Some(1) => {
+                                    if output.contains("no devices/emulators found") {
+                                        InstallWivrnStatus::Done(Some(concat!(
+                                            "No devices connected. Make sure your headset is connected ",
+                                            "to this computer and USB debugging is turned on."
+                                        ).into()))
+                                    } else {
+                                    InstallWivrnStatus::Done(fallback_msg(1))
+                                    }
+                                }
+                                Some(err_code) => InstallWivrnStatus::Done(fallback_msg(err_code)),
                             });
                         }
                     };
