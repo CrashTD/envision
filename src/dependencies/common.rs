@@ -91,3 +91,55 @@ pub fn dep_gpp() -> Dependency {
         ]),
     }
 }
+
+pub fn dep_libdrm() -> Dependency {
+    Dependency {
+        name: "libdrm".into(),
+        dep_type: DepType::SharedObject,
+        filename: "libdrm.so".into(),
+        packages: HashMap::from([
+            (LinuxDistro::Arch, "libdrm".into()),
+            (LinuxDistro::Debian, "libdrm-dev".into()),
+            (LinuxDistro::Fedora, "libdrm".into()),
+        ]),
+    }
+}
+
+pub fn dep_openxr() -> Dependency {
+    Dependency {
+        name: "openxr".into(),
+        dep_type: DepType::SharedObject,
+        filename: "libopenxr_loader.so".into(),
+        packages: HashMap::from([
+            (LinuxDistro::Arch, "openxr".into()),
+            (LinuxDistro::Debian, "libopenxr-dev".into()),
+            (LinuxDistro::Fedora, "openxr-devel".into()),
+        ]),
+    }
+}
+
+pub fn dep_vulkan_icd_loader() -> Dependency {
+    Dependency {
+        name: "vulkan-icd-loader".into(),
+        dep_type: DepType::SharedObject,
+        filename: "libvulkan.so".into(),
+        packages: HashMap::from([
+            (LinuxDistro::Arch, "vulkan-icd-loader".into()),
+            (LinuxDistro::Debian, "libvulkan-dev".into()),
+            (LinuxDistro::Fedora, "vulkan-loader-devel".into()),
+        ]),
+    }
+}
+
+pub fn dep_vulkan_headers() -> Dependency {
+    Dependency {
+        name: "vulkan-headers".into(),
+        dep_type: DepType::Include,
+        filename: "vulkan/vulkan.h".into(),
+        packages: HashMap::from([
+            (LinuxDistro::Arch, "vulkan-headers".into()),
+            (LinuxDistro::Debian, "libvulkan-dev".into()),
+            (LinuxDistro::Fedora, "vulkan-devel".into()),
+        ]),
+    }
+}

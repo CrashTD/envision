@@ -1,7 +1,8 @@
 use crate::{
     depcheck::{check_dependencies, DepType, Dependency, DependencyCheckResult},
     dependencies::common::{
-        dep_cmake, dep_eigen, dep_gcc, dep_git, dep_glslang_validator, dep_gpp, dep_ninja,
+        dep_cmake, dep_eigen, dep_gcc, dep_git, dep_glslang_validator, dep_gpp, dep_libdrm,
+        dep_ninja, dep_openxr, dep_vulkan_headers, dep_vulkan_icd_loader,
     },
     linux_distro::LinuxDistro,
 };
@@ -15,6 +16,10 @@ fn wivrn_deps() -> Vec<Dependency> {
         dep_git(),
         dep_gcc(),
         dep_gpp(),
+        dep_libdrm(),
+        dep_openxr(),
+        dep_vulkan_icd_loader(),
+        dep_vulkan_headers(),
         Dependency {
             name: "x264-dev".into(),
             dep_type: DepType::Include,
