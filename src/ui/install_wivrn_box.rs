@@ -60,8 +60,8 @@ impl SimpleComponent for InstallWivrnBox {
     menu! {
         install_wivrn_menu: {
             section! {
-                "For _Oculus" => WivrnApkOculusAction,
-                "For _Pico" => WivrnApkPicoAction,
+                "_Standard (Oculus and other devices)" => WivrnApkStandardAction,
+                "_Pico" => WivrnApkPicoAction,
             }
         }
     }
@@ -201,15 +201,19 @@ impl SimpleComponent for InstallWivrnBox {
 
         let apk_oculus_action = {
             let oculus_sender = sender.clone();
-            RelmAction::<WivrnApkOculusAction>::new_stateless(move |_| {
-                oculus_sender.input(Self::Input::DownloadWivrn("https://github.com/Meumeu/WiVRn/releases/latest/download/WiVRn-oculus-release.apk".into()));
+            RelmAction::<WivrnApkStandardAction>::new_stateless(move |_| {
+                oculus_sender.input(Self::Input::DownloadWivrn(
+                    "https://github.com/Meumeu/WiVRn/releases/latest/download/WiVRn-standard-release.apk".into()
+                ));
             })
         };
 
         let apk_pico_action = {
             let pico_sender = sender.clone();
             RelmAction::<WivrnApkPicoAction>::new_stateless(move |_| {
-                pico_sender.input(Self::Input::DownloadWivrn("https://github.com/Meumeu/WiVRn/releases/latest/download/WiVRn-pico-release.apk".into()));
+                pico_sender.input(Self::Input::DownloadWivrn(
+                    "https://github.com/Meumeu/WiVRn/releases/latest/download/WiVRn-pico-release.apk".into()
+                ));
             })
         };
 
@@ -226,5 +230,5 @@ impl SimpleComponent for InstallWivrnBox {
 }
 
 new_action_group!(pub InstallWivrnActionGroup, "installwivrn");
-new_stateless_action!(pub WivrnApkOculusAction, InstallWivrnActionGroup, "apkoculus");
+new_stateless_action!(pub WivrnApkStandardAction, InstallWivrnActionGroup, "apkoculus");
 new_stateless_action!(pub WivrnApkPicoAction, InstallWivrnActionGroup, "apkpico");
