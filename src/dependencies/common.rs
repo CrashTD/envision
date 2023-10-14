@@ -65,3 +65,29 @@ pub fn dep_glslang_validator() -> Dependency {
         ]),
     }
 }
+
+pub fn dep_gcc() -> Dependency {
+    Dependency {
+        name: "gcc".into(),
+        dep_type: DepType::Executable,
+        filename: "gcc".into(),
+        packages: HashMap::from([
+            (LinuxDistro::Arch, "gcc".into()),
+            (LinuxDistro::Debian, "gcc".into()),
+            (LinuxDistro::Fedora, "gcc".into()),
+        ]),
+    }
+}
+
+pub fn dep_gpp() -> Dependency {
+    Dependency {
+        name: "g++".into(),
+        dep_type: DepType::Executable,
+        filename: "g++".into(),
+        packages: HashMap::from([
+            (LinuxDistro::Arch, "gcc".into()),
+            (LinuxDistro::Debian, "g++".into()),
+            (LinuxDistro::Fedora, "g++".into()),
+        ]),
+    }
+}

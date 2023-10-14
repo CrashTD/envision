@@ -1,12 +1,13 @@
 use crate::{
     depcheck::{check_dependencies, DepType, Dependency, DependencyCheckResult},
-    dependencies::common::dep_eigen,
+    dependencies::common::{dep_eigen, dep_gpp},
     linux_distro::LinuxDistro,
 };
 use std::collections::HashMap;
 
 fn basalt_deps() -> Vec<Dependency> {
     vec![
+        dep_gpp(),
         Dependency {
             name: "boost".into(),
             dep_type: DepType::SharedObject,

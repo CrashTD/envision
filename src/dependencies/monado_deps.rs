@@ -1,6 +1,8 @@
 use crate::{
     depcheck::{check_dependencies, DepType, Dependency, DependencyCheckResult},
-    dependencies::common::{dep_cmake, dep_eigen, dep_git, dep_glslang_validator, dep_ninja},
+    dependencies::common::{
+        dep_cmake, dep_eigen, dep_gcc, dep_git, dep_glslang_validator, dep_gpp, dep_ninja,
+    },
     linux_distro::LinuxDistro,
 };
 use std::collections::HashMap;
@@ -60,6 +62,8 @@ fn monado_deps() -> Vec<Dependency> {
         dep_eigen(),
         dep_git(),
         dep_ninja(),
+        dep_gcc(),
+        dep_gpp(),
         Dependency {
             name: "glslc".into(),
             dep_type: DepType::Executable,
