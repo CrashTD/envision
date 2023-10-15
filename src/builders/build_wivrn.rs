@@ -26,14 +26,14 @@ pub fn get_build_wivrn_jobs(
 
     jobs.push_back(git.get_override_remote_url_job());
 
-    git.get_clone_or_pull_job(profile).map(|j| {
-        jobs.push_back(j);
+    git.get_clone_or_pull_jobs(profile).map(|j| {
+        jobs.extend(j);
     });
 
     git.get_checkout_ref_job().map(|j| {
         jobs.push_back(j);
         if profile.pull_on_build {
-            jobs.push_back(git.get_pull_job());
+            jobs.extend(git.get_pull_jobs());
         }
     });
 
