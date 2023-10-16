@@ -90,6 +90,17 @@ fn basalt_deps() -> Vec<Dependency> {
             packages: HashMap::from([
                 (LinuxDistro::Arch, "gtest".into()),
                 (LinuxDistro::Debian, "libgtest-dev".into()),
+                (LinuxDistro::Fedora, "gtest-devel".into()),
+            ]),
+        },
+        Dependency {
+            name: "tbb".into(),
+            dep_type: DepType::Include,
+            filename: "tbb/tbb.h".into(),
+            packages: HashMap::from([
+                (LinuxDistro::Arch, "onetbb".into()),
+                (LinuxDistro::Debian, "libtbb-dev".into()),
+                (LinuxDistro::Fedora, "tbb-devel".into()),
             ]),
         },
         Dependency {
