@@ -18,20 +18,10 @@ pub fn get_build_openhmd_jobs(profile: &Profile, clean_build: bool) -> VecDeque<
             None => "https://github.com/OpenHMD/OpenHMD".into(),
         },
         dir: profile.features.openhmd.path.as_ref().unwrap().clone(),
+        default_branch: "master".into(),
     };
 
-    jobs.push_back(git.get_override_remote_url_job());
-
-    git.get_clone_or_pull_jobs(profile).map(|j| {
-        jobs.extend(j);
-    });
-
-    git.get_checkout_ref_job().map(|j| {
-        jobs.push_back(j);
-        if profile.pull_on_build {
-            jobs.extend(git.get_pull_jobs());
-        }
-    });
+    jobs.extend(git.get_pre_build_jobs(profile.pull_on_build));
 
     let build_dir = format!("{}/build", profile.features.openhmd.path.as_ref().unwrap());
     let mut cmake_vars: HashMap<String, String> = HashMap::new();
