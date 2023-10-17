@@ -108,10 +108,10 @@ impl Git {
     pub fn get_pre_build_jobs(&self, pull_on_build: bool) -> Vec<WorkerJob> {
         let mut jobs = Vec::<WorkerJob>::new();
         if self.clone_exists() {
-            jobs.push(self.get_override_remote_url_job());
-            jobs.push(self.get_fetch_job());
-            jobs.push(self.get_checkout_ref_job());
             if pull_on_build {
+                jobs.push(self.get_override_remote_url_job());
+                jobs.push(self.get_fetch_job());
+                jobs.push(self.get_checkout_ref_job());
                 jobs.push(self.get_pull_job());
             }
         } else {
