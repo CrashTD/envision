@@ -48,3 +48,10 @@ If you see this warning:
 > Your current prefix is inside a partition mounted with the nosuid option. This will prevent the Envision runtime from acquiring certain privileges and will cause noticeable stutter when running XR applications.
 
 And you're using systemd-homed to manage your home partition, you need to disable it using homectl. To do so, log out, log in as root in a tty and run: `homectl update <username> --nosuid=false`.
+
+# Chat with us
+
+We have a Matrix space that's also bridged to discord, you can join to chat, ask questions, get help or if you want to start contributing to the project!
+
+- [Matrix](https://matrix.to/#/#linux-vr-adventures:matrix.org)
+- [Discord](https://discord.gg/PGnsecBETY)
