@@ -41,6 +41,7 @@ use crate::profiles::lighthouse::lighthouse_profile;
 use crate::profiles::openhmd::openhmd_profile;
 use crate::profiles::survive::survive_profile;
 use crate::profiles::wivrn::wivrn_profile;
+use crate::profiles::wmr::wmr_profile;
 use crate::ui::build_window::{BuildWindowMsg, BuildWindowOutMsg};
 use crate::ui::debug_view::DebugViewInit;
 use crate::ui::libsurvive_setup_window::LibsurviveSetupMsg;
@@ -245,6 +246,7 @@ impl App {
             lighthouse_profile(),
             survive_profile(),
             wivrn_profile(),
+            wmr_profile(),
             openhmd_profile(),
         ];
         profiles.extend(config.user_profiles.clone());

@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use crate::{
     profile::Profile,
-    profiles::{lighthouse::lighthouse_profile, wivrn::wivrn_profile},
+    profiles::{lighthouse::lighthouse_profile, wivrn::wivrn_profile, wmr::wmr_profile},
 };
 
 #[derive(Debug, PartialEq, Eq)]
@@ -112,20 +112,20 @@ impl PhysicalXRDevice {
             Self::PicoNeo3Pro => Some(wivrn_profile()),
             Self::Pico4 => Some(wivrn_profile()),
             Self::LynxR1 => Some(wivrn_profile()),
+            Self::DellVisor => Some(wmr_profile()),
+            //self::AcerAH101 => Some(wmr_profile()),
+            Self::HPWMR => Some(wmr_profile()),
+            Self::HPReverbG1 => Some(wmr_profile()),
+            Self::HPReverbG2 => Some(wmr_profile()),
+            Self::LenovoExplorer => Some(wmr_profile()),
+            Self::SamsungOdyssey => Some(wmr_profile()),
+            Self::SamsungOdysseyPlus => Some(wmr_profile()),
             _ => None,
             // Self::HTCViveCosmos => "HTC Vive Cosmos",
             // Self::OculusRift => "Oculus Rift",
             // Self::OculusRiftS => "Oculus Rift S",
             // Self::PlayStationVR => "PlayStation Vr",
             // Self::PlayStationVR2 => "PlayStation Vr2",
-            // Self::DellVisor => "Dell Visor",
-            // Self::AcerAH101 => "Acer AH101",
-            // Self::HPWMR => "HP WMR",
-            // Self::HPReverbG1 => "HP Reverb G1",
-            // Self::HPReverbG2 => "HP Reverb G2",
-            // Self::LenovoExplorer => "Lenovo Explorer",
-            // Self::SamsungOdyssey => "Samsung Odyssey",
-            // Self::SamsungOdysseyPlus => "Samsung Odyssey Plus",
             // Self::RazerHydra => "Razer Hydra",
         }
     }

@@ -1,0 +1,47 @@
+use crate::{
+    constants::APP_NAME,
+    paths::{data_monado_path, data_opencomposite_path, data_basalt_path, get_data_dir},
+    profile::{
+        LighthouseDriver, Profile, ProfileFeature, ProfileFeatureType, ProfileFeatures,
+        XRServiceType,
+    },
+};
+use std::collections::HashMap;
+
+pub fn wmr_profile() -> Profile {
+    let data_dir = get_data_dir();
+    let prefix = format!("{data}/prefixes/wmr_default", data = data_dir);
+    let mut environment: HashMap<String, String> = HashMap::new();
+    environment.insert("XRT_JSON_LOG".into(), "1".into());
+    environment.insert("XRT_COMPOSITOR_SCALE_PERCENTAGE".into(), "140".into());
+    environment.insert("XRT_COMPOSITOR_COMPUTE".into(), "1".into());
+    environment.insert("XRT_DEBUG_GUI".into(), "1".into());
+    environment.insert("XRT_CURATED_GUI".into(), "1".into());
+    environment.insert(
+        "LD_LIBRARY_PATH".into(),
+        format!("{pfx}/lib:{pfx}/lib64", pfx = prefix),
+    );
+    Profile {
+        uuid: "wmr-default".into(),
+        name: format!("WMR - {name} Default", name = APP_NAME),
+        xrservice_path: data_monado_path(),
+        xrservice_type: XRServiceType::Monado,
+        opencomposite_path: data_opencomposite_path(),
+        features: ProfileFeatures {
+            basalt: ProfileFeature {
+                feature_type: ProfileFeatureType::Basalt,
+                enabled: true,
+                path: Some(data_basalt_path()),
+                repo: None,
+            },
+            mercury_enabled: true,
+            ..Default::default()
+        },
+        environment,
+        prefix,
+        can_be_built: true,
+        editable: false,
+        lighthouse_driver: LighthouseDriver::Vive,
+        ..Default::default()
+    }
+}
