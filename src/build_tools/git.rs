@@ -1,7 +1,4 @@
-use crate::{
-    profile::Profile,
-    ui::job_worker::job::{FuncWorkerOut, WorkerJob},
-};
+use crate::ui::job_worker::job::{FuncWorkerOut, WorkerJob};
 use git2::Repository;
 use std::path::Path;
 
@@ -9,9 +6,16 @@ use std::path::Path;
 pub struct Git {
     pub repo: String,
     pub dir: String,
+    pub default_branch: String,
 }
 
 impl Git {
+    fn cmd(&self, args: Vec<String>) -> WorkerJob {
+        let mut nargs = vec!["-C".into(), self.dir.clone()];
+        nargs.extend(args);
+        WorkerJob::new_cmd(None, "git".into(), Some(nargs))
+    }
+
     fn get_repo(&self) -> String {
         self.repo
             .split('#')
@@ -27,16 +31,7 @@ impl Git {
     }
 
     pub fn get_reset_job(&self) -> WorkerJob {
-        WorkerJob::new_cmd(
-            None,
-            "git".into(),
-            Some(vec![
-                "-C".into(),
-                self.dir.clone(),
-                "reset".into(),
-                "--hard".into(),
-            ]),
-        )
+        self.cmd(vec!["reset".into(), "--hard".into()])
     }
 
     pub fn get_override_remote_url_job(&self) -> WorkerJob {
@@ -76,11 +71,7 @@ impl Git {
     }
 
     pub fn get_pull_job(&self) -> WorkerJob {
-        WorkerJob::new_cmd(
-            None,
-            "git".into(),
-            Some(vec!["-C".into(), self.dir.clone(), "pull".into()]),
-        )
+        self.cmd(vec!["pull".into()])
     }
 
     pub fn get_clone_job(&self) -> WorkerJob {
@@ -96,32 +87,37 @@ impl Git {
         )
     }
 
-    pub fn get_checkout_ref_job(&self) -> Option<WorkerJob> {
-        self.get_ref().map(|r| {
-            WorkerJob::new_cmd(
-                None,
-                "git".into(),
-                Some(vec!["-C".into(), self.dir.clone(), "checkout".into(), r]),
-            )
-        })
+    pub fn get_checkout_ref_job(&self) -> WorkerJob {
+        let gref = self.get_ref().unwrap_or(self.default_branch.clone());
+        self.cmd(vec!["checkout".into(), gref])
     }
 
-    pub fn get_clone_or_not_job(&self) -> Option<WorkerJob> {
+    pub fn get_fetch_job(&self) -> WorkerJob {
+        self.cmd(vec!["fetch".into()])
+    }
+
+    pub fn get_merge_job(&self) -> WorkerJob {
+        self.cmd(vec!["merge".into(), "--ff-only".into()])
+    }
+
+    pub fn clone_exists(&self) -> bool {
         let path_s = format!("{}/.git", self.dir.clone());
-        let path = Path::new(&path_s);
-        if path.is_dir() {
-            return None;
-        }
-        Some(self.get_clone_job())
+        Path::new(&path_s).is_dir()
     }
 
-    pub fn get_clone_or_pull_job(&self, profile: &Profile) -> Option<WorkerJob> {
-        match self.get_clone_or_not_job() {
-            Some(j) => Some(j),
-            None => match profile.pull_on_build {
-                true => Some(self.get_pull_job()),
-                false => None,
-            },
+    pub fn get_pre_build_jobs(&self, pull_on_build: bool) -> Vec<WorkerJob> {
+        let mut jobs = Vec::<WorkerJob>::new();
+        if self.clone_exists() {
+            if pull_on_build {
+                jobs.push(self.get_override_remote_url_job());
+                jobs.push(self.get_fetch_job());
+                jobs.push(self.get_checkout_ref_job());
+                jobs.push(self.get_pull_job());
+            }
+        } else {
+            jobs.push(self.get_clone_job());
+            jobs.push(self.get_checkout_ref_job());
         }
+        jobs
     }
 }

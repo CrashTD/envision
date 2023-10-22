@@ -22,20 +22,10 @@ pub fn get_build_wivrn_jobs(
             None => "https://github.com/Meumeu/WiVRn".into(),
         },
         dir: profile.xrservice_path.clone(),
+        default_branch: "master".into(),
     };
 
-    jobs.push_back(git.get_override_remote_url_job());
-
-    git.get_clone_or_pull_job(profile).map(|j| {
-        jobs.push_back(j);
-    });
-
-    git.get_checkout_ref_job().map(|j| {
-        jobs.push_back(j);
-        if profile.pull_on_build {
-            jobs.push_back(git.get_pull_job());
-        }
-    });
+    jobs.extend(git.get_pre_build_jobs(profile.pull_on_build));
 
     let build_dir = format!("{}/build", profile.xrservice_path);
     let mut cmake_vars: HashMap<String, String> = HashMap::new();

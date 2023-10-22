@@ -18,20 +18,10 @@ pub fn get_build_opencomposite_jobs(profile: &Profile, clean_build: bool) -> Vec
             None => "https://gitlab.com/znixian/OpenOVR.git".into(),
         },
         dir: profile.opencomposite_path.clone(),
+        default_branch: "openxr".into(),
     };
 
-    jobs.push_back(git.get_override_remote_url_job());
-
-    git.get_clone_or_pull_job(profile).map(|j| {
-        jobs.push_back(j);
-    });
-
-    git.get_checkout_ref_job().map(|j| {
-        jobs.push_back(j);
-        if profile.pull_on_build {
-            jobs.push_back(git.get_pull_job());
-        }
-    });
+    jobs.extend(git.get_pre_build_jobs(profile.pull_on_build));
 
     let build_dir = format!("{}/build", profile.opencomposite_path);
     let mut cmake_vars: HashMap<String, String> = HashMap::new();
