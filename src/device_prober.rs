@@ -113,7 +113,7 @@ impl PhysicalXRDevice {
             Self::Pico4 => Some(wivrn_profile()),
             Self::LynxR1 => Some(wivrn_profile()),
             Self::DellVisor => Some(wmr_profile()),
-            //self::AcerAH101 => Some(wmr_profile()),
+            // Self::AcerAH101 => Some(wmr_profile()),
             Self::HPWMR => Some(wmr_profile()),
             Self::HPReverbG1 => Some(wmr_profile()),
             Self::HPReverbG2 => Some(wmr_profile()),

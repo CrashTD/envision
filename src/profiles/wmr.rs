@@ -1,6 +1,6 @@
 use crate::{
     constants::APP_NAME,
-    paths::{data_monado_path, data_opencomposite_path, data_basalt_path, get_data_dir},
+    paths::{data_basalt_path, data_monado_path, data_opencomposite_path, get_data_dir},
     profile::{
         LighthouseDriver, Profile, ProfileFeature, ProfileFeatureType, ProfileFeatures,
         XRServiceType,
