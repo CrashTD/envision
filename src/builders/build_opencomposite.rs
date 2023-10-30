@@ -9,7 +9,11 @@ use std::{
     path::Path,
 };
 
-pub fn get_build_opencomposite_jobs(profile: &Profile, clean_build: bool) -> VecDeque<WorkerJob> {
+pub fn get_build_opencomposite_jobs(
+    profile: &Profile,
+    clean_build: bool,
+    debug_build: bool,
+) -> VecDeque<WorkerJob> {
     let mut jobs = VecDeque::<WorkerJob>::new();
 
     let git = Git {
@@ -25,7 +29,10 @@ pub fn get_build_opencomposite_jobs(profile: &Profile, clean_build: bool) -> Vec
 
     let build_dir = format!("{}/build", profile.opencomposite_path);
     let mut cmake_vars: HashMap<String, String> = HashMap::new();
-    cmake_vars.insert("CMAKE_BUILD_TYPE".into(), "Release".into());
+    cmake_vars.insert(
+        "CMAKE_BUILD_TYPE".into(),
+        (if debug_build { "Debug" } else { "Release" }).into(),
+    );
     let cmake = Cmake {
         env: None,
         vars: Some(cmake_vars),
