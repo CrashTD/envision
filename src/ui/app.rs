@@ -462,7 +462,11 @@ impl SimpleComponent for App {
                     });
                     // no listed deps for opencomp
                 }
-                jobs.extend(get_build_opencomposite_jobs(&profile, clean_build));
+                jobs.extend(get_build_opencomposite_jobs(
+                    &profile,
+                    clean_build,
+                    debug_build,
+                ));
                 if !missing_deps.is_empty() {
                     missing_deps.sort_unstable();
                     missing_deps.dedup(); // dedup only works if sorted, hence the above
