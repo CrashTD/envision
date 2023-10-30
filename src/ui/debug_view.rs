@@ -19,6 +19,7 @@ pub enum DebugViewMsg {
     FilterLog(SearchDirection),
     LogLevelChanged(LogLevel),
     XRServiceActiveChanged(bool),
+    SetColorScheme,
 }
 
 #[tracker::track]
@@ -120,6 +121,7 @@ impl SimpleComponent for DebugView {
                 add_css_class: "undershoot-top",
                 #[name(textview)]
                 sourceview5::View {
+                    add_css_class: "sourceview-transparent-bg",
                     set_margin_start: 1,
                     set_hexpand: true,
                     set_vexpand: true,
@@ -221,6 +223,9 @@ impl SimpleComponent for DebugView {
             Self::Input::ClearLog => {
                 self.textbuf.set_text("");
             }
+            Self::Input::SetColorScheme => {
+                Self::set_color_scheme(&self.textbuf);
+            }
         }
     }
 
@@ -233,11 +238,6 @@ impl SimpleComponent for DebugView {
             .highlight_syntax(false)
             .enable_undo(false)
             .build();
-        if let Some(scheme) = &sourceview5::StyleSchemeManager::new().scheme("Adwaita-dark") {
-            textbuf.set_style_scheme(Some(scheme));
-        } else {
-            println!("gtksourceview style scheme not found")
-        }
         let search_settings = sourceview5::SearchSettings::builder()
             .wrap_around(true)
             .case_sensitive(false)
@@ -271,6 +271,14 @@ impl SimpleComponent for DebugView {
             });
         }
 
+        {
+            withclones![sender];
+            adw::StyleManager::default().connect_dark_notify(move |_| {
+                sender.input(Self::Input::SetColorScheme);
+            });
+        }
+        Self::set_color_scheme(&textbuf);
+
         let mut model = Self {
             xrservice_active: false,
             tracker: 0,
@@ -294,5 +302,21 @@ impl SimpleComponent for DebugView {
         model.scrolledwin = Some(widgets.scrolledwin.clone());
 
         ComponentParts { model, widgets }
+    }
+}
+
+impl DebugView {
+    fn set_color_scheme(textbuf: &sourceview5::Buffer) {
+        let sourceview_scheme_name = if adw::StyleManager::default().is_dark() {
+            "Adwaita-dark"
+        } else {
+            "Adwaita"
+        };
+        if let Some(scheme) = &sourceview5::StyleSchemeManager::new().scheme(sourceview_scheme_name)
+        {
+            textbuf.set_style_scheme(Some(scheme));
+        } else {
+            println!("gtksourceview style scheme not found")
+        }
     }
 }
