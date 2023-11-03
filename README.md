@@ -33,11 +33,13 @@ cd envision
 ./dist/appimage/build_appimage.sh
 ```
 
+<!-- no feature flags for now :)
 # Feature flags
 
 |Env var|Values|Default|
 |---|---|---|
 |`ENVISION_FF_USE_LIBMONADO`|`1`: enabled; `0`: disabled|`0`|
+-->
 
 # Common issues
 

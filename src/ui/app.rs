@@ -3,7 +3,6 @@ use super::alert::alert;
 use super::build_window::{BuildStatus, BuildWindow};
 use super::debug_view::{DebugView, DebugViewMsg};
 use super::fbt_config_editor::{FbtConfigEditor, FbtConfigEditorInit, FbtConfigEditorMsg};
-use super::feature_flags::FF_LIBMONADO_DEVICE_ENUMERATION_ENABLED;
 use super::job_worker::internal_worker::JobWorkerOut;
 use super::job_worker::job::WorkerJob;
 use super::job_worker::JobWorker;
@@ -343,26 +342,24 @@ impl SimpleComponent for App {
             }
             Msg::ClockTicking => {
                 self.main_view.sender().emit(MainViewMsg::ClockTicking);
-                if *FF_LIBMONADO_DEVICE_ENUMERATION_ENABLED {
-                    if let Some(w) = self.xrservice_worker.as_ref() {
-                        if {
-                            let state = w.state.lock().unwrap();
-                            state.exit_status.is_none() && !state.stop_requested
-                        } {
-                            if let Some(monado) = self.libmonado.as_ref() {
-                                self.xr_devices = XRDevice::merge(
-                                    &self.xr_devices,
-                                    &XRDevice::from_libmonado(monado),
-                                );
-                                self.main_view
-                                    .sender()
-                                    .emit(MainViewMsg::UpdateDevices(self.xr_devices.clone()));
-                            } else {
-                                if let Some(so) = self.get_selected_profile().libmonado_so() {
-                                    self.libmonado = libmonado_rs::Monado::create(so).ok();
-                                    if self.libmonado.is_some() {
-                                        sender.input(Msg::ClockTicking);
-                                    }
+                if let Some(w) = self.xrservice_worker.as_ref() {
+                    if {
+                        let state = w.state.lock().unwrap();
+                        state.exit_status.is_none() && !state.stop_requested
+                    } {
+                        if let Some(monado) = self.libmonado.as_ref() {
+                            self.xr_devices = XRDevice::merge(
+                                &self.xr_devices,
+                                &XRDevice::from_libmonado(monado),
+                            );
+                            self.main_view
+                                .sender()
+                                .emit(MainViewMsg::UpdateDevices(self.xr_devices.clone()));
+                        } else {
+                            if let Some(so) = self.get_selected_profile().libmonado_so() {
+                                self.libmonado = libmonado_rs::Monado::create(so).ok();
+                                if self.libmonado.is_some() {
+                                    sender.input(Msg::ClockTicking);
                                 }
                             }
                         }
@@ -374,15 +371,7 @@ impl SimpleComponent for App {
                     match MonadoLog::new_from_str(row.as_str()) {
                         None => {}
                         Some(parsed) => {
-                            if !*FF_LIBMONADO_DEVICE_ENUMERATION_ENABLED
-                                && parsed.func == "p_create_system"
-                            {
-                                let n_devs = XRDevice::from_log_message(parsed.message.as_str());
-                                self.xr_devices = XRDevice::merge(&self.xr_devices, &n_devs);
-                                self.main_view
-                                    .sender()
-                                    .emit(MainViewMsg::UpdateDevices(self.xr_devices.clone()));
-                            } else if let Some(tracker) =
+                            if let Some(tracker) =
                                 XRDevice::generic_tracker_from_log_row(parsed.message.as_str())
                             {
                                 self.xr_devices.push(tracker);

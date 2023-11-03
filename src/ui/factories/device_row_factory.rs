@@ -3,7 +3,7 @@ use relm4::{factory::AsyncFactoryComponent, prelude::*, AsyncFactorySender};
 
 use crate::{
     ui::devices_box::DevicesBoxMsg,
-    xr_devices::{XRDevice, XRDeviceType},
+    xr_devices::{XRDevice, XRDeviceRole},
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -62,7 +62,7 @@ impl DeviceRowModelInit {
         }
     }
 
-    pub fn new_missing(t: XRDeviceType) -> Self {
+    pub fn new_missing(t: XRDeviceRole) -> Self {
         DeviceRowModelInit {
             title: Some(t.to_string()),
             subtitle: Some("None".into()),

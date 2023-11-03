@@ -3,7 +3,7 @@ use std::{fmt::Display, slice::Iter};
 const GENERIC_TRACKER_PREFIX: &str = "Found generic tracker device: ";
 
 #[derive(Debug, Clone, PartialEq, Eq, Copy)]
-pub enum XRDeviceType {
+pub enum XRDeviceRole {
     Head,
     Left,
     Right,
@@ -12,9 +12,19 @@ pub enum XRDeviceType {
     HandTrackingLeft,
     HandTrackingRight,
     GenericTracker,
+    /**
+     * Devices with no role
+     */
+    Other,
 }
 
-impl Display for XRDeviceType {
+impl Default for XRDeviceRole {
+    fn default() -> Self {
+        Self::Other
+    }
+}
+
+impl Display for XRDeviceRole {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(match self {
             Self::Head => "Head",
@@ -25,23 +35,24 @@ impl Display for XRDeviceType {
             Self::HandTrackingLeft => "Hand tracking left",
             Self::HandTrackingRight => "Hand tracking right",
             Self::GenericTracker => "Generic tracker",
+            Self::Other => "",
         })
     }
 }
 
-impl PartialOrd for XRDeviceType {
+impl PartialOrd for XRDeviceRole {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         Some(self.as_number().cmp(&other.as_number()))
     }
 }
 
-impl Ord for XRDeviceType {
+impl Ord for XRDeviceRole {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         self.partial_cmp(other).unwrap()
     }
 }
 
-impl XRDeviceType {
+impl XRDeviceRole {
     pub fn iter() -> Iter<'static, Self> {
         [
             Self::Head,
@@ -63,9 +74,10 @@ impl XRDeviceType {
             Self::Right => "right",
             Self::Gamepad => "gamepad",
             Self::Eyes => "eyes",
-            Self::HandTrackingLeft => "hand_tracking.left",
-            Self::HandTrackingRight => "hand_tracking.right",
-            Self::GenericTracker => "generic_tracker",
+            Self::HandTrackingLeft => "hand-tracking-left",
+            Self::HandTrackingRight => "hand-tracking-right",
+            Self::GenericTracker => "generic-tracker", // not actually in monado
+            Self::Other => "other",                    // not actually in monado
         }
     }
 
@@ -79,6 +91,7 @@ impl XRDeviceType {
             Self::HandTrackingLeft => 5,
             Self::HandTrackingRight => 6,
             Self::GenericTracker => 7,
+            Self::Other => 8,
         }
     }
 
@@ -89,8 +102,8 @@ impl XRDeviceType {
             "right" => Some(Self::Right),
             "gamepad" => Some(Self::Gamepad),
             "eyes" => Some(Self::Eyes),
-            "hand_tracking.left" => Some(Self::HandTrackingLeft),
-            "hand_tracking.right" => Some(Self::HandTrackingRight),
+            "hand-tracking-left" => Some(Self::HandTrackingLeft),
+            "hand-tracking-right" => Some(Self::HandTrackingRight),
             _ => None,
         }
     }
@@ -112,7 +125,7 @@ impl XRDeviceType {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct XRDevice {
-    pub dev_type: XRDeviceType,
+    pub dev_type: XRDeviceRole,
     pub name: String,
     pub id: String,
     pub battery: f32, // battery percentage, from 0 to 1 maybe
@@ -122,7 +135,7 @@ pub struct XRDevice {
 impl Default for XRDevice {
     fn default() -> Self {
         Self {
-            dev_type: XRDeviceType::GenericTracker,
+            dev_type: XRDeviceRole::GenericTracker,
             name: String::default(),
             id: String::default(),
             battery: f32::default(),
@@ -135,7 +148,7 @@ impl XRDevice {
         if s.starts_with(GENERIC_TRACKER_PREFIX) {
             let n_tracker = s.trim_start_matches(GENERIC_TRACKER_PREFIX);
             return Some(Self {
-                dev_type: XRDeviceType::GenericTracker,
+                dev_type: XRDeviceRole::GenericTracker,
                 id: n_tracker.into(),
                 ..Default::default()
             });
@@ -143,14 +156,31 @@ impl XRDevice {
         None
     }
 
+    /* pub fn from_libmonado_devices(monado: &libmonado_rs::Monado) -> Vec<Self> {
+        if let Ok(devs) = monado.devices() {
+            return devs
+                .into_iter()
+                .map(|xrd| Self {
+                    id: xrd.id.to_string(),
+                    name: xrd.name,
+                    ..Default::default()
+                })
+                .collect();
+        }
+
+        vec![]
+    } */
+
     pub fn from_libmonado(monado: &libmonado_rs::Monado) -> Vec<Self> {
         let mut res = vec![];
         [
-            XRDeviceType::Head,
-            XRDeviceType::Left,
-            XRDeviceType::Right,
-            XRDeviceType::Gamepad,
-            XRDeviceType::Eyes,
+            XRDeviceRole::Head,
+            XRDeviceRole::Left,
+            XRDeviceRole::Right,
+            XRDeviceRole::HandTrackingLeft,
+            XRDeviceRole::HandTrackingRight,
+            XRDeviceRole::Gamepad,
+            XRDeviceRole::Eyes,
         ]
         .iter()
         .for_each(|xrd| {
@@ -182,7 +212,7 @@ impl XRDevice {
                 match row.trim().split(": ").collect::<Vec<&str>>()[..] {
                     [_, "<none>"] => {}
                     [dev_type_s, name] => {
-                        if let Some(xrdt) = XRDeviceType::from_monado_str(dev_type_s) {
+                        if let Some(xrdt) = XRDeviceRole::from_monado_str(dev_type_s) {
                             res.push(Self {
                                 dev_type: xrdt,
                                 name: name.to_string(),
@@ -204,12 +234,12 @@ impl XRDevice {
         let new_dev_types = new
             .iter()
             .filter_map(|d| {
-                if d.dev_type == XRDeviceType::GenericTracker {
+                if d.dev_type == XRDeviceRole::GenericTracker {
                     return None;
                 }
                 Some(d.dev_type)
             })
-            .collect::<Vec<XRDeviceType>>();
+            .collect::<Vec<XRDeviceRole>>();
         let mut res = old
             .iter()
             .filter(|d| !new_dev_types.contains(&d.dev_type))
@@ -218,14 +248,14 @@ impl XRDevice {
         let old_tracker_ids = old
             .iter()
             .filter_map(|d| {
-                if d.dev_type == XRDeviceType::GenericTracker {
+                if d.dev_type == XRDeviceRole::GenericTracker {
                     return Some(d.id.clone());
                 }
                 None
             })
             .collect::<Vec<String>>();
         for n_dev in new {
-            if n_dev.dev_type == XRDeviceType::GenericTracker {
+            if n_dev.dev_type == XRDeviceRole::GenericTracker {
                 if !old_tracker_ids.contains(&n_dev.id) {
                     res.push(n_dev.clone());
                 }

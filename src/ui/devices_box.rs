@@ -4,7 +4,7 @@ use super::{
 };
 use crate::{
     file_builders::monado_config_v0::dump_generic_trackers,
-    xr_devices::{XRDevice, XRDeviceType},
+    xr_devices::{XRDevice, XRDeviceRole},
 };
 use adw::prelude::*;
 use relm4::{factory::AsyncFactoryVecDeque, prelude::*, Sender};
@@ -75,7 +75,7 @@ impl SimpleComponent for DevicesBox {
                     let mut generic: Vec<&XRDevice> = vec![];
                     for dev in &self.devices {
                         match dev.dev_type {
-                            XRDeviceType::Head => {
+                            XRDeviceRole::Head => {
                                 has_head = true;
                                 let mut init = DeviceRowModelInit::from_xr_device(&dev);
                                 if dev.name == "Simulated HMD" {
@@ -84,15 +84,15 @@ impl SimpleComponent for DevicesBox {
                                 }
                                 models.push(init);
                             }
-                            XRDeviceType::Left => {
+                            XRDeviceRole::Left => {
                                 has_left = true;
                                 models.push(DeviceRowModelInit::from_xr_device(&dev));
                             }
-                            XRDeviceType::Right => {
+                            XRDeviceRole::Right => {
                                 has_right = true;
                                 models.push(DeviceRowModelInit::from_xr_device(&dev));
                             }
-                            XRDeviceType::GenericTracker => {
+                            XRDeviceRole::GenericTracker => {
                                 generic.push(dev);
                             }
                             _ => {
@@ -102,7 +102,7 @@ impl SimpleComponent for DevicesBox {
                     }
                     if !generic.is_empty() {
                         models.push(DeviceRowModelInit {
-                            title: Some(XRDeviceType::GenericTracker.to_string()),
+                            title: Some(XRDeviceRole::GenericTracker.to_string()),
                             subtitle: Some(
                                 generic
                                     .iter()
@@ -118,20 +118,20 @@ impl SimpleComponent for DevicesBox {
                         });
                     }
                     if !has_right {
-                        models.push(DeviceRowModelInit::new_missing(XRDeviceType::Right));
+                        models.push(DeviceRowModelInit::new_missing(XRDeviceRole::Right));
                     }
                     if !has_left {
-                        models.push(DeviceRowModelInit::new_missing(XRDeviceType::Left));
+                        models.push(DeviceRowModelInit::new_missing(XRDeviceRole::Left));
                     }
                     if !has_head {
-                        models.push(DeviceRowModelInit::new_missing(XRDeviceType::Head));
+                        models.push(DeviceRowModelInit::new_missing(XRDeviceRole::Head));
                     }
 
                     models.sort_by(|m1, m2| {
-                        let dt1 = XRDeviceType::from_display_str(
+                        let dt1 = XRDeviceRole::from_display_str(
                             m1.title.as_ref().unwrap_or(&String::new()),
                         );
-                        let dt2 = XRDeviceType::from_display_str(
+                        let dt2 = XRDeviceRole::from_display_str(
                             m2.title.as_ref().unwrap_or(&String::new()),
                         );
                         dt1.cmp(&dt2)
@@ -147,7 +147,7 @@ impl SimpleComponent for DevicesBox {
                     &self
                         .devices
                         .iter()
-                        .filter(|d| d.dev_type == XRDeviceType::GenericTracker)
+                        .filter(|d| d.dev_type == XRDeviceRole::GenericTracker)
                         .map(|d| d.id.clone())
                         .collect::<Vec<String>>(),
                 );
