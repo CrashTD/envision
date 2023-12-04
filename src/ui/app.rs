@@ -74,7 +74,7 @@ pub struct App {
     #[tracker::do_not_track]
     debug_view: Controller<DebugView>,
     #[tracker::do_not_track]
-    split_view: Option<adw::OverlaySplitView>,
+    split_view: Option<adw::NavigationSplitView>,
     #[tracker::do_not_track]
     about_dialog: Controller<AboutDialog>,
     #[tracker::do_not_track]
@@ -276,17 +276,13 @@ impl SimpleComponent for App {
                 set_hexpand: true,
                 set_vexpand: true,
                 #[name = "split_view"]
-                adw::OverlaySplitView {
+                adw::NavigationSplitView {
                     set_hexpand: true,
                     set_vexpand: true,
-                    set_content: Some(model.main_view.widget()),
-                    set_sidebar: Some(model.debug_view.widget()),
-                    set_sidebar_position: gtk::PackType::End,
-                    set_show_sidebar: model.config.debug_view_enabled,
-                    set_sidebar_width_fraction: 1.0,
-                    // stupid way to make sidebar hexpand
-                    set_max_sidebar_width: 999999.9,
-                    set_pin_sidebar: true,
+                    set_sidebar: Some(&adw::NavigationPage::new(model.main_view.widget(), APP_NAME)),
+                    set_content: Some(&adw::NavigationPage::new(model.debug_view.widget(), "Debug View")),
+                    set_show_content: false,
+                    set_collapsed: !model.config.debug_view_enabled,
                 }
             },
             connect_close_request[sender] => move |win| {
@@ -384,7 +380,7 @@ impl SimpleComponent for App {
                 self.set_enable_debug_view(val);
                 self.config.debug_view_enabled = val;
                 self.config.save();
-                self.split_view.clone().unwrap().set_show_sidebar(val);
+                self.split_view.clone().unwrap().set_collapsed(!val);
                 self.main_view
                     .sender()
                     .emit(MainViewMsg::EnableDebugViewChanged(val));

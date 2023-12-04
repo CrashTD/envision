@@ -66,10 +66,6 @@ impl SimpleComponent for DebugView {
                 set_hexpand: true,
                 set_vexpand: false,
                 add_css_class: "flat",
-                #[wrap(Some)]
-                set_title_widget: title_label = &adw::WindowTitle {
-                    set_title: "Debug View",
-                },
                 pack_end: search_toggle = &gtk::ToggleButton {
                     set_icon_name: "edit-find-symbolic",
                     set_tooltip_text: Some("Filter Log"),

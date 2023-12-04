@@ -140,16 +140,10 @@ impl SimpleComponent for MainView {
             add_top_bar: top_bar = &adw::HeaderBar {
                 set_hexpand: true,
                 set_vexpand: false,
-                #[wrap(Some)]
-                set_title_widget: title_label = &adw::WindowTitle {
-                    set_title: APP_NAME,
-                },
                 pack_end: menu_btn = &gtk::MenuButton {
                     set_icon_name: "open-menu-symbolic",
                     set_menu_model: Some(&app_menu),
                 },
-                #[track = "model.changed(Self::enable_debug_view())"]
-                set_show_end_title_buttons: !model.enable_debug_view,
             },
             #[wrap(Some)]
             set_content: content = &gtk::ScrolledWindow {
