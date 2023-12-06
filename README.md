@@ -51,9 +51,6 @@ If you see this warning:
 
 And you're using systemd-homed to manage your home partition, you need to disable it using homectl. To do so, log out, log in as root in a tty and run: `homectl update <username> --nosuid=false`.
 
-# Chat with us
+# LVRA Community
 
-We have a Matrix space that's also bridged to discord, you can join to chat, ask questions, get help or if you want to start contributing to the project!
-
-- [Matrix](https://matrix.to/#/#linux-vr-adventures:matrix.org)
-- [Discord](https://discord.gg/PGnsecBETY)
+We're a community dedicated to VR on Linux, we've got a wiki you might want to check out: [LVRA Wiki](https://lvra.gitlab.io). You can also [chat with us](https://lvra.gitlab.io/docs/community/).
