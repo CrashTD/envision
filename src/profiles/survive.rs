@@ -19,6 +19,7 @@ pub fn survive_profile() -> Profile {
     environment.insert("SURVIVE_TIMECODE_OFFSET_MS".into(), "-6.94".into());
     environment.insert("XRT_DEBUG_GUI".into(), "1".into());
     environment.insert("XRT_CURATED_GUI".into(), "1".into());
+    environment.insert("U_PACING_APP_USE_MIN_FRAME_PERIOD".into(), "1".into());
     environment.insert(
         "LD_LIBRARY_PATH".into(),
         format!("{pfx}/lib:{pfx}/lib64", pfx = prefix),

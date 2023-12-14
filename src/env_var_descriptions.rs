@@ -5,6 +5,7 @@ pub static ENV_VAR_DESCRIPTIONS: Map<&str, &str> = phf_map! {
     "XRT_COMPOSITOR_SCALE_PECENTAGE" =>
         "Render resolution percentage. A percentage higher than the native resolution (>100) will help with antialiasing and image clarity.",
     "XRT_COMPOSITOR_COMPUTE" => "Set to 1 to use GPU compute for the OpenXR compositor.",
+    "U_PACING_APP_USE_MIN_FRAME_PERIOD" => "Set to 1 to unlimit the compositor refresh from a power of two of your HMD refresh, typically provides a large performance boost.",
     "SURVIVE_GLOBALSCENESOLVER" =>
         "Continuously recalibrate lighthouse tracking during use. In the current state it's recommended to disable this feature by setting this value to 0.",
     // "SURVIVE_TIMECODE_OFFSET_MS" => "",

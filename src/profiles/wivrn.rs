@@ -15,6 +15,7 @@ pub fn wivrn_profile() -> Profile {
     );
     environment.insert("XRT_DEBUG_GUI".into(), "1".into());
     environment.insert("XRT_CURATED_GUI".into(), "1".into());
+    environment.insert("U_PACING_APP_USE_MIN_FRAME_PERIOD".into(), "1".into());
     Profile {
         uuid: "wivrn-default".into(),
         name: format!("WiVRn - {name} Default", name = APP_NAME),
