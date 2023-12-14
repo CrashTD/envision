@@ -1,4 +1,7 @@
-use crate::{profile::Profile, withclones};
+use crate::{
+    profile::{LighthouseDriver, Profile},
+    withclones,
+};
 
 use super::{
     job::{CmdWorkerData, FuncWorkerOut, WorkerJob},
@@ -161,10 +164,15 @@ impl InternalJobWorker {
     ) -> relm4::WorkerHandle<InternalJobWorker> {
         let mut env = prof.environment.clone();
         if !env.contains_key("LH_DRIVER") {
-            env.insert(
-                "LH_DRIVER".into(),
-                prof.lighthouse_driver.to_string().to_lowercase(),
-            );
+            match prof.lighthouse_driver {
+                // don't set LH_DRIVER for steamvr driver, set this instead
+                LighthouseDriver::SteamVR => {
+                    env.insert("STEAMVR_LH_ENABLE".into(), "true".into());
+                }
+                d => {
+                    env.insert("LH_DRIVER".into(), d.to_string().to_lowercase());
+                }
+            }
         }
         let mut launch_opts = prof.xrservice_launch_options.trim();
         let debug_launch_opts = if debug {
