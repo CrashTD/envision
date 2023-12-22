@@ -125,3 +125,10 @@ pub fn get_ipc_file_path(xrservice_type: &XRServiceType) -> String {
         }
     )
 }
+
+pub fn get_steamvr_bin_dir_path() -> String {
+    format!(
+        "{data}/Steam/steamapps/common/SteamVR/bin/linux64",
+        data = get_xdg_data_dir()
+    )
+}

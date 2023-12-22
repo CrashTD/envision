@@ -15,5 +15,6 @@ pub mod main_view;
 pub mod preference_rows;
 pub mod profile_editor;
 pub mod steam_launch_options_box;
+mod steamvr_calibration_box;
 pub mod util;
 pub mod wivrn_conf_editor;

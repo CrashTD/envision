@@ -3,6 +3,7 @@ use super::devices_box::{DevicesBox, DevicesBoxMsg};
 use super::install_wivrn_box::{InstallWivrnBox, InstallWivrnBoxInit, InstallWivrnBoxMsg};
 use super::profile_editor::{ProfileEditor, ProfileEditorMsg, ProfileEditorOutMsg};
 use super::steam_launch_options_box::{SteamLaunchOptionsBox, SteamLaunchOptionsBoxMsg};
+use super::steamvr_calibration_box::SteamVrCalibrationBox;
 use crate::config::Config;
 use crate::constants::APP_NAME;
 use crate::file_utils::mount_has_nosuid;
@@ -17,6 +18,7 @@ use crate::ui::app::{
     BuildProfileDebugAction, ConfigFbtAction, DebugViewToggleAction,
 };
 use crate::ui::profile_editor::ProfileEditorInit;
+use crate::ui::steamvr_calibration_box::SteamVrCalibrationBoxMsg;
 use crate::ui::util::{limit_dropdown_width, warning_heading};
 use crate::xr_devices::XRDevice;
 use gtk::prelude::*;
@@ -46,6 +48,8 @@ pub struct MainView {
     profile_delete_confirm_dialog: adw::MessageDialog,
     #[tracker::do_not_track]
     profile_editor: Option<Controller<ProfileEditor>>,
+    #[tracker::do_not_track]
+    steamvr_calibration_box: Controller<SteamVrCalibrationBox>,
     #[tracker::do_not_track]
     root_win: gtk::Window,
 }
@@ -334,6 +338,7 @@ impl SimpleComponent for MainView {
                         },
                         model.steam_launch_options_box.widget(),
                         model.install_wivrn_box.widget(),
+                        model.steamvr_calibration_box.widget(),
                         gtk::Box {
                             set_orientation: gtk::Orientation::Vertical,
                             set_hexpand: true,
@@ -368,7 +373,7 @@ impl SimpleComponent for MainView {
                                 set_label: "Calibrate",
                                 set_halign: gtk::Align::Start,
                                 connect_clicked[sender] => move |_| {
-                                    sender.output(Self::Output::OpenLibsurviveSetup).expect("Sender outut failed");
+                                    sender.output(Self::Output::OpenLibsurviveSetup).expect("Sender output failed");
                                 }
                             },
                         },
@@ -465,6 +470,9 @@ impl SimpleComponent for MainView {
             }
             Self::Input::XRServiceActiveChanged(active, profile) => {
                 self.set_xrservice_active(active);
+                self.steamvr_calibration_box
+                    .sender()
+                    .emit(SteamVrCalibrationBoxMsg::XRServiceActiveChanged(active));
                 if !active {
                     sender.input(Self::Input::UpdateDevices(vec![]));
                 }
@@ -492,6 +500,11 @@ impl SimpleComponent for MainView {
             }
             Self::Input::UpdateSelectedProfile(prof) => {
                 self.set_selected_profile(prof.clone());
+                self.steamvr_calibration_box
+                    .sender()
+                    .emit(SteamVrCalibrationBoxMsg::SetVisible(
+                        prof.lighthouse_driver == LighthouseDriver::SteamVR,
+                    ));
                 self.install_wivrn_box
                     .sender()
                     .emit(InstallWivrnBoxMsg::UpdateSelectedProfile(prof.clone()));
@@ -630,6 +643,13 @@ impl SimpleComponent for MainView {
             });
         }
 
+        let steamvr_calibration_box = SteamVrCalibrationBox::builder().launch(()).detach();
+        steamvr_calibration_box
+            .sender()
+            .emit(SteamVrCalibrationBoxMsg::SetVisible(
+                init.selected_profile.lighthouse_driver == LighthouseDriver::SteamVR,
+            ));
+
         let mut model = Self {
             xrservice_active: false,
             enable_debug_view: init.config.debug_view_enabled,
@@ -647,6 +667,7 @@ impl SimpleComponent for MainView {
             profile_not_editable_dialog,
             profile_delete_confirm_dialog,
             root_win: init.root_win.clone(),
+            steamvr_calibration_box,
             profile_editor: None,
             tracker: 0,
         };
