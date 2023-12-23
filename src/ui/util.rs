@@ -1,4 +1,4 @@
-use gtk4::prelude::*;
+use gtk4::{gio, prelude::*};
 
 pub fn limit_dropdown_width(dd: &gtk4::DropDown, chars: i32) {
     let mut dd_child = dd
@@ -43,4 +43,10 @@ pub fn warning_heading() -> gtk4::Box {
     );
 
     b
+}
+
+pub fn open_with_default_handler(uri: &str) {
+    if let Err(e) = gio::AppInfo::launch_default_for_uri(uri, gio::AppLaunchContext::NONE) {
+        eprintln!("Error opening uri {}: {}", uri, e)
+    };
 }

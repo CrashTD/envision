@@ -1,5 +1,6 @@
 use crate::log_level::LogLevel;
 use crate::log_parser::MonadoLog;
+use crate::ui::app::{DebugOpenDataAction, DebugOpenPrefixAction};
 use crate::withclones;
 use gtk::prelude::*;
 use relm4::prelude::*;
@@ -57,6 +58,15 @@ impl SimpleComponent for DebugView {
     type Input = DebugViewMsg;
     type Output = ();
 
+    menu! {
+        debug_menu: {
+            section! {
+                "Open Envision _Data Folder" => DebugOpenDataAction,
+                "Open _Prefix Folder" => DebugOpenPrefixAction,
+            },
+        }
+    }
+
     view! {
         gtk::Box {
             set_orientation: gtk::Orientation::Vertical,
@@ -66,6 +76,11 @@ impl SimpleComponent for DebugView {
                 set_hexpand: true,
                 set_vexpand: false,
                 add_css_class: "flat",
+                pack_end: debug_menu_btn = &gtk::MenuButton {
+                    set_icon_name: "view-more-symbolic",
+                    set_tooltip_text: Some("Debug Actions..."),
+                    set_menu_model: Some(&debug_menu),
+                },
                 pack_end: search_toggle = &gtk::ToggleButton {
                     set_icon_name: "edit-find-symbolic",
                     set_tooltip_text: Some("Filter Log"),

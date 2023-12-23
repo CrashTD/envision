@@ -8,6 +8,7 @@ use super::job_worker::job::WorkerJob;
 use super::job_worker::JobWorker;
 use super::libsurvive_setup_window::LibsurviveSetupWindow;
 use super::main_view::MainViewMsg;
+use super::util::open_with_default_handler;
 use crate::builders::build_basalt::get_build_basalt_jobs;
 use crate::builders::build_libsurvive::get_build_libsurvive_jobs;
 use crate::builders::build_mercury::get_build_mercury_job;
@@ -34,7 +35,7 @@ use crate::file_builders::openvrpaths_vrpath::{
 use crate::file_utils::setcap_cap_sys_nice_eip;
 use crate::linux_distro::get_distro;
 use crate::log_parser::MonadoLog;
-use crate::paths::get_ipc_file_path;
+use crate::paths::{get_data_dir, get_ipc_file_path};
 use crate::profile::{Profile, XRServiceType};
 use crate::profiles::lighthouse::lighthouse_profile;
 use crate::profiles::openhmd::openhmd_profile;
@@ -124,6 +125,8 @@ pub enum Msg {
     Quit,
     ParseLog(Vec<String>),
     ConfigFbt,
+    DebugOpenPrefix,
+    DebugOpenData,
 }
 
 impl App {
@@ -619,6 +622,15 @@ impl SimpleComponent for App {
                 ));
                 self.application.quit();
             }
+            Msg::DebugOpenData => {
+                open_with_default_handler(&format!("file://{}", get_data_dir()));
+            }
+            Msg::DebugOpenPrefix => {
+                open_with_default_handler(&format!(
+                    "file://{}",
+                    self.get_selected_profile().prefix
+                ));
+            }
         }
     }
 
@@ -756,6 +768,18 @@ impl SimpleComponent for App {
         }
         {
             withclones![sender];
+            stateless_action!(actions, DebugOpenDataAction, {
+                sender.input(Msg::DebugOpenData);
+            });
+        }
+        {
+            withclones![sender];
+            stateless_action!(actions, DebugOpenPrefixAction, {
+                sender.input(Msg::DebugOpenPrefix);
+            });
+        }
+        {
+            withclones![sender];
             actions.add_action(RelmAction::<DebugViewToggleAction>::new_stateful(
                 &model.enable_debug_view,
                 move |_, state| {
@@ -803,3 +827,6 @@ new_stateless_action!(pub BuildProfileCleanDebugAction, AppActionGroup, "buildpr
 new_stateless_action!(pub ConfigFbtAction, AppActionGroup, "configfbt");
 new_stateless_action!(pub QuitAction, AppActionGroup, "quit");
 new_stateful_action!(pub DebugViewToggleAction, AppActionGroup, "debugviewtoggle", (), bool);
+
+new_stateless_action!(pub DebugOpenDataAction, AppActionGroup, "debugopendata");
+new_stateless_action!(pub DebugOpenPrefixAction, AppActionGroup, "debugopenprefix");
