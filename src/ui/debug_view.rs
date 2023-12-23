@@ -1,7 +1,7 @@
 use crate::log_level::LogLevel;
 use crate::log_parser::MonadoLog;
 use crate::ui::app::{DebugOpenDataAction, DebugOpenPrefixAction};
-use crate::withclones;
+use gtk::glib::clone;
 use gtk::prelude::*;
 use relm4::prelude::*;
 use relm4::{ComponentSender, SimpleComponent};
@@ -270,24 +270,18 @@ impl SimpleComponent for DebugView {
         if let Some(btn) = log_level_dropdown.first_child() {
             btn.add_css_class("flat");
         }
-        {
-            withclones![sender];
-            log_level_dropdown.connect_selected_notify(move |dd| {
-                sender.input(Self::Input::LogLevelChanged(
-                    *LogLevel::iter()
-                        .as_slice()
-                        .get(dd.selected() as usize)
-                        .unwrap(),
-                ));
-            });
-        }
+        log_level_dropdown.connect_selected_notify(clone!(@strong sender => move |dd| {
+            sender.input(Self::Input::LogLevelChanged(
+                *LogLevel::iter()
+                    .as_slice()
+                    .get(dd.selected() as usize)
+                    .unwrap(),
+            ));
+        }));
 
-        {
-            withclones![sender];
-            adw::StyleManager::default().connect_dark_notify(move |_| {
-                sender.input(Self::Input::SetColorScheme);
-            });
-        }
+        adw::StyleManager::default().connect_dark_notify(clone!(@strong sender => move |_| {
+            sender.input(Self::Input::SetColorScheme);
+        }));
         Self::set_color_scheme(&textbuf);
 
         let mut model = Self {

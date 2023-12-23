@@ -4,9 +4,9 @@ use crate::{
         dump_monado_config_v0, get_monado_config_v0, MonadoConfigV0, TrackerRole,
     },
     ui::factories::tracker_role_group_factory::TrackerRoleModelInit,
-    withclones,
 };
 use adw::prelude::*;
+use gtk::glib::clone;
 use relm4::{factory::AsyncFactoryVecDeque, prelude::*};
 
 #[tracker::track]
@@ -113,18 +113,12 @@ impl SimpleComponent for FbtConfigEditor {
             .label("Save")
             .css_classes(["suggested-action"])
             .build();
-        {
-            withclones![sender];
-            add_btn.connect_clicked(move |_| {
-                sender.input(Self::Input::TrackerRoleNew);
-            });
-        };
-        {
-            withclones![sender];
-            save_btn.connect_clicked(move |_| {
-                sender.input(Self::Input::Save);
-            });
-        };
+        add_btn.connect_clicked(clone!(@strong sender => move |_| {
+            sender.input(Self::Input::TrackerRoleNew);
+        }));
+        save_btn.connect_clicked(clone!(@strong sender => move |_| {
+            sender.input(Self::Input::Save);
+        }));
 
         let mut model = Self {
             win: None,

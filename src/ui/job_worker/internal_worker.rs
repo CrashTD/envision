@@ -1,7 +1,4 @@
-use crate::{
-    profile::{LighthouseDriver, Profile},
-    withclones,
-};
+use crate::profile::{LighthouseDriver, Profile};
 
 use super::{
     job::{CmdWorkerData, FuncWorkerOut, WorkerJob},
@@ -92,7 +89,7 @@ impl Worker for InternalJobWorker {
                     let mut job = self.jobs.pop_front().unwrap();
                     match &mut job {
                         WorkerJob::Cmd(data) => {
-                            withclones![data];
+                            let data = data.clone();
                             if let Ok(mut cmd) = Command::new(data.command)
                                 .args(data.args)
                                 .envs(data.environment)

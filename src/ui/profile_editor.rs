@@ -6,9 +6,9 @@ use crate::{
     env_var_descriptions::env_var_descriptions_as_paragraph,
     profile::{LighthouseDriver, Profile, XRServiceType},
     ui::preference_rows::{combo_row, entry_row, path_row, switch_row},
-    withclones,
 };
 use adw::prelude::*;
+use gtk::glib::clone;
 use relm4::{factory::AsyncFactoryVecDeque, prelude::*};
 use std::{cell::RefCell, rc::Rc};
 
@@ -80,35 +80,30 @@ impl SimpleComponent for ProfileEditor {
                     set_vexpand: true,
                     add: maingrp = &adw::PreferencesGroup {
                         set_title: "General",
-                        add: {
-                            withclones![prof];
-                            &entry_row("Profile Name", model.profile.borrow().name.as_str(), move |row| {
+                        add: &entry_row(
+                            "Profile Name",
+                            model.profile.borrow().name.as_str(),
+                            clone!(@strong prof => move |row| {
                                 prof.borrow_mut().name = row.text().to_string();
                             })
-                        },
-                        add: {
-                            withclones![prof];
-                            &switch_row(
-                                "Update on Build", None,
-                                model.profile.borrow().pull_on_build,
-                                move |_, state| {
-                                    prof.borrow_mut().pull_on_build = state;
-                                    gtk::glib::Propagation::Proceed
-                                }
-                            )
-                        },
-                        add: {
-                            withclones![prof];
-                            &path_row(
-                                "Install Prefix",
-                                None,
-                                Some(model.profile.borrow().prefix.clone()),
-                                Some(init.root_win.clone()),
-                                move |n_path| {
-                                    prof.borrow_mut().prefix = n_path.unwrap_or_default()
-                                },
-                            )
-                        },
+                        ),
+                        add: &switch_row(
+                            "Update on Build", None,
+                            model.profile.borrow().pull_on_build,
+                            clone!(@strong prof => move |_, state| {
+                                prof.borrow_mut().pull_on_build = state;
+                                gtk::glib::Propagation::Proceed
+                            })
+                        ),
+                        add: &path_row(
+                            "Install Prefix",
+                            None,
+                            Some(model.profile.borrow().prefix.clone()),
+                            Some(init.root_win.clone()),
+                            clone!(@strong prof => move |n_path| {
+                                prof.borrow_mut().prefix = n_path.unwrap_or_default()
+                            }),
+                        ),
                     },
                     add: xrservicegrp = &adw::PreferencesGroup {
                         set_title: "XR Service",
@@ -119,227 +114,176 @@ impl SimpleComponent for ProfileEditor {
                             "For launch options, you can insert %command% as ",
                             "a placeholder for the actual XR Service command.",
                         )),
-                        add: {
-                            withclones![prof];
-                            &combo_row(
-                                "XR Service Type",
-                                Some("Monado is for PCVR headsets, while WiVRn is for Andorid standalone headsets"),
-                                model.profile.borrow().xrservice_type.to_string().as_str(),
-                                XRServiceType::iter()
-                                    .map(XRServiceType::to_string)
-                                    .collect::<Vec<String>>(),
-                                move |row| {
-                                    prof.borrow_mut().xrservice_type =
-                                        XRServiceType::from_number(row.selected());
-                                },
-                            )
-                        },
-                        add: {
-                            withclones![prof];
-                            &entry_row(
-                                "XR Service Launch Options",
-                                model.profile.borrow().xrservice_launch_options.as_str(),
-                                move |row| {
-                                    prof.borrow_mut().xrservice_launch_options = row.text().trim().to_string();
-                                }
-                            )
-                        },
-                        add: {
-                            withclones![prof];
-                            &combo_row(
-                                "Lighthouse Driver",
-                                Some(concat!(
-                                    "Driver for lighhouse tracked XR devices (ie: Valve Index, HTC Vive...). Only applicable for Monado.\n\n",
-                                    "Vive: 3DOF tracking\n\n",
-                                    "Survive: 6DOF reverse engineered lighthouse tracking provided by Libsurvive\n\n",
-                                    "SteamVR: 6DOF lighthouse tracking using the proprietary SteamVR driver",
-                                )),
-                                model.profile.borrow().lighthouse_driver.to_string().as_str(),
-                                LighthouseDriver::iter()
-                                    .map(LighthouseDriver::to_string)
-                                    .collect::<Vec<String>>(),
-                                move |row| {
-                                    prof.borrow_mut().lighthouse_driver =
-                                        LighthouseDriver::from_number(row.selected());
-                                }
-                            )
-                        },
-                        add: {
-                            withclones![prof];
-                            &path_row(
-                                "XR Service Path",
-                                None,
-                                Some(model.profile.borrow().xrservice_path.clone()),
-                                Some(init.root_win.clone()),
-                                move |n_path| {
-                                    prof.borrow_mut().xrservice_path = n_path.unwrap_or_default()
-                                },
-                            )
-                        },
-                        add: {
-                            withclones![prof];
-                            &entry_row(
-                                "XR Service Repo",
-                                model.profile.borrow().xrservice_repo.clone().unwrap_or_default().as_str(),
-                                move |row| {
-                                    let n_val = row.text().to_string();
-                                    prof.borrow_mut().xrservice_repo = (!n_val.is_empty()).then_some(n_val);
-                                }
-                            )
-                        },
+                        add: &combo_row(
+                            "XR Service Type",
+                            Some("Monado is for PCVR headsets, while WiVRn is for Andorid standalone headsets"),
+                            model.profile.borrow().xrservice_type.to_string().as_str(),
+                            XRServiceType::iter()
+                                .map(XRServiceType::to_string)
+                                .collect::<Vec<String>>(),
+                            clone!(@strong prof => move |row| {
+                                prof.borrow_mut().xrservice_type =
+                                    XRServiceType::from_number(row.selected());
+                            }),
+                        ),
+                        add: &entry_row(
+                            "XR Service Launch Options",
+                            model.profile.borrow().xrservice_launch_options.as_str(),
+                            clone!(@strong prof => move |row| {
+                                prof.borrow_mut().xrservice_launch_options = row.text().trim().to_string();
+                            })
+                        ),
+                        add: &combo_row(
+                            "Lighthouse Driver",
+                            Some(concat!(
+                                "Driver for lighhouse tracked XR devices (ie: Valve Index, HTC Vive...). Only applicable for Monado.\n\n",
+                                "Vive: 3DOF tracking\n\n",
+                                "Survive: 6DOF reverse engineered lighthouse tracking provided by Libsurvive\n\n",
+                                "SteamVR: 6DOF lighthouse tracking using the proprietary SteamVR driver",
+                            )),
+                            model.profile.borrow().lighthouse_driver.to_string().as_str(),
+                            LighthouseDriver::iter()
+                                .map(LighthouseDriver::to_string)
+                                .collect::<Vec<String>>(),
+                            clone!(@strong prof => move |row| {
+                                prof.borrow_mut().lighthouse_driver =
+                                    LighthouseDriver::from_number(row.selected());
+                            })
+                        ),
+                        add: &path_row(
+                            "XR Service Path",
+                            None,
+                            Some(model.profile.borrow().xrservice_path.clone()),
+                            Some(init.root_win.clone()),
+                            clone!(@strong prof => move |n_path| {
+                                prof.borrow_mut().xrservice_path = n_path.unwrap_or_default()
+                            }),
+                        ),
+                        add: &entry_row(
+                            "XR Service Repo",
+                            model.profile.borrow().xrservice_repo.clone().unwrap_or_default().as_str(),
+                            clone!(@strong prof => move |row| {
+                                let n_val = row.text().to_string();
+                                prof.borrow_mut().xrservice_repo = (!n_val.is_empty()).then_some(n_val);
+                            })
+                        ),
                     },
                     add: model.xrservice_cmake_flags_rows.widget(),
                     add: opencompgrp = &adw::PreferencesGroup {
                         set_title: "OpenComposite",
                         set_description: Some("OpenVR driver built on top of OpenXR\n\nWhen specifying a repository, you can set a specific git ref (branch, tag, commit...) by appending a '#' followed by the ref"),
-                        add: {
-                            withclones![prof];
-                            &path_row(
-                                "OpenComposite Path", None,
-                                Some(model.profile.borrow().opencomposite_path.clone()),
-                                Some(init.root_win.clone()),
-                                move |n_path| {
-                                    prof.borrow_mut().opencomposite_path = n_path.unwrap_or_default();
-                                }
-                            )
-                        },
-                        add: {
-                            withclones![prof];
-                            &entry_row(
-                                "OpenComposite Repo",
-                                model.profile.borrow().opencomposite_repo.clone().unwrap_or_default().as_str(),
-                                move |row| {
-                                    let n_val = row.text().to_string();
-                                    prof.borrow_mut().opencomposite_repo = (!n_val.is_empty()).then_some(n_val);
-                                }
-                            )
-                        },
+                        add: &path_row(
+                            "OpenComposite Path", None,
+                            Some(model.profile.borrow().opencomposite_path.clone()),
+                            Some(init.root_win.clone()),
+                            clone!(@strong prof => move |n_path| {
+                                prof.borrow_mut().opencomposite_path = n_path.unwrap_or_default();
+                            })
+                        ),
+                        add: &entry_row(
+                            "OpenComposite Repo",
+                            model.profile.borrow().opencomposite_repo.clone().unwrap_or_default().as_str(),
+                            clone!(@strong prof => move |row| {
+                                let n_val = row.text().to_string();
+                                prof.borrow_mut().opencomposite_repo = (!n_val.is_empty()).then_some(n_val);
+                            })
+                        ),
                     },
                     add: libsurvivegrp = &adw::PreferencesGroup {
                         set_title: "Libsurvive",
                         set_description: Some("Lighthouse tracking driver\n\nWhen specifying a repository, you can set a specific git ref (branch, tag, commit...) by appending a '#' followed by the ref"),
-                        add: {
-                            withclones![prof];
-                            &switch_row(
-                                "Enable Libsurvive", None,
-                                model.profile.borrow().features.libsurvive.enabled,
-                                move |_, state| {
-                                    prof.borrow_mut().features.libsurvive.enabled = state;
-                                    gtk::glib::Propagation::Proceed
-                                }
-                            )
-                        },
-                        add: {
-                            withclones![prof];
-                            &path_row(
-                                "Libsurvive Path", None,
-                                model.profile.borrow().features.libsurvive.path.clone(),
-                                Some(init.root_win.clone()),
-                                move |n_path| {
-                                    prof.borrow_mut().features.libsurvive.path = n_path;
-                                }
-                            )
-                        },
-                        add: {
-                            withclones![prof];
-                            &entry_row(
-                                "Libsurvive Repo",
-                                model.profile.borrow().features.libsurvive.repo.clone().unwrap_or_default().as_str(),
-                                move |row| {
-                                    let n_val = row.text().to_string();
-                                    prof.borrow_mut().features.libsurvive.repo = (!n_val.is_empty()).then_some(n_val);
-                                }
-                            )
-                        },
+                        add: &switch_row(
+                            "Enable Libsurvive", None,
+                            model.profile.borrow().features.libsurvive.enabled,
+                            clone!(@strong prof => move |_, state| {
+                                prof.borrow_mut().features.libsurvive.enabled = state;
+                                gtk::glib::Propagation::Proceed
+                            })
+                        ),
+                        add: &path_row(
+                            "Libsurvive Path", None,
+                            model.profile.borrow().features.libsurvive.path.clone(),
+                            Some(init.root_win.clone()),
+                            clone!(@strong prof => move |n_path| {
+                                prof.borrow_mut().features.libsurvive.path = n_path;
+                            })
+                        ),
+                        add: &entry_row(
+                            "Libsurvive Repo",
+                            model.profile.borrow().features.libsurvive.repo.clone().unwrap_or_default().as_str(),
+                            clone!(@strong prof => move |row| {
+                                let n_val = row.text().to_string();
+                                prof.borrow_mut().features.libsurvive.repo = (!n_val.is_empty()).then_some(n_val);
+                            })
+                        ),
                     },
                     add: openhmdgrp = &adw::PreferencesGroup {
                         set_title: "OpenHMD",
                         set_description: Some("Legacy driver for older Oculus HMDs\n\nWhen specifying a repository, you can set a specific git ref (branch, tag, commit...) by appending a '#' followed by the ref"),
-                        add: {
-                            withclones![prof];
-                            &switch_row(
-                                "Enable OpenHMD", None,
-                                model.profile.borrow().features.openhmd.enabled,
-                                move |_, state| {
-                                    prof.borrow_mut().features.openhmd.enabled = state;
-                                    gtk::glib::Propagation::Proceed
-                                }
-                            )
-                        },
-                        add: {
-                            withclones![prof];
-                            &path_row(
-                                "OpenHMD Path", None,
-                                model.profile.borrow().features.openhmd.path.clone(),
-                                Some(init.root_win.clone()),
-                                move |n_path| {
-                                    prof.borrow_mut().features.openhmd.path = n_path;
-                                }
-                            )
-                        },
-                        add: {
-                            withclones![prof];
-                            &entry_row(
-                                "OpenHMD Repo",
-                                model.profile.borrow().features.openhmd.repo.clone().unwrap_or_default().as_str(),
-                                move |row| {
-                                    let n_val = row.text().to_string();
-                                    prof.borrow_mut().features.openhmd.repo = (!n_val.is_empty()).then_some(n_val);
-                                }
-                            )
-                        },
+                        add: &switch_row(
+                            "Enable OpenHMD", None,
+                            model.profile.borrow().features.openhmd.enabled,
+                            clone!(@strong prof => move |_, state| {
+                                prof.borrow_mut().features.openhmd.enabled = state;
+                                gtk::glib::Propagation::Proceed
+                            })
+                        ),
+                        add: &path_row(
+                            "OpenHMD Path", None,
+                            model.profile.borrow().features.openhmd.path.clone(),
+                            Some(init.root_win.clone()),
+                            clone!(@strong prof => move |n_path| {
+                                prof.borrow_mut().features.openhmd.path = n_path;
+                            })
+                        ),
+                        add: &entry_row(
+                            "OpenHMD Repo",
+                            model.profile.borrow().features.openhmd.repo.clone().unwrap_or_default().as_str(),
+                            clone!(@strong prof => move |row| {
+                                let n_val = row.text().to_string();
+                                prof.borrow_mut().features.openhmd.repo = (!n_val.is_empty()).then_some(n_val);
+                            })
+                        ),
                     },
                     add: basaltgrp = &adw::PreferencesGroup {
                         set_title: "Basalt",
                         set_description: Some("Camera based SLAM tracking driver\n\nWhen specifying a repository, you can set a specific git ref (branch, tag, commit...) by appending a '#' followed by the ref"),
-                        add: {
-                            withclones![prof];
-                            &switch_row(
-                                "Enable Basalt", None,
-                                model.profile.borrow().features.basalt.enabled,
-                                move |_, state| {
-                                    prof.borrow_mut().features.basalt.enabled = state;
-                                    gtk::glib::Propagation::Proceed
-                                }
-                            )
-                        },
-                        add: {
-                            withclones![prof];
-                            &path_row(
-                                "Basalt Path", None,
-                                model.profile.borrow().features.basalt.path.clone(),
-                                Some(init.root_win.clone()),
-                                move |n_path| {
-                                    prof.borrow_mut().features.basalt.path = n_path;
-                                }
-                            )
-                        },
-                        add: {
-                            withclones![prof];
-                            &entry_row(
-                                "Basalt Repo",
-                                model.profile.borrow().features.basalt.repo.clone().unwrap_or_default().as_str(),
-                                move |row| {
-                                    let n_val = row.text().to_string();
-                                    prof.borrow_mut().features.basalt.repo = n_val.is_empty().then_some(n_val);
-                                }
-                            )
-                        },
+                        add: &switch_row(
+                            "Enable Basalt", None,
+                            model.profile.borrow().features.basalt.enabled,
+                            clone!(@strong prof => move |_, state| {
+                                prof.borrow_mut().features.basalt.enabled = state;
+                                gtk::glib::Propagation::Proceed
+                            })
+                        ),
+                        add: &path_row(
+                            "Basalt Path", None,
+                            model.profile.borrow().features.basalt.path.clone(),
+                            Some(init.root_win.clone()),
+                            clone!(@strong prof => move |n_path| {
+                                prof.borrow_mut().features.basalt.path = n_path;
+                            })
+                        ),
+                        add: &entry_row(
+                            "Basalt Repo",
+                            model.profile.borrow().features.basalt.repo.clone().unwrap_or_default().as_str(),
+                            clone!(@strong prof => move |row| {
+                                let n_val = row.text().to_string();
+                                prof.borrow_mut().features.basalt.repo = n_val.is_empty().then_some(n_val);
+                            })
+                        ),
                     },
                     add: mercurygrp = &adw::PreferencesGroup {
                         set_title: "Mercury",
                         set_description: Some("Camera and OpenCV based hand tracking driver"),
-                        add: {
-                            withclones![prof];
-                            &switch_row(
-                                "Enable Mercury", None,
-                                model.profile.borrow().features.mercury_enabled,
-                                move |_, state| {
-                                    prof.borrow_mut().features.mercury_enabled = state;
-                                    gtk::glib::Propagation::Proceed
-                                }
-                            )
-                        },
+                        add: &switch_row(
+                            "Enable Mercury", None,
+                            model.profile.borrow().features.mercury_enabled,
+                            clone!(@strong prof => move |_, state| {
+                                prof.borrow_mut().features.mercury_enabled = state;
+                                gtk::glib::Propagation::Proceed
+                            })
+                        ),
                     },
                     add: model.env_rows.widget(),
                 }
@@ -465,16 +409,17 @@ impl SimpleComponent for ProfileEditor {
                         .halign(gtk::Align::End)
                         .build();
 
-                    withclones![sender, name_entry, popover];
-                    add_btn.connect_clicked(move |_| {
-                        let key_gstr = name_entry.text();
-                        let key = key_gstr.trim();
-                        if !key.is_empty() {
-                            popover.popdown();
-                            name_entry.set_text("");
-                            sender.input($event(key.to_string()));
-                        }
-                    });
+                    add_btn.connect_clicked(
+                        clone!(@strong sender, @strong name_entry, @strong popover => move |_| {
+                            let key_gstr = name_entry.text();
+                            let key = key_gstr.trim();
+                            if !key.is_empty() {
+                                popover.popdown();
+                                name_entry.set_text("");
+                                sender.input($event(key.to_string()));
+                            }
+                        })
+                    );
                     btn
                 }};
             }

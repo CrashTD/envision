@@ -1,8 +1,7 @@
-use crate::withclones;
 use adw::prelude::*;
 use gtk::{
     gio,
-    glib::{self, GString},
+    glib::{self, clone, GString},
 };
 use relm4::prelude::*;
 
@@ -94,33 +93,26 @@ pub fn path_row<F: Fn(Option<String>) + 'static + Clone>(
         .valign(gtk::Align::Center)
         .build();
     row.add_suffix(&clear_btn);
-    {
-        withclones![path_label, cb];
-        clear_btn.connect_clicked(move |_| {
-            path_label.set_label("(None)");
-            cb(None)
-        });
-    }
+    clear_btn.connect_clicked(clone!(@strong path_label, @strong cb => move |_| {
+        path_label.set_label("(None)");
+        cb(None)
+    }));
     let filedialog = gtk::FileDialog::builder()
         .modal(true)
         .title(format!("Select Path for {}", title))
         .build();
 
-    {
-        withclones![path_label];
-        row.connect_activated(move |_| {
-            withclones![path_label, cb];
-            filedialog.select_folder(root_win.as_ref(), gio::Cancellable::NONE, move |res| {
-                if let Ok(file) = res {
-                    if let Some(path) = file.path() {
-                        let path_s = path.to_str().unwrap().to_string();
-                        path_label.set_text(path_s.as_str());
-                        cb(Some(path_s))
-                    }
+    row.connect_activated(clone!(@strong path_label => move |_| {
+        filedialog.select_folder(root_win.as_ref(), gio::Cancellable::NONE, clone!(@strong path_label, @strong cb => move |res| {
+            if let Ok(file) = res {
+                if let Some(path) = file.path() {
+                    let path_s = path.to_str().unwrap().to_string();
+                    path_label.set_text(path_s.as_str());
+                    cb(Some(path_s))
                 }
-            })
-        });
-    }
+            }
+        }))
+    }));
 
     row
 }

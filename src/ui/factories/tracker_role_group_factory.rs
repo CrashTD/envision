@@ -2,9 +2,9 @@ use crate::{
     file_builders::monado_config_v0::{TrackerRole, XrtTrackerRole},
     ui::fbt_config_editor::FbtConfigEditorMsg,
     ui::preference_rows::{combo_row, entry_row},
-    withclones,
 };
 use adw::prelude::*;
+use gtk::glib::clone;
 use relm4::{factory::AsyncFactoryComponent, prelude::*, AsyncFactorySender};
 
 #[derive(Debug)]
@@ -54,27 +54,29 @@ impl AsyncFactoryComponent for TrackerRoleModel {
                 }
             },
             add: {
-                withclones![sender];
                 let tr = self.tracker_role.clone();
-                &entry_row("Device serial", self.tracker_role.device_serial.as_str(), move |row| {
-                    let mut ntr = tr.clone();
-                    ntr.device_serial = row.text().to_string();
-                    sender.input(Self::Input::Changed(ntr));
-                })
+                &entry_row(
+                    "Device serial",
+                    self.tracker_role.device_serial.as_str(),
+                    clone!(@strong sender => move |row| {
+                        let mut ntr = tr.clone();
+                        ntr.device_serial = row.text().to_string();
+                        sender.input(Self::Input::Changed(ntr));
+                    })
+                )
             },
             add: {
-                withclones![sender];
                 let tr = self.tracker_role.clone();
                 &combo_row("Tracker role", None, &tr.role.clone().to_picker_string(),
                     XrtTrackerRole::iter()
                         .map(XrtTrackerRole::to_picker_string)
                         .map(String::from)
                         .collect::<Vec<String>>(),
-                    move |row| {
+                    clone!(@strong sender => move |row| {
                         let mut ntr = tr.clone();
                         ntr.role = XrtTrackerRole::from_number(&row.selected());
                         sender.input(Self::Input::Changed(ntr));
-                    }
+                    })
                 )
             },
         }

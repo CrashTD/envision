@@ -42,12 +42,13 @@ use crate::profiles::openhmd::openhmd_profile;
 use crate::profiles::survive::survive_profile;
 use crate::profiles::wivrn::wivrn_profile;
 use crate::profiles::wmr::wmr_profile;
+use crate::stateless_action;
 use crate::ui::build_window::{BuildWindowMsg, BuildWindowOutMsg};
 use crate::ui::debug_view::DebugViewInit;
 use crate::ui::libsurvive_setup_window::LibsurviveSetupMsg;
 use crate::ui::main_view::{MainView, MainViewInit, MainViewOutMsg};
 use crate::xr_devices::XRDevice;
-use crate::{stateless_action, withclones};
+use gtk::glib::clone;
 use gtk::prelude::*;
 use relm4::actions::{AccelsPlus, ActionGroupName, RelmAction, RelmActionGroup};
 use relm4::adw::traits::MessageDialogExt;
@@ -724,71 +725,76 @@ impl SimpleComponent for App {
 
         let mut actions = RelmActionGroup::<AppActionGroup>::new();
 
-        {
-            withclones![sender];
-            stateless_action!(actions, BuildProfileAction, {
+        stateless_action!(
+            actions,
+            BuildProfileAction,
+            clone!(@strong sender => move |_| {
                 sender.input_sender().emit(Msg::BuildProfile(false, false));
-            });
-        }
-        {
-            withclones![sender];
-            stateless_action!(actions, BuildProfileCleanAction, {
+            })
+        );
+        stateless_action!(
+            actions,
+            BuildProfileCleanAction,
+            clone!(@strong sender => move |_| {
                 sender.input_sender().emit(Msg::BuildProfile(true, false));
-            });
-        }
-        {
-            withclones![sender];
-            stateless_action!(actions, BuildProfileDebugAction, {
+            })
+        );
+        stateless_action!(
+            actions,
+            BuildProfileDebugAction,
+            clone!(@strong sender => move |_| {
                 sender.input_sender().emit(Msg::BuildProfile(false, true));
-            });
-        }
-        {
-            withclones![sender];
-            stateless_action!(actions, BuildProfileCleanDebugAction, {
+            })
+        );
+        stateless_action!(
+            actions,
+            BuildProfileCleanDebugAction,
+            clone!(@strong sender => move |_| {
                 sender.input_sender().emit(Msg::BuildProfile(true, true));
-            });
-        }
-        {
-            withclones![sender];
-            stateless_action!(actions, ConfigFbtAction, {
+            })
+        );
+        stateless_action!(
+            actions,
+            ConfigFbtAction,
+            clone!(@strong sender => move |_| {
                 sender.input_sender().emit(Msg::ConfigFbt);
-            });
-        }
+            })
+        );
         {
             let abd_sender = model.about_dialog.sender().clone();
-            stateless_action!(actions, AboutAction, {
+            stateless_action!(actions, AboutAction, move |_| {
                 abd_sender.send(()).unwrap();
             });
         }
-        {
-            withclones![sender];
-            stateless_action!(actions, QuitAction, {
+        stateless_action!(
+            actions,
+            QuitAction,
+            clone!(@strong sender => move |_| {
                 sender.input(Msg::Quit);
-            });
-        }
-        {
-            withclones![sender];
-            stateless_action!(actions, DebugOpenDataAction, {
+            })
+        );
+        stateless_action!(
+            actions,
+            DebugOpenDataAction,
+            clone!(@strong sender => move |_| {
                 sender.input(Msg::DebugOpenData);
-            });
-        }
-        {
-            withclones![sender];
-            stateless_action!(actions, DebugOpenPrefixAction, {
+            })
+        );
+        stateless_action!(
+            actions,
+            DebugOpenPrefixAction,
+            clone!(@strong sender => move |_| {
                 sender.input(Msg::DebugOpenPrefix);
-            });
-        }
-        {
-            withclones![sender];
-            actions.add_action(RelmAction::<DebugViewToggleAction>::new_stateful(
-                &model.enable_debug_view,
-                move |_, state| {
-                    let s = *state;
-                    *state = !s;
-                    sender.input(Msg::EnableDebugViewChanged(*state));
-                },
-            ))
-        }
+            })
+        );
+        actions.add_action(RelmAction::<DebugViewToggleAction>::new_stateful(
+            &model.enable_debug_view,
+            clone!(@strong sender => move |_, state| {
+                let s = *state;
+                *state = !s;
+                sender.input(Msg::EnableDebugViewChanged(*state));
+            }),
+        ));
 
         root.insert_action_group(AppActionGroup::NAME, Some(&actions.into_action_group()));
 
@@ -804,13 +810,13 @@ impl SimpleComponent for App {
             model.config.clone(),
         ));
 
-        {
-            withclones![sender];
-            glib::timeout_add_local(Duration::from_millis(1000), move || {
+        glib::timeout_add_local(
+            Duration::from_millis(1000),
+            clone!(@strong sender => move || {
                 sender.input(Msg::ClockTicking);
                 glib::ControlFlow::Continue
-            });
-        }
+            }),
+        );
 
         model.split_view = Some(widgets.split_view.clone());
 
