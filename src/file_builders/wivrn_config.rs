@@ -24,11 +24,11 @@ impl Display for Encoder {
 }
 
 impl Encoder {
-    pub fn iter() -> Iter<'static, Encoder> {
+    pub fn iter() -> Iter<'static, Self> {
         [Self::X264, Self::Nvenc, Self::Vaapi].iter()
     }
 
-    pub fn as_vec() -> Vec<Encoder> {
+    pub fn as_vec() -> Vec<Self> {
         vec![Self::X264, Self::Nvenc, Self::Vaapi]
     }
 
@@ -50,6 +50,36 @@ pub enum Codec {
     Hevc,
 }
 
+impl Display for Codec {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
+            Self::H264 => "h264",
+            Self::H265 => "h265",
+            Self::Avc => "AVC",
+            Self::Hevc => "HEVC",
+        })
+    }
+}
+
+impl Codec {
+    pub fn iter() -> Iter<'static, Self> {
+        [Self::H264, Self::H265, Self::Avc, Self::Hevc].iter()
+    }
+
+    pub fn as_vec() -> Vec<Self> {
+        vec![Self::H264, Self::H265, Self::Avc, Self::Hevc]
+    }
+
+    pub fn as_number(&self) -> u32 {
+        match self {
+            Self::H264 => 0,
+            Self::H265 => 1,
+            Self::Avc => 2,
+            Self::Hevc => 3,
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct WivrnConfEncoder {
     pub encoder: Encoder,
@@ -62,6 +92,19 @@ pub struct WivrnConfEncoder {
     pub height: Option<f32>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub group: Option<i32>,
+}
+
+impl Default for WivrnConfEncoder {
+    fn default() -> Self {
+        Self {
+            encoder: Encoder::X264,
+            codec: Codec::H264,
+            bitrate: None,
+            width: None,
+            height: None,
+            group: None,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
