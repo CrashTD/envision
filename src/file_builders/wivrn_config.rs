@@ -46,8 +46,6 @@ impl Encoder {
 pub enum Codec {
     H264,
     H265,
-    Avc,
-    Hevc,
 }
 
 impl Display for Codec {
@@ -55,27 +53,23 @@ impl Display for Codec {
         f.write_str(match self {
             Self::H264 => "h264",
             Self::H265 => "h265",
-            Self::Avc => "AVC",
-            Self::Hevc => "HEVC",
         })
     }
 }
 
 impl Codec {
     pub fn iter() -> Iter<'static, Self> {
-        [Self::H264, Self::H265, Self::Avc, Self::Hevc].iter()
+        [Self::H264, Self::H265].iter()
     }
 
     pub fn as_vec() -> Vec<Self> {
-        vec![Self::H264, Self::H265, Self::Avc, Self::Hevc]
+        vec![Self::H264, Self::H265]
     }
 
     pub fn as_number(&self) -> u32 {
         match self {
             Self::H264 => 0,
             Self::H265 => 1,
-            Self::Avc => 2,
-            Self::Hevc => 3,
         }
     }
 }
