@@ -8,7 +8,7 @@ use relm4::prelude::*;
 pub struct WivrnConfEditor {
     conf: WivrnConfig,
     #[tracker::do_not_track]
-    win: Option<adw::PreferencesWindow>,
+    win: Option<adw::Window>,
     #[tracker::do_not_track]
     scalex_entry: Option<adw::EntryRow>,
     #[tracker::do_not_track]
@@ -37,81 +37,100 @@ impl SimpleComponent for WivrnConfEditor {
 
     view! {
         #[name(win)]
-        adw::PreferencesWindow {
-            set_hide_on_close: true,
+        adw::Window {
             set_modal: true,
             set_transient_for: Some(&init.root_win),
             set_title: Some("WiVRn Configuration"),
-            add: mainpage = &adw::PreferencesPage {
-                add: scalegrp = &adw::PreferencesGroup {
-                    set_title: "Scale",
-                    set_description: Some("Render resolution scale. 1.0 is 100%."),
-                    #[name(scalex_entry)]
-                    adw::EntryRow {
-                        set_title: "Scale X",
-                        #[track = "model.changed(Self::conf())"]
-                        set_text: match model.conf.scale {
-                            Some([x, _]) => x.to_string(),
-                            None => "".to_string(),
-                        }.as_str(),
-                        set_input_purpose: gtk::InputPurpose::Number,
-                    },
-                    #[name(scaley_entry)]
-                    adw::EntryRow {
-                        set_title: "Scale Y",
-                        #[track = "model.changed(Self::conf())"]
-                        set_text: match model.conf.scale {
-                            Some([_, y]) => y.to_string(),
-                            None => "".to_string(),
-                        }.as_str(),
-                        set_input_purpose: gtk::InputPurpose::Number,
-                    },
-                },
-                add: encgrp = &adw::PreferencesGroup {
-                    set_title: "Encoder",
-                    #[name(encoder_combo)]
-                    adw::ComboRow {
-                        set_title: "Encoder",
-                        set_subtitle: "x264: CPU based h264 encoding\n\nNVEnc: Nvidia GPU encoding\n\nVAAPI: Intel or AMD GPU encoding",
-                        set_model: Some(&gtk::StringList::new(
-                            Encoder::iter()
-                                .map(Encoder::to_string)
-                                .collect::<Vec<String>>()
-                                .iter()
-                                .map(String::as_str)
-                                .collect::<Vec<&str>>()
-                                .as_slice()
-                        )),
-                        #[track = "model.changed(Self::conf())"]
-                        set_selected: model.conf.encoders.get(0).unwrap().encoder.as_number(),
-                    },
-                    #[name(bitrate_entry)]
-                    adw::EntryRow {
-                        set_title: "Bitrate",
-                        #[track = "model.changed(Self::conf())"]
-                        set_text: match model.conf.encoders.get(0).unwrap().bitrate {
-                            Some(br) => br.to_string(),
-                            None => "".to_string()
-                        }.as_str(),
-                        set_input_purpose: gtk::InputPurpose::Number,
-                    },
-                },
-                add: save_grp = &adw::PreferencesGroup {
-                    add: save_box = &gtk::Box {
-                        set_orientation: gtk::Orientation::Vertical,
-                        set_hexpand: true,
-                        gtk::Button {
-                            set_halign: gtk::Align::Center,
-                            set_label: "Save",
-                            add_css_class: "pill",
-                            add_css_class: "suggested-action",
-                            connect_clicked[sender] => move |_| {
-                                sender.input(Self::Input::Save);
-                            },
+            set_default_height: 500,
+            set_default_width: 600,
+            adw::ToolbarView {
+                set_top_bar_style: adw::ToolbarStyle::Flat,
+                set_hexpand: true,
+                set_vexpand: true,
+                add_top_bar: top_bar = &adw::HeaderBar {
+                    set_vexpand: false,
+                    pack_end: save_btn = &gtk::Button {
+                        set_label: "Save",
+                        add_css_class: "suggested-action",
+                        connect_clicked[sender] => move |_| {
+                            sender.input(Self::Input::Save);
                         },
-                    }
+                    },
                 },
-            },
+                #[wrap(Some)]
+                set_content: pref_page = &adw::PreferencesPage {
+                    set_hexpand: true,
+                    set_vexpand: true,
+                    add: scalegrp = &adw::PreferencesGroup {
+                        set_title: "Scale",
+                        set_description: Some("Render resolution scale. 1.0 is 100%."),
+                        #[name(scalex_entry)]
+                        adw::EntryRow {
+                            set_title: "Scale X",
+                            #[track = "model.changed(Self::conf())"]
+                            set_text: match model.conf.scale {
+                                Some([x, _]) => x.to_string(),
+                                None => "".to_string(),
+                            }.as_str(),
+                            set_input_purpose: gtk::InputPurpose::Number,
+                        },
+                        #[name(scaley_entry)]
+                        adw::EntryRow {
+                            set_title: "Scale Y",
+                            #[track = "model.changed(Self::conf())"]
+                            set_text: match model.conf.scale {
+                                Some([_, y]) => y.to_string(),
+                                None => "".to_string(),
+                            }.as_str(),
+                            set_input_purpose: gtk::InputPurpose::Number,
+                        },
+                    },
+                    add: encgrp = &adw::PreferencesGroup {
+                        set_title: "Encoder",
+                        #[name(encoder_combo)]
+                        adw::ComboRow {
+                            set_title: "Encoder",
+                            set_subtitle: "x264: CPU based h264 encoding\n\nNVEnc: Nvidia GPU encoding\n\nVAAPI: Intel or AMD GPU encoding",
+                            set_model: Some(&gtk::StringList::new(
+                                Encoder::iter()
+                                    .map(Encoder::to_string)
+                                    .collect::<Vec<String>>()
+                                    .iter()
+                                    .map(String::as_str)
+                                    .collect::<Vec<&str>>()
+                                    .as_slice()
+                            )),
+                            #[track = "model.changed(Self::conf())"]
+                            set_selected: model.conf.encoders.get(0).unwrap().encoder.as_number(),
+                        },
+                        #[name(bitrate_entry)]
+                        adw::EntryRow {
+                            set_title: "Bitrate",
+                            #[track = "model.changed(Self::conf())"]
+                            set_text: match model.conf.encoders.get(0).unwrap().bitrate {
+                                Some(br) => br.to_string(),
+                                None => "".to_string()
+                            }.as_str(),
+                            set_input_purpose: gtk::InputPurpose::Number,
+                        },
+                    },
+                    add: save_grp = &adw::PreferencesGroup {
+                        add: save_box = &gtk::Box {
+                            set_orientation: gtk::Orientation::Vertical,
+                            set_hexpand: true,
+                            gtk::Button {
+                                set_halign: gtk::Align::Center,
+                                set_label: "Save",
+                                add_css_class: "pill",
+                                add_css_class: "suggested-action",
+                                connect_clicked[sender] => move |_| {
+                                    sender.input(Self::Input::Save);
+                                },
+                            },
+                        }
+                    },
+                }
+            }
         }
     }
 
