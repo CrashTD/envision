@@ -60,6 +60,68 @@ pub fn entry_row<F: Fn(&adw::EntryRow) + 'static>(
     row
 }
 
+fn is_int(t: &str) -> bool {
+    t.find(|c: char| !c.is_digit(10)).is_none()
+}
+
+fn convert_to_int(t: &str) -> String {
+    t.trim().chars().filter(|c| c.is_digit(10)).collect()
+}
+
+fn is_float(t: &str) -> bool {
+    let mut has_dot = false;
+    for c in t.chars() {
+        if c == '.' {
+            if has_dot {
+                return false;
+            }
+            has_dot = true;
+        } else if !c.is_digit(10) {
+            return false;
+        }
+    }
+    true
+}
+
+fn convert_to_float(t: &str) -> String {
+    let mut s = String::new();
+    let mut has_dot = false;
+    for c in t.trim().chars() {
+        if c.is_digit(10) {
+            s.push(c);
+        } else if c == '.' && !has_dot {
+            s.push(c);
+            has_dot = true;
+        }
+    }
+    s
+}
+
+pub fn number_entry_row<F: Fn(&adw::EntryRow) + 'static>(
+    title: &str,
+    value: &str,
+    float: bool,
+    cb: F,
+) -> adw::EntryRow {
+    let validator = if float { is_float } else { is_int };
+    let converter = if float {
+        convert_to_float
+    } else {
+        convert_to_int
+    };
+    let row = entry_row(title, value, move |row| {
+        let txt_gstr = row.text();
+        let txt = txt_gstr.as_str();
+        if validator(txt) {
+            cb(row)
+        } else {
+            row.set_text(&converter(txt));
+        }
+    });
+    row.set_input_purpose(gtk::InputPurpose::Number);
+    row
+}
+
 pub fn path_row<F: Fn(Option<String>) + 'static + Clone>(
     title: &str,
     description: Option<&str>,
@@ -146,4 +208,34 @@ pub fn combo_row<F: Fn(&adw::ComboRow) + 'static>(
     row.connect_selected_item_notify(cb);
 
     row
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::ui::preference_rows::{convert_to_float, is_float};
+
+    #[test]
+    fn accepts_float() {
+        assert!(is_float("132.1425"));
+    }
+
+    #[test]
+    fn rejects_float_with_many_dots() {
+        assert!(!is_float("132.142.5"));
+    }
+
+    #[test]
+    fn accepts_float_without_dots() {
+        assert!(is_float("1321425"));
+    }
+
+    #[test]
+    fn rejects_float_with_alphas() {
+        assert!(!is_float("123.34a65"));
+    }
+
+    #[test]
+    fn converts_to_float() {
+        assert_eq!(convert_to_float("123a.435.123"), "123.435123");
+    }
 }
