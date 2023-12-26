@@ -49,12 +49,21 @@ impl SimpleComponent for WivrnConfEditor {
                 set_vexpand: true,
                 add_top_bar: top_bar = &adw::HeaderBar {
                     set_vexpand: false,
+                    set_show_end_title_buttons: false,
+                    set_show_start_title_buttons: false,
                     pack_end: save_btn = &gtk::Button {
                         set_label: "Save",
                         add_css_class: "suggested-action",
                         connect_clicked[sender] => move |_| {
                             sender.input(Self::Input::Save);
                         },
+                    },
+                    pack_start: cancel_btn = &gtk::Button {
+                        set_label: "Cancel",
+                        add_css_class: "destructive-action",
+                        connect_clicked[win] => move |_| {
+                            win.close();
+                        }
                     },
                 },
                 #[wrap(Some)]
