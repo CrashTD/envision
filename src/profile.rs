@@ -236,26 +236,45 @@ impl Display for Profile {
 
 impl Default for Profile {
     fn default() -> Self {
+        let uuid = Uuid::new_v4().to_string();
+        let profile_dir = format!("{}/{}", get_data_dir(), uuid);
         Self {
-            uuid: Uuid::new_v4().to_string(),
             name: "Default profile name".into(),
-            xrservice_path: data_monado_path(),
+            xrservice_path: format!("{}/xrservice", profile_dir),
             xrservice_type: XRServiceType::Monado,
             xrservice_repo: None,
             xrservice_cmake_flags: HashMap::<String, String>::default(),
-            opencomposite_path: data_opencomposite_path(),
-            features: ProfileFeatures::default(),
+            features: ProfileFeatures {
+                libsurvive: ProfileFeature {
+                    enabled: false,
+                    path: Some(format!("{}/libsurvive", profile_dir)),
+                    repo: None,
+                    feature_type: ProfileFeatureType::Libsurvive,
+                },
+                basalt: ProfileFeature {
+                    enabled: false,
+                    path: Some(format!("{}/basalt", profile_dir)),
+                    repo: None,
+                    feature_type: ProfileFeatureType::Basalt,
+                },
+                openhmd: ProfileFeature {
+                    enabled: false,
+                    path: Some(format!("{}/openhmd", profile_dir)),
+                    repo: None,
+                    feature_type: ProfileFeatureType::OpenHmd,
+                },
+                mercury_enabled: false,
+            },
             environment: HashMap::new(),
-            prefix: format!(
-                "{data}/prefixes/default_profile_prefix",
-                data = get_data_dir()
-            ),
+            prefix: format!("{}/prefixes/{}", get_data_dir(), uuid),
             can_be_built: true,
             pull_on_build: true,
             opencomposite_repo: None,
+            opencomposite_path: format!("{}/opencomposite", profile_dir),
             editable: true,
             lighthouse_driver: LighthouseDriver::default(),
             xrservice_launch_options: String::default(),
+            uuid,
         }
     }
 }
@@ -307,10 +326,30 @@ impl Profile {
     }
 
     pub fn create_duplicate(&self) -> Self {
-        let mut dup = self.clone();
-        dup.uuid = Uuid::new_v4().to_string();
-        dup.editable = true;
-        dup.name = format!("Duplicate of {}", dup.name);
+        if !self.can_be_built {
+            let mut dup = self.clone();
+            dup.uuid = Uuid::new_v4().to_string();
+            dup.name = format!("Duplicate of {}", dup.name);
+            dup.editable = true;
+            return dup;
+        }
+        let mut dup = Self::default();
+        dup.name = format!("Duplicate of {}", self.name);
+        dup.xrservice_type = self.xrservice_type.clone();
+        dup.xrservice_repo = self.xrservice_repo.clone();
+        dup.xrservice_cmake_flags = self.xrservice_cmake_flags.clone();
+        dup.features.libsurvive.enabled = self.features.libsurvive.enabled;
+        dup.features.libsurvive.repo = self.features.libsurvive.repo.clone();
+        dup.features.basalt.enabled = self.features.basalt.enabled;
+        dup.features.basalt.repo = self.features.basalt.repo.clone();
+        dup.features.openhmd.enabled = self.features.openhmd.enabled;
+        dup.features.openhmd.repo = self.features.openhmd.repo.clone();
+        dup.features.mercury_enabled = self.features.mercury_enabled;
+        dup.environment = self.environment.clone();
+        dup.pull_on_build = self.pull_on_build;
+        dup.opencomposite_repo = self.opencomposite_repo.clone();
+        dup.lighthouse_driver = self.lighthouse_driver;
+        dup.xrservice_launch_options = self.xrservice_launch_options.clone();
         dup
     }
 
@@ -347,10 +386,14 @@ impl Profile {
     }
 
     pub fn xrservice_binary(&self) -> String {
-        match self.xrservice_type {
-            XRServiceType::Monado => format!("{pfx}/bin/monado-service", pfx = self.prefix),
-            XRServiceType::Wivrn => format!("{pfx}/bin/wivrn-server", pfx = self.prefix),
-        }
+        format!(
+            "{}/bin/{}",
+            self.prefix,
+            match self.xrservice_type {
+                XRServiceType::Monado => "monado-service",
+                XRServiceType::Wivrn => "wivrn-server",
+            }
+        )
     }
 
     pub fn can_start(&self) -> bool {
