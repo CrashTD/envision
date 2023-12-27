@@ -122,6 +122,40 @@ pub fn number_entry_row<F: Fn(&adw::EntryRow) + 'static>(
     row
 }
 
+pub fn spin_row<F: Fn(&gtk::Adjustment) + 'static>(
+    title: &str,
+    subtitle: Option<&str>,
+    val: f64,
+    min: f64,
+    max: f64,
+    min_increment: f64,
+    cb: F,
+) -> adw::SpinRow {
+    let adj = gtk::Adjustment::builder()
+        .lower(min)
+        .upper(max)
+        .step_increment(min_increment)
+        .page_increment(min_increment)
+        .value(val)
+        .build();
+    let row = adw::SpinRow::builder()
+        .title(title)
+        .adjustment(&adj)
+        .digits(if min_increment == 1.0 {
+            0
+        } else {
+            min_increment.to_string().len() - 2
+        } as u32)
+        .build();
+    if let Some(sub) = subtitle {
+        row.set_subtitle(sub);
+    }
+
+    adj.connect_value_changed(cb);
+
+    row
+}
+
 pub fn path_row<F: Fn(Option<String>) + 'static + Clone>(
     title: &str,
     description: Option<&str>,
