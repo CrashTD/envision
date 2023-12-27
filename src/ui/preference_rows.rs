@@ -179,6 +179,7 @@ pub fn path_row<F: Fn(Option<String>) + 'static + Clone>(
             None => "(None)",
             Some(p) => p.as_str(),
         })
+        .wrap(true)
         .build();
     row.add_suffix(path_label);
 
