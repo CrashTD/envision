@@ -5,7 +5,6 @@ use super::profile_editor::{ProfileEditor, ProfileEditorMsg, ProfileEditorOutMsg
 use super::steam_launch_options_box::{SteamLaunchOptionsBox, SteamLaunchOptionsBoxMsg};
 use super::steamvr_calibration_box::SteamVrCalibrationBox;
 use crate::config::Config;
-use crate::constants::APP_NAME;
 use crate::file_utils::mount_has_nosuid;
 use crate::gpu_profile::{
     get_amd_gpu_power_profile, get_first_amd_gpu, get_set_amd_vr_pow_prof_cmd, GpuPowerProfile,
