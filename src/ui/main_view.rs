@@ -336,6 +336,7 @@ impl SimpleComponent for MainView {
                                 }
                             },
                         },
+
                         model.steam_launch_options_box.widget(),
                         model.install_wivrn_box.widget(),
                         gtk::Box {
@@ -365,6 +366,7 @@ impl SimpleComponent for MainView {
                             },
                         },
                         model.steamvr_calibration_box.widget(),
+
                         gtk::Box {
                             set_orientation: gtk::Orientation::Vertical,
                             set_hexpand: true,
