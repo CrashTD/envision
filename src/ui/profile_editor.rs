@@ -146,9 +146,9 @@ impl SimpleComponent for ProfileEditor {
                             "Lighthouse Driver",
                             Some(concat!(
                                 "Driver for lighhouse tracked XR devices (ie: Valve Index, HTC Vive...). Only applicable for Monado.\n\n",
-                                "Vive: 3DOF tracking\n\n",
-                                "Survive: 6DOF reverse engineered lighthouse tracking provided by Libsurvive\n\n",
-                                "SteamVR: 6DOF lighthouse tracking using the proprietary SteamVR driver",
+                                " \u{2022} Vive: 3DOF tracking\n",
+                                " \u{2022} Survive: 6DOF reverse engineered lighthouse tracking provided by Libsurvive\n",
+                                " \u{2022} SteamVR: 6DOF lighthouse tracking using the proprietary SteamVR driver",
                             )),
                             model.profile.borrow().lighthouse_driver.to_string().as_str(),
                             LighthouseDriver::iter()

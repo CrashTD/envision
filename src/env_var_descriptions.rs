@@ -22,7 +22,7 @@ pub static ENV_VAR_DESCRIPTIONS: Map<&str, &str> = phf_map! {
 pub fn env_var_descriptions_as_paragraph() -> String {
     ENV_VAR_DESCRIPTIONS
         .into_iter()
-        .map(|(k, v)| format!("{}: {}", k, v))
+        .map(|(k, v)| format!(" \u{2022} <b>{}</b>: {}", k, v))
         .collect::<Vec<String>>()
         .join("\n\n")
 }
