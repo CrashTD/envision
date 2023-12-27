@@ -1,8 +1,10 @@
-use crate::file_builders::wivrn_config::{
-    dump_wivrn_config, get_wivrn_config, Encoder, WivrnConfig,
+use super::factories::wivrn_encoder_group_factory::{WivrnEncoderModel, WivrnEncoderModelInit};
+use crate::{
+    file_builders::wivrn_config::{dump_wivrn_config, get_wivrn_config, WivrnConfig},
+    ui::preference_rows::spin_row,
 };
 use adw::prelude::*;
-use relm4::prelude::*;
+use relm4::{factory::AsyncFactoryVecDeque, prelude::*};
 
 #[tracker::track]
 pub struct WivrnConfEditor {
@@ -10,19 +12,19 @@ pub struct WivrnConfEditor {
     #[tracker::do_not_track]
     win: Option<adw::Window>,
     #[tracker::do_not_track]
-    scalex_entry: Option<adw::EntryRow>,
+    pub encoder_models: Option<AsyncFactoryVecDeque<WivrnEncoderModel>>,
     #[tracker::do_not_track]
-    scaley_entry: Option<adw::EntryRow>,
+    pub scalex_row: Option<adw::SpinRow>,
     #[tracker::do_not_track]
-    encoder_combo: Option<adw::ComboRow>,
-    #[tracker::do_not_track]
-    bitrate_entry: Option<adw::EntryRow>,
+    pub scaley_row: Option<adw::SpinRow>,
 }
 
 #[derive(Debug)]
 pub enum WivrnConfEditorMsg {
     Present,
     Save,
+    AddEncoder,
+    DeleteEncoder(String),
 }
 
 pub struct WivrnConfEditorInit {
@@ -70,73 +72,50 @@ impl SimpleComponent for WivrnConfEditor {
                 set_content: pref_page = &adw::PreferencesPage {
                     set_hexpand: true,
                     set_vexpand: true,
+                    set_description: "<a href=\"https://github.com/Meumeu/WiVRn#encoders\">WiVRn Configuration Documentation</a>",
                     add: scalegrp = &adw::PreferencesGroup {
                         set_title: "Scale",
                         set_description: Some("Render resolution scale. 1.0 is 100%."),
-                        #[name(scalex_entry)]
-                        adw::EntryRow {
-                            set_title: "Scale X",
-                            #[track = "model.changed(Self::conf())"]
-                            set_text: match model.conf.scale {
-                                Some([x, _]) => x.to_string(),
-                                None => "".to_string(),
-                            }.as_str(),
-                            set_input_purpose: gtk::InputPurpose::Number,
-                        },
-                        #[name(scaley_entry)]
-                        adw::EntryRow {
-                            set_title: "Scale Y",
-                            #[track = "model.changed(Self::conf())"]
-                            set_text: match model.conf.scale {
-                                Some([_, y]) => y.to_string(),
-                                None => "".to_string(),
-                            }.as_str(),
-                            set_input_purpose: gtk::InputPurpose::Number,
-                        },
-                    },
-                    add: encgrp = &adw::PreferencesGroup {
-                        set_title: "Encoder",
-                        #[name(encoder_combo)]
-                        adw::ComboRow {
-                            set_title: "Encoder",
-                            set_subtitle: "x264: CPU based h264 encoding\n\nNVEnc: Nvidia GPU encoding\n\nVAAPI: Intel or AMD GPU encoding",
-                            set_model: Some(&gtk::StringList::new(
-                                Encoder::iter()
-                                    .map(Encoder::to_string)
-                                    .collect::<Vec<String>>()
-                                    .iter()
-                                    .map(String::as_str)
-                                    .collect::<Vec<&str>>()
-                                    .as_slice()
-                            )),
-                            #[track = "model.changed(Self::conf())"]
-                            set_selected: model.conf.encoders.get(0).unwrap().encoder.as_number(),
-                        },
-                        #[name(bitrate_entry)]
-                        adw::EntryRow {
-                            set_title: "Bitrate",
-                            #[track = "model.changed(Self::conf())"]
-                            set_text: match model.conf.encoders.get(0).unwrap().bitrate {
-                                Some(br) => br.to_string(),
-                                None => "".to_string()
-                            }.as_str(),
-                            set_input_purpose: gtk::InputPurpose::Number,
-                        },
-                    },
-                    add: save_grp = &adw::PreferencesGroup {
-                        add: save_box = &gtk::Box {
-                            set_orientation: gtk::Orientation::Vertical,
-                            set_hexpand: true,
-                            gtk::Button {
-                                set_halign: gtk::Align::Center,
-                                set_label: "Save",
-                                add_css_class: "pill",
-                                add_css_class: "suggested-action",
-                                connect_clicked[sender] => move |_| {
-                                    sender.input(Self::Input::Save);
-                                },
+                        add: scalex_row = &spin_row(
+                            "Scale X",
+                            None,
+                            match model.conf.scale {
+                                Some([x, _]) => x.into(),
+                                None => 1.0,
                             },
-                        }
+                            0.0,
+                            1.0,
+                            0.01,
+                            move |_| {}
+                        ) -> adw::SpinRow,
+                        add: scaley_row = &spin_row(
+                            "Scale Y",
+                            None,
+                            match model.conf.scale {
+                                Some([_, y]) => y.into(),
+                                None => 1.0,
+                            },
+                            0.0,
+                            1.0,
+                            0.01,
+                            move |_| {}
+                        ) -> adw::SpinRow,
+                    },
+                    add: encodersrgp = &adw::PreferencesGroup {
+                        set_title: "Encoders",
+                        adw::ActionRow {
+                            set_title: "Add encoder",
+                            add_suffix: add_encoder_btn = &gtk::Button {
+                                set_halign: gtk::Align::Center,
+                                set_valign: gtk::Align::Center,
+                                add_css_class: "suggested-action",
+                                set_icon_name: "list-add-symbolic",
+                                set_tooltip_text: Some("Add encoder"),
+                                connect_clicked[sender] => move |_| {
+                                    sender.input(Self::Input::AddEncoder)
+                                }
+                            },
+                        },
                     },
                 }
             }
@@ -152,33 +131,40 @@ impl SimpleComponent for WivrnConfEditor {
                 self.win.as_ref().unwrap().present();
             }
             Self::Input::Save => {
-                let scalex = self.scalex_entry.as_ref().unwrap().text().parse::<f32>();
-                let scaley = self.scaley_entry.as_ref().unwrap().text().parse::<f32>();
-                if scalex.is_ok() && scaley.is_ok() {
-                    self.conf.scale = Some([*scalex.as_ref().unwrap(), *scaley.as_ref().unwrap()]);
-                }
-                if scalex.is_ok() || scaley.is_ok() {
-                    let scale = scalex.unwrap_or(scaley.unwrap());
-                    self.conf.scale = Some([scale, scale]);
-                } else {
-                    self.conf.scale = None
-                }
+                let x = self.scalex_row.as_ref().unwrap().adjustment().value();
+                let y = self.scaley_row.as_ref().unwrap().adjustment().value();
+                Some([x as f32, y as f32]);
 
-                let mut enc = self.conf.encoders.remove(0);
-                let bitrate = self.bitrate_entry.as_ref().unwrap().text().parse::<u32>();
-                if let Ok(br) = bitrate {
-                    enc.bitrate = Some(br);
-                }
-                let encoders = Encoder::as_vec();
-                let encoder =
-                    encoders.get(self.encoder_combo.as_ref().unwrap().selected() as usize);
-                if let Some(e) = encoder {
-                    enc.encoder = e.clone();
-                }
-                self.conf.encoders.insert(0, enc);
-
+                self.conf.encoders = self
+                    .encoder_models
+                    .as_ref()
+                    .unwrap()
+                    .iter()
+                    .filter(Option::is_some)
+                    .map(|m| m.as_ref().unwrap().encoder_conf.clone())
+                    .collect();
                 dump_wivrn_config(&self.conf);
                 self.win.as_ref().unwrap().close();
+            }
+            Self::Input::AddEncoder => {
+                self.encoder_models
+                    .as_mut()
+                    .unwrap()
+                    .guard()
+                    .push_back(WivrnEncoderModelInit::default());
+            }
+            Self::Input::DeleteEncoder(id) => {
+                let idx_opt = self
+                    .encoder_models
+                    .as_ref()
+                    .unwrap()
+                    .iter()
+                    .position(|m_opt| m_opt.is_some_and(|m| m.uid == id));
+                if let Some(idx) = idx_opt {
+                    self.encoder_models.as_mut().unwrap().guard().remove(idx);
+                } else {
+                    eprintln!("Couldn't find encoder model with id {id}");
+                }
             }
         }
     }
@@ -190,21 +176,28 @@ impl SimpleComponent for WivrnConfEditor {
     ) -> ComponentParts<Self> {
         let mut model = Self {
             conf: get_wivrn_config(),
+            encoder_models: None,
             win: None,
-            scalex_entry: None,
-            scaley_entry: None,
-            bitrate_entry: None,
-            encoder_combo: None,
+            scalex_row: None,
+            scaley_row: None,
             tracker: 0,
         };
 
         let widgets = view_output!();
 
+        model.scalex_row = Some(widgets.scalex_row.clone());
+        model.scaley_row = Some(widgets.scaley_row.clone());
+
+        let mut encoder_models: AsyncFactoryVecDeque<WivrnEncoderModel> =
+            AsyncFactoryVecDeque::new(widgets.pref_page.clone(), sender.input_sender());
+        for encoder_conf in model.conf.encoders.clone() {
+            encoder_models.guard().push_back(WivrnEncoderModelInit {
+                encoder_conf: Some(encoder_conf),
+            });
+        }
+        model.encoder_models = Some(encoder_models);
+
         model.win = Some(widgets.win.clone());
-        model.scalex_entry = Some(widgets.scalex_entry.clone());
-        model.scaley_entry = Some(widgets.scaley_entry.clone());
-        model.bitrate_entry = Some(widgets.bitrate_entry.clone());
-        model.encoder_combo = Some(widgets.encoder_combo.clone());
 
         ComponentParts { model, widgets }
     }

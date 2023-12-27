@@ -9,6 +9,7 @@ use super::job_worker::JobWorker;
 use super::libsurvive_setup_window::LibsurviveSetupWindow;
 use super::main_view::MainViewMsg;
 use super::util::open_with_default_handler;
+use super::wivrn_conf_editor::{WivrnConfEditor, WivrnConfEditorInit, WivrnConfEditorMsg};
 use crate::builders::build_basalt::get_build_basalt_jobs;
 use crate::builders::build_libsurvive::get_build_libsurvive_jobs;
 use crate::builders::build_mercury::get_build_mercury_job;
@@ -102,6 +103,9 @@ pub struct App {
     fbt_config_editor: Option<Controller<FbtConfigEditor>>,
     #[tracker::do_not_track]
     libmonado: Option<libmonado_rs::Monado>,
+
+    #[tracker::do_not_track]
+    wivrn_conf_editor: Option<Controller<WivrnConfEditor>>,
 }
 
 #[derive(Debug)]
@@ -128,6 +132,7 @@ pub enum Msg {
     ConfigFbt,
     DebugOpenPrefix,
     DebugOpenData,
+    OpenWivrnConfig,
 }
 
 impl App {
@@ -632,6 +637,15 @@ impl SimpleComponent for App {
                     self.get_selected_profile().prefix
                 ));
             }
+            Msg::OpenWivrnConfig => {
+                let editor = WivrnConfEditor::builder()
+                    .launch(WivrnConfEditorInit {
+                        root_win: self.app_win.clone().upcast::<gtk::Window>(),
+                    })
+                    .detach();
+                editor.emit(WivrnConfEditorMsg::Present);
+                self.wivrn_conf_editor = Some(editor);
+            }
         }
     }
 
@@ -669,6 +683,7 @@ impl SimpleComponent for App {
         }
 
         let mut model = App {
+            tracker: 0,
             application: init.application,
             app_win: root.clone(),
             inhibit_id: None,
@@ -687,6 +702,7 @@ impl SimpleComponent for App {
                     MainViewOutMsg::DeleteProfile => Msg::DeleteProfile,
                     MainViewOutMsg::SaveProfile(p) => Msg::SaveProfile(p),
                     MainViewOutMsg::OpenLibsurviveSetup => Msg::OpenLibsurviveSetup,
+                    MainViewOutMsg::OpenWivrnConfig => Msg::OpenWivrnConfig,
                 }),
             debug_view: DebugView::builder().launch(DebugViewInit {}).forward(
                 sender.input_sender(),
@@ -712,7 +728,6 @@ impl SimpleComponent for App {
             setcap_confirm_dialog,
             enable_debug_view: config.debug_view_enabled,
             config,
-            tracker: 0,
             profiles,
             xrservice_worker: None,
             build_worker: None,
@@ -720,6 +735,7 @@ impl SimpleComponent for App {
             fbt_config_editor: None,
             restart_xrservice: false,
             libmonado: None,
+            wivrn_conf_editor: None,
         };
         let widgets = view_output!();
 

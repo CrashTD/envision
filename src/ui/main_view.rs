@@ -11,7 +11,7 @@ use crate::gpu_profile::{
     get_amd_gpu_power_profile, get_first_amd_gpu, get_set_amd_vr_pow_prof_cmd, GpuPowerProfile,
     GpuSysDrm,
 };
-use crate::profile::{LighthouseDriver, Profile};
+use crate::profile::{LighthouseDriver, Profile, XRServiceType};
 use crate::steamvr_utils::chaperone_info_exists;
 use crate::ui::app::{
     AboutAction, BuildProfileAction, BuildProfileCleanAction, BuildProfileCleanDebugAction,
@@ -84,6 +84,7 @@ pub enum MainViewOutMsg {
     DeleteProfile,
     SaveProfile(Profile),
     OpenLibsurviveSetup,
+    OpenWivrnConfig,
 }
 
 pub struct MainViewInit {
@@ -338,6 +339,32 @@ impl SimpleComponent for MainView {
                         },
                         model.steam_launch_options_box.widget(),
                         model.install_wivrn_box.widget(),
+                        gtk::Box {
+                            set_orientation: gtk::Orientation::Horizontal,
+                            set_hexpand: true,
+                            set_vexpand: false,
+                            set_spacing: 12,
+                            add_css_class: "card",
+                            add_css_class: "padded",
+                            #[track = "model.changed(Self::selected_profile())"]
+                            set_visible: model.selected_profile.xrservice_type == XRServiceType::Wivrn,
+                            gtk::Label {
+                                add_css_class: "heading",
+                                set_hexpand: true,
+                                set_xalign: 0.0,
+                                set_label: "Configure WiVRn",
+                                set_wrap: true,
+                                set_wrap_mode: gtk::pango::WrapMode::Word,
+                            },
+                            gtk::Button {
+                                add_css_class: "suggested-action",
+                                set_label: "Configure",
+                                set_halign: gtk::Align::End,
+                                connect_clicked[sender] => move |_| {
+                                    sender.output(Self::Output::OpenWivrnConfig).expect("Sender output failed");
+                                }
+                            },
+                        },
                         model.steamvr_calibration_box.widget(),
                         gtk::Box {
                             set_orientation: gtk::Orientation::Vertical,
