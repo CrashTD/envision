@@ -30,6 +30,7 @@ pub fn get_build_libsurvive_jobs(profile: &Profile, clean_build: bool) -> VecDeq
     let mut cmake_vars: HashMap<String, String> = HashMap::new();
     cmake_vars.insert("CMAKE_BUILD_TYPE".into(), "Release".into());
     cmake_vars.insert("ENABLE_api_example".into(), "OFF".into());
+    cmake_vars.insert("USE_HIDAPI".into(), "ON".into());
     cmake_vars.insert("CMAKE_SKIP_INSTALL_RPATH".into(), "YES".into());
     cmake_vars.insert("CMAKE_INSTALL_PREFIX".into(), profile.prefix.clone());
     cmake_vars.insert(
