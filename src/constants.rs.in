@@ -2,6 +2,7 @@ use crate::paths::get_exec_prefix;
 
 pub const APP_NAME: &str = "@PRETTY_NAME@";
 pub const APP_ID: &str = "@APP_ID@";
+pub const RESOURCES_BASE_PATH: &str = "@RESOURCES_BASE_PATH@";
 pub const PKG_DATA_DIR: &str = "@PKGDATADIR@";
 pub const RESOURCES: &str = concat!("@PKGDATADIR@", "/resources.gresource");
 pub const CMD_NAME: &str = "@CMD_NAME@";

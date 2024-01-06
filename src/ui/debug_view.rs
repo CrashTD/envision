@@ -61,7 +61,7 @@ impl SimpleComponent for DebugView {
     menu! {
         debug_menu: {
             section! {
-                "Open Envision _Data Folder" => DebugOpenDataAction,
+                "Open _Data Folder" => DebugOpenDataAction,
                 "Open _Prefix Folder" => DebugOpenPrefixAction,
             },
         }

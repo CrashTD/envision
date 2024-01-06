@@ -223,7 +223,7 @@ impl SimpleComponent for MainView {
                                 set_label: concat!(
                                     "Your current prefix is inside a partition ",
                                     "mounted with the nosuid option. This will prevent ",
-                                    "the Envision runtime from acquiring certain privileges ",
+                                    "the XR runtime from acquiring certain privileges ",
                                     "and will cause noticeable stutter when running XR ",
                                     "applications."
                                 ),

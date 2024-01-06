@@ -61,6 +61,7 @@ meson.add_dist_script(
 
 global_conf = configuration_data()
 global_conf.set('APP_ID', application_id)
+global_conf.set('RESOURCES_BASE_PATH', '/' + base_id.replace('.', '/'))
 global_conf.set('PKGDATADIR', pkgdatadir)
 global_conf.set('PROFILE', profile)
 global_conf.set('VERSION', version + version_suffix)

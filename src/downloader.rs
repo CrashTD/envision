@@ -1,4 +1,4 @@
-use crate::file_utils::get_writer;
+use crate::{constants::APP_ID, file_utils::get_writer};
 use reqwest::{
     header::{HeaderMap, USER_AGENT},
     Method,
@@ -11,7 +11,7 @@ const CHUNK_SIZE: usize = 1024;
 
 fn headers() -> HeaderMap {
     let mut headers = HeaderMap::new();
-    headers.insert(USER_AGENT, "org.gabmus.envision/1.0".parse().unwrap());
+    headers.insert(USER_AGENT, format!("{}/1.0", APP_ID).parse().unwrap());
     headers
 }
 

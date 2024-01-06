@@ -1,13 +1,10 @@
-use std::env;
-
 use anyhow::Result;
-use constants::{resources, APP_ID, APP_NAME, GETTEXT_PACKAGE, LOCALE_DIR};
+use constants::{resources, APP_ID, APP_NAME, GETTEXT_PACKAGE, LOCALE_DIR, RESOURCES_BASE_PATH};
 use file_builders::{
     active_runtime_json::{get_current_active_runtime, set_current_active_runtime_to_steam},
     openvrpaths_vrpath::{get_current_openvrpaths, set_current_openvrpaths_to_steam},
 };
 use gettextrs::LocaleCategory;
-use gtk::prelude::ObjectExt;
 use relm4::{
     adw,
     gtk::{self, gdk, gio, glib},
@@ -82,7 +79,7 @@ fn main() -> Result<()> {
     }
 
     let provider = gtk::CssProvider::new();
-    provider.load_from_resource("/org/gabmus/envision/style.css");
+    provider.load_from_resource(&format!("{}/style.css", RESOURCES_BASE_PATH));
     if let Some(display) = gdk::Display::default() {
         gtk::style_context_add_provider_for_display(
             &display,
