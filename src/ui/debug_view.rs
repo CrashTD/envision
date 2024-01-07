@@ -1,11 +1,12 @@
 use crate::log_level::LogLevel;
 use crate::log_parser::MonadoLog;
 use crate::ui::app::{DebugOpenDataAction, DebugOpenPrefixAction};
+use crate::ui::util::copy_text;
 use gtk::glib::clone;
 use gtk::prelude::*;
 use relm4::prelude::*;
 use relm4::{ComponentSender, SimpleComponent};
-use sourceview5::prelude::*;
+use zoha_vte4::{Terminal, TerminalExt};
 
 #[derive(Debug)]
 pub enum SearchDirection {
@@ -17,7 +18,8 @@ pub enum SearchDirection {
 pub enum DebugViewMsg {
     LogUpdated(Vec<String>),
     ClearLog,
-    FilterLog(SearchDirection),
+    DoSearch,
+    SearchFindMatch(SearchDirection),
     LogLevelChanged(LogLevel),
     XRServiceActiveChanged(bool),
     SetColorScheme,
@@ -27,30 +29,20 @@ pub enum DebugViewMsg {
 pub struct DebugView {
     xrservice_active: bool,
     #[tracker::do_not_track]
-    textbuf: sourceview5::Buffer,
-    #[tracker::do_not_track]
-    textview: Option<sourceview5::View>,
-    #[tracker::do_not_track]
     searchbar: Option<gtk::SearchBar>,
     #[tracker::do_not_track]
     search_entry: Option<gtk::SearchEntry>,
     #[tracker::do_not_track]
     dropdown: Option<gtk::DropDown>,
     #[tracker::do_not_track]
-    scrolledwin: Option<gtk::ScrolledWindow>,
-    #[tracker::do_not_track]
-    search_ctx: sourceview5::SearchContext,
-    #[tracker::do_not_track]
-    search_settings: sourceview5::SearchSettings,
-    #[tracker::do_not_track]
-    search_mark: Option<gtk::TextMark>,
-    #[tracker::do_not_track]
     log_level: LogLevel,
+    #[tracker::do_not_track]
+    vte_terminal: Terminal,
 }
 
 pub struct DebugViewInit {}
 
-const MAX_SCROLLBACK: i32 = 2000;
+const MAX_SCROLLBACK: u32 = 2000;
 
 #[relm4::component(pub)]
 impl SimpleComponent for DebugView {
@@ -68,11 +60,10 @@ impl SimpleComponent for DebugView {
     }
 
     view! {
-        gtk::Box {
-            set_orientation: gtk::Orientation::Vertical,
+        adw::ToolbarView {
             set_hexpand: true,
             set_vexpand: true,
-            adw::HeaderBar {
+            add_top_bar: hb = &adw::HeaderBar {
                 set_hexpand: true,
                 set_vexpand: false,
                 add_css_class: "flat",
@@ -87,8 +78,7 @@ impl SimpleComponent for DebugView {
                 },
                 pack_start: &log_level_dropdown,
             },
-            #[name(searchbar)]
-            gtk::SearchBar {
+            add_top_bar: searchbar = &gtk::SearchBar {
                 set_margin_start: 1,
                 set_hexpand: true,
                 #[chain(flags(gtk::glib::BindingFlags::BIDIRECTIONAL).build())]
@@ -102,44 +92,34 @@ impl SimpleComponent for DebugView {
                     gtk::SearchEntry {
                         set_hexpand: true,
                         connect_changed[sender] => move |_| {
-                            sender.input(Self::Input::FilterLog(SearchDirection::Forward));
+                            sender.input(Self::Input::DoSearch);
                         },
                         connect_activate[sender] => move |_| {
-                            sender.input(Self::Input::FilterLog(SearchDirection::Forward));
+                            sender.input(Self::Input::SearchFindMatch(SearchDirection::Forward));
                         },
                     },
                     gtk::Button {
                         set_icon_name: "go-up-symbolic",
                         set_tooltip_text: Some("Previous Match"),
                         connect_clicked[sender] => move |_| {
-                            sender.input(Self::Input::FilterLog(SearchDirection::Backward))
+                            sender.input(Self::Input::SearchFindMatch(SearchDirection::Backward))
                         },
                     },
                     gtk::Button {
                         set_icon_name: "go-down-symbolic",
                         set_tooltip_text: Some("Next Match"),
                         connect_clicked[sender] => move |_| {
-                            sender.input(Self::Input::FilterLog(SearchDirection::Forward))
+                            sender.input(Self::Input::SearchFindMatch(SearchDirection::Forward))
                         },
                     },
                 },
                 connect_entry: &search_entry,
             },
-            #[name(scrolledwin)]
-            gtk::ScrolledWindow {
+            #[wrap(Some)]
+            set_content: sw = &gtk::ScrolledWindow {
                 set_hexpand: true,
                 set_vexpand: true,
-                add_css_class: "undershoot-top",
-                #[name(textview)]
-                sourceview5::View {
-                    add_css_class: "sourceview-transparent-bg",
-                    set_margin_start: 1,
-                    set_hexpand: true,
-                    set_vexpand: true,
-                    set_editable: false,
-                    set_monospace: true,
-                    set_buffer: Some(&model.textbuf),
-                },
+                model.vte_terminal.clone(),
             }
         }
     }
@@ -157,85 +137,57 @@ impl SimpleComponent for DebugView {
             Self::Input::LogLevelChanged(lvl) => {
                 self.log_level = lvl;
             }
-            Self::Input::FilterLog(direction) => {
+            Self::Input::DoSearch => {
                 let searchbar = self.searchbar.as_ref().unwrap().clone();
                 let search_entry = self.search_entry.as_ref().unwrap().clone();
                 let search_text = search_entry.text().to_string();
                 if searchbar.is_search_mode() && !search_text.is_empty() {
-                    self.search_settings
-                        .set_search_text(Some(search_text.as_str()));
-                    self.search_mark = Some(self.textbuf.get_insert());
-                    let mut iter = self
-                        .textbuf
-                        .iter_at_mark(self.search_mark.as_ref().unwrap());
-                    iter.forward_char();
-                    let search_res = match direction {
-                        SearchDirection::Forward => self.search_ctx.forward(&iter),
-                        SearchDirection::Backward => self.search_ctx.backward(&iter),
-                    };
-                    match search_res {
-                        None => {
-                            // TODO: mark search entry red
-                        }
-                        Some((start, end, _)) => {
-                            self.textbuf.move_mark(
-                                self.search_mark.as_ref().unwrap(),
-                                match direction {
-                                    SearchDirection::Forward => &end,
-                                    SearchDirection::Backward => &start,
-                                },
-                            );
-                            self.textbuf.select_range(&start, &end);
-                            self.textview
-                                .as_ref()
-                                .unwrap()
-                                .scroll_mark_onscreen(&self.textbuf.create_mark(None, &end, false));
-                        }
+                    if let Ok(regex) = zoha_vte4::Regex::for_search(&search_text, 0) {
+                        self.vte_terminal.search_set_regex(Some(&regex), 0);
                     }
                 } else {
-                    self.search_settings.set_search_text(None);
+                    self.vte_terminal.search_set_regex(None, 0);
                 }
             }
+            Self::Input::SearchFindMatch(direction) => match direction {
+                SearchDirection::Forward => {
+                    self.vte_terminal.search_find_next();
+                }
+                SearchDirection::Backward => {
+                    self.vte_terminal.search_find_previous();
+                }
+            },
             Self::Input::LogUpdated(n_log) => {
                 for row in n_log {
                     let txt = match MonadoLog::new_from_str(row.as_str()) {
                         Some(o) => match o.level >= self.log_level {
                             false => None,
                             true => Some(format!(
-                                "{lvl}\t[{file}:{func}]\n\t{msg}\n",
+                                "{lvl}\t[{file}:{func}]\r\n\t{msg}\r\n",
                                 lvl = o.level,
                                 file = o.file,
                                 func = o.func,
-                                msg = o.message
+                                msg = o.message.replace("\n", "\r\n")
                             )),
                         },
                         None => Some(row),
                     };
                     if let Some(t) = txt {
-                        self.textbuf
-                            .insert(&mut self.textbuf.end_iter(), t.as_str());
+                        self.vte_terminal.feed(t.as_bytes())
                     }
-                }
-                if !self.searchbar.as_ref().unwrap().is_search_mode() {
-                    let textbuf = self.textbuf.clone();
-                    let textview = self.textview.as_ref().unwrap().clone();
-                    gtk::glib::idle_add_local_once(move || {
-                        let end_mark = textbuf.create_mark(None, &textbuf.end_iter(), false);
-                        textview.scroll_mark_onscreen(&end_mark);
-                    });
-                }
-                while self.textbuf.line_count() > MAX_SCROLLBACK {
-                    let mut start = self.textbuf.start_iter();
-                    let mut end = self.textbuf.start_iter();
-                    end.forward_line();
-                    self.textbuf.delete(&mut start, &mut end);
                 }
             }
             Self::Input::ClearLog => {
-                self.textbuf.set_text("");
+                self.vte_terminal.feed("\x1bc".as_bytes());
             }
             Self::Input::SetColorScheme => {
-                Self::set_color_scheme(&self.textbuf);
+                if adw::StyleManager::default().is_dark() {
+                    self.vte_terminal
+                        .set_color_foreground(&gtk::gdk::RGBA::new(1.0, 1.0, 1.0, 1.0));
+                } else {
+                    self.vte_terminal
+                        .set_color_foreground(&gtk::gdk::RGBA::new(0.0, 0.0, 0.0, 1.0));
+                }
             }
         }
     }
@@ -245,19 +197,6 @@ impl SimpleComponent for DebugView {
         root: &Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
-        let textbuf = sourceview5::Buffer::builder()
-            .highlight_syntax(false)
-            .enable_undo(false)
-            .build();
-        let search_settings = sourceview5::SearchSettings::builder()
-            .wrap_around(true)
-            .case_sensitive(false)
-            .build();
-        let search_ctx = sourceview5::SearchContext::builder()
-            .buffer(&textbuf)
-            .settings(&search_settings)
-            .build();
-
         let log_level_dropdown = gtk::DropDown::from_strings(
             LogLevel::iter()
                 .map(|lvl| lvl.to_string())
@@ -282,46 +221,56 @@ impl SimpleComponent for DebugView {
         adw::StyleManager::default().connect_dark_notify(clone!(@strong sender => move |_| {
             sender.input(Self::Input::SetColorScheme);
         }));
-        Self::set_color_scheme(&textbuf);
 
         let mut model = Self {
             xrservice_active: false,
             tracker: 0,
-            textbuf,
-            textview: None,
             searchbar: None,
             search_entry: None,
             dropdown: None,
-            scrolledwin: None,
-            search_settings,
-            search_ctx,
-            search_mark: None,
             log_level: LogLevel::Trace,
+            vte_terminal: {
+                let t = Terminal::builder()
+                    .scroll_on_output(true)
+                    .scrollback_lines(MAX_SCROLLBACK)
+                    .scroll_unit_is_pixels(true)
+                    .vexpand(true)
+                    .hexpand(true)
+                    .build();
+                t.set_clear_background(false);
+                t.search_set_wrap_around(true);
+                t
+            },
         };
+
+        {
+            let sc = gtk::ShortcutController::new();
+            let term = model.vte_terminal.clone();
+            sc.add_shortcut(gtk::Shortcut::new(
+                gtk::ShortcutTrigger::parse_string("<Control>c"),
+                Some(gtk::CallbackAction::new(move |_, _| {
+                    if let Some(text) = term.text_selected(zoha_vte4::Format::Text) {
+                        copy_text(text.as_str());
+                    }
+                    true
+                })),
+            ));
+            let term = model.vte_terminal.clone();
+            sc.add_shortcut(gtk::Shortcut::new(
+                gtk::ShortcutTrigger::parse_string("<Control>a"),
+                Some(gtk::CallbackAction::new(move |_, _| {
+                    term.select_all();
+                    true
+                })),
+            ));
+            model.vte_terminal.add_controller(sc);
+        }
 
         let widgets = view_output!();
         model.searchbar = Some(widgets.searchbar.clone());
         model.search_entry = Some(widgets.search_entry.clone());
-        model.textview = Some(widgets.textview.clone());
         model.dropdown = Some(log_level_dropdown.clone());
-        model.scrolledwin = Some(widgets.scrolledwin.clone());
 
         ComponentParts { model, widgets }
-    }
-}
-
-impl DebugView {
-    fn set_color_scheme(textbuf: &sourceview5::Buffer) {
-        let sourceview_scheme_name = if adw::StyleManager::default().is_dark() {
-            "Adwaita-dark"
-        } else {
-            "Adwaita"
-        };
-        if let Some(scheme) = &sourceview5::StyleSchemeManager::new().scheme(sourceview_scheme_name)
-        {
-            textbuf.set_style_scheme(Some(scheme));
-        } else {
-            println!("gtksourceview style scheme not found")
-        }
     }
 }

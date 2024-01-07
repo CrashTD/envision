@@ -18,7 +18,7 @@ use crate::ui::app::{
 };
 use crate::ui::profile_editor::ProfileEditorInit;
 use crate::ui::steamvr_calibration_box::SteamVrCalibrationBoxMsg;
-use crate::ui::util::{limit_dropdown_width, warning_heading};
+use crate::ui::util::{copy_text, limit_dropdown_width, warning_heading};
 use crate::xr_devices::XRDevice;
 use gtk::prelude::*;
 use relm4::adw::traits::MessageDialogExt;
@@ -320,10 +320,9 @@ impl SimpleComponent for MainView {
                                     set_valign: gtk::Align::Center,
                                     connect_clicked => move |_| {
                                         if let Some(GpuSysDrm::Amd(d)) = get_first_amd_gpu() {
-                                            gtk::gdk::Display::default()
-                                                .expect("Could not find default display")
-                                                .clipboard()
-                                                .set_text(get_set_amd_vr_pow_prof_cmd(d.as_str()).as_str());
+                                            copy_text(
+                                                &get_set_amd_vr_pow_prof_cmd(d.as_str())
+                                            )
                                         }
                                     }
                                 },

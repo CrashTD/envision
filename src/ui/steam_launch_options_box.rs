@@ -1,3 +1,4 @@
+use super::util::copy_text;
 use crate::{constants::APP_NAME, profile::Profile};
 use gtk::prelude::*;
 use relm4::prelude::*;
@@ -100,10 +101,7 @@ impl SimpleComponent for SteamLaunchOptionsBox {
                 self.set_launch_options(prof.get_steam_launch_options());
             }
             Self::Input::CopyLaunchOptions => {
-                gtk::gdk::Display::default()
-                    .expect("Could not find default display")
-                    .clipboard()
-                    .set_text(self.launch_options.as_str());
+                copy_text(self.launch_options.as_str());
             }
         }
     }

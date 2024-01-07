@@ -41,3 +41,4 @@ sourceview5 = { version = "0.7.1", features = [
 ] }
 tracker = "0.2.1"
 uuid = { version = "1.4.1", features = ["v4", "fast-rng"] }
+zoha-vte4 = { version = "0.0.2", features = ["v0_72"] }

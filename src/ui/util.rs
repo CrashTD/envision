@@ -1,4 +1,4 @@
-use gtk4::{gio, prelude::*};
+use gtk4::{gdk, gio, prelude::*};
 
 pub fn limit_dropdown_width(dd: &gtk4::DropDown, chars: i32) {
     let mut dd_child = dd
@@ -49,4 +49,15 @@ pub fn open_with_default_handler(uri: &str) {
     if let Err(e) = gio::AppInfo::launch_default_for_uri(uri, gio::AppLaunchContext::NONE) {
         eprintln!("Error opening uri {}: {}", uri, e)
     };
+}
+
+pub fn copy_text(txt: &str) {
+    match gdk::Display::default() {
+        None => {
+            eprintln!("Warning: could not get default gdk display")
+        }
+        Some(d) => {
+            d.clipboard().set_text(txt);
+        }
+    }
 }
