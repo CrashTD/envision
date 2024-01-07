@@ -6,7 +6,9 @@
       "codec": "h264",
       "bitrate": 100000000,
       "width": 1.0,
-      "height": 1.0
+      "height": 1.0,
+      "offset_x": 0.0,
+      "offset_y": 0.0
     }
   ]
 }

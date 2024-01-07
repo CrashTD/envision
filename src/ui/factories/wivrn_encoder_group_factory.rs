@@ -24,6 +24,8 @@ pub enum WivrnEncoderModelMsg {
     BitrateChanged(Option<u32>),
     WidthChanged(Option<f32>),
     HeightChanged(Option<f32>),
+    OffsetXChanged(Option<f32>),
+    OffsetYChanged(Option<f32>),
     GroupChanged(Option<i32>),
     Delete,
 }
@@ -134,6 +136,38 @@ impl AsyncFactoryComponent for WivrnEncoderModel {
                     }
                 }
             ) -> adw::SpinRow,
+            add: offset_x_row = &spin_row(
+                "Offset X",
+                None,
+                self.encoder_conf.offset_x.unwrap_or(0.0).into(),
+                0.0,
+                1.0,
+                0.01,
+                {
+                    let sender = sender.clone();
+                    move |adj| {
+                        sender.input(Self::Input::OffsetXChanged(
+                            Some(adj.value() as f32)
+                        ));
+                    }
+                }
+            ) -> adw::SpinRow,
+            add: offset_y_row = &spin_row(
+                "Offset Y",
+                None,
+                self.encoder_conf.offset_y.unwrap_or(0.0).into(),
+                0.0,
+                1.0,
+                0.01,
+                {
+                    let sender = sender.clone();
+                    move |adj| {
+                        sender.input(Self::Input::OffsetYChanged(
+                            Some(adj.value() as f32)
+                        ));
+                    }
+                }
+            ) -> adw::SpinRow,
             add: group_row = &spin_row(
                 "Group",
                 None,
@@ -169,6 +203,12 @@ impl AsyncFactoryComponent for WivrnEncoderModel {
             }
             Self::Input::HeightChanged(val) => {
                 self.encoder_conf.height = val;
+            }
+            Self::Input::OffsetXChanged(val) => {
+                self.encoder_conf.offset_x = val;
+            }
+            Self::Input::OffsetYChanged(val) => {
+                self.encoder_conf.offset_y = val;
             }
             Self::Input::GroupChanged(val) => {
                 self.encoder_conf.group = val;

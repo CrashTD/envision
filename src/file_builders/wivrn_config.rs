@@ -85,6 +85,10 @@ pub struct WivrnConfEncoder {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub height: Option<f32>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub offset_x: Option<f32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub offset_y: Option<f32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub group: Option<i32>,
 }
 
@@ -96,6 +100,8 @@ impl Default for WivrnConfEncoder {
             bitrate: None,
             width: None,
             height: None,
+            offset_x: None,
+            offset_y: None,
             group: None,
         }
     }
@@ -118,6 +124,8 @@ impl Default for WivrnConfig {
                 bitrate: Some(100000000),
                 width: Some(1.0),
                 height: Some(1.0),
+                offset_x: Some(0.0),
+                offset_y: Some(0.0),
                 group: None,
             }],
         }
@@ -162,5 +170,7 @@ mod tests {
         assert_eq!(conf.encoders.get(0).unwrap().bitrate, Some(100000000));
         assert_eq!(conf.encoders.get(0).unwrap().width, Some(1.0));
         assert_eq!(conf.encoders.get(0).unwrap().height, Some(1.0));
+        assert_eq!(conf.encoders.get(0).unwrap().offset_x, Some(0.0));
+        assert_eq!(conf.encoders.get(0).unwrap().offset_y, Some(0.0));
     }
 }
