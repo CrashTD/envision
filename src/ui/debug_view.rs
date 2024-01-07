@@ -181,13 +181,7 @@ impl SimpleComponent for DebugView {
                 self.vte_terminal.feed("\x1bc".as_bytes());
             }
             Self::Input::SetColorScheme => {
-                if adw::StyleManager::default().is_dark() {
-                    self.vte_terminal
-                        .set_color_foreground(&gtk::gdk::RGBA::new(1.0, 1.0, 1.0, 1.0));
-                } else {
-                    self.vte_terminal
-                        .set_color_foreground(&gtk::gdk::RGBA::new(0.0, 0.0, 0.0, 1.0));
-                }
+                Self::set_color_scheme(&self.vte_terminal);
             }
         }
     }
@@ -239,6 +233,7 @@ impl SimpleComponent for DebugView {
                     .build();
                 t.set_clear_background(false);
                 t.search_set_wrap_around(true);
+                Self::set_color_scheme(&t);
                 t
             },
         };
@@ -272,5 +267,15 @@ impl SimpleComponent for DebugView {
         model.dropdown = Some(log_level_dropdown.clone());
 
         ComponentParts { model, widgets }
+    }
+}
+
+impl DebugView {
+    fn set_color_scheme(term: &Terminal) {
+        if adw::StyleManager::default().is_dark() {
+            term.set_color_foreground(&gtk::gdk::RGBA::new(1.0, 1.0, 1.0, 1.0));
+        } else {
+            term.set_color_foreground(&gtk::gdk::RGBA::new(0.0, 0.0, 0.0, 1.0));
+        }
     }
 }
