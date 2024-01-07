@@ -34,6 +34,7 @@ pub fn openhmd_profile() -> Profile {
                 enabled: true,
                 path: Some(data_openhmd_path()),
                 repo: None,
+                branch: None,
             },
             ..Default::default()
         },

@@ -90,6 +90,7 @@ pub struct ProfileFeature {
     pub enabled: bool,
     pub path: Option<String>,
     pub repo: Option<String>,
+    pub branch: Option<String>,
 }
 
 impl Default for ProfileFeature {
@@ -99,6 +100,7 @@ impl Default for ProfileFeature {
             enabled: false,
             path: None,
             repo: None,
+            branch: None,
         }
     }
 }
@@ -210,10 +212,12 @@ pub struct Profile {
     pub xrservice_type: XRServiceType,
     pub xrservice_path: String,
     pub xrservice_repo: Option<String>,
+    pub xrservice_branch: Option<String>,
     #[serde(default = "HashMap::<String, String>::default")]
     pub xrservice_cmake_flags: HashMap<String, String>,
     pub opencomposite_path: String,
     pub opencomposite_repo: Option<String>,
+    pub opencomposite_branch: Option<String>,
     pub features: ProfileFeatures,
     pub environment: HashMap<String, String>,
     /** Install prefix */
@@ -243,24 +247,28 @@ impl Default for Profile {
             xrservice_path: format!("{}/xrservice", profile_dir),
             xrservice_type: XRServiceType::Monado,
             xrservice_repo: None,
+            xrservice_branch: None,
             xrservice_cmake_flags: HashMap::<String, String>::default(),
             features: ProfileFeatures {
                 libsurvive: ProfileFeature {
                     enabled: false,
                     path: Some(format!("{}/libsurvive", profile_dir)),
                     repo: None,
+                    branch: None,
                     feature_type: ProfileFeatureType::Libsurvive,
                 },
                 basalt: ProfileFeature {
                     enabled: false,
                     path: Some(format!("{}/basalt", profile_dir)),
                     repo: None,
+                    branch: None,
                     feature_type: ProfileFeatureType::Basalt,
                 },
                 openhmd: ProfileFeature {
                     enabled: false,
                     path: Some(format!("{}/openhmd", profile_dir)),
                     repo: None,
+                    branch: None,
                     feature_type: ProfileFeatureType::OpenHmd,
                 },
                 mercury_enabled: false,
@@ -269,8 +277,9 @@ impl Default for Profile {
             prefix: format!("{}/prefixes/{}", get_data_dir(), uuid),
             can_be_built: true,
             pull_on_build: true,
-            opencomposite_repo: None,
             opencomposite_path: format!("{}/opencomposite", profile_dir),
+            opencomposite_repo: None,
+            opencomposite_branch: None,
             editable: true,
             lighthouse_driver: LighthouseDriver::default(),
             xrservice_launch_options: String::default(),
@@ -337,17 +346,22 @@ impl Profile {
         dup.name = format!("Duplicate of {}", self.name);
         dup.xrservice_type = self.xrservice_type.clone();
         dup.xrservice_repo = self.xrservice_repo.clone();
+        dup.xrservice_branch = self.xrservice_branch.clone();
         dup.xrservice_cmake_flags = self.xrservice_cmake_flags.clone();
         dup.features.libsurvive.enabled = self.features.libsurvive.enabled;
         dup.features.libsurvive.repo = self.features.libsurvive.repo.clone();
+        dup.features.libsurvive.branch = self.features.libsurvive.branch.clone();
         dup.features.basalt.enabled = self.features.basalt.enabled;
         dup.features.basalt.repo = self.features.basalt.repo.clone();
+        dup.features.basalt.branch = self.features.basalt.branch.clone();
         dup.features.openhmd.enabled = self.features.openhmd.enabled;
         dup.features.openhmd.repo = self.features.openhmd.repo.clone();
+        dup.features.openhmd.branch = self.features.openhmd.branch.clone();
         dup.features.mercury_enabled = self.features.mercury_enabled;
         dup.environment = self.environment.clone();
         dup.pull_on_build = self.pull_on_build;
         dup.opencomposite_repo = self.opencomposite_repo.clone();
+        dup.opencomposite_branch = self.opencomposite_branch.clone();
         dup.lighthouse_driver = self.lighthouse_driver;
         dup.xrservice_launch_options = self.xrservice_launch_options.clone();
         dup
@@ -467,6 +481,7 @@ mod tests {
                     enabled: true,
                     path: Some(String::from("/home/user/libsurvive")),
                     repo: None,
+                    branch: None,
                 },
                 basalt: ProfileFeature::default_basalt(),
                 openhmd: ProfileFeature::default_openhmd(),

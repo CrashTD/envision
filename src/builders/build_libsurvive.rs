@@ -18,7 +18,10 @@ pub fn get_build_libsurvive_jobs(profile: &Profile, clean_build: bool) -> VecDeq
             None => "https://github.com/cntools/libsurvive".into(),
         },
         dir: profile.features.libsurvive.path.as_ref().unwrap().clone(),
-        default_branch: "master".into(),
+        branch: match profile.features.libsurvive.branch.as_ref() {
+            Some(r) => r.clone(),
+            None => "master".into(),
+        },
     };
 
     jobs.extend(git.get_pre_build_jobs(profile.pull_on_build));

@@ -4,20 +4,24 @@
     "xrservice_type": "Monado",
     "xrservice_path": "/home/user/monado",
     "xrservice_repo": null,
+    "xrservice_branch": null,
     "opencomposite_path": "/home/user/opencomposite",
     "opencomposite_repo": null,
+    "opencomposite_branch": null,
     "features": {
         "libsurvive": {
             "feature_type": "Libsurvive",
             "enabled": true,
             "path": "/home/user/libsurvive",
-            "repo": null
+            "repo": null,
+            "branch": null
         },
         "basalt": {
             "feature_type": "Basalt",
             "enabled": false,
             "path": null,
-            "repo": null
+            "repo": null,
+            "branch": null
         },
         "mercury_enabled": false
     },
