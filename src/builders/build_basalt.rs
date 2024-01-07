@@ -18,7 +18,10 @@ pub fn get_build_basalt_jobs(profile: &Profile, clean_build: bool) -> VecDeque<W
             None => "https://gitlab.freedesktop.org/mateosss/basalt.git".into(),
         },
         dir: profile.features.basalt.path.as_ref().unwrap().clone(),
-        default_branch: "main".into(),
+        branch: match profile.features.basalt.branch.as_ref() {
+            Some(r) => r.clone(),
+            None => "main".into(),
+        },
     };
 
     jobs.extend(git.get_pre_build_jobs(profile.pull_on_build));

@@ -176,6 +176,14 @@ impl SimpleComponent for ProfileEditor {
                                 prof.borrow_mut().xrservice_repo = (!n_val.is_empty()).then_some(n_val);
                             })
                         ),
+                        add: &entry_row(
+                            "XR Service Branch",
+                            model.profile.borrow().xrservice_branch.clone().unwrap_or_default().as_str(),
+                            clone!(@strong prof => move |row| {
+                                let n_val = row.text().to_string();
+                                prof.borrow_mut().xrservice_branch = (!n_val.is_empty()).then_some(n_val);
+                            })
+                        ),
                     },
                     add: model.xrservice_cmake_flags_rows.widget(),
                     add: opencompgrp = &adw::PreferencesGroup {
@@ -195,6 +203,14 @@ impl SimpleComponent for ProfileEditor {
                             clone!(@strong prof => move |row| {
                                 let n_val = row.text().to_string();
                                 prof.borrow_mut().opencomposite_repo = (!n_val.is_empty()).then_some(n_val);
+                            })
+                        ),
+                        add: &entry_row(
+                            "OpenComposite Branch",
+                            model.profile.borrow().opencomposite_branch.clone().unwrap_or_default().as_str(),
+                            clone!(@strong prof => move |row| {
+                                let n_val = row.text().to_string();
+                                prof.borrow_mut().opencomposite_branch = (!n_val.is_empty()).then_some(n_val);
                             })
                         ),
                     },
@@ -225,6 +241,14 @@ impl SimpleComponent for ProfileEditor {
                                 prof.borrow_mut().features.libsurvive.repo = (!n_val.is_empty()).then_some(n_val);
                             })
                         ),
+                        add: &entry_row(
+                            "Libsurvive Branch",
+                            model.profile.borrow().features.libsurvive.branch.clone().unwrap_or_default().as_str(),
+                            clone!(@strong prof => move |row| {
+                                let n_val = row.text().to_string();
+                                prof.borrow_mut().features.libsurvive.branch = (!n_val.is_empty()).then_some(n_val);
+                            })
+                        ),
                     },
                     add: openhmdgrp = &adw::PreferencesGroup {
                         set_title: "OpenHMD",
@@ -253,6 +277,14 @@ impl SimpleComponent for ProfileEditor {
                                 prof.borrow_mut().features.openhmd.repo = (!n_val.is_empty()).then_some(n_val);
                             })
                         ),
+                        add: &entry_row(
+                            "OpenHMD Branch",
+                            model.profile.borrow().features.openhmd.branch.clone().unwrap_or_default().as_str(),
+                            clone!(@strong prof => move |row| {
+                                let n_val = row.text().to_string();
+                                prof.borrow_mut().features.openhmd.branch = (!n_val.is_empty()).then_some(n_val);
+                            })
+                        ),
                     },
                     add: basaltgrp = &adw::PreferencesGroup {
                         set_title: "Basalt",
@@ -279,6 +311,14 @@ impl SimpleComponent for ProfileEditor {
                             clone!(@strong prof => move |row| {
                                 let n_val = row.text().to_string();
                                 prof.borrow_mut().features.basalt.repo = n_val.is_empty().then_some(n_val);
+                            })
+                        ),
+                        add: &entry_row(
+                            "Basalt Branch",
+                            model.profile.borrow().features.basalt.branch.clone().unwrap_or_default().as_str(),
+                            clone!(@strong prof => move |row| {
+                                let n_val = row.text().to_string();
+                                prof.borrow_mut().features.basalt.branch = n_val.is_empty().then_some(n_val);
                             })
                         ),
                     },

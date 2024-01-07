@@ -6,7 +6,7 @@ use std::path::Path;
 pub struct Git {
     pub repo: String,
     pub dir: String,
-    pub default_branch: String,
+    pub branch: String,
 }
 
 impl Git {
@@ -88,7 +88,7 @@ impl Git {
     }
 
     pub fn get_checkout_ref_job(&self) -> WorkerJob {
-        let gref = self.get_ref().unwrap_or(self.default_branch.clone());
+        let gref = self.get_ref().unwrap_or(self.branch.clone());
         self.cmd(vec!["checkout".into(), gref])
     }
 

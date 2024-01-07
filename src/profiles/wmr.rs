@@ -34,6 +34,7 @@ pub fn wmr_profile() -> Profile {
                 enabled: true,
                 path: Some(data_basalt_path()),
                 repo: None,
+                branch: None,
             },
             mercury_enabled: true,
             ..Default::default()

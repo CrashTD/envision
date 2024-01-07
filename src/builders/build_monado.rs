@@ -22,7 +22,10 @@ pub fn get_build_monado_jobs(
             None => "https://gitlab.freedesktop.org/monado/monado".into(),
         },
         dir: profile.xrservice_path.clone(),
-        default_branch: "main".into(),
+        branch: match profile.xrservice_branch.as_ref() {
+            Some(r) => r.clone(),
+            None => "main".into(),
+        },
     };
 
     jobs.extend(git.get_pre_build_jobs(profile.pull_on_build));

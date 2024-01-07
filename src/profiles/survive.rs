@@ -36,6 +36,7 @@ pub fn survive_profile() -> Profile {
                 enabled: true,
                 path: Some(data_libsurvive_path()),
                 repo: None,
+                branch: None,
             },
             ..Default::default()
         },

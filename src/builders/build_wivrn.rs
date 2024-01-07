@@ -22,7 +22,10 @@ pub fn get_build_wivrn_jobs(
             None => "https://github.com/Meumeu/WiVRn".into(),
         },
         dir: profile.xrservice_path.clone(),
-        default_branch: "master".into(),
+        branch: match profile.xrservice_branch.as_ref() {
+            Some(r) => r.clone(),
+            None => "master".into(),
+        },
     };
 
     jobs.extend(git.get_pre_build_jobs(profile.pull_on_build));

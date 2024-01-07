@@ -18,7 +18,10 @@ pub fn get_build_openhmd_jobs(profile: &Profile, clean_build: bool) -> VecDeque<
             None => "https://github.com/OpenHMD/OpenHMD".into(),
         },
         dir: profile.features.openhmd.path.as_ref().unwrap().clone(),
-        default_branch: "master".into(),
+        branch: match profile.features.openhmd.branch.as_ref() {
+            Some(r) => r.clone(),
+            None => "master".into(),
+        },
     };
 
     jobs.extend(git.get_pre_build_jobs(profile.pull_on_build));

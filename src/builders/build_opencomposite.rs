@@ -22,7 +22,10 @@ pub fn get_build_opencomposite_jobs(
             None => "https://gitlab.com/znixian/OpenOVR.git".into(),
         },
         dir: profile.opencomposite_path.clone(),
-        default_branch: "openxr".into(),
+        branch: match profile.opencomposite_branch.as_ref() {
+            Some(r) => r.clone(),
+            None => "openxr".into(),
+        },
     };
 
     jobs.extend(git.get_pre_build_jobs(profile.pull_on_build));
