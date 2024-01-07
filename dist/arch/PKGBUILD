@@ -23,6 +23,7 @@ depends=(
     ninja
     shaderc
     vulkan-headers
+    vte4
 )
 makedepends=(
     meson
