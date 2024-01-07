@@ -2,6 +2,7 @@ use crate::{
     file_builders::wivrn_config::{Codec, Encoder, WivrnConfEncoder},
     ui::{
         preference_rows::{combo_row, number_entry_row, spin_row},
+        util::{bits_from_mbits, bits_to_mbits},
         wivrn_conf_editor::WivrnConfEditorMsg,
     },
 };
@@ -85,9 +86,13 @@ impl AsyncFactoryComponent for WivrnEncoderModel {
                 }
             ) -> adw::ComboRow,
             add: bitrate_row = &number_entry_row(
-                "Bitrate",
+                "Bitrate (Mbps)",
                 &self.encoder_conf.bitrate
-                    .and_then(|n| Some(n.to_string()))
+                    .and_then(|n| if let Some(mbits) = bits_to_mbits(n) {
+                        Some(mbits.to_string())
+                    } else {
+                        None
+                    })
                     .unwrap_or_default(),
                 false,
                 {
@@ -98,7 +103,10 @@ impl AsyncFactoryComponent for WivrnEncoderModel {
                             if txt.is_empty() {
                                 None
                             } else {
-                                Some(txt.parse::<u32>().unwrap())
+                                match txt.parse::<u32>() {
+                                    Ok(bits) => bits_from_mbits(bits),
+                                    Err(e) => None,
+                                }
                             }
                         ));
                     }

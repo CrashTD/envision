@@ -61,3 +61,11 @@ pub fn copy_text(txt: &str) {
         }
     }
 }
+
+pub fn bits_to_mbits(bits: u32) -> Option<u32> {
+    bits.checked_div(1000000)
+}
+
+pub fn bits_from_mbits(mbits: u32) -> Option<u32> {
+    mbits.checked_mul(1000000)
+}
