@@ -1,5 +1,6 @@
 use gtk::prelude::*;
 use relm4::prelude::*;
+use super::term_widget::TermWidget;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum BuildStatus {
@@ -11,20 +12,15 @@ pub enum BuildStatus {
 #[tracker::track]
 pub struct BuildWindow {
     title: String,
-    content: String,
     can_close: bool,
     build_status: BuildStatus,
 
-    #[tracker::do_not_track]
-    pub textbuf: gtk::TextBuffer,
-    #[tracker::do_not_track]
-    pub textview: Option<gtk::TextView>,
     #[tracker::do_not_track]
     pub win: Option<adw::Window>,
     #[tracker::do_not_track]
     build_status_label: Option<gtk::Label>,
     #[tracker::do_not_track]
-    scrolledwin: Option<gtk::ScrolledWindow>,
+    term: TermWidget,
 }
 
 #[derive(Debug)]
@@ -108,26 +104,7 @@ impl SimpleComponent for BuildWindow {
                             }
                         },
                     },
-                    #[name(scrolledwin)]
-                    gtk::ScrolledWindow {
-                        set_hexpand: true,
-                        set_vexpand: true,
-                        set_margin_all: 12,
-                        add_css_class: "card",
-                        set_overflow: gtk::Overflow::Hidden,
-                        #[name(textview)]
-                        gtk::TextView {
-                            set_hexpand: true,
-                            set_vexpand: true,
-                            set_editable: false,
-                            set_monospace: true,
-                            set_left_margin: 6,
-                            set_right_margin: 6,
-                            set_top_margin: 6,
-                            set_bottom_margin: 6,
-                            set_buffer: Some(&model.textbuf),
-                        },
-                    },
+                    model.term.container.clone(),
                 },
                 add_bottom_bar: bottom_bar = &gtk::Button {
                     add_css_class: "pill",
@@ -150,10 +127,10 @@ impl SimpleComponent for BuildWindow {
 
         match message {
             Self::Input::Present => {
-                self.win.as_ref().unwrap().present();
+                self.term.set_color_scheme();
                 sender.input(BuildWindowMsg::UpdateBuildStatus(BuildStatus::Building));
-                self.set_content("".into());
-                self.textbuf.set_text("");
+                self.term.clear();
+                self.win.as_ref().unwrap().present();
             }
             Self::Input::UpdateTitle(t) => {
                 self.set_title(t);
@@ -161,17 +138,7 @@ impl SimpleComponent for BuildWindow {
             Self::Input::UpdateContent(c) => {
                 if !c.is_empty() {
                     let n_lines = c.concat();
-                    let mut n_content = self.content.clone();
-                    n_content.push_str(n_lines.as_str());
-                    self.set_content(n_content);
-                    self.textbuf
-                        .insert(&mut self.textbuf.end_iter(), n_lines.as_str());
-                    let textbuf = self.textbuf.clone();
-                    let textview = self.textview.as_ref().unwrap().clone();
-                    gtk::glib::idle_add_local_once(move || {
-                        let end_mark = textbuf.create_mark(None, &textbuf.end_iter(), false);
-                        textview.scroll_mark_onscreen(&end_mark);
-                    });
+                    self.term.feed(&n_lines);
                 }
             }
             Self::Input::UpdateBuildStatus(status) => {
@@ -202,20 +169,21 @@ impl SimpleComponent for BuildWindow {
         let mut model = Self {
             tracker: 0,
             title: "".into(),
-            content: "".into(),
             can_close: false,
-            textbuf: gtk::TextBuffer::builder().enable_undo(false).build(),
-            textview: None,
             build_status: BuildStatus::Building,
             win: None,
-            scrolledwin: None,
             build_status_label: None,
+            term: {
+                let t = TermWidget::new();
+                t.container.add_css_class("card");
+                t.container.set_margin_all(12);
+                t.container.set_overflow(gtk::Overflow::Hidden);
+                t
+            },
         };
         let widgets = view_output!();
         model.win = Some(widgets.win.clone());
         model.build_status_label = Some(widgets.build_status_label.clone());
-        model.textview = Some(widgets.textview.clone());
-        model.scrolledwin = Some(widgets.scrolledwin.clone());
         ComponentParts { model, widgets }
     }
 }
