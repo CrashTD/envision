@@ -6,7 +6,9 @@ use gtk::glib::clone;
 use gtk::prelude::*;
 use relm4::prelude::*;
 use relm4::{ComponentSender, SimpleComponent};
-use zoha_vte4::{Terminal, TerminalExt};
+use zoha_vte4::TerminalExt;
+
+use super::term_widget::TermWidget;
 
 #[derive(Debug)]
 pub enum SearchDirection {
@@ -37,12 +39,10 @@ pub struct DebugView {
     #[tracker::do_not_track]
     log_level: LogLevel,
     #[tracker::do_not_track]
-    vte_terminal: Terminal,
+    term: TermWidget,
 }
 
 pub struct DebugViewInit {}
-
-const MAX_SCROLLBACK: u32 = 2000;
 
 #[relm4::component(pub)]
 impl SimpleComponent for DebugView {
@@ -115,16 +115,11 @@ impl SimpleComponent for DebugView {
                 },
                 connect_entry: &search_entry,
             },
-            #[wrap(Some)]
-            set_content: sw = &gtk::ScrolledWindow {
-                set_hexpand: true,
-                set_vexpand: true,
-                model.vte_terminal.clone(),
-            }
+            set_content: Some(&model.term.container),
         }
     }
 
-    fn update(&mut self, message: Self::Input, sender: ComponentSender<Self>) {
+    fn update(&mut self, message: Self::Input, _sender: ComponentSender<Self>) {
         self.reset();
 
         match message {
@@ -142,19 +137,17 @@ impl SimpleComponent for DebugView {
                 let search_entry = self.search_entry.as_ref().unwrap().clone();
                 let search_text = search_entry.text().to_string();
                 if searchbar.is_search_mode() && !search_text.is_empty() {
-                    if let Ok(regex) = zoha_vte4::Regex::for_search(&search_text, 0) {
-                        self.vte_terminal.search_set_regex(Some(&regex), 0);
-                    }
+                    self.term.set_search_term(Some(&search_text));
                 } else {
-                    self.vte_terminal.search_set_regex(None, 0);
+                    self.term.set_search_term(None);
                 }
             }
             Self::Input::SearchFindMatch(direction) => match direction {
                 SearchDirection::Forward => {
-                    self.vte_terminal.search_find_next();
+                    self.term.search_next();
                 }
                 SearchDirection::Backward => {
-                    self.vte_terminal.search_find_previous();
+                    self.term.search_prev();
                 }
             },
             Self::Input::LogUpdated(n_log) => {
@@ -173,15 +166,15 @@ impl SimpleComponent for DebugView {
                         None => Some(row),
                     };
                     if let Some(t) = txt {
-                        self.vte_terminal.feed(t.as_bytes())
+                        self.term.feed(&t);
                     }
                 }
             }
             Self::Input::ClearLog => {
-                self.vte_terminal.feed("\x1bc".as_bytes());
+                self.term.clear();
             }
             Self::Input::SetColorScheme => {
-                Self::set_color_scheme(&self.vte_terminal);
+                self.term.set_color_scheme();
             }
         }
     }
@@ -223,24 +216,13 @@ impl SimpleComponent for DebugView {
             search_entry: None,
             dropdown: None,
             log_level: LogLevel::Trace,
-            vte_terminal: {
-                let t = Terminal::builder()
-                    .scroll_on_output(true)
-                    .scrollback_lines(MAX_SCROLLBACK)
-                    .scroll_unit_is_pixels(true)
-                    .vexpand(true)
-                    .hexpand(true)
-                    .build();
-                t.set_clear_background(false);
-                t.search_set_wrap_around(true);
-                Self::set_color_scheme(&t);
-                t
-            },
+            term: TermWidget::new(),
         };
+        model.term.set_color_scheme();
 
         {
             let sc = gtk::ShortcutController::new();
-            let term = model.vte_terminal.clone();
+            let term = model.term.term.clone();
             sc.add_shortcut(gtk::Shortcut::new(
                 gtk::ShortcutTrigger::parse_string("<Control>c"),
                 Some(gtk::CallbackAction::new(move |_, _| {
@@ -250,7 +232,7 @@ impl SimpleComponent for DebugView {
                     true
                 })),
             ));
-            let term = model.vte_terminal.clone();
+            let term = model.term.term.clone();
             sc.add_shortcut(gtk::Shortcut::new(
                 gtk::ShortcutTrigger::parse_string("<Control>a"),
                 Some(gtk::CallbackAction::new(move |_, _| {
@@ -258,7 +240,7 @@ impl SimpleComponent for DebugView {
                     true
                 })),
             ));
-            model.vte_terminal.add_controller(sc);
+            model.term.term.add_controller(sc);
         }
 
         let widgets = view_output!();
@@ -267,15 +249,5 @@ impl SimpleComponent for DebugView {
         model.dropdown = Some(log_level_dropdown.clone());
 
         ComponentParts { model, widgets }
-    }
-}
-
-impl DebugView {
-    fn set_color_scheme(term: &Terminal) {
-        if adw::StyleManager::default().is_dark() {
-            term.set_color_foreground(&gtk::gdk::RGBA::new(1.0, 1.0, 1.0, 1.0));
-        } else {
-            term.set_color_foreground(&gtk::gdk::RGBA::new(0.0, 0.0, 0.0, 1.0));
-        }
     }
 }
