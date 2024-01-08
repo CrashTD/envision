@@ -9,7 +9,6 @@ url='https://gitlab.com/gabmus/envision'
 license=(GPL)
 depends=(
     gtk4
-    gtksourceview5
     libadwaita
     openxr
     libgl

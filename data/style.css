@@ -1,7 +1,3 @@
 .padded {
     padding: 18px;
 }
-
-.sourceview-transparent-bg, .sourceview-transparent-bg * {
-    background-color: transparent;
-}
