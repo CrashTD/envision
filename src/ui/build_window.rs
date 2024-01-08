@@ -1,6 +1,6 @@
+use super::term_widget::TermWidget;
 use gtk::prelude::*;
 use relm4::prelude::*;
-use super::term_widget::TermWidget;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum BuildStatus {
