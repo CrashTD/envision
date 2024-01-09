@@ -174,11 +174,11 @@ impl InternalJobWorker {
         let mut launch_opts = prof.xrservice_launch_options.trim();
         let debug_launch_opts = if debug {
             if launch_opts.contains(LAUNCH_OPTS_CMD_PLACEHOLDER) {
-                format!("{} {}", "gdb -batch -ex run -ex bt --args", launch_opts)
+                format!("{} {}", "gdbserver localhost:9000", launch_opts)
             } else {
                 format!(
                     "{} {} {}",
-                    "gdb -batch -ex run -ex bt --args", LAUNCH_OPTS_CMD_PLACEHOLDER, launch_opts
+                    "gdbserver localhost:9000", LAUNCH_OPTS_CMD_PLACEHOLDER, launch_opts
                 )
             }
         } else {
