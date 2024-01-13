@@ -14,6 +14,7 @@ pub static ENV_VAR_DESCRIPTIONS: Map<&str, &str> = phf_map! {
     "XRT_DEBUG_GUI" => "Set to 1 to enable the Monado debug UI.",
     "XRT_CURATED_GUI" => "Set to 1 to enable the Monado preview UI. Requires XRT_DEBUG_GUI=1 to work.",
     "XRT_JSON_LOG" => "Set to 1 to enable JSON logging for Monado. This enables better log visualization and log level filtering.",
+    "QWERTY_ENABLE" => "Set to 1 to enable QWERTY Simulation driver. This enables simulated driver that allows you to use Monado without HMD and controllers. It's also possible to mix and match different profiles with this.",
     "LH_DRIVER" => "Lighthouse driver, this overrides the \"Lighthouse driver option in the profile\"; Valid options are: \"vive\" for the default built-in driver, \"survive\" for Libsurvive, \"steamvr\" for the SteamVR based implementation.",
     "LH_LOG" => "Lighthouse log level. Can be one of: \"trace\", \"debug\", \"info\", \"warn\", \"error\".",
     "LIGHTHOUSE_LOG" => "Lighthouse driver log level. Can be one of: \"trace\", \"debug\", \"info\", \"warn\", \"error\"."
