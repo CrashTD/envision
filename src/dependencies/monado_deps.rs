@@ -40,6 +40,16 @@ fn monado_deps() -> Vec<Dependency> {
             ]),
         },
         dep_glslang_validator(),
+        Dependency {
+            name: "sdl2".into(),
+            dep_type: DepType::SharedObject,
+            filename: "libSDL2.so".into(),
+            packages: HashMap::from([
+                (LinuxDistro::Arch, "sdl2".into()),
+                (LinuxDistro::Debian, "libsdl2".into()),
+                (LinuxDistro::Fedora, "SDL2".into()),
+            ]),
+        },
     ]
 }
 

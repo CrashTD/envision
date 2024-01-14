@@ -40,6 +40,7 @@ use crate::paths::{get_data_dir, get_ipc_file_path};
 use crate::profile::{Profile, XRServiceType};
 use crate::profiles::lighthouse::lighthouse_profile;
 use crate::profiles::openhmd::openhmd_profile;
+use crate::profiles::simulated::simulated_profile;
 use crate::profiles::survive::survive_profile;
 use crate::profiles::wivrn::wivrn_profile;
 use crate::profiles::wmr::wmr_profile;
@@ -256,6 +257,7 @@ impl App {
             wivrn_profile(),
             wmr_profile(),
             openhmd_profile(),
+            simulated_profile(),
         ];
         profiles.extend(config.user_profiles.clone());
         profiles.sort_unstable_by(|a, b| a.name.cmp(&b.name));
