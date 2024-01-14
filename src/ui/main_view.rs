@@ -180,7 +180,7 @@ impl SimpleComponent for MainView {
                                 },
                             },
                             gtk::Button {
-                                set_label: "Start with GDB",
+                                set_label: "Start with gdbserver",
                                 #[track = "model.changed(Self::xrservice_active()) || model.changed(Self::enable_debug_view())"]
                                 set_visible: model.enable_debug_view && !model.xrservice_active,
                                 connect_clicked[sender] => move |_| {

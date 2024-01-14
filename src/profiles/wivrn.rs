@@ -1,7 +1,7 @@
 use crate::{
     constants::APP_NAME,
     paths::{data_opencomposite_path, data_wivrn_path, get_data_dir},
-    profile::{Profile, ProfileFeatures, XRServiceType},
+    profile::{prepare_ld_library_path, Profile, ProfileFeatures, XRServiceType},
 };
 use std::collections::HashMap;
 
@@ -9,10 +9,7 @@ pub fn wivrn_profile() -> Profile {
     let data_dir = get_data_dir();
     let prefix = format!("{data}/prefixes/wivrn_default", data = data_dir);
     let mut environment: HashMap<String, String> = HashMap::new();
-    environment.insert(
-        "LD_LIBRARY_PATH".into(),
-        format!("{pfx}/lib:{pfx}/lib64", pfx = prefix),
-    );
+    environment.insert("LD_LIBRARY_PATH".into(), prepare_ld_library_path(&prefix));
     environment.insert("XRT_DEBUG_GUI".into(), "1".into());
     environment.insert("XRT_CURATED_GUI".into(), "1".into());
     environment.insert("U_PACING_APP_USE_MIN_FRAME_PERIOD".into(), "1".into());
