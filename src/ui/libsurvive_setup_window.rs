@@ -1,10 +1,13 @@
-use crate::{cmd_runner::CmdRunner, profile::Profile, runner::Runner};
+use super::alert::alert;
+use crate::{
+    cmd_runner::CmdRunner,
+    profile::{prepare_ld_library_path, Profile},
+    runner::Runner,
+};
 use adw::prelude::*;
 use gtk::glib;
 use relm4::prelude::*;
 use std::{cell::Cell, collections::HashMap, path::Path, rc::Rc, time::Duration};
-
-use super::alert::alert;
 
 const NO_FILE_MSG: &str = "(No file selected)";
 const CALIBRATION_RUN_TIME_SECONDS: f64 = 30.0;
@@ -57,9 +60,10 @@ impl LibsurviveSetupWindow {
     fn create_calibration_runner(&mut self, survive_cli_path: String) -> CmdRunner {
         let lh_path = self.steam_lighthouse_path.clone();
         let mut env = HashMap::new();
+        let profile_prefix = &self.profile.as_ref().unwrap().prefix;
         env.insert(
-            "LD_LIBRARY_PATH".to_string(),
-            format!("{pfx}/lib", pfx = self.profile.as_ref().unwrap().prefix),
+            "LD_LIBRARY_PATH".into(),
+            prepare_ld_library_path(&profile_prefix),
         );
         CmdRunner::new(
             Some(env),

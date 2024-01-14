@@ -2,8 +2,8 @@ use crate::{
     constants::APP_NAME,
     paths::{data_basalt_path, data_monado_path, data_opencomposite_path, get_data_dir},
     profile::{
-        LighthouseDriver, Profile, ProfileFeature, ProfileFeatureType, ProfileFeatures,
-        XRServiceType,
+        prepare_ld_library_path, LighthouseDriver, Profile, ProfileFeature, ProfileFeatureType,
+        ProfileFeatures, XRServiceType,
     },
 };
 use std::collections::HashMap;
@@ -18,10 +18,7 @@ pub fn wmr_profile() -> Profile {
     environment.insert("XRT_DEBUG_GUI".into(), "1".into());
     environment.insert("XRT_CURATED_GUI".into(), "1".into());
     environment.insert("U_PACING_APP_USE_MIN_FRAME_PERIOD".into(), "1".into());
-    environment.insert(
-        "LD_LIBRARY_PATH".into(),
-        format!("{pfx}/lib:{pfx}/lib64", pfx = prefix),
-    );
+    environment.insert("LD_LIBRARY_PATH".into(), prepare_ld_library_path(&prefix));
     Profile {
         uuid: "wmr-default".into(),
         name: format!("WMR - {name} Default", name = APP_NAME),

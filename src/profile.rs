@@ -359,6 +359,12 @@ impl Profile {
         dup.features.openhmd.branch = self.features.openhmd.branch.clone();
         dup.features.mercury_enabled = self.features.mercury_enabled;
         dup.environment = self.environment.clone();
+        if dup.environment.contains_key("LD_LIBRARY_PATH".into()) {
+            dup.environment.insert(
+                "LD_LIBRARY_PATH".into(),
+                prepare_ld_library_path(&dup.prefix),
+            );
+        }
         dup.pull_on_build = self.pull_on_build;
         dup.opencomposite_repo = self.opencomposite_repo.clone();
         dup.opencomposite_branch = self.opencomposite_branch.clone();
@@ -508,4 +514,8 @@ mod tests {
             "1"
         );
     }
+}
+
+pub fn prepare_ld_library_path(prefix: &str) -> String {
+    format!("{pfx}/lib:{pfx}/lib64", pfx = prefix)
 }
