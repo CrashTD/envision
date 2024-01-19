@@ -1,5 +1,5 @@
 use super::about_dialog::AboutDialog;
-use super::alert::alert;
+use super::alert::{alert, alert_w_widget};
 use super::build_window::{BuildStatus, BuildWindow};
 use super::debug_view::{DebugView, DebugViewMsg};
 use super::fbt_config_editor::{FbtConfigEditor, FbtConfigEditorInit, FbtConfigEditorMsg};
@@ -8,7 +8,7 @@ use super::job_worker::job::WorkerJob;
 use super::job_worker::JobWorker;
 use super::libsurvive_setup_window::LibsurviveSetupWindow;
 use super::main_view::MainViewMsg;
-use super::util::open_with_default_handler;
+use super::util::{copy_text, open_with_default_handler};
 use super::wivrn_conf_editor::{WivrnConfEditor, WivrnConfEditorInit, WivrnConfEditorMsg};
 use crate::builders::build_basalt::get_build_basalt_jobs;
 use crate::builders::build_libsurvive::get_build_libsurvive_jobs;
@@ -34,7 +34,7 @@ use crate::file_builders::openvrpaths_vrpath::{
     set_current_openvrpaths_to_profile, set_current_openvrpaths_to_steam,
 };
 use crate::file_utils::setcap_cap_sys_nice_eip;
-use crate::linux_distro::get_distro;
+use crate::linux_distro::LinuxDistro;
 use crate::log_parser::MonadoLog;
 use crate::paths::{get_data_dir, get_ipc_file_path};
 use crate::profile::{Profile, XRServiceType};
@@ -466,26 +466,101 @@ impl SimpleComponent for App {
                 if !missing_deps.is_empty() {
                     missing_deps.sort_unstable();
                     missing_deps.dedup(); // dedup only works if sorted, hence the above
-                    let distro = get_distro();
-                    alert(
-                        "Missing dependencies:",
-                        Some(
+                    let distro = LinuxDistro::get();
+                    let (missing_package_list, install_missing_widget): (
+                        String,
+                        Option<gtk::Widget>,
+                    ) = if let Some(d) = distro {
+                        (
                             missing_deps
                                 .iter()
                                 .map(|dep| {
-                                    if let Some(d) = distro {
-                                        return dep
-                                            .packages
-                                            .get(&d)
-                                            .unwrap_or_else(|| &dep.name)
-                                            .clone();
-                                    }
-                                    dep.name.clone()
+                                    dep.packages.get(&d).unwrap_or_else(|| &dep.name).clone()
                                 })
                                 .collect::<Vec<String>>()
-                                .join(", ")
-                                .as_str(),
-                        ),
+                                .join(", "),
+                            {
+                                let packages = missing_deps
+                                    .iter()
+                                    .filter_map(|dep| {
+                                        dep.packages.get(&d).and_then(|s| Some(s.clone()))
+                                    })
+                                    .collect::<Vec<String>>();
+                                if packages.is_empty() {
+                                    None
+                                } else {
+                                    let cmd = d.install_command(&packages);
+                                    {
+                                        let container = gtk::Box::builder()
+                                            .orientation(gtk::Orientation::Horizontal)
+                                            .spacing(6)
+                                            .build();
+                                        let btn = gtk::Button::builder()
+                                            .css_classes(["flat", "circular"])
+                                            .tooltip_text("Copy")
+                                            .icon_name("edit-copy-symbolic")
+                                            .vexpand(false)
+                                            .hexpand(false)
+                                            .valign(gtk::Align::Center)
+                                            .halign(gtk::Align::Center)
+                                            .build();
+                                        btn.connect_clicked(
+                                            clone!(@strong cmd => move |_| copy_text(&cmd)),
+                                        );
+                                        container.append(
+                                            &gtk::ScrolledWindow::builder()
+                                                .vscrollbar_policy(gtk::PolicyType::Never)
+                                                .hscrollbar_policy(gtk::PolicyType::Automatic)
+                                                .css_classes(["card"])
+                                                .overflow(gtk::Overflow::Hidden)
+                                                .child(
+                                                    &gtk::TextView::builder()
+                                                        .hexpand(true)
+                                                        .vexpand(false)
+                                                        .monospace(true)
+                                                        .editable(false)
+                                                        .left_margin(6)
+                                                        .right_margin(6)
+                                                        .top_margin(6)
+                                                        .bottom_margin(18)
+                                                        .buffer(
+                                                            &gtk::TextBuffer::builder()
+                                                                .text(&cmd)
+                                                                .enable_undo(false)
+                                                                .build(),
+                                                        )
+                                                        .build(),
+                                                )
+                                                .build(),
+                                        );
+                                        container.append(&btn);
+                                        Some(container.upcast())
+                                    }
+                                }
+                            },
+                        )
+                    } else {
+                        (
+                            missing_deps
+                                .iter()
+                                .map(|dep| dep.name.clone())
+                                .collect::<Vec<String>>()
+                                .join(", "),
+                            None,
+                        )
+                    };
+                    alert_w_widget(
+                        "Missing dependencies:",
+                        Some(&format!(
+                            "{}{}",
+                            missing_package_list,
+                            if install_missing_widget.is_some() {
+                                "\n\nYou can install them with the following command:"
+                            } else {
+                                ""
+                            }
+                        )),
+                        install_missing_widget.as_ref(),
                         Some(&self.app_win.clone().upcast::<gtk::Window>()),
                     );
                     return;
