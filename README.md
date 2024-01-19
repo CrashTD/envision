@@ -12,7 +12,7 @@ Also consider that due to the unstable nature of the app, it's possible to encou
 
 UI for building, configuring and running Monado, the open source OpenXR runtime.
 
-Download the latest AppImage snapshot: [GitLab Pipelines](https://gitlab.com/gabmus/envision/-/pipelines)
+Download the latest AppImage snapshot: [GitLab Pipelines](https://gitlab.com/gabmus/envision/-/pipelines?page=1&scope=all&ref=main)
 
 ## Running
 
