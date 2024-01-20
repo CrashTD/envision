@@ -1,5 +1,4 @@
 use crate::{
-    checkerr,
     file_utils::{copy_file, deserialize_file, get_writer, set_file_readonly},
     paths::{get_backup_dir, get_xdg_config_dir, get_xdg_data_dir},
     profile::Profile,
@@ -94,9 +93,9 @@ fn build_steam_openvrpaths() -> OpenVrPaths {
     }
 }
 
-pub fn set_current_openvrpaths_to_steam() -> Result<(), ()> {
-    checkerr!(set_file_readonly(&get_openvrpaths_vrpath_path(), false));
-    checkerr!(dump_current_openvrpaths(&build_steam_openvrpaths()));
+pub fn set_current_openvrpaths_to_steam() -> anyhow::Result<()> {
+    set_file_readonly(&get_openvrpaths_vrpath_path(), false)?;
+    dump_current_openvrpaths(&build_steam_openvrpaths())?;
     Ok(())
 }
 
@@ -115,14 +114,14 @@ pub fn build_profile_openvrpaths(profile: &Profile) -> OpenVrPaths {
     }
 }
 
-pub fn set_current_openvrpaths_to_profile(profile: &Profile) -> Result<(), ()> {
+pub fn set_current_openvrpaths_to_profile(profile: &Profile) -> anyhow::Result<()> {
     let dest = get_openvrpaths_vrpath_path();
-    checkerr!(set_file_readonly(&dest, false));
+    set_file_readonly(&dest, false)?;
     backup_steam_openvrpaths();
-    checkerr!(dump_current_openvrpaths(&build_profile_openvrpaths(
+    dump_current_openvrpaths(&build_profile_openvrpaths(
         profile
-    )));
-    checkerr!(set_file_readonly(&dest, true));
+    ))?;
+    set_file_readonly(&dest, true)?;
     Ok(())
 }
 

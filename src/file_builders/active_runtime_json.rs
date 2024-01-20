@@ -1,5 +1,4 @@
 use crate::{
-    checkerr,
     file_utils::{copy_file, deserialize_file, get_writer, set_file_readonly},
     paths::{get_backup_dir, get_xdg_config_dir, get_xdg_data_dir, SYSTEM_PREFIX},
     profile::{Profile, XRServiceType},
@@ -97,9 +96,9 @@ fn build_steam_active_runtime() -> ActiveRuntime {
     }
 }
 
-pub fn set_current_active_runtime_to_steam() -> Result<(), ()> {
-    checkerr!(set_file_readonly(&get_active_runtime_json_path(), false));
-    checkerr!(dump_current_active_runtime(&build_steam_active_runtime()));
+pub fn set_current_active_runtime_to_steam() -> anyhow::Result<()> {
+    set_file_readonly(&get_active_runtime_json_path(), false)?;
+    dump_current_active_runtime(&build_steam_active_runtime())?;
     Ok(())
 }
 
@@ -156,9 +155,9 @@ fn relativize_active_runtime_lib_path(ar: &ActiveRuntime, dest: &str) -> ActiveR
     res
 }
 
-pub fn set_current_active_runtime_to_profile(profile: &Profile) -> Result<(), ()> {
+pub fn set_current_active_runtime_to_profile(profile: &Profile) -> anyhow::Result<()> {
     let dest = get_active_runtime_json_path();
-    checkerr!(set_file_readonly(&dest, false));
+    set_file_readonly(&dest, false)?;
     backup_steam_active_runtime();
     let pfx = profile.clone().prefix;
     let mut ar = build_profile_active_runtime(profile);
@@ -166,8 +165,8 @@ pub fn set_current_active_runtime_to_profile(profile: &Profile) -> Result<(), ()
     if pfx == SYSTEM_PREFIX {
         ar = relativize_active_runtime_lib_path(&ar, &dest);
     }
-    checkerr!(dump_current_active_runtime(&ar));
-    checkerr!(set_file_readonly(&dest, true));
+    dump_current_active_runtime(&ar)?;
+    set_file_readonly(&dest, true)?;
     Ok(())
 }
 

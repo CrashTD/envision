@@ -15,7 +15,6 @@ use ui::app::{App, AppInit};
 pub mod adb;
 pub mod build_tools;
 pub mod builders;
-pub mod checkerr;
 pub mod cmd_runner;
 pub mod config;
 pub mod constants;
@@ -48,7 +47,7 @@ fn restore_steam_xr_files() {
         if !file_builders::active_runtime_json::is_steam(&ar) {
             match set_current_active_runtime_to_steam() {
                 Ok(_) => {}
-                Err(_) => println!("Warning: failed to restore active runtime to steam!"),
+                Err(e) => eprintln!("Warning: failed to restore active runtime to steam: {e}"),
             };
         }
     }
@@ -56,7 +55,7 @@ fn restore_steam_xr_files() {
         if !file_builders::openvrpaths_vrpath::is_steam(&ovrp) {
             match set_current_openvrpaths_to_steam() {
                 Ok(_) => {}
-                Err(_) => println!("Warning: failed to restore openvrpaths to steam!"),
+                Err(e) => eprintln!("Warning: failed to restore openvrpaths to steam: {e}"),
             };
         }
     }

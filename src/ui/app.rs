@@ -162,18 +162,18 @@ impl App {
 
     pub fn start_xrservice(&mut self, sender: ComponentSender<Self>, debug: bool) {
         let prof = self.get_selected_profile();
-        if set_current_active_runtime_to_profile(&prof).is_err() {
+        if let Err(e) = set_current_active_runtime_to_profile(&prof) {
             alert(
                 "Failed to start XR Service",
-                Some("Error setting current active runtime to profile"),
+                Some(&format!("Error setting current active runtime to profile: {e}")),
                 Some(&self.app_win.clone().upcast::<gtk::Window>()),
             );
             return;
         }
-        if set_current_openvrpaths_to_profile(&prof).is_err() {
+        if let Err(e) = set_current_openvrpaths_to_profile(&prof) {
             alert(
                 "Failed to start XR Service",
-                Some("Error setting current openvrpaths file to profile"),
+                Some(&format!("Error setting current openvrpaths file to profile: {e}")),
                 Some(&self.app_win.clone().upcast::<gtk::Window>()),
             );
             return;
@@ -218,17 +218,17 @@ impl App {
     }
 
     pub fn restore_openxr_openvr_files(&self) {
-        if set_current_active_runtime_to_steam().is_err() {
+        if let Err(e) = set_current_active_runtime_to_steam() {
             alert(
                 "Could not restore Steam active runtime",
-                None,
+                Some(&format!("{e}")),
                 Some(&self.app_win.clone().upcast::<gtk::Window>()),
             );
         }
-        if set_current_openvrpaths_to_steam().is_err() {
+        if let Err(e) = set_current_openvrpaths_to_steam() {
             alert(
                 "Could not restore Steam openvrpaths",
-                None,
+                Some(&format!("{e}")),
                 Some(&self.app_win.clone().upcast::<gtk::Window>()),
             );
         };
