@@ -165,7 +165,9 @@ impl App {
         if let Err(e) = set_current_active_runtime_to_profile(&prof) {
             alert(
                 "Failed to start XR Service",
-                Some(&format!("Error setting current active runtime to profile: {e}")),
+                Some(&format!(
+                    "Error setting current active runtime to profile: {e}"
+                )),
                 Some(&self.app_win.clone().upcast::<gtk::Window>()),
             );
             return;
@@ -173,7 +175,9 @@ impl App {
         if let Err(e) = set_current_openvrpaths_to_profile(&prof) {
             alert(
                 "Failed to start XR Service",
-                Some(&format!("Error setting current openvrpaths file to profile: {e}")),
+                Some(&format!(
+                    "Error setting current openvrpaths file to profile: {e}"
+                )),
                 Some(&self.app_win.clone().upcast::<gtk::Window>()),
             );
             return;
