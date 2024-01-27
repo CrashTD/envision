@@ -1,6 +1,5 @@
-use std::{collections::HashMap, env, fmt::Display, path::Path};
-
 use crate::linux_distro::LinuxDistro;
+use std::{collections::HashMap, env, fmt::Display, path::Path};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum DepType {

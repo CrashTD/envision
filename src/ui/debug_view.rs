@@ -1,3 +1,4 @@
+use super::term_widget::TermWidget;
 use crate::log_level::LogLevel;
 use crate::log_parser::MonadoLog;
 use crate::ui::app::{DebugOpenDataAction, DebugOpenPrefixAction};
@@ -7,8 +8,6 @@ use gtk::prelude::*;
 use relm4::prelude::*;
 use relm4::{ComponentSender, SimpleComponent};
 use zoha_vte4::TerminalExt;
-
-use super::term_widget::TermWidget;
 
 #[derive(Debug)]
 pub enum SearchDirection {

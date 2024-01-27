@@ -1,7 +1,4 @@
-use gtk::{
-    prelude::IsA,
-    traits::{GtkApplicationExt, GtkWindowExt},
-};
+use gtk::traits::{GtkApplicationExt, GtkWindowExt};
 use relm4::{adw::traits::MessageDialogExt, prelude::*};
 
 fn alert_base(title: &str, msg: Option<&str>, parent: Option<&gtk::Window>) -> adw::MessageDialog {

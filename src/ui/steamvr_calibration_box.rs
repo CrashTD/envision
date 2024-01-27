@@ -1,20 +1,18 @@
-use std::{
-    collections::{HashMap, VecDeque},
-    path::Path,
-    thread::sleep,
-    time::Duration,
-};
-
-use crate::paths::get_steamvr_bin_dir_path;
-
 use super::job_worker::{
     internal_worker::JobWorkerOut,
     job::{FuncWorkerOut, WorkerJob},
     JobWorker,
 };
+use crate::paths::get_steamvr_bin_dir_path;
 use relm4::{
     gtk::{self, prelude::*},
     ComponentParts, ComponentSender, RelmWidgetExt, SimpleComponent,
+};
+use std::{
+    collections::{HashMap, VecDeque},
+    path::Path,
+    thread::sleep,
+    time::Duration,
 };
 
 #[tracker::track]

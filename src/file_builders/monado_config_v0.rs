@@ -1,11 +1,9 @@
-use std::slice::Iter;
-
-use serde::{Deserialize, Serialize};
-
 use crate::{
     file_utils::{deserialize_file, get_writer},
     paths::get_xdg_config_dir,
 };
+use serde::{Deserialize, Serialize};
+use std::slice::Iter;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum XrtInputName {

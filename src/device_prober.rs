@@ -1,9 +1,8 @@
-use std::fmt::Display;
-
 use crate::{
     profile::Profile,
     profiles::{lighthouse::lighthouse_profile, wivrn::wivrn_profile, wmr::wmr_profile},
 };
+use std::fmt::Display;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum PhysicalXRDevice {

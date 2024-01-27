@@ -1,6 +1,5 @@
-use std::io::Read;
-
 use crate::file_utils::get_reader;
+use std::io::Read;
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 pub enum LinuxDistro {

@@ -1,3 +1,4 @@
+use super::alert::alert;
 use crate::{
     adb::get_adb_install_runner,
     cmd_runner::CmdRunner,
@@ -15,8 +16,6 @@ use relm4::{
     prelude::*,
 };
 use std::thread::JoinHandle;
-
-use super::alert::alert;
 
 #[derive(PartialEq, Eq, Debug, Clone)]
 pub enum InstallWivrnStatus {

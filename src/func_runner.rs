@@ -1,9 +1,8 @@
+use crate::runner::{Runner, RunnerStatus};
 use std::{
     mem,
     thread::{self, JoinHandle},
 };
-
-use crate::runner::{Runner, RunnerStatus};
 
 #[derive(Debug, Clone, Default)]
 pub struct FuncRunnerOut {

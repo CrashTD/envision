@@ -1,9 +1,8 @@
-use crate::profile::{LighthouseDriver, Profile};
-
 use super::{
     job::{CmdWorkerData, FuncWorkerOut, WorkerJob},
     state::JobWorkerState,
 };
+use crate::profile::{LighthouseDriver, Profile};
 use nix::unistd::Pid;
 use relm4::{prelude::*, Worker};
 use std::{
