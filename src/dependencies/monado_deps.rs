@@ -1,5 +1,5 @@
 use crate::{
-    depcheck::{check_dependencies, DepType, Dependency, DependencyCheckResult},
+    depcheck::{DepType, Dependency, DependencyCheckResult},
     dependencies::common::{
         dep_cmake, dep_eigen, dep_gcc, dep_git, dep_glslang_validator, dep_gpp, dep_libdrm,
         dep_ninja, dep_openxr, dep_vulkan_headers, dep_vulkan_icd_loader,
@@ -54,7 +54,7 @@ fn monado_deps() -> Vec<Dependency> {
 }
 
 pub fn check_monado_deps() -> Vec<DependencyCheckResult> {
-    check_dependencies(monado_deps())
+    Dependency::check_many(monado_deps())
 }
 
 pub fn get_missing_monado_deps() -> Vec<Dependency> {

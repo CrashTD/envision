@@ -1,5 +1,5 @@
 use crate::{
-    depcheck::{check_dependencies, DepType, Dependency, DependencyCheckResult},
+    depcheck::{DepType, Dependency, DependencyCheckResult},
     linux_distro::LinuxDistro,
 };
 use std::collections::HashMap;
@@ -37,7 +37,7 @@ fn mercury_deps() -> Vec<Dependency> {
 }
 
 pub fn check_mercury_deps() -> Vec<DependencyCheckResult> {
-    check_dependencies(mercury_deps())
+    Dependency::check_many(mercury_deps())
 }
 
 pub fn get_missing_mercury_deps() -> Vec<Dependency> {

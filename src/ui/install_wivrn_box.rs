@@ -2,7 +2,6 @@ use super::alert::alert;
 use crate::{
     adb::get_adb_install_runner,
     cmd_runner::CmdRunner,
-    depcheck::check_dependency,
     dependencies::adb_dep::adb_dep,
     downloader::download_file,
     paths::wivrn_apk_download_path,
@@ -177,7 +176,7 @@ impl SimpleComponent for InstallWivrnBox {
                 }
             }
             Self::Input::DownloadWivrn(link) => {
-                if !check_dependency(adb_dep()) {
+                if !adb_dep().check() {
                     alert("ADB is not installed", Some("Please install ADB on your computer to install WiVRn on your Android headset"), Some(&self.root_win));
                 } else {
                     self.set_install_wivrn_status(InstallWivrnStatus::InProgress);

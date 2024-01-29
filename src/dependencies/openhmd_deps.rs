@@ -1,5 +1,5 @@
 use crate::{
-    depcheck::{check_dependencies, Dependency, DependencyCheckResult},
+    depcheck::{Dependency, DependencyCheckResult},
     dependencies::common::{dep_cmake, dep_gcc, dep_git, dep_gpp, dep_ninja},
 };
 
@@ -8,7 +8,7 @@ fn openhmd_deps() -> Vec<Dependency> {
 }
 
 pub fn check_openhmd_deps() -> Vec<DependencyCheckResult> {
-    check_dependencies(openhmd_deps())
+    Dependency::check_many(openhmd_deps())
 }
 
 pub fn get_missing_openhmd_deps() -> Vec<Dependency> {

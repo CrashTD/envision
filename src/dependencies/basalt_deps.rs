@@ -1,5 +1,5 @@
 use crate::{
-    depcheck::{check_dependencies, DepType, Dependency, DependencyCheckResult},
+    depcheck::{DepType, Dependency, DependencyCheckResult},
     dependencies::common::{dep_eigen, dep_gpp},
     linux_distro::LinuxDistro,
 };
@@ -134,7 +134,7 @@ fn basalt_deps() -> Vec<Dependency> {
 }
 
 pub fn check_basalt_deps() -> Vec<DependencyCheckResult> {
-    check_dependencies(basalt_deps())
+    Dependency::check_many(basalt_deps())
 }
 
 pub fn get_missing_basalt_deps() -> Vec<Dependency> {

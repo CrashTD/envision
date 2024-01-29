@@ -143,3 +143,17 @@ pub fn dep_vulkan_headers() -> Dependency {
         ]),
     }
 }
+
+pub fn dep_pkexec() -> Dependency {
+    Dependency {
+        name: "pkexec".into(),
+        dep_type: DepType::Executable,
+        filename: "pkexec".into(),
+        packages: HashMap::from([
+            (LinuxDistro::Arch, "polkit".into()),
+            (LinuxDistro::Debian, "pkexec".into()),
+            (LinuxDistro::Fedora, "polkit".into()),
+            (LinuxDistro::Alpine, "polkit".into()),
+        ]),
+    }
+}

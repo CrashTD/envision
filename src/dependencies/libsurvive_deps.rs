@@ -1,5 +1,5 @@
 use crate::{
-    depcheck::{check_dependencies, Dependency, DependencyCheckResult},
+    depcheck::{Dependency, DependencyCheckResult},
     dependencies::common::{dep_cmake, dep_eigen, dep_gcc, dep_git, dep_gpp, dep_ninja},
 };
 
@@ -15,7 +15,7 @@ fn libsurvive_deps() -> Vec<Dependency> {
 }
 
 pub fn check_libsurvive_deps() -> Vec<DependencyCheckResult> {
-    check_dependencies(libsurvive_deps())
+    Dependency::check_many(libsurvive_deps())
 }
 
 pub fn get_missing_libsurvive_deps() -> Vec<Dependency> {

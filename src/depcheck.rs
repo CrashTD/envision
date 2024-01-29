@@ -28,6 +28,54 @@ impl PartialOrd for Dependency {
     }
 }
 
+impl Dependency {
+    pub fn check(&self) -> bool {
+        for dir in match self.dep_type {
+            DepType::SharedObject => shared_obj_paths(),
+            DepType::Executable => env::var("PATH")
+                .expect("PATH environment variable not defined")
+                .split(':')
+                .map(str::to_string)
+                .collect(),
+            DepType::Include => include_paths(),
+        } {
+            let path_s = &format!("{dir}/{fname}", dir = dir, fname = self.filename);
+            let path = Path::new(&path_s);
+            if path.is_file() {
+                return true;
+            }
+        }
+        false
+    }
+
+    pub fn check_many(deps: Vec<Self>) -> Vec<DependencyCheckResult> {
+        deps.iter()
+            .map(|dep| DependencyCheckResult {
+                dependency: dep.clone(),
+                found: dep.check(),
+            })
+            .collect()
+    }
+
+    pub fn package_name_for_distro(&self, distro: Option<&LinuxDistro>) -> String {
+        if let Some(distro) = distro {
+            if let Some(pname) = self
+                .packages
+                .iter()
+                .find(|(k, _)| *k == distro)
+                .map(|(_, v)| v)
+            {
+                return pname.clone();
+            }
+        }
+        self.name.clone()
+    }
+
+    pub fn package_name(&self) -> String {
+        self.package_name_for_distro(LinuxDistro::get().as_ref())
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DependencyCheckResult {
     pub dependency: Dependency,
@@ -73,39 +121,10 @@ fn include_paths() -> Vec<String> {
     ]
 }
 
-pub fn check_dependency(dep: Dependency) -> bool {
-    for dir in match dep.dep_type {
-        DepType::SharedObject => shared_obj_paths(),
-        DepType::Executable => env::var("PATH")
-            .expect("PATH environment variable not defined")
-            .split(':')
-            .map(str::to_string)
-            .collect(),
-        DepType::Include => include_paths(),
-    } {
-        let path_s = &format!("{dir}/{fname}", dir = dir, fname = dep.filename);
-        let path = Path::new(&path_s);
-        if path.is_file() {
-            return true;
-        }
-    }
-    false
-}
-
-pub fn check_dependencies(deps: Vec<Dependency>) -> Vec<DependencyCheckResult> {
-    deps.iter()
-        .map(|dep| DependencyCheckResult {
-            dependency: dep.clone(),
-            found: check_dependency(dep.clone()),
-        })
-        .collect()
-}
-
 #[cfg(test)]
 mod tests {
+    use super::{DepType, Dependency};
     use std::collections::HashMap;
-
-    use super::{check_dependency, DepType, Dependency};
 
     #[test]
     fn can_find_libc() {
@@ -116,19 +135,19 @@ mod tests {
             packages: HashMap::new(),
         };
 
-        assert!(check_dependency(libc_dep));
+        assert!(libc_dep.check());
     }
 
     #[test]
     fn can_find_ls() {
-        let libc_dep = Dependency {
+        let ls_dep = Dependency {
             name: "ls".into(),
             dep_type: DepType::Executable,
             filename: ("ls".into()),
             packages: HashMap::new(),
         };
 
-        assert!(check_dependency(libc_dep));
+        assert!(ls_dep.check());
     }
 
     #[test]
@@ -140,6 +159,6 @@ mod tests {
             packages: HashMap::new(),
         };
 
-        assert!(!check_dependency(fake_dep));
+        assert!(!fake_dep.check());
     }
 }

@@ -5,6 +5,7 @@ use super::profile_editor::{ProfileEditor, ProfileEditorMsg, ProfileEditorOutMsg
 use super::steam_launch_options_box::{SteamLaunchOptionsBox, SteamLaunchOptionsBoxMsg};
 use super::steamvr_calibration_box::SteamVrCalibrationBox;
 use crate::config::Config;
+use crate::dependencies::common::dep_pkexec;
 use crate::file_utils::mount_has_nosuid;
 use crate::gpu_profile::{
     get_amd_gpu_power_profile, get_first_amd_gpu, get_set_amd_vr_pow_prof_cmd, GpuPowerProfile,
@@ -222,11 +223,32 @@ impl SimpleComponent for MainView {
                             gtk::Label {
                                 set_label: concat!(
                                     "Your current prefix is inside a partition ",
-                                    "mounted with the nosuid option. This will prevent ",
+                                    "mounted with the nosuid option.\nThis will prevent ",
                                     "the XR runtime from acquiring certain privileges ",
                                     "and will cause noticeable stutter when running XR ",
                                     "applications."
                                 ),
+                                add_css_class: "warning",
+                                set_xalign: 0.0,
+                                set_wrap: true,
+                                set_wrap_mode: gtk::pango::WrapMode::Word,
+                            }
+                        },
+                        gtk::Box {
+                            set_orientation: gtk::Orientation::Vertical,
+                            set_hexpand: true,
+                            set_vexpand: false,
+                            set_spacing: 12,
+                            add_css_class: "card",
+                            add_css_class: "padded",
+                            #[track = "model.changed(Self::selected_profile())"]
+                            set_visible: true || !dep_pkexec().check(),
+                            warning_heading(),
+                            gtk::Label {
+                                set_label: &format!(
+                                    "Pkexec wasn't found on your system.\nThis will prevent the XR runtime from acquiring certain priviledges and will cause noticeable stutter when running XR applications.\nYou can fix this by installing the following package on your system: <tt>{}</tt>", dep_pkexec().package_name()
+                                ),
+                                set_use_markup: true,
                                 add_css_class: "warning",
                                 set_xalign: 0.0,
                                 set_wrap: true,

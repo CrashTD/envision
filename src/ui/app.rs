@@ -19,13 +19,12 @@ use crate::builders::build_openhmd::get_build_openhmd_jobs;
 use crate::builders::build_wivrn::get_build_wivrn_jobs;
 use crate::config::Config;
 use crate::constants::APP_NAME;
-use crate::depcheck::check_dependency;
 use crate::dependencies::basalt_deps::get_missing_basalt_deps;
+use crate::dependencies::common::dep_pkexec;
 use crate::dependencies::libsurvive_deps::get_missing_libsurvive_deps;
 use crate::dependencies::mercury_deps::get_missing_mercury_deps;
 use crate::dependencies::monado_deps::get_missing_monado_deps;
 use crate::dependencies::openhmd_deps::get_missing_openhmd_deps;
-use crate::dependencies::pkexec_dep::pkexec_dep;
 use crate::dependencies::wivrn_deps::get_missing_wivrn_deps;
 use crate::file_builders::active_runtime_json::{
     set_current_active_runtime_to_profile, set_current_active_runtime_to_steam,
@@ -478,9 +477,7 @@ impl SimpleComponent for App {
                         (
                             missing_deps
                                 .iter()
-                                .map(|dep| {
-                                    dep.packages.get(&d).unwrap_or_else(|| &dep.name).clone()
-                                })
+                                .map(|dep| dep.package_name_for_distro(Some(&d)))
                                 .collect::<Vec<String>>()
                                 .join(", "),
                             {
@@ -656,7 +653,7 @@ impl SimpleComponent for App {
                 ));
             }
             Msg::RunSetCap => {
-                if !check_dependency(pkexec_dep()) {
+                if !dep_pkexec().check() {
                     println!("pkexec not found, skipping setcap");
                 } else {
                     let profile = self.get_selected_profile();
