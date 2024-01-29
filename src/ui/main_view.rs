@@ -242,7 +242,7 @@ impl SimpleComponent for MainView {
                             add_css_class: "card",
                             add_css_class: "padded",
                             #[track = "model.changed(Self::selected_profile())"]
-                            set_visible: true || !dep_pkexec().check(),
+                            set_visible: !dep_pkexec().check(),
                             warning_heading(),
                             gtk::Label {
                                 set_label: &format!(
