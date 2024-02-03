@@ -48,8 +48,8 @@ fn monado_deps() -> Vec<Dependency> {
             filename: "libSDL2.so".into(),
             packages: HashMap::from([
                 (LinuxDistro::Arch, "sdl2".into()),
-                (LinuxDistro::Debian, "libsdl2".into()),
-                (LinuxDistro::Fedora, "SDL2".into()),
+                (LinuxDistro::Debian, "libsdl2-dev".into()),
+                (LinuxDistro::Fedora, "SDL2-devel".into()),
             ]),
         },
     ]
