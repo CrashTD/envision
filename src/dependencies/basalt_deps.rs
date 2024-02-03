@@ -1,6 +1,6 @@
 use crate::{
     depcheck::{DepType, Dependency, DependencyCheckResult},
-    dependencies::common::{dep_eigen, dep_gpp},
+    dependencies::common::{dep_eigen, dep_gpp, dep_opencv},
     linux_distro::LinuxDistro,
 };
 use std::collections::HashMap;
@@ -16,6 +16,8 @@ fn basalt_deps() -> Vec<Dependency> {
             packages: HashMap::from([
                 (LinuxDistro::Arch, "boost".into()),
                 (LinuxDistro::Debian, "libboost-all-dev".into()),
+                (LinuxDistro::Fedora, "boost".into()),
+                (LinuxDistro::Alpine, "boost".into()),
             ]),
         },
         Dependency {
@@ -26,6 +28,8 @@ fn basalt_deps() -> Vec<Dependency> {
             packages: HashMap::from([
                 (LinuxDistro::Arch, "boost".into()),
                 (LinuxDistro::Debian, "libboost-all-dev".into()),
+                (LinuxDistro::Fedora, "boost-devel".into()),
+                (LinuxDistro::Alpine, "boost-dev".into()),
             ]),
         },
         Dependency {
@@ -35,6 +39,8 @@ fn basalt_deps() -> Vec<Dependency> {
             packages: HashMap::from([
                 (LinuxDistro::Arch, "bzip2".into()),
                 (LinuxDistro::Debian, "libbz2-dev".into()),
+                (LinuxDistro::Fedora, "bzip2-devel".into()),
+                (LinuxDistro::Alpine, "bzip2".into()),
             ]),
         },
         Dependency {
@@ -44,6 +50,8 @@ fn basalt_deps() -> Vec<Dependency> {
             packages: HashMap::from([
                 (LinuxDistro::Arch, "bzip2".into()),
                 (LinuxDistro::Debian, "libbz2-dev".into()),
+                (LinuxDistro::Fedora, "bzip2-devel".into()),
+                (LinuxDistro::Alpine, "bzip2-dev".into()),
             ]),
         },
         dep_eigen(),
@@ -54,6 +62,8 @@ fn basalt_deps() -> Vec<Dependency> {
             packages: HashMap::from([
                 (LinuxDistro::Arch, "fmt".into()),
                 (LinuxDistro::Debian, "libfmt-dev".into()),
+                (LinuxDistro::Fedora, "fmt-devel".into()),
+                (LinuxDistro::Alpine, "fmt".into()),
             ]),
         },
         Dependency {
@@ -63,6 +73,8 @@ fn basalt_deps() -> Vec<Dependency> {
             packages: HashMap::from([
                 (LinuxDistro::Arch, "fmt".into()),
                 (LinuxDistro::Debian, "libfmt-dev".into()),
+                (LinuxDistro::Fedora, "fmt-devel".into()),
+                (LinuxDistro::Alpine, "fmt-dev".into()),
             ]),
         },
         Dependency {
@@ -72,6 +84,7 @@ fn basalt_deps() -> Vec<Dependency> {
             packages: HashMap::from([
                 (LinuxDistro::Arch, "glew".into()),
                 (LinuxDistro::Debian, "libglew-dev".into()),
+                (LinuxDistro::Fedora, "glew-devel".into()),
             ]),
         },
         Dependency {
@@ -81,6 +94,7 @@ fn basalt_deps() -> Vec<Dependency> {
             packages: HashMap::from([
                 (LinuxDistro::Arch, "glew".into()),
                 (LinuxDistro::Debian, "libglew-dev".into()),
+                (LinuxDistro::Fedora, "glew-devel".into()),
             ]),
         },
         Dependency {
@@ -103,15 +117,7 @@ fn basalt_deps() -> Vec<Dependency> {
                 (LinuxDistro::Fedora, "tbb-devel".into()),
             ]),
         },
-        Dependency {
-            name: "opencv".into(),
-            dep_type: DepType::Include,
-            filename: "opencv4/opencv2/core/hal/hal.hpp".into(),
-            packages: HashMap::from([
-                (LinuxDistro::Arch, "opencv".into()),
-                (LinuxDistro::Debian, "libopencv-dev".into()),
-            ]),
-        },
+        dep_opencv(),
         Dependency {
             name: "python3".into(),
             dep_type: DepType::Executable,
@@ -119,6 +125,8 @@ fn basalt_deps() -> Vec<Dependency> {
             packages: HashMap::from([
                 (LinuxDistro::Arch, "python".into()),
                 (LinuxDistro::Debian, "python3".into()),
+                (LinuxDistro::Fedora, "python3".into()),
+                (LinuxDistro::Alpine, "python3".into()),
             ]),
         },
         Dependency {
@@ -128,6 +136,8 @@ fn basalt_deps() -> Vec<Dependency> {
             packages: HashMap::from([
                 (LinuxDistro::Arch, "bc".into()),
                 (LinuxDistro::Debian, "bc".into()),
+                (LinuxDistro::Fedora, "bc".into()),
+                (LinuxDistro::Alpine, "bc".into()),
             ]),
         },
     ]

@@ -21,6 +21,7 @@ fn monado_deps() -> Vec<Dependency> {
             packages: HashMap::from([
                 (LinuxDistro::Arch, "wayland".into()),
                 (LinuxDistro::Debian, "libwayland-dev".into()),
+                (LinuxDistro::Fedora, "wayland-devel".into()),
             ]),
         },
         dep_cmake(),
@@ -37,6 +38,7 @@ fn monado_deps() -> Vec<Dependency> {
                 (LinuxDistro::Arch, "shaderc".into()),
                 (LinuxDistro::Debian, "glslc".into()),
                 (LinuxDistro::Fedora, "glslc".into()),
+                (LinuxDistro::Alpine, "shaderc".into()),
             ]),
         },
         dep_glslang_validator(),

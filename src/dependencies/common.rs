@@ -12,6 +12,8 @@ pub fn dep_eigen() -> Dependency {
         packages: HashMap::from([
             (LinuxDistro::Arch, "eigen".into()),
             (LinuxDistro::Debian, "libeigen3-dev".into()),
+            (LinuxDistro::Fedora, "eigen3-devel".into()),
+            (LinuxDistro::Alpine, "eigen-dev".into()),
         ]),
     }
 }
@@ -24,6 +26,8 @@ pub fn dep_cmake() -> Dependency {
         packages: HashMap::from([
             (LinuxDistro::Arch, "cmake".into()),
             (LinuxDistro::Debian, "cmake".into()),
+            (LinuxDistro::Fedora, "cmake".into()),
+            (LinuxDistro::Alpine, "cmake".into()),
         ]),
     }
 }
@@ -37,6 +41,7 @@ pub fn dep_git() -> Dependency {
             (LinuxDistro::Arch, "git".into()),
             (LinuxDistro::Debian, "git".into()),
             (LinuxDistro::Fedora, "git".into()),
+            (LinuxDistro::Alpine, "git".into()),
         ]),
     }
 }
@@ -49,6 +54,8 @@ pub fn dep_ninja() -> Dependency {
         packages: HashMap::from([
             (LinuxDistro::Arch, "ninja".into()),
             (LinuxDistro::Debian, "ninja-build".into()),
+            (LinuxDistro::Fedora, "ninja-build".into()),
+            (LinuxDistro::Alpine, "ninja".into()),
         ]),
     }
 }
@@ -62,6 +69,7 @@ pub fn dep_glslang_validator() -> Dependency {
             (LinuxDistro::Arch, "glslang".into()),
             (LinuxDistro::Debian, "glslang-tools".into()),
             (LinuxDistro::Fedora, "glslang-devel".into()),
+            (LinuxDistro::Alpine, "glslang".into()),
         ]),
     }
 }
@@ -75,6 +83,7 @@ pub fn dep_gcc() -> Dependency {
             (LinuxDistro::Arch, "gcc".into()),
             (LinuxDistro::Debian, "gcc".into()),
             (LinuxDistro::Fedora, "gcc".into()),
+            (LinuxDistro::Alpine, "gcc".into()),
         ]),
     }
 }
@@ -88,6 +97,7 @@ pub fn dep_gpp() -> Dependency {
             (LinuxDistro::Arch, "gcc".into()),
             (LinuxDistro::Debian, "g++".into()),
             (LinuxDistro::Fedora, "g++".into()),
+            (LinuxDistro::Alpine, "g++".into()),
         ]),
     }
 }
@@ -101,6 +111,7 @@ pub fn dep_libdrm() -> Dependency {
             (LinuxDistro::Arch, "libdrm".into()),
             (LinuxDistro::Debian, "libdrm-dev".into()),
             (LinuxDistro::Fedora, "libdrm".into()),
+            (LinuxDistro::Alpine, "libdrm-dev".into()),
         ]),
     }
 }
@@ -114,6 +125,7 @@ pub fn dep_openxr() -> Dependency {
             (LinuxDistro::Arch, "openxr".into()),
             (LinuxDistro::Debian, "libopenxr-dev".into()),
             (LinuxDistro::Fedora, "openxr-devel".into()),
+            (LinuxDistro::Alpine, "openxr-dev".into()),
         ]),
     }
 }
@@ -154,6 +166,19 @@ pub fn dep_pkexec() -> Dependency {
             (LinuxDistro::Debian, "pkexec".into()),
             (LinuxDistro::Fedora, "polkit".into()),
             (LinuxDistro::Alpine, "polkit".into()),
+        ]),
+    }
+}
+
+pub fn dep_opencv() -> Dependency {
+    Dependency {
+        name: "opencv".into(),
+        dep_type: DepType::Include,
+        filename: "opencv4/opencv2/core/hal/hal.hpp".into(),
+        packages: HashMap::from([
+            (LinuxDistro::Arch, "opencv".into()),
+            (LinuxDistro::Debian, "libopencv-dev".into()),
+            (LinuxDistro::Fedora, "opencv-devel".into()),
         ]),
     }
 }

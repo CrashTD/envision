@@ -11,8 +11,9 @@ pub fn adb_dep() -> Dependency {
         filename: "adb".into(),
         packages: HashMap::from([
             (LinuxDistro::Arch, "android-tools".into()),
-            (LinuxDistro::Fedora, "android-tools".into()),
             (LinuxDistro::Debian, "adb".into()),
+            (LinuxDistro::Fedora, "android-tools".into()),
+            (LinuxDistro::Alpine, "android-tools".into()),
         ]),
     }
 }
