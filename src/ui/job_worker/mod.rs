@@ -1,6 +1,6 @@
 use self::{
     internal_worker::{InternalJobWorker, JobWorkerInit, JobWorkerMsg, JobWorkerOut},
-    job::WorkerJob,
+    job::{FuncWorkerOut, WorkerJob},
     state::JobWorkerState,
 };
 use crate::profile::Profile;
@@ -32,6 +32,32 @@ impl JobWorker {
         transform: F,
     ) -> Self {
         let state = Arc::new(Mutex::new(JobWorkerState::default()));
+        let init = JobWorkerInit {
+            jobs,
+            state: state.clone(),
+        };
+        Self {
+            worker: InternalJobWorker::builder()
+                .detach_worker(init)
+                .forward(sender, transform),
+            state,
+        }
+    }
+
+    pub fn new_with_timer<X: 'static, F: (Fn(JobWorkerOut) -> X) + 'static>(
+        duration: Duration,
+        job: WorkerJob,
+        sender: &Sender<X>,
+        transform: F,
+    ) -> Self {
+        let timer_job = WorkerJob::new_func(Box::new(move || {
+            thread::sleep(duration);
+            FuncWorkerOut::default()
+        }));
+        let mut jobs = VecDeque::new();
+        let state = Arc::new(Mutex::new(JobWorkerState::default()));
+        jobs.push_back(timer_job);
+        jobs.push_back(job);
         let init = JobWorkerInit {
             jobs,
             state: state.clone(),

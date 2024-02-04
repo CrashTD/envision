@@ -1,9 +1,6 @@
 use crate::{
     file_utils::get_writer,
-    paths::{
-        data_monado_path, data_opencomposite_path, get_data_dir, get_ipc_file_path,
-        BWRAP_SYSTEM_PREFIX, SYSTEM_PREFIX,
-    },
+    paths::{get_data_dir, get_ipc_file_path, BWRAP_SYSTEM_PREFIX, SYSTEM_PREFIX},
 };
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, fmt::Display, fs::File, io::BufReader, path::Path, slice::Iter};
@@ -230,6 +227,7 @@ pub struct Profile {
     pub lighthouse_driver: LighthouseDriver,
     #[serde(default = "String::default")]
     pub xrservice_launch_options: String,
+    pub autostart_command: Option<String>,
 }
 
 impl Display for Profile {
@@ -284,6 +282,7 @@ impl Default for Profile {
             lighthouse_driver: LighthouseDriver::default(),
             xrservice_launch_options: String::default(),
             uuid,
+            autostart_command: None,
         }
     }
 }

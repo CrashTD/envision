@@ -113,6 +113,14 @@ impl SimpleComponent for ProfileEditor {
                                 prof.borrow_mut().prefix = n_path.unwrap_or_default()
                             }),
                         ),
+                        add: &entry_row("Autostart Command",
+                            model.profile.borrow().autostart_command.as_ref().unwrap_or(&String::default()),
+                            clone!(@strong prof => move |row| {
+                                let txt = row.text().trim().to_string();
+                                prof.borrow_mut().autostart_command =
+                                    if txt.is_empty() {None} else {Some(txt)};
+                            })
+                        )
                     },
                     add: xrservicegrp = &adw::PreferencesGroup {
                         set_title: "XR Service",

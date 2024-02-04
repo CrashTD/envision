@@ -92,6 +92,8 @@ pub struct App {
     #[tracker::do_not_track]
     xrservice_worker: Option<JobWorker>,
     #[tracker::do_not_track]
+    autostart_worker: Option<JobWorker>,
+    #[tracker::do_not_track]
     restart_xrservice: bool,
     #[tracker::do_not_track]
     build_worker: Option<JobWorker>,
@@ -112,6 +114,7 @@ pub struct App {
 pub enum Msg {
     OnServiceLog(Vec<String>),
     OnServiceExit(i32),
+    OnAutostartExit(i32),
     OnBuildLog(Vec<String>),
     OnBuildExit(i32),
     ClockTicking,
@@ -197,6 +200,23 @@ impl App {
                 debug,
             );
             worker.start();
+            if let Some(autostart_cmd) = prof.autostart_command {
+                let autostart_worker = JobWorker::new_with_timer(
+                    Duration::from_secs(5),
+                    WorkerJob::new_cmd(
+                        Some(prof.environment.clone()),
+                        "sh".into(),
+                        Some(vec!["-c".into(), autostart_cmd.clone()]),
+                    ),
+                    sender.input_sender(),
+                    |msg| match msg {
+                        JobWorkerOut::Log(rows) => Msg::OnServiceLog(rows),
+                        JobWorkerOut::Exit(code) => Msg::OnAutostartExit(code),
+                    },
+                );
+                autostart_worker.start();
+                self.autostart_worker = Some(autostart_worker)
+            }
             self.xrservice_worker = Some(worker);
             self.main_view
                 .sender()
@@ -240,6 +260,9 @@ impl App {
     pub fn shutdown_xrservice(&mut self) {
         self.set_inhibit_session(false);
         if let Some(worker) = self.xrservice_worker.as_ref() {
+            worker.stop();
+        }
+        if let Some(worker) = self.autostart_worker.as_ref() {
             worker.stop();
         }
         self.libmonado = None;
@@ -325,24 +348,20 @@ impl SimpleComponent for App {
                         .emit(DebugViewMsg::LogUpdated(rows));
                 }
             }
-            Msg::OnServiceExit(_) => {
+            Msg::OnServiceExit(code) => {
                 self.main_view
                     .sender()
                     .emit(MainViewMsg::XRServiceActiveChanged(false, None));
                 self.debug_view
                     .sender()
                     .emit(DebugViewMsg::XRServiceActiveChanged(false));
-                if let Some(worker) = self.xrservice_worker.as_ref() {
-                    if let Some(code) = worker.exit_code() {
-                        if code != 0 && code != 15 {
-                            // 15 is SIGTERM
-                            sender.input(Msg::OnServiceLog(vec![format!(
-                                "{} exited with code {}",
-                                self.get_selected_profile().xrservice_type,
-                                code
-                            )]));
-                        }
-                    }
+                if code != 0 && code != 15 {
+                    // 15 is SIGTERM
+                    sender.input(Msg::OnServiceLog(vec![format!(
+                        "{} exited with code {}",
+                        self.get_selected_profile().xrservice_type,
+                        code
+                    )]));
                 }
                 self.xrservice_worker = None;
                 if self.restart_xrservice {
@@ -350,6 +369,7 @@ impl SimpleComponent for App {
                     self.start_xrservice(sender, false);
                 }
             }
+            Msg::OnAutostartExit(_) => self.autostart_worker = None,
             Msg::ClockTicking => {
                 self.main_view.sender().emit(MainViewMsg::ClockTicking);
                 if let Some(w) = self.xrservice_worker.as_ref() {
@@ -798,6 +818,7 @@ impl SimpleComponent for App {
             config,
             profiles,
             xrservice_worker: None,
+            autostart_worker: None,
             build_worker: None,
             xr_devices: vec![],
             fbt_config_editor: None,

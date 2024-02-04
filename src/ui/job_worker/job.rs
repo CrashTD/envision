@@ -7,10 +7,19 @@ pub struct CmdWorkerData {
     pub args: Vec<String>,
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub struct FuncWorkerOut {
     pub success: bool,
     pub out: Vec<String>,
+}
+
+impl Default for FuncWorkerOut {
+    fn default() -> Self {
+        Self {
+            success: true,
+            out: vec![],
+        }
+    }
 }
 
 pub struct FuncWorkerData {
