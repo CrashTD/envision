@@ -28,6 +28,9 @@ makedepends=(
     meson
     rust
 )
+optdepends=(
+    'libudev0-shim: steamvr_lh lighthouse driver support'
+)
 provides=(envision)
 conflicts=(envision)
 source=("git+${url}.git")
