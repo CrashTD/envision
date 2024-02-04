@@ -26,6 +26,11 @@ pub enum DebugViewMsg {
     SetColorScheme,
 }
 
+#[derive(Debug)]
+pub enum DebugViewOutMsg {
+    StartWithDebug,
+}
+
 #[tracker::track]
 pub struct DebugView {
     xrservice_active: bool,
@@ -47,7 +52,7 @@ pub struct DebugViewInit {}
 impl SimpleComponent for DebugView {
     type Init = DebugViewInit;
     type Input = DebugViewMsg;
-    type Output = ();
+    type Output = DebugViewOutMsg;
 
     menu! {
         debug_menu: {
@@ -76,6 +81,16 @@ impl SimpleComponent for DebugView {
                     set_tooltip_text: Some("Filter Log"),
                 },
                 pack_start: &log_level_dropdown,
+                pack_start: run_debug_btn = &gtk::Button {
+                    set_icon_name: "run-debug-symbolic",
+                    set_tooltip_text: Some("Start with gdbserver"),
+                    connect_clicked[sender] => move |_| {
+                        sender.output(Self::Output::StartWithDebug)
+                            .expect("Sender output failed");
+                    },
+                    #[track = "model.changed(Self::xrservice_active())"]
+                    set_sensitive: !model.xrservice_active
+                },
             },
             add_top_bar: searchbar = &gtk::SearchBar {
                 set_margin_start: 1,

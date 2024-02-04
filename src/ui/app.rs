@@ -45,7 +45,7 @@ use crate::profiles::wivrn::wivrn_profile;
 use crate::profiles::wmr::wmr_profile;
 use crate::stateless_action;
 use crate::ui::build_window::{BuildWindowMsg, BuildWindowOutMsg};
-use crate::ui::debug_view::DebugViewInit;
+use crate::ui::debug_view::{DebugViewInit, DebugViewOutMsg};
 use crate::ui::libsurvive_setup_window::LibsurviveSetupMsg;
 use crate::ui::main_view::{MainView, MainViewInit, MainViewOutMsg};
 use crate::xr_devices::XRDevice;
@@ -765,7 +765,6 @@ impl SimpleComponent for App {
                 })
                 .forward(sender.input_sender(), |message| match message {
                     MainViewOutMsg::DoStartStopXRService => Msg::DoStartStopXRService,
-                    MainViewOutMsg::StartWithDebug => Msg::StartWithDebug,
                     MainViewOutMsg::RestartXRService => Msg::RestartXRService,
                     MainViewOutMsg::ProfileSelected(uuid) => Msg::ProfileSelected(uuid),
                     MainViewOutMsg::DeleteProfile => Msg::DeleteProfile,
@@ -776,7 +775,7 @@ impl SimpleComponent for App {
             debug_view: DebugView::builder().launch(DebugViewInit {}).forward(
                 sender.input_sender(),
                 |message| match message {
-                    _ => Msg::ClockTicking,
+                    DebugViewOutMsg::StartWithDebug => Msg::StartWithDebug,
                 },
             ),
             about_dialog: AboutDialog::builder()

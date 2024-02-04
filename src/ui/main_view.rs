@@ -58,7 +58,6 @@ pub struct MainView {
 pub enum MainViewMsg {
     ClockTicking,
     StartStopClicked,
-    StartWithDebug,
     RestartXRService,
     XRServiceActiveChanged(bool, Option<Profile>),
     EnableDebugViewChanged(bool),
@@ -77,7 +76,6 @@ pub enum MainViewMsg {
 #[derive(Debug)]
 pub enum MainViewOutMsg {
     DoStartStopXRService,
-    StartWithDebug,
     RestartXRService,
     ProfileSelected(Profile),
     DeleteProfile,
@@ -173,14 +171,6 @@ impl SimpleComponent for MainView {
                                 },
                                 connect_clicked[sender] => move |_| {
                                     sender.input(MainViewMsg::StartStopClicked);
-                                },
-                            },
-                            gtk::Button {
-                                set_label: "Start with gdbserver",
-                                #[track = "model.changed(Self::xrservice_active()) || model.changed(Self::enable_debug_view())"]
-                                set_visible: model.enable_debug_view && !model.xrservice_active,
-                                connect_clicked[sender] => move |_| {
-                                    sender.input(MainViewMsg::StartWithDebug);
                                 },
                             },
                             gtk::Button {
@@ -500,11 +490,6 @@ impl SimpleComponent for MainView {
             Self::Input::StartStopClicked => {
                 sender
                     .output(Self::Output::DoStartStopXRService)
-                    .expect("Sender output failed");
-            }
-            Self::Input::StartWithDebug => {
-                sender
-                    .output(Self::Output::StartWithDebug)
                     .expect("Sender output failed");
             }
             Self::Input::RestartXRService => {
