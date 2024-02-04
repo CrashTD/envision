@@ -28,7 +28,7 @@ pub fn get_build_basalt_jobs(profile: &Profile, clean_build: bool) -> VecDeque<W
 
     let build_dir = format!("{}/build", profile.features.basalt.path.as_ref().unwrap());
     let mut cmake_vars: HashMap<String, String> = HashMap::new();
-    cmake_vars.insert("CMAKE_BUILD_TYPE".into(), "Release".into());
+    cmake_vars.insert("CMAKE_BUILD_TYPE".into(), "RelWithDebInfo".into());
     cmake_vars.insert("CMAKE_INSTALL_PREFIX".into(), profile.prefix.clone());
     cmake_vars.insert("BUILD_TESTS".into(), "OFF".into());
     cmake_vars.insert("BASALT_INSTANTIATIONS_DOUBLE".into(), "OFF".into());

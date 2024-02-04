@@ -115,7 +115,7 @@ pub enum Msg {
     OnBuildLog(Vec<String>),
     OnBuildExit(i32),
     ClockTicking,
-    BuildProfile(bool, bool),
+    BuildProfile(bool),
     CancelBuild,
     EnableDebugViewChanged(bool),
     DoStartStopXRService,
@@ -425,7 +425,7 @@ impl SimpleComponent for App {
                     }
                 }
             },
-            Msg::BuildProfile(clean_build, debug_build) => {
+            Msg::BuildProfile(clean_build) => {
                 let profile = self.get_selected_profile();
                 let mut missing_deps = vec![];
                 let mut jobs = VecDeque::<WorkerJob>::new();
@@ -452,20 +452,12 @@ impl SimpleComponent for App {
                         jobs.push_back(get_build_mercury_job(&profile));
                     }
                     jobs.extend(match profile.xrservice_type {
-                        XRServiceType::Monado => {
-                            get_build_monado_jobs(&profile, clean_build, debug_build)
-                        }
-                        XRServiceType::Wivrn => {
-                            get_build_wivrn_jobs(&profile, clean_build, debug_build)
-                        }
+                        XRServiceType::Monado => get_build_monado_jobs(&profile, clean_build),
+                        XRServiceType::Wivrn => get_build_wivrn_jobs(&profile, clean_build),
                     });
                     // no listed deps for opencomp
                 }
-                jobs.extend(get_build_opencomposite_jobs(
-                    &profile,
-                    clean_build,
-                    debug_build,
-                ));
+                jobs.extend(get_build_opencomposite_jobs(&profile, clean_build));
                 if !missing_deps.is_empty() {
                     missing_deps.sort_unstable();
                     missing_deps.dedup(); // dedup only works if sorted, hence the above
@@ -772,7 +764,6 @@ impl SimpleComponent for App {
                     root_win: root.clone().into(),
                 })
                 .forward(sender.input_sender(), |message| match message {
-                    MainViewOutMsg::EnableDebugViewChanged(val) => Msg::EnableDebugViewChanged(val),
                     MainViewOutMsg::DoStartStopXRService => Msg::DoStartStopXRService,
                     MainViewOutMsg::StartWithDebug => Msg::StartWithDebug,
                     MainViewOutMsg::RestartXRService => Msg::RestartXRService,
@@ -823,28 +814,14 @@ impl SimpleComponent for App {
             actions,
             BuildProfileAction,
             clone!(@strong sender => move |_| {
-                sender.input_sender().emit(Msg::BuildProfile(false, false));
+                sender.input_sender().emit(Msg::BuildProfile(false));
             })
         );
         stateless_action!(
             actions,
             BuildProfileCleanAction,
             clone!(@strong sender => move |_| {
-                sender.input_sender().emit(Msg::BuildProfile(true, false));
-            })
-        );
-        stateless_action!(
-            actions,
-            BuildProfileDebugAction,
-            clone!(@strong sender => move |_| {
-                sender.input_sender().emit(Msg::BuildProfile(false, true));
-            })
-        );
-        stateless_action!(
-            actions,
-            BuildProfileCleanDebugAction,
-            clone!(@strong sender => move |_| {
-                sender.input_sender().emit(Msg::BuildProfile(true, true));
+                sender.input_sender().emit(Msg::BuildProfile(true));
             })
         );
         stateless_action!(
@@ -922,8 +899,6 @@ new_action_group!(pub AppActionGroup, "win");
 new_stateless_action!(pub AboutAction, AppActionGroup, "about");
 new_stateless_action!(pub BuildProfileAction, AppActionGroup, "buildprofile");
 new_stateless_action!(pub BuildProfileCleanAction, AppActionGroup, "buildprofileclean");
-new_stateless_action!(pub BuildProfileDebugAction, AppActionGroup, "buildprofiledebug");
-new_stateless_action!(pub BuildProfileCleanDebugAction, AppActionGroup, "buildprofilecleandebug");
 new_stateless_action!(pub ConfigFbtAction, AppActionGroup, "configfbt");
 new_stateless_action!(pub QuitAction, AppActionGroup, "quit");
 new_stateful_action!(pub DebugViewToggleAction, AppActionGroup, "debugviewtoggle", (), bool);
