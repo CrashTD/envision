@@ -32,33 +32,14 @@ pub fn get_build_wivrn_jobs(
 
     let build_dir = format!("{}/build", profile.xrservice_path);
     let mut cmake_vars: HashMap<String, String> = HashMap::new();
-    cmake_vars.insert(
-        "CMAKE_BUILD_TYPE".into(),
-        (if debug_build { "Debug" } else { "Release" }).into(),
-    );
+    cmake_vars.insert("CMAKE_BUILD_TYPE".into(), "RelWithDebInfo".into());
     cmake_vars.insert("XRT_HAVE_SYSTEM_CJSON".into(), "NO".into());
     cmake_vars.insert("WIVRN_BUILD_CLIENT".into(), "OFF".into());
     cmake_vars.insert("CMAKE_INSTALL_PREFIX".into(), profile.prefix.clone());
 
-    if debug_build {
-        for k in ["CMAKE_C_FLAGS", "CMAKE_CXX_FLAGS"] {
-            cmake_vars.insert(
-                k.into(),
-                "-g -march=native -O3 -fno-omit-frame-pointer".into(),
-            );
-        }
-        profile.xrservice_cmake_flags.iter().for_each(|(k, v)| {
-            if k == "CMAKE_C_FLAGS" || k == "CMAKE_CXX_FLAGS" {
-                cmake_vars.insert(k.clone(), format!("{} {}", cmake_vars.get(k).unwrap(), v));
-            } else {
-                cmake_vars.insert(k.clone(), v.clone());
-            }
-        });
-    } else {
-        profile.xrservice_cmake_flags.iter().for_each(|(k, v)| {
-            cmake_vars.insert(k.clone(), v.clone());
-        });
-    }
+    profile.xrservice_cmake_flags.iter().for_each(|(k, v)| {
+        cmake_vars.insert(k.clone(), v.clone());
+    });
 
     let cmake = Cmake {
         env: None,
