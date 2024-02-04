@@ -28,7 +28,7 @@ pub fn get_build_openhmd_jobs(profile: &Profile, clean_build: bool) -> VecDeque<
 
     let build_dir = format!("{}/build", profile.features.openhmd.path.as_ref().unwrap());
     let mut cmake_vars: HashMap<String, String> = HashMap::new();
-    cmake_vars.insert("CMAKE_BUILD_TYPE".into(), "Release".into());
+    cmake_vars.insert("CMAKE_BUILD_TYPE".into(), "RelWithDebInfo".into());
     cmake_vars.insert("CMAKE_INSTALL_PREFIX".into(), profile.prefix.clone());
     cmake_vars.insert(
         "CMAKE_INSTALL_LIBDIR".into(),

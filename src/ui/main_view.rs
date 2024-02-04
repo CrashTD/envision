@@ -14,8 +14,8 @@ use crate::gpu_profile::{
 use crate::profile::{LighthouseDriver, Profile, XRServiceType};
 use crate::steamvr_utils::chaperone_info_exists;
 use crate::ui::app::{
-    AboutAction, BuildProfileAction, BuildProfileCleanAction, BuildProfileCleanDebugAction,
-    BuildProfileDebugAction, ConfigFbtAction, DebugViewToggleAction,
+    AboutAction, BuildProfileAction, BuildProfileCleanAction, ConfigFbtAction,
+    DebugViewToggleAction,
 };
 use crate::ui::profile_editor::ProfileEditorInit;
 use crate::ui::steamvr_calibration_box::SteamVrCalibrationBoxMsg;
@@ -76,7 +76,6 @@ pub enum MainViewMsg {
 
 #[derive(Debug)]
 pub enum MainViewOutMsg {
-    EnableDebugViewChanged(bool),
     DoStartStopXRService,
     StartWithDebug,
     RestartXRService,
@@ -122,10 +121,6 @@ impl SimpleComponent for MainView {
                 "_Build Profile" => BuildProfileAction,
                 "C_lean Build Profile" => BuildProfileCleanAction,
                 "Configure Full Body _Tracking" => ConfigFbtAction,
-            },
-            section! {
-                "Build Profile with Debug Symbols" => BuildProfileDebugAction,
-                "Clean Build Profile with Debug Symbols" => BuildProfileCleanDebugAction,
             },
             section! {
                 "_About" => AboutAction,

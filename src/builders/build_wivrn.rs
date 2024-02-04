@@ -9,11 +9,7 @@ use std::{
     path::Path,
 };
 
-pub fn get_build_wivrn_jobs(
-    profile: &Profile,
-    clean_build: bool,
-    debug_build: bool,
-) -> VecDeque<WorkerJob> {
+pub fn get_build_wivrn_jobs(profile: &Profile, clean_build: bool) -> VecDeque<WorkerJob> {
     let mut jobs = VecDeque::<WorkerJob>::new();
 
     let git = Git {
