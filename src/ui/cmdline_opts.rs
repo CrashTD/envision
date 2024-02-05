@@ -1,29 +1,72 @@
+use crate::config::Config;
 use gtk4::{
-    gio::{prelude::ApplicationExt, Application, ApplicationCommandLine},
+    gio::{
+        prelude::{ApplicationCommandLineExt, ApplicationExt},
+        Application, ApplicationCommandLine,
+    },
     glib::{self, IsA},
 };
-use zoha_vte4::ApplicationCommandLineExt;
 
 #[derive(Debug, Clone)]
 pub struct CmdLineOpts {
     pub start: bool,
+    pub profile_uuid: Option<String>,
 }
 
 impl CmdLineOpts {
+    const OPT_START: (&'static str, char) = ("start", 'S');
+    const OPT_LIST_PROFILES: (&'static str, char) = ("list-profiles", 'l');
+    const OPT_PROFILE: (&'static str, char) = ("profile", 'p');
+
     pub fn init(app: &impl IsA<Application>) {
         app.add_main_option(
-            "start",
-            glib::Char::try_from('S').unwrap(),
+            Self::OPT_START.0,
+            glib::Char::try_from(Self::OPT_START.1).unwrap(),
             glib::OptionFlags::IN_MAIN,
             glib::OptionArg::None,
             "Start the XR Service right away",
             None,
         );
+        app.add_main_option(
+            Self::OPT_LIST_PROFILES.0,
+            glib::Char::try_from(Self::OPT_LIST_PROFILES.1).unwrap(),
+            glib::OptionFlags::IN_MAIN,
+            glib::OptionArg::None,
+            "List the available profiles",
+            None,
+        );
+        app.add_main_option(
+            Self::OPT_PROFILE.0,
+            glib::Char::try_from(Self::OPT_PROFILE.1).unwrap(),
+            glib::OptionFlags::IN_MAIN,
+            glib::OptionArg::String,
+            "Switch to the profile indicated by the UUID",
+            None,
+        );
+    }
+
+    /// returns true if the application should quit
+    pub fn handle_non_activating_opts(cmdline: &ApplicationCommandLine) -> bool {
+        if cmdline.options_dict().contains(Self::OPT_LIST_PROFILES.0) {
+            println!("Available profiles\nUUID: \"name\"");
+            let profiles = Config::get_config().profiles();
+            profiles.iter().for_each(|p| {
+                println!("{}: \"{}\"", p.uuid, p.name);
+            });
+            return true;
+        }
+        false
     }
 
     pub fn from_cmdline(cmdline: &ApplicationCommandLine) -> Self {
+        let opts = cmdline.options_dict();
         Self {
-            start: cmdline.options_dict().contains("start"),
+            start: opts.contains(Self::OPT_START.0),
+            profile_uuid: match opts.lookup::<String>(Self::OPT_PROFILE.0) {
+                Err(_) => None,
+                Ok(None) => None,
+                Ok(Some(variant)) => Some(variant),
+            },
         }
     }
 }

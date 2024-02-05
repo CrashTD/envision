@@ -1,6 +1,13 @@
 use crate::{
-    constants::CMD_NAME, device_prober::get_xr_usb_devices, file_utils::get_writer,
-    paths::get_config_dir, profile::Profile,
+    constants::CMD_NAME,
+    device_prober::get_xr_usb_devices,
+    file_utils::get_writer,
+    paths::get_config_dir,
+    profile::Profile,
+    profiles::{
+        lighthouse::lighthouse_profile, openhmd::openhmd_profile, simulated::simulated_profile,
+        survive::survive_profile, wivrn::wivrn_profile, wmr::wmr_profile,
+    },
 };
 use serde::{Deserialize, Serialize};
 use std::{fs::File, io::BufReader};
@@ -86,6 +93,20 @@ impl Config {
 
     pub fn set_profiles(&mut self, profiles: &[Profile]) {
         self.user_profiles = profiles.iter().filter(|p| p.editable).cloned().collect();
+    }
+
+    pub fn profiles(&self) -> Vec<Profile> {
+        let mut profiles = vec![
+            lighthouse_profile(),
+            survive_profile(),
+            wivrn_profile(),
+            wmr_profile(),
+            openhmd_profile(),
+            simulated_profile(),
+        ];
+        profiles.extend(self.user_profiles.clone());
+        profiles.sort_unstable_by(|a, b| a.name.cmp(&b.name));
+        profiles
     }
 }
 

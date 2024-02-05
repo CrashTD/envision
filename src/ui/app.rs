@@ -38,12 +38,6 @@ use crate::linux_distro::LinuxDistro;
 use crate::log_parser::MonadoLog;
 use crate::paths::{get_data_dir, get_ipc_file_path};
 use crate::profile::{Profile, XRServiceType};
-use crate::profiles::lighthouse::lighthouse_profile;
-use crate::profiles::openhmd::openhmd_profile;
-use crate::profiles::simulated::simulated_profile;
-use crate::profiles::survive::survive_profile;
-use crate::profiles::wivrn::wivrn_profile;
-use crate::profiles::wmr::wmr_profile;
 use crate::stateless_action;
 use crate::ui::build_window::{BuildWindowMsg, BuildWindowOutMsg};
 use crate::ui::debug_view::{DebugViewInit, DebugViewOutMsg};
@@ -276,20 +270,6 @@ impl App {
             .sender()
             .emit(DebugViewMsg::XRServiceActiveChanged(false));
         self.xr_devices = vec![];
-    }
-
-    pub fn profiles_list(config: &Config) -> Vec<Profile> {
-        let mut profiles = vec![
-            lighthouse_profile(),
-            survive_profile(),
-            wivrn_profile(),
-            wmr_profile(),
-            openhmd_profile(),
-            simulated_profile(),
-        ];
-        profiles.extend(config.user_profiles.clone());
-        profiles.sort_unstable_by(|a, b| a.name.cmp(&b.name));
-        profiles
     }
 }
 
@@ -637,7 +617,7 @@ impl SimpleComponent for App {
                 if todel.editable {
                     self.config.user_profiles.retain(|p| p.uuid != todel.uuid);
                     self.config.save();
-                    self.profiles = Self::profiles_list(&self.config);
+                    self.profiles = self.config.profiles();
                     self.main_view
                         .sender()
                         .emit(MainViewMsg::UpdateSelectedProfile(
@@ -739,6 +719,15 @@ impl SimpleComponent for App {
                 self.wivrn_conf_editor = Some(editor);
             }
             Msg::HandleCommandLine(opts) => {
+                if let Some(prof_uuid) = opts.profile_uuid {
+                    if let Some(index) = self.profiles.iter().position(|p| p.uuid == prof_uuid) {
+                        let target = self.profiles.get(index).unwrap();
+                        sender.input(Msg::ProfileSelected(target.clone()));
+                        self.main_view
+                            .sender()
+                            .emit(MainViewMsg::SetSelectedProfile(index as u32));
+                    }
+                }
                 if opts.start {
                     sender.input(Msg::DoStartStopXRService)
                 }
@@ -753,7 +742,7 @@ impl SimpleComponent for App {
     ) -> ComponentParts<Self> {
         let config = Config::get_config();
         let win_size = config.win_size;
-        let profiles = Self::profiles_list(&config);
+        let profiles = config.profiles();
         let setcap_confirm_dialog = adw::MessageDialog::builder()
             .modal(true)
             .transient_for(root)

@@ -100,6 +100,9 @@ fn main() -> Result<()> {
     CmdLineOpts::init(&main_app);
     let sender = BROKER.sender();
     main_app.connect_command_line(move |this, cmdline| {
+        if CmdLineOpts::handle_non_activating_opts(cmdline) {
+            return 0;
+        }
         this.activate();
         sender.emit(Msg::HandleCommandLine(CmdLineOpts::from_cmdline(cmdline)));
         0
