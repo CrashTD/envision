@@ -1,6 +1,7 @@
 use super::about_dialog::AboutDialog;
 use super::alert::{alert, alert_w_widget};
 use super::build_window::{BuildStatus, BuildWindow};
+use super::cmdline_opts::CmdLineOpts;
 use super::debug_view::{DebugView, DebugViewMsg};
 use super::fbt_config_editor::{FbtConfigEditor, FbtConfigEditorInit, FbtConfigEditorMsg};
 use super::job_worker::internal_worker::JobWorkerOut;
@@ -136,6 +137,7 @@ pub enum Msg {
     DebugOpenPrefix,
     DebugOpenData,
     OpenWivrnConfig,
+    HandleCommandLine(CmdLineOpts),
 }
 
 impl App {
@@ -735,6 +737,11 @@ impl SimpleComponent for App {
                     .detach();
                 editor.emit(WivrnConfEditorMsg::Present);
                 self.wivrn_conf_editor = Some(editor);
+            }
+            Msg::HandleCommandLine(opts) => {
+                if opts.start {
+                    sender.input(Msg::DoStartStopXRService)
+                }
             }
         }
     }

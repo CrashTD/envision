@@ -2,6 +2,7 @@ mod about_dialog;
 mod alert;
 pub mod app;
 mod build_window;
+pub mod cmdline_opts;
 mod debug_view;
 mod devices_box;
 mod factories;

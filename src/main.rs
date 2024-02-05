@@ -7,10 +7,12 @@ use file_builders::{
 use gettextrs::LocaleCategory;
 use relm4::{
     adw,
-    gtk::{self, gdk, gio, glib},
-    RelmApp,
+    gtk::{self, gdk, gio, glib, prelude::*},
+    MessageBroker, RelmApp,
 };
 use ui::app::{App, AppInit};
+
+use crate::ui::{app::Msg, cmdline_opts::CmdLineOpts};
 
 pub mod adb;
 pub mod build_tools;
@@ -90,10 +92,19 @@ fn main() -> Result<()> {
 
     let main_app = adw::Application::builder()
         .application_id(APP_ID)
-        .flags(gio::ApplicationFlags::FLAGS_NONE)
+        .flags(gio::ApplicationFlags::HANDLES_COMMAND_LINE)
         .resource_base_path(format!("/{}", APP_ID.replace(".", "/")))
         .build();
-    let app = RelmApp::from_app(main_app.clone());
+
+    static BROKER: MessageBroker<Msg> = MessageBroker::new();
+    CmdLineOpts::init(&main_app);
+    let sender = BROKER.sender();
+    main_app.connect_command_line(move |this, cmdline| {
+        this.activate();
+        sender.emit(Msg::HandleCommandLine(CmdLineOpts::from_cmdline(cmdline)));
+        0
+    });
+    let app = RelmApp::from_app(main_app.clone()).with_broker(&BROKER);
     app.run::<App>(AppInit {
         application: main_app,
     });
