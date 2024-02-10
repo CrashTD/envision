@@ -14,6 +14,7 @@ pub fn adb_dep() -> Dependency {
             (LinuxDistro::Debian, "adb".into()),
             (LinuxDistro::Fedora, "android-tools".into()),
             (LinuxDistro::Alpine, "android-tools".into()),
+            (LinuxDistro::Gentoo, "dev-util/android-tools".into()),
         ]),
     }
 }

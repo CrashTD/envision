@@ -17,6 +17,7 @@ fn mercury_deps() -> Vec<Dependency> {
                 (LinuxDistro::Debian, "git-lfs".into()),
                 (LinuxDistro::Fedora, "git-lfs".into()),
                 (LinuxDistro::Alpine, "git-lfs".into()),
+                (LinuxDistro::Gentoo, "dev-vcs/git-lfs".into()),
             ]),
         },
     ]
