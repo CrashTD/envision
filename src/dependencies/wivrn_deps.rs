@@ -28,6 +28,7 @@ fn wivrn_deps() -> Vec<Dependency> {
                 (LinuxDistro::Arch, "x264".into()),
                 (LinuxDistro::Debian, "libx264-dev".into()),
                 (LinuxDistro::Fedora, "x264-devel".into()),
+                (LinuxDistro::Gentoo, "media-libs/x264".into()),
             ]),
         },
         Dependency {
@@ -38,6 +39,7 @@ fn wivrn_deps() -> Vec<Dependency> {
                 (LinuxDistro::Arch, "avahi".into()),
                 (LinuxDistro::Debian, "libavahi-client-dev".into()),
                 (LinuxDistro::Fedora, "avahi-devel".into()),
+                (LinuxDistro::Gentoo, "net-dns/avahi".into()),
             ]),
         },
         Dependency {
@@ -48,6 +50,7 @@ fn wivrn_deps() -> Vec<Dependency> {
                 (LinuxDistro::Arch, "libpulse".into()),
                 (LinuxDistro::Debian, "libpulse-dev".into()),
                 (LinuxDistro::Fedora, "pulseaudio-libs-devel".into()),
+                (LinuxDistro::Gentoo, "media-libs/libpulse".into()),
             ]),
         },
         dep_eigen(),
@@ -59,6 +62,7 @@ fn wivrn_deps() -> Vec<Dependency> {
                 (LinuxDistro::Arch, "nlohmann-json".into()),
                 (LinuxDistro::Debian, "nlohmann-json3-dev".into()),
                 (LinuxDistro::Fedora, "json-devel".into()),
+                (LinuxDistro::Gentoo, "dev-cpp/nlohmann_json".into()),
             ]),
         },
         Dependency {
@@ -69,6 +73,7 @@ fn wivrn_deps() -> Vec<Dependency> {
                 (LinuxDistro::Arch, "ffmpeg".into()),
                 (LinuxDistro::Debian, "libavcodec-dev".into()),
                 (LinuxDistro::Fedora, "libavcodec-devel".into()),
+                (LinuxDistro::Gentoo, "media-video/ffmpeg".into()),
             ]),
         },
         Dependency {
@@ -79,6 +84,7 @@ fn wivrn_deps() -> Vec<Dependency> {
                 (LinuxDistro::Arch, "ffmpeg".into()),
                 (LinuxDistro::Debian, "libavfilter-dev".into()),
                 (LinuxDistro::Fedora, "libavfilter-devel".into()),
+                (LinuxDistro::Gentoo, "media-video/ffmpeg".into()),
             ]),
         },
         Dependency {
@@ -89,6 +95,7 @@ fn wivrn_deps() -> Vec<Dependency> {
                 (LinuxDistro::Arch, "ffmpeg".into()),
                 (LinuxDistro::Debian, "libswscale-dev".into()),
                 (LinuxDistro::Fedora, "libswscale-devel".into()),
+                (LinuxDistro::Gentoo, "media-video/ffmpeg".into()),
             ]),
         },
         dep_glslang_validator(),
@@ -100,6 +107,7 @@ fn wivrn_deps() -> Vec<Dependency> {
                 (LinuxDistro::Arch, "systemd-libs".into()),
                 (LinuxDistro::Debian, "libudev-dev".into()),
                 (LinuxDistro::Fedora, "systemd-devel".into()),
+                (LinuxDistro::Gentoo, "virtual/libudev".into()),
             ]),
         },
         Dependency {
@@ -110,6 +118,7 @@ fn wivrn_deps() -> Vec<Dependency> {
                 (LinuxDistro::Arch, "gstreamer".into()),
                 (LinuxDistro::Debian, "libgstreamer1.0-dev".into()),
                 (LinuxDistro::Fedora, "gstreamer1-devel".into()),
+                (LinuxDistro::Gentoo, "media-libs/gstreamer".into()),
             ]),
         },
         Dependency {
@@ -120,6 +129,7 @@ fn wivrn_deps() -> Vec<Dependency> {
                 (LinuxDistro::Arch, "gst-plugins-base-libs".into()),
                 (LinuxDistro::Debian, "libgstreamer1.0-dev".into()),
                 (LinuxDistro::Fedora, "gstreamer1-devel".into()),
+                (LinuxDistro::Gentoo, "media-libs/gst-plugins-base".into()),
             ]),
         },
         Dependency {
@@ -130,6 +140,7 @@ fn wivrn_deps() -> Vec<Dependency> {
                 (LinuxDistro::Arch, "systemd-libs".into()),
                 (LinuxDistro::Debian, "libsystemd-dev".into()),
                 (LinuxDistro::Fedora, "systemd-devel".into()),
+                (LinuxDistro::Gentoo, "sys-auth/elogind".into()),
             ]),
         },
         Dependency {
@@ -140,6 +151,7 @@ fn wivrn_deps() -> Vec<Dependency> {
                 (LinuxDistro::Arch, "libva".into()),
                 (LinuxDistro::Debian, "libva-dev".into()),
                 (LinuxDistro::Fedora, "libva-devel".into()),
+                (LinuxDistro::Gentoo, "media-libs/libva".into()),
             ]),
         },
     ]

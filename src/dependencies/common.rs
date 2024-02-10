@@ -14,6 +14,7 @@ pub fn dep_eigen() -> Dependency {
             (LinuxDistro::Debian, "libeigen3-dev".into()),
             (LinuxDistro::Fedora, "eigen3-devel".into()),
             (LinuxDistro::Alpine, "eigen-dev".into()),
+            (LinuxDistro::Gentoo, "dev-cpp/eigen".into()),
         ]),
     }
 }
@@ -28,6 +29,7 @@ pub fn dep_cmake() -> Dependency {
             (LinuxDistro::Debian, "cmake".into()),
             (LinuxDistro::Fedora, "cmake".into()),
             (LinuxDistro::Alpine, "cmake".into()),
+            (LinuxDistro::Gentoo, "dev-build/cmake".into()),
         ]),
     }
 }
@@ -42,6 +44,7 @@ pub fn dep_git() -> Dependency {
             (LinuxDistro::Debian, "git".into()),
             (LinuxDistro::Fedora, "git".into()),
             (LinuxDistro::Alpine, "git".into()),
+            (LinuxDistro::Gentoo, "dev-vcs/git".into()),
         ]),
     }
 }
@@ -56,6 +59,7 @@ pub fn dep_ninja() -> Dependency {
             (LinuxDistro::Debian, "ninja-build".into()),
             (LinuxDistro::Fedora, "ninja-build".into()),
             (LinuxDistro::Alpine, "ninja".into()),
+            (LinuxDistro::Gentoo, "dev-build/ninja".into()),
         ]),
     }
 }
@@ -70,6 +74,7 @@ pub fn dep_glslang_validator() -> Dependency {
             (LinuxDistro::Debian, "glslang-tools".into()),
             (LinuxDistro::Fedora, "glslang-devel".into()),
             (LinuxDistro::Alpine, "glslang".into()),
+            (LinuxDistro::Gentoo, "dev-util/glslang".into()),
         ]),
     }
 }
@@ -84,6 +89,7 @@ pub fn dep_gcc() -> Dependency {
             (LinuxDistro::Debian, "gcc".into()),
             (LinuxDistro::Fedora, "gcc".into()),
             (LinuxDistro::Alpine, "gcc".into()),
+            (LinuxDistro::Gentoo, "sys-devel/gcc".into()),
         ]),
     }
 }
@@ -98,6 +104,7 @@ pub fn dep_gpp() -> Dependency {
             (LinuxDistro::Debian, "g++".into()),
             (LinuxDistro::Fedora, "g++".into()),
             (LinuxDistro::Alpine, "g++".into()),
+            (LinuxDistro::Gentoo, "sys-devel/gcc".into()),
         ]),
     }
 }
@@ -112,6 +119,7 @@ pub fn dep_libdrm() -> Dependency {
             (LinuxDistro::Debian, "libdrm-dev".into()),
             (LinuxDistro::Fedora, "libdrm".into()),
             (LinuxDistro::Alpine, "libdrm-dev".into()),
+            (LinuxDistro::Gentoo, "x11-libs/libdrm".into()),
         ]),
     }
 }
@@ -126,6 +134,7 @@ pub fn dep_openxr() -> Dependency {
             (LinuxDistro::Debian, "libopenxr-dev".into()),
             (LinuxDistro::Fedora, "openxr-devel".into()),
             (LinuxDistro::Alpine, "openxr-dev".into()),
+            (LinuxDistro::Gentoo, "media-libs/openxr".into()),
         ]),
     }
 }
@@ -139,6 +148,7 @@ pub fn dep_vulkan_icd_loader() -> Dependency {
             (LinuxDistro::Arch, "vulkan-icd-loader".into()),
             (LinuxDistro::Debian, "libvulkan-dev".into()),
             (LinuxDistro::Fedora, "vulkan-loader-devel".into()),
+            (LinuxDistro::Gentoo, "media-libs/vulkan-loader".into()),
         ]),
     }
 }
@@ -166,6 +176,7 @@ pub fn dep_pkexec() -> Dependency {
             (LinuxDistro::Debian, "pkexec".into()),
             (LinuxDistro::Fedora, "polkit".into()),
             (LinuxDistro::Alpine, "polkit".into()),
+            (LinuxDistro::Gentoo, "sys-auth/polkit".into()),
         ]),
     }
 }
@@ -179,6 +190,7 @@ pub fn dep_opencv() -> Dependency {
             (LinuxDistro::Arch, "opencv".into()),
             (LinuxDistro::Debian, "libopencv-dev".into()),
             (LinuxDistro::Fedora, "opencv-devel".into()),
+            (LinuxDistro::Gentoo, "media-libs/opencv".into()),
         ]),
     }
 }

@@ -18,6 +18,7 @@ fn basalt_deps() -> Vec<Dependency> {
                 (LinuxDistro::Debian, "libboost-all-dev".into()),
                 (LinuxDistro::Fedora, "boost".into()),
                 (LinuxDistro::Alpine, "boost".into()),
+                (LinuxDistro::Gentoo, "dev-libs/boost".into()),
             ]),
         },
         Dependency {
@@ -41,6 +42,7 @@ fn basalt_deps() -> Vec<Dependency> {
                 (LinuxDistro::Debian, "libbz2-dev".into()),
                 (LinuxDistro::Fedora, "bzip2-devel".into()),
                 (LinuxDistro::Alpine, "bzip2".into()),
+                (LinuxDistro::Gentoo, "app-arch/bzip2".into()),
             ]),
         },
         Dependency {
@@ -64,6 +66,7 @@ fn basalt_deps() -> Vec<Dependency> {
                 (LinuxDistro::Debian, "libfmt-dev".into()),
                 (LinuxDistro::Fedora, "fmt-devel".into()),
                 (LinuxDistro::Alpine, "fmt".into()),
+                (LinuxDistro::Gentoo, "dev-libs/libfmt".into()),
             ]),
         },
         Dependency {
@@ -85,6 +88,7 @@ fn basalt_deps() -> Vec<Dependency> {
                 (LinuxDistro::Arch, "glew".into()),
                 (LinuxDistro::Debian, "libglew-dev".into()),
                 (LinuxDistro::Fedora, "glew-devel".into()),
+                (LinuxDistro::Gentoo, "media-libs/glew".into()),
             ]),
         },
         Dependency {
@@ -105,6 +109,7 @@ fn basalt_deps() -> Vec<Dependency> {
                 (LinuxDistro::Arch, "gtest".into()),
                 (LinuxDistro::Debian, "libgtest-dev".into()),
                 (LinuxDistro::Fedora, "gtest-devel".into()),
+                (LinuxDistro::Gentoo, "dev-cpp/gtest".into()),
             ]),
         },
         Dependency {
@@ -115,6 +120,7 @@ fn basalt_deps() -> Vec<Dependency> {
                 (LinuxDistro::Arch, "onetbb".into()),
                 (LinuxDistro::Debian, "libtbb-dev".into()),
                 (LinuxDistro::Fedora, "tbb-devel".into()),
+                (LinuxDistro::Gentoo, "dev-cpp/tbb".into()),
             ]),
         },
         dep_opencv(),
@@ -127,6 +133,7 @@ fn basalt_deps() -> Vec<Dependency> {
                 (LinuxDistro::Debian, "python3".into()),
                 (LinuxDistro::Fedora, "python3".into()),
                 (LinuxDistro::Alpine, "python3".into()),
+                (LinuxDistro::Gentoo, "dev-lang/python".into()),
             ]),
         },
         Dependency {
@@ -138,6 +145,7 @@ fn basalt_deps() -> Vec<Dependency> {
                 (LinuxDistro::Debian, "bc".into()),
                 (LinuxDistro::Fedora, "bc".into()),
                 (LinuxDistro::Alpine, "bc".into()),
+                (LinuxDistro::Gentoo, "sys-devel/bc".into()),
             ]),
         },
     ]

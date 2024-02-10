@@ -22,6 +22,7 @@ fn monado_deps() -> Vec<Dependency> {
                 (LinuxDistro::Arch, "wayland".into()),
                 (LinuxDistro::Debian, "libwayland-dev".into()),
                 (LinuxDistro::Fedora, "wayland-devel".into()),
+                (LinuxDistro::Gentoo, "dev-libs/wayland".into()),
             ]),
         },
         dep_cmake(),
@@ -39,6 +40,7 @@ fn monado_deps() -> Vec<Dependency> {
                 (LinuxDistro::Debian, "glslc".into()),
                 (LinuxDistro::Fedora, "glslc".into()),
                 (LinuxDistro::Alpine, "shaderc".into()),
+                (LinuxDistro::Gentoo, "media-libs/shaderc".into()),
             ]),
         },
         dep_glslang_validator(),
@@ -50,6 +52,7 @@ fn monado_deps() -> Vec<Dependency> {
                 (LinuxDistro::Arch, "sdl2".into()),
                 (LinuxDistro::Debian, "libsdl2-dev".into()),
                 (LinuxDistro::Fedora, "SDL2-devel".into()),
+                (LinuxDistro::Gentoo, "media-libs/libsdl2".into()),
             ]),
         },
     ]
