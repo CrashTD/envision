@@ -1,3 +1,4 @@
+use crate::ui::{app::Msg, cmdline_opts::CmdLineOpts};
 use anyhow::Result;
 use constants::{resources, APP_ID, APP_NAME, GETTEXT_PACKAGE, LOCALE_DIR, RESOURCES_BASE_PATH};
 use file_builders::{
@@ -11,8 +12,6 @@ use relm4::{
     MessageBroker, RelmApp,
 };
 use ui::app::{App, AppInit};
-
-use crate::ui::{app::Msg, cmdline_opts::CmdLineOpts};
 
 pub mod adb;
 pub mod build_tools;
