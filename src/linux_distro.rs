@@ -56,7 +56,7 @@ impl LinuxDistro {
             Self::Alpine => format!("sudo apk add {}", packages.join(" ")),
             Self::Debian => format!("sudo apt install {}", packages.join(" ")),
             Self::Fedora => format!("sudo dnf install {}", packages.join(" ")),
-            Self::Gentoo => format!("sudo emerge {}", packages.join(" ")),
+            Self::Gentoo => format!("sudo emerge -av {}", packages.join(" ")),
             Self::Suse => format!("sudo zypper install {}", packages.join(" ")),
         }
     }
