@@ -1,5 +1,5 @@
 use crate::{
-    ui::devices_box::DevicesBoxMsg,
+    ui::{battery_status::BatteryStatus, devices_box::DevicesBoxMsg},
     xr_devices::{XRDevice, XRDeviceRole},
 };
 use adw::prelude::*;
@@ -42,6 +42,7 @@ pub struct DeviceRowModel {
     subtitle: String,
     state: DeviceRowState,
     suffix: Option<gtk::Widget>,
+    battery_status: Option<BatteryStatus>,
 }
 
 #[derive(Debug, Default)]
@@ -50,6 +51,7 @@ pub struct DeviceRowModelInit {
     pub subtitle: Option<String>,
     pub state: Option<DeviceRowState>,
     pub suffix: Option<gtk::Widget>,
+    pub battery_status: Option<BatteryStatus>,
 }
 
 impl DeviceRowModelInit {
@@ -57,6 +59,9 @@ impl DeviceRowModelInit {
         Self {
             title: Some(d.dev_type.to_string()),
             subtitle: Some(d.name.clone()),
+            battery_status: d
+                .battery
+                .map(|bat| BatteryStatus::new((bat * 100.0).trunc() as u8)),
             ..Default::default()
         }
     }
@@ -85,6 +90,22 @@ impl AsyncFactoryComponent for DeviceRowModel {
             // TODO: replace with flat button that spawns popover
             add_prefix: icon = &gtk::Image {
                 set_icon_name: Some(self.state.icon()),
+            },
+            add_suffix: batt_info = &gtk::Box {
+                set_visible: self.battery_status.is_some(),
+                set_orientation: gtk::Orientation::Horizontal,
+                set_spacing: 6,
+                gtk::Image {
+                    set_icon_name: self.battery_status
+                        .as_ref()
+                        .map(|bs| bs.icon()),
+                },
+                gtk::Label {
+                    set_text: &self.battery_status
+                        .as_ref()
+                        .map(|bs| bs.to_string())
+                        .unwrap_or_default(),
+                },
             },
             set_title: self.title.as_str(),
             set_subtitle: self.subtitle.as_str(),
@@ -120,6 +141,7 @@ impl AsyncFactoryComponent for DeviceRowModel {
             title: init.title.unwrap_or_default(),
             subtitle: init.subtitle.unwrap_or_default(),
             state: init.state.unwrap_or_default(),
+            battery_status: init.battery_status,
             suffix: init.suffix,
         }
     }

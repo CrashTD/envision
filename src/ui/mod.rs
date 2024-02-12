@@ -1,6 +1,7 @@
 mod about_dialog;
 mod alert;
 pub mod app;
+mod battery_status;
 mod build_window;
 pub mod cmdline_opts;
 mod debug_view;

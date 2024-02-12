@@ -229,8 +229,8 @@ pub struct XRDevice {
     pub dev_type: XRDeviceRole,
     pub name: String,
     pub id: String,
-    pub battery: f32, // battery percentage, from 0 to 1 maybe
-                      // still need to implement it in monado & gui
+    pub battery: Option<f32>, // battery percentage, from 0 to 1 maybe
+                              // still need to implement it in monado
 }
 
 impl Default for XRDevice {
@@ -239,7 +239,7 @@ impl Default for XRDevice {
             dev_type: XRDeviceRole::GenericTracker,
             name: String::default(),
             id: String::default(),
-            battery: f32::default(),
+            battery: Option::default(),
         }
     }
 }
