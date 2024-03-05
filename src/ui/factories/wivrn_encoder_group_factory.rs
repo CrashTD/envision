@@ -22,7 +22,6 @@ pub struct WivrnEncoderModel {
 pub enum WivrnEncoderModelMsg {
     EncoderChanged(u32),
     CodecChanged(u32),
-    BitrateChanged(Option<u32>),
     WidthChanged(Option<f32>),
     HeightChanged(Option<f32>),
     OffsetXChanged(Option<f32>),
@@ -85,33 +84,6 @@ impl AsyncFactoryComponent for WivrnEncoderModel {
                     }
                 }
             ) -> adw::ComboRow,
-            add: bitrate_row = &number_entry_row(
-                "Bitrate (Mbps)",
-                &self.encoder_conf.bitrate
-                    .and_then(|n| if let Some(mbits) = bits_to_mbits(n) {
-                        Some(mbits.to_string())
-                    } else {
-                        None
-                    })
-                    .unwrap_or_default(),
-                false,
-                {
-                    let sender = sender.clone();
-                    move |row| {
-                        let txt = row.text();
-                        sender.input(Self::Input::BitrateChanged(
-                            if txt.is_empty() {
-                                None
-                            } else {
-                                match txt.parse::<u32>() {
-                                    Ok(bits) => bits_from_mbits(bits),
-                                    Err(e) => None,
-                                }
-                            }
-                        ));
-                    }
-                }
-            ) -> adw::EntryRow,
             add: width_row = &spin_row(
                 "Width",
                 None,
@@ -202,9 +174,6 @@ impl AsyncFactoryComponent for WivrnEncoderModel {
             }
             Self::Input::CodecChanged(idx) => {
                 self.encoder_conf.codec = Codec::as_vec().get(idx as usize).unwrap().clone();
-            }
-            Self::Input::BitrateChanged(val) => {
-                self.encoder_conf.bitrate = val;
             }
             Self::Input::WidthChanged(val) => {
                 self.encoder_conf.width = val;

@@ -79,8 +79,6 @@ pub struct WivrnConfEncoder {
     pub encoder: Encoder,
     pub codec: Codec,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub bitrate: Option<u32>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub width: Option<f32>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub height: Option<f32>,
@@ -97,11 +95,10 @@ impl Default for WivrnConfEncoder {
         Self {
             encoder: Encoder::X264,
             codec: Codec::H264,
-            bitrate: None,
-            width: None,
-            height: None,
-            offset_x: None,
-            offset_y: None,
+            width: Some(1.0),
+            height: Some(1.0),
+            offset_x: Some(0.0),
+            offset_y: Some(0.0),
             group: None,
         }
     }
@@ -111,6 +108,8 @@ impl Default for WivrnConfEncoder {
 pub struct WivrnConfig {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub scale: Option<[f32; 2]>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub bitrate: Option<u32>,
     pub encoders: Vec<WivrnConfEncoder>,
 }
 
@@ -118,16 +117,8 @@ impl Default for WivrnConfig {
     fn default() -> Self {
         Self {
             scale: Some([0.8, 0.8]),
-            encoders: vec![WivrnConfEncoder {
-                encoder: Encoder::X264,
-                codec: Codec::H264,
-                bitrate: Some(100000000),
-                width: Some(1.0),
-                height: Some(1.0),
-                offset_x: Some(0.0),
-                offset_y: Some(0.0),
-                group: None,
-            }],
+            bitrate: Some(50000000),
+            encoders: vec![WivrnConfEncoder::default()],
         }
     }
 }
@@ -167,7 +158,7 @@ mod tests {
         assert_eq!(conf.encoders.len(), 1);
         assert_eq!(conf.encoders.get(0).unwrap().encoder, Encoder::X264);
         assert_eq!(conf.encoders.get(0).unwrap().codec, Codec::H264);
-        assert_eq!(conf.encoders.get(0).unwrap().bitrate, Some(100000000));
+        assert_eq!(conf.bitrate, Some(100000000));
         assert_eq!(conf.encoders.get(0).unwrap().width, Some(1.0));
         assert_eq!(conf.encoders.get(0).unwrap().height, Some(1.0));
         assert_eq!(conf.encoders.get(0).unwrap().offset_x, Some(0.0));
