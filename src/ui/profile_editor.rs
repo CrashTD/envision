@@ -404,13 +404,22 @@ impl SimpleComponent for ProfileEditor {
                     self.xrservice_cmake_flags_rows.guard().remove(p);
                 }
             }
-            Self::Input::AddEnvVar(name) => {
+            Self::Input::AddEnvVar(var) => {
                 let mut prof = self.profile.borrow_mut();
-                if !prof.environment.contains_key(&name) {
-                    prof.environment.insert(name.clone(), "".to_string());
+                if !prof.environment.contains_key(&var) {
+                    let (name, value) = if var.contains('=') {
+                        let mut sp = var.split('=');
+                        (
+                            sp.next().unwrap().to_string(),
+                            sp.next().unwrap().to_string(),
+                        )
+                    } else {
+                        (var, "".to_string())
+                    };
+                    prof.environment.insert(name.clone(), value.clone());
                     self.env_rows.guard().push_back(EnvVarModelInit {
                         name,
-                        value: "".to_string(),
+                        value,
                         var_type: VarType::EnvVar,
                     });
                 }
