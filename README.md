@@ -14,11 +14,11 @@ UI for building, configuring and running Monado, the open source OpenXR runtime.
 
 Download the latest AppImage snapshot: [GitLab Pipelines](https://gitlab.com/gabmus/envision/-/pipelines?page=1&scope=all&ref=main)
 
-## Running
+## Building and running from source
 
 ```bash
 git clone https://gitlab.com/gabmus/envision/
-cd envision 
+cd envision
 meson setup build -Dprefix="$PWD/build/localprefix" -Dprofile=development
 ninja -C build
 ninja -C build install
