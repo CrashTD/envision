@@ -21,6 +21,18 @@ fn wivrn_deps() -> Vec<Dependency> {
         dep_vulkan_icd_loader(),
         dep_vulkan_headers(),
         Dependency {
+            name: "patch".into(),
+            dep_type: DepType::Executable,
+            filename: "patch".into(),
+            packages: HashMap::from([
+                (LinuxDistro::Arch, "patch".into()),
+                (LinuxDistro::Debian, "patch".into()),
+                (LinuxDistro::Fedora, "patch".into()),
+                (LinuxDistro::Alpine, "patch".into()),
+                (LinuxDistro::Gentoo, "sys-devel/patch".into()),
+            ]),
+        },
+        Dependency {
             name: "x264-dev".into(),
             dep_type: DepType::Include,
             filename: "x264.h".into(),
