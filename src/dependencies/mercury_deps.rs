@@ -9,6 +9,18 @@ fn mercury_deps() -> Vec<Dependency> {
     vec![
         dep_opencv(),
         Dependency {
+            name: "jq".into(),
+            dep_type: DepType::Executable,
+            filename: "jq".into(),
+            packages: HashMap::from([
+                (LinuxDistro::Arch, "jq".into()),
+                (LinuxDistro::Debian, "jq".into()),
+                (LinuxDistro::Fedora, "jq".into()),
+                (LinuxDistro::Alpine, "jq".into()),
+                (LinuxDistro::Gentoo, "app-misc/jq".into()),
+            ]),
+        },
+        Dependency {
             name: "git-lfs".into(),
             dep_type: DepType::Executable,
             filename: "git-lfs".into(),
