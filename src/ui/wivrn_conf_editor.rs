@@ -1,7 +1,13 @@
-use super::factories::wivrn_encoder_group_factory::{WivrnEncoderModel, WivrnEncoderModelInit};
+use super::{
+    factories::wivrn_encoder_group_factory::{WivrnEncoderModel, WivrnEncoderModelInit},
+    util::bits_from_mbits,
+};
 use crate::{
     file_builders::wivrn_config::{dump_wivrn_config, get_wivrn_config, WivrnConfig},
-    ui::preference_rows::spin_row,
+    ui::{
+        preference_rows::{number_entry_row, spin_row},
+        util::bits_to_mbits,
+    },
 };
 use adw::prelude::*;
 use relm4::{factory::AsyncFactoryVecDeque, prelude::*};
@@ -17,6 +23,8 @@ pub struct WivrnConfEditor {
     pub scalex_row: Option<adw::SpinRow>,
     #[tracker::do_not_track]
     pub scaley_row: Option<adw::SpinRow>,
+    #[tracker::do_not_track]
+    bitrate_row: Option<adw::EntryRow>,
 }
 
 #[derive(Debug)]
@@ -101,6 +109,24 @@ impl SimpleComponent for WivrnConfEditor {
                             move |_| {}
                         ) -> adw::SpinRow,
                     },
+                    add: bitrategrp = &adw::PreferencesGroup {
+                        set_title: "Bitrate",
+                        add: bitrate_row = &number_entry_row(
+                            "Bitrate (Mbps)",
+                            &model.conf.bitrate
+                                .and_then(|n| if let Some(mbits) = bits_to_mbits(n) {
+                                    Some(mbits.to_string())
+                                } else {
+                                    None
+                                })
+                                .unwrap_or_default(),
+                            false,
+                            {
+                                let sender = sender.clone();
+                                move |_| {}
+                            }
+                        ) -> adw::EntryRow,
+                    },
                     add: encodersrgp = &adw::PreferencesGroup {
                         set_title: "Encoders",
                         adw::ActionRow {
@@ -133,8 +159,18 @@ impl SimpleComponent for WivrnConfEditor {
             Self::Input::Save => {
                 let x = self.scalex_row.as_ref().unwrap().adjustment().value();
                 let y = self.scaley_row.as_ref().unwrap().adjustment().value();
-                Some([x as f32, y as f32]);
-
+                self.conf.scale = Some([x as f32, y as f32]);
+                self.conf.bitrate = {
+                    let txt = self.bitrate_row.as_ref().unwrap().text();
+                    if txt.is_empty() {
+                        None
+                    } else {
+                        match txt.parse::<u32>() {
+                            Ok(mbits) => bits_from_mbits(mbits),
+                            Err(_) => None,
+                        }
+                    }
+                };
                 self.conf.encoders = self
                     .encoder_models
                     .as_ref()
@@ -180,6 +216,7 @@ impl SimpleComponent for WivrnConfEditor {
             win: None,
             scalex_row: None,
             scaley_row: None,
+            bitrate_row: None,
             tracker: 0,
         };
 
@@ -187,6 +224,7 @@ impl SimpleComponent for WivrnConfEditor {
 
         model.scalex_row = Some(widgets.scalex_row.clone());
         model.scaley_row = Some(widgets.scaley_row.clone());
+        model.bitrate_row = Some(widgets.bitrate_row.clone());
 
         let mut encoder_models: AsyncFactoryVecDeque<WivrnEncoderModel> =
             AsyncFactoryVecDeque::new(widgets.pref_page.clone(), sender.input_sender());

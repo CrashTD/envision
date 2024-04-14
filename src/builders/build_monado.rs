@@ -33,6 +33,7 @@ pub fn get_build_monado_jobs(profile: &Profile, clean_build: bool) -> VecDeque<W
         format!("{}/lib/pkgconfig", profile.prefix),
     );
     let mut cmake_vars: HashMap<String, String> = HashMap::new();
+    cmake_vars.insert("CMAKE_EXPORT_COMPILE_COMMANDS".into(), "ON".into());
     cmake_vars.insert("CMAKE_BUILD_TYPE".into(), "RelWithDebInfo".into());
     cmake_vars.insert("XRT_HAVE_SYSTEM_CJSON".into(), "NO".into());
     cmake_vars.insert("CMAKE_LIBDIR".into(), format!("{}/lib", profile.prefix));

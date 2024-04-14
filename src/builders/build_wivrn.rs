@@ -28,6 +28,7 @@ pub fn get_build_wivrn_jobs(profile: &Profile, clean_build: bool) -> VecDeque<Wo
 
     let build_dir = format!("{}/build", profile.xrservice_path);
     let mut cmake_vars: HashMap<String, String> = HashMap::new();
+    cmake_vars.insert("CMAKE_EXPORT_COMPILE_COMMANDS".into(), "ON".into());
     cmake_vars.insert("CMAKE_BUILD_TYPE".into(), "RelWithDebInfo".into());
     cmake_vars.insert("XRT_HAVE_SYSTEM_CJSON".into(), "NO".into());
     cmake_vars.insert("WIVRN_BUILD_CLIENT".into(), "OFF".into());
