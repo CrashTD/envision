@@ -9,7 +9,6 @@ use crate::{
 use std::collections::HashMap;
 
 fn wivrn_deps() -> Vec<Dependency> {
-    // TODO: populate!
     vec![
         dep_cmake(),
         dep_ninja(),
