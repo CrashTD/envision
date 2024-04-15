@@ -103,6 +103,9 @@ pub struct App {
 
     #[tracker::do_not_track]
     wivrn_conf_editor: Option<Controller<WivrnConfEditor>>,
+
+    #[tracker::do_not_track]
+    skip_depcheck: bool,
 }
 
 #[derive(Debug)]
@@ -460,7 +463,7 @@ impl SimpleComponent for App {
                     // no listed deps for opencomp
                 }
                 jobs.extend(get_build_opencomposite_jobs(&profile, clean_build));
-                if !missing_deps.is_empty() {
+                if !(self.skip_depcheck || missing_deps.is_empty()) {
                     missing_deps.sort_unstable();
                     missing_deps.dedup(); // dedup only works if sorted, hence the above
                     let distro = LinuxDistro::get();
@@ -731,6 +734,9 @@ impl SimpleComponent for App {
                 if opts.start {
                     sender.input(Msg::DoStartStopXRService)
                 }
+                if opts.skip_depcheck {
+                    self.skip_depcheck = true;
+                }
             }
         }
     }
@@ -821,6 +827,7 @@ impl SimpleComponent for App {
             restart_xrservice: false,
             libmonado: None,
             wivrn_conf_editor: None,
+            skip_depcheck: false,
         };
         let widgets = view_output!();
 

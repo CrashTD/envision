@@ -11,12 +11,14 @@ use gtk4::{
 pub struct CmdLineOpts {
     pub start: bool,
     pub profile_uuid: Option<String>,
+    pub skip_depcheck: bool,
 }
 
 impl CmdLineOpts {
     const OPT_START: (&'static str, char) = ("start", 'S');
     const OPT_LIST_PROFILES: (&'static str, char) = ("list-profiles", 'l');
     const OPT_PROFILE: (&'static str, char) = ("profile", 'p');
+    const OPT_SKIP_DEPCHECK: (&'static str, char) = ("skip-dependency-check", 'd');
 
     pub fn init(app: &impl IsA<Application>) {
         app.add_main_option(
@@ -43,6 +45,14 @@ impl CmdLineOpts {
             "Switch to the profile indicated by the UUID",
             None,
         );
+        app.add_main_option(
+            Self::OPT_SKIP_DEPCHECK.0,
+            glib::Char::try_from(Self::OPT_SKIP_DEPCHECK.1).unwrap(),
+            glib::OptionFlags::IN_MAIN,
+            glib::OptionArg::None,
+            "Skip dependency checks when building profiles",
+            None,
+        );
     }
 
     /// returns true if the application should quit
@@ -67,6 +77,7 @@ impl CmdLineOpts {
                 Ok(None) => None,
                 Ok(Some(variant)) => Some(variant),
             },
+            skip_depcheck: opts.contains(Self::OPT_SKIP_DEPCHECK.0),
         }
     }
 }
