@@ -151,7 +151,7 @@ fn wivrn_deps() -> Vec<Dependency> {
                 (LinuxDistro::Arch, "systemd-libs".into()),
                 (LinuxDistro::Debian, "libsystemd-dev".into()),
                 (LinuxDistro::Fedora, "systemd-devel".into()),
-                (LinuxDistro::Gentoo, "sys-auth/elogind".into()),
+                (LinuxDistro::Gentoo, "sys-apps/systemd".into()),
             ]),
         },
         Dependency {
@@ -163,6 +163,16 @@ fn wivrn_deps() -> Vec<Dependency> {
                 (LinuxDistro::Debian, "libva-dev".into()),
                 (LinuxDistro::Fedora, "libva-devel".into()),
                 (LinuxDistro::Gentoo, "media-libs/libva".into()),
+            ]),
+        },
+        Dependency {
+            name: "libavutil-dev".into(),
+            dep_type: DepType::Include,
+            filename: "libavutil/hwcontext_vaapi.h".into(),
+            packages: HashMap::from([
+                (LinuxDistro::Arch, "ffmpeg".into()),
+                (LinuxDistro::Debian, "libavutil-dev".into()),
+                (LinuxDistro::Fedora, "libavutil-free-devel".into()),
             ]),
         },
     ]
