@@ -43,6 +43,10 @@ If you see this warning:
 
 And you're using systemd-homed to manage your home partition, you need to disable it using homectl. To do so, log out, log in as root in a tty and run: `homectl update <username> --nosuid=false`.
 
+## Dependency checker erroneously reports missing dependencies
+
+You can use the `--skip-dependency-check` option to disable dependency checking.
+
 # LVRA Community
 
 We're a community dedicated to VR on Linux, we've got a wiki you might want to check out: [LVRA Wiki](https://lvra.gitlab.io). You can also [chat with us](https://lvra.gitlab.io/docs/community/).
