@@ -156,7 +156,9 @@ pub fn get_xr_usb_devices() -> Vec<PhysicalXRDevice> {
         .filter_map(|t| match t {
             // PCVR
             (0x28de, 0x2102) => Some(PhysicalXRDevice::ValveIndex),
-            (0x28de, 0x2300) => Some(PhysicalXRDevice::ValveIndex),
+            // this is the index controller, shouldn't dictate the driver
+            // so it's commented out
+            // (0x28de, 0x2300) => Some(PhysicalXRDevice::ValveIndex),
             (0x0bb4, 0x2c87) => Some(PhysicalXRDevice::HTCVive),
             (0x0bb4, 0x0309) => Some(PhysicalXRDevice::HTCVivePro),
             (0x0bb4, 0x0313) => Some(PhysicalXRDevice::HTCViveCosmos),
