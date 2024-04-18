@@ -175,6 +175,7 @@ pub fn get_xr_usb_devices() -> Vec<PhysicalXRDevice> {
             (0x35bd, 0x0101) => Some(PhysicalXRDevice::BigscreenBeyond),
             (0x04e8, 0x7312) => Some(PhysicalXRDevice::SamsungOdysseyPlus),
             (0x04e8, 0x7084) => Some(PhysicalXRDevice::SamsungOdysseyPlus),
+            (0x413c, 0xb0d5) => Some(PhysicalXRDevice::DellVisor),
             // Standalone
             (0x2833, 0x0137) => Some(PhysicalXRDevice::OculusQuest),
             (0x2833, 0x0186) => Some(PhysicalXRDevice::OculusQuest2),
