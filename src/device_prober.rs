@@ -43,6 +43,7 @@ pub enum PhysicalXRDevice {
     PicoNeo3Pro,
     Pico4,
     LynxR1,
+    ViveFocus3,
 }
 
 impl Display for PhysicalXRDevice {
@@ -83,6 +84,7 @@ impl Display for PhysicalXRDevice {
             Self::PicoNeo3Pro => "Pico Neo 3 Pro",
             Self::Pico4 => "PICO 4",
             Self::LynxR1 => "Lynx R1",
+            Self::ViveFocus3 => "Vive Focus 3",
         })
     }
 }
@@ -111,6 +113,7 @@ impl PhysicalXRDevice {
             Self::PicoNeo3Pro => Some(wivrn_profile()),
             Self::Pico4 => Some(wivrn_profile()),
             Self::LynxR1 => Some(wivrn_profile()),
+            Self::ViveFocus3 => Some(wivrn_profile()),
             Self::DellVisor => Some(wmr_profile()),
             // Self::AcerAH101 => Some(wmr_profile()),
             Self::HPWMR => Some(wmr_profile()),
@@ -153,6 +156,7 @@ pub fn get_xr_usb_devices() -> Vec<PhysicalXRDevice> {
         .filter_map(|t| match t {
             // PCVR
             (0x28de, 0x2102) => Some(PhysicalXRDevice::ValveIndex),
+            (0x28de, 0x2300) => Some(PhysicalXRDevice::ValveIndex),
             (0x0bb4, 0x2c87) => Some(PhysicalXRDevice::HTCVive),
             (0x0bb4, 0x0309) => Some(PhysicalXRDevice::HTCVivePro),
             (0x0bb4, 0x0313) => Some(PhysicalXRDevice::HTCViveCosmos),
@@ -172,6 +176,8 @@ pub fn get_xr_usb_devices() -> Vec<PhysicalXRDevice> {
             // Standalone
             (0x2833, 0x0137) => Some(PhysicalXRDevice::OculusQuest),
             (0x2833, 0x0186) => Some(PhysicalXRDevice::OculusQuest2),
+            (0x2d40, 0x00b7) => Some(PhysicalXRDevice::Pico4),
+            (0x0bb4, 0x0344) => Some(PhysicalXRDevice::ViveFocus3),
             _ => None,
         })
         .collect()
