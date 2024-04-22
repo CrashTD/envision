@@ -62,6 +62,7 @@ impl LinuxDistro {
             || s.contains("manjaro")
             || s.contains("steamos")
             || s.contains("steam os")
+            || s.contains("endeavouros")
         {
             return Some(Self::Arch);
         }
