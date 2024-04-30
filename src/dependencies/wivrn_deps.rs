@@ -83,7 +83,7 @@ fn wivrn_deps() -> Vec<Dependency> {
             packages: HashMap::from([
                 (LinuxDistro::Arch, "ffmpeg".into()),
                 (LinuxDistro::Debian, "libavcodec-dev".into()),
-                (LinuxDistro::Fedora, "libavcodec-devel".into()),
+                (LinuxDistro::Fedora, "ffmpeg-devel".into()),
                 (LinuxDistro::Gentoo, "media-video/ffmpeg".into()),
             ]),
         },
@@ -94,7 +94,7 @@ fn wivrn_deps() -> Vec<Dependency> {
             packages: HashMap::from([
                 (LinuxDistro::Arch, "ffmpeg".into()),
                 (LinuxDistro::Debian, "libavfilter-dev".into()),
-                (LinuxDistro::Fedora, "libavfilter-devel".into()),
+                (LinuxDistro::Fedora, "ffmpeg-devel".into()),
                 (LinuxDistro::Gentoo, "media-video/ffmpeg".into()),
             ]),
         },
@@ -105,8 +105,18 @@ fn wivrn_deps() -> Vec<Dependency> {
             packages: HashMap::from([
                 (LinuxDistro::Arch, "ffmpeg".into()),
                 (LinuxDistro::Debian, "libswscale-dev".into()),
-                (LinuxDistro::Fedora, "libswscale-devel".into()),
+                (LinuxDistro::Fedora, "ffmpeg-devel".into()),
                 (LinuxDistro::Gentoo, "media-video/ffmpeg".into()),
+            ]),
+        },
+        Dependency {
+            name: "libavutil-dev".into(),
+            dep_type: DepType::Include,
+            filename: "libavutil/hwcontext_vaapi.h".into(),
+            packages: HashMap::from([
+                (LinuxDistro::Arch, "ffmpeg".into()),
+                (LinuxDistro::Debian, "libavutil-dev".into()),
+                (LinuxDistro::Fedora, "ffmpeg-devel".into()),
             ]),
         },
         dep_glslang_validator(),
@@ -163,16 +173,6 @@ fn wivrn_deps() -> Vec<Dependency> {
                 (LinuxDistro::Debian, "libva-dev".into()),
                 (LinuxDistro::Fedora, "libva-devel".into()),
                 (LinuxDistro::Gentoo, "media-libs/libva".into()),
-            ]),
-        },
-        Dependency {
-            name: "libavutil-dev".into(),
-            dep_type: DepType::Include,
-            filename: "libavutil/hwcontext_vaapi.h".into(),
-            packages: HashMap::from([
-                (LinuxDistro::Arch, "ffmpeg".into()),
-                (LinuxDistro::Debian, "libavutil-dev".into()),
-                (LinuxDistro::Fedora, "libavutil-free-devel".into()),
             ]),
         },
     ]
