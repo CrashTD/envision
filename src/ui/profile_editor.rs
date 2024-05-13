@@ -318,7 +318,7 @@ impl SimpleComponent for ProfileEditor {
                             model.profile.borrow().features.basalt.repo.clone().unwrap_or_default().as_str(),
                             clone!(@strong prof => move |row| {
                                 let n_val = row.text().to_string();
-                                prof.borrow_mut().features.basalt.repo = n_val.is_empty().then_some(n_val);
+                                prof.borrow_mut().features.basalt.repo = (!n_val.is_empty()).then_some(n_val);
                             })
                         ),
                         add: &entry_row(
@@ -326,7 +326,7 @@ impl SimpleComponent for ProfileEditor {
                             model.profile.borrow().features.basalt.branch.clone().unwrap_or_default().as_str(),
                             clone!(@strong prof => move |row| {
                                 let n_val = row.text().to_string();
-                                prof.borrow_mut().features.basalt.branch = n_val.is_empty().then_some(n_val);
+                                prof.borrow_mut().features.basalt.branch = (!n_val.is_empty()).then_some(n_val);
                             })
                         ),
                     },
