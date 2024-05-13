@@ -13,15 +13,21 @@ pub fn get_build_openhmd_jobs(profile: &Profile, clean_build: bool) -> VecDeque<
     let mut jobs = VecDeque::<WorkerJob>::new();
 
     let git = Git {
-        repo: match profile.features.openhmd.repo.as_ref() {
-            Some(r) => r.clone(),
-            None => "https://github.com/OpenHMD/OpenHMD".into(),
-        },
+        repo: profile
+            .features
+            .openhmd
+            .repo
+            .as_ref()
+            .unwrap_or(&"https://github.com/OpenHMD/OpenHMD".into())
+            .clone(),
         dir: profile.features.openhmd.path.as_ref().unwrap().clone(),
-        branch: match profile.features.openhmd.branch.as_ref() {
-            Some(r) => r.clone(),
-            None => "master".into(),
-        },
+        branch: profile
+            .features
+            .openhmd
+            .branch
+            .as_ref()
+            .unwrap_or(&"master".into())
+            .clone(),
     };
 
     jobs.extend(git.get_pre_build_jobs(profile.pull_on_build));

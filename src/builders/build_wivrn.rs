@@ -13,15 +13,17 @@ pub fn get_build_wivrn_jobs(profile: &Profile, clean_build: bool) -> VecDeque<Wo
     let mut jobs = VecDeque::<WorkerJob>::new();
 
     let git = Git {
-        repo: match profile.xrservice_repo.as_ref() {
-            Some(r) => r.clone(),
-            None => "https://github.com/Meumeu/WiVRn".into(),
-        },
+        repo: profile
+            .xrservice_repo
+            .as_ref()
+            .unwrap_or(&"https://github.com/Meumeu/WiVRn".into())
+            .clone(),
         dir: profile.xrservice_path.clone(),
-        branch: match profile.xrservice_branch.as_ref() {
-            Some(r) => r.clone(),
-            None => "master".into(),
-        },
+        branch: profile
+            .xrservice_branch
+            .as_ref()
+            .unwrap_or(&"master".into())
+            .clone(),
     };
 
     jobs.extend(git.get_pre_build_jobs(profile.pull_on_build));

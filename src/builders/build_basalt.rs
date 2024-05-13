@@ -13,15 +13,21 @@ pub fn get_build_basalt_jobs(profile: &Profile, clean_build: bool) -> VecDeque<W
     let mut jobs = VecDeque::<WorkerJob>::new();
 
     let git = Git {
-        repo: match profile.features.basalt.repo.as_ref() {
-            Some(r) => r.clone(),
-            None => "https://gitlab.freedesktop.org/mateosss/basalt.git".into(),
-        },
+        repo: profile
+            .features
+            .basalt
+            .repo
+            .as_ref()
+            .unwrap_or(&"https://gitlab.freedesktop.org/mateosss/basalt.git".into())
+            .clone(),
         dir: profile.features.basalt.path.as_ref().unwrap().clone(),
-        branch: match profile.features.basalt.branch.as_ref() {
-            Some(r) => r.clone(),
-            None => "main".into(),
-        },
+        branch: profile
+            .features
+            .basalt
+            .branch
+            .as_ref()
+            .unwrap_or(&"main".into())
+            .clone(),
     };
 
     jobs.extend(git.get_pre_build_jobs(profile.pull_on_build));

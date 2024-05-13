@@ -13,15 +13,17 @@ pub fn get_build_monado_jobs(profile: &Profile, clean_build: bool) -> VecDeque<W
     let mut jobs = VecDeque::<WorkerJob>::new();
 
     let git = Git {
-        repo: match profile.xrservice_repo.as_ref() {
-            Some(r) => r.clone(),
-            None => "https://gitlab.freedesktop.org/monado/monado".into(),
-        },
+        repo: profile
+            .xrservice_repo
+            .as_ref()
+            .unwrap_or(&"https://gitlab.freedesktop.org/monado/monado".into())
+            .clone(),
         dir: profile.xrservice_path.clone(),
-        branch: match profile.xrservice_branch.as_ref() {
-            Some(r) => r.clone(),
-            None => "main".into(),
-        },
+        branch: profile
+            .xrservice_branch
+            .as_ref()
+            .unwrap_or(&"main".into())
+            .clone(),
     };
 
     jobs.extend(git.get_pre_build_jobs(profile.pull_on_build));

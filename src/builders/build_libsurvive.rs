@@ -13,15 +13,21 @@ pub fn get_build_libsurvive_jobs(profile: &Profile, clean_build: bool) -> VecDeq
     let mut jobs = VecDeque::<WorkerJob>::new();
 
     let git = Git {
-        repo: match profile.features.libsurvive.repo.as_ref() {
-            Some(r) => r.clone(),
-            None => "https://github.com/cntools/libsurvive".into(),
-        },
+        repo: profile
+            .features
+            .libsurvive
+            .repo
+            .as_ref()
+            .unwrap_or(&"https://github.com/cntools/libsurvive".into())
+            .clone(),
         dir: profile.features.libsurvive.path.as_ref().unwrap().clone(),
-        branch: match profile.features.libsurvive.branch.as_ref() {
-            Some(r) => r.clone(),
-            None => "master".into(),
-        },
+        branch: profile
+            .features
+            .libsurvive
+            .branch
+            .as_ref()
+            .unwrap_or(&"master".into())
+            .clone(),
     };
 
     jobs.extend(git.get_pre_build_jobs(profile.pull_on_build));

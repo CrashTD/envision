@@ -13,15 +13,17 @@ pub fn get_build_opencomposite_jobs(profile: &Profile, clean_build: bool) -> Vec
     let mut jobs = VecDeque::<WorkerJob>::new();
 
     let git = Git {
-        repo: match profile.opencomposite_repo.as_ref() {
-            Some(r) => r.clone(),
-            None => "https://gitlab.com/znixian/OpenOVR.git".into(),
-        },
+        repo: profile
+            .opencomposite_repo
+            .as_ref()
+            .unwrap_or(&"https://gitlab.com/znixian/OpenOVR.git".into())
+            .clone(),
         dir: profile.opencomposite_path.clone(),
-        branch: match profile.opencomposite_branch.as_ref() {
-            Some(r) => r.clone(),
-            None => "openxr".into(),
-        },
+        branch: profile
+            .opencomposite_branch
+            .as_ref()
+            .unwrap_or(&"openxr".into())
+            .clone(),
     };
 
     jobs.extend(git.get_pre_build_jobs(profile.pull_on_build));
