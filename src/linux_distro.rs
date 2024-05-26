@@ -74,7 +74,7 @@ impl LinuxDistro {
         {
             return Some(Self::Debian);
         }
-        if s.contains("fedora") || s.contains("nobara") {
+        if s.contains("fedora") || s.contains("nobara") || s.contains("ultramarine linux") {
             return Some(Self::Fedora);
         }
         if s.contains("gentoo") {
