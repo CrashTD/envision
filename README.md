@@ -14,7 +14,27 @@ UI for building, configuring and running Monado, the open source OpenXR runtime.
 
 Download the latest AppImage snapshot: [GitLab Pipelines](https://gitlab.com/gabmus/envision/-/pipelines?page=1&scope=all&ref=main)
 
+<details>
+<summary>
+
+## Dependencies
+
+</summary>
+
+### Arch
+
+You can find the Arch dependencies in the `PKGBUILD` in `dist/arch/PKGBUILD`.
+
+### Debian/Ubuntu
+
+You can find the Debian dependencies in the `.gitlab-ci.yml` file in this repository, in particular you can find the install command used by the CI in the `appimage` stage.
+
+</details>
+
+
+
 ## Building and running from source
+
 
 ```bash
 git clone https://gitlab.com/gabmus/envision/
