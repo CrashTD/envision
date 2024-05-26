@@ -5,6 +5,7 @@ use super::job_worker::{
 };
 use crate::paths::get_steamvr_bin_dir_path;
 use relm4::{
+    binding::{Binding, ConnectBinding, StringBinding},
     gtk::{self, prelude::*},
     ComponentParts, ComponentSender, RelmWidgetExt, SimpleComponent,
 };
@@ -58,27 +59,50 @@ impl SimpleComponent for SteamVrCalibrationBox {
                 add_css_class: "heading",
                 set_hexpand: true,
                 set_xalign: 0.0,
-                set_label: "SteamVR Calibration",
+                set_label: "SteamVR Quick Calibration",
                 set_wrap: true,
                 set_wrap_mode: gtk::pango::WrapMode::Word,
             },
-            gtk::Label {
-                add_css_class: "dim-label",
-                set_hexpand: true,
-                set_label: concat!(
-                    "Run a quick SteamVR calibration.\n\n",
-                    " \u{2022} Plug in your HMD and place it on the floor, ",
-                    "approximately in the middle of your play area\n",
-                    " \u{2022} Make sure your controllers and other VR devices ",
-                    "are turned off\n",
-                    " \u{2022} Click the Calibrate button and wait for the ",
-                    "process to finish\n\n",
-                    "Note that the orientation of your HMD during this process ",
-                    "will dictate the forward direction of your play area.",
-                ),
-                set_xalign: 0.0,
-                set_wrap: true,
-                set_wrap_mode: gtk::pango::WrapMode::Word,
+            gtk::Button {
+                add_css_class: "flat",
+                gtk::Box {
+                    set_orientation: gtk::Orientation::Horizontal,
+                    set_hexpand: true,
+                    set_vexpand: false,
+                    set_spacing: 6,
+                    set_halign: gtk::Align::Start,
+                    #[name(revealer_icon)]
+                    gtk::Image {
+                        set_icon_name: Some("pan-end-symbolic"),
+                    },
+                    gtk::Label {
+                        set_label: "Details"
+                    }
+                },
+                connect_clicked[revealer] => move |_| {
+                    revealer.set_reveal_child(!revealer.reveals_child())
+                },
+            },
+            #[name(revealer)]
+            gtk::Revealer {
+                gtk::Label {
+                    add_css_class: "dim-label",
+                    set_hexpand: true,
+                    set_label: concat!(
+                        "Run a quick SteamVR calibration.\n\n",
+                        " \u{2022} Plug in your HMD and place it on the floor, ",
+                        "approximately in the middle of your play area\n",
+                        " \u{2022} Make sure your controllers and other VR devices ",
+                        "are turned off\n",
+                        " \u{2022} Click the Calibrate button and wait for the ",
+                        "process to finish\n\n",
+                        "Note that the orientation of your HMD during this process ",
+                        "will dictate the forward direction of your play area.",
+                    ),
+                    set_xalign: 0.0,
+                    set_wrap: true,
+                    set_wrap_mode: gtk::pango::WrapMode::Word,
+                },
             },
             gtk::Label {
                 add_css_class: "error",
@@ -202,6 +226,16 @@ impl SimpleComponent for SteamVrCalibrationBox {
         };
 
         let widgets = view_output!();
+
+        let _ = &widgets
+            .revealer
+            .bind_property("reveal-child", &widgets.revealer_icon, "icon-name")
+            .transform_to(|_, reveal_child| match reveal_child {
+                true => Some("pan-down-symbolic"),
+                false => Some("pan-end-symbolic"),
+            })
+            .sync_create()
+            .build();
 
         ComponentParts { model, widgets }
     }
