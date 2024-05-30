@@ -125,11 +125,9 @@ impl SimpleComponent for ProfileEditor {
                     add: xrservicegrp = &adw::PreferencesGroup {
                         set_title: "XR Service",
                         set_description: Some(concat!(
-                            "When specifying a repository, you can set a ",
-                            "specific git ref (branch, tag, commit...) by ",
-                            "appending a '#' followed by the ref.\n\n",
                             "For launch options, you can insert %command% as ",
-                            "a placeholder for the actual XR Service command.",
+                            "a placeholder for the actual XR Service command,",
+                            "similarly to how Steam launch options work.",
                         )),
                         add: &combo_row(
                             "XR Service Type",
@@ -196,7 +194,7 @@ impl SimpleComponent for ProfileEditor {
                     add: model.xrservice_cmake_flags_rows.widget(),
                     add: opencompgrp = &adw::PreferencesGroup {
                         set_title: "OpenComposite",
-                        set_description: Some("OpenVR driver built on top of OpenXR\n\nWhen specifying a repository, you can set a specific git ref (branch, tag, commit...) by appending a '#' followed by the ref"),
+                        set_description: Some("OpenVR driver built on top of OpenXR"),
                         add: &path_row(
                             "OpenComposite Path", None,
                             Some(model.profile.borrow().opencomposite_path.clone()),
@@ -224,7 +222,7 @@ impl SimpleComponent for ProfileEditor {
                     },
                     add: libsurvivegrp = &adw::PreferencesGroup {
                         set_title: "Libsurvive",
-                        set_description: Some("Lighthouse tracking driver\n\nWhen specifying a repository, you can set a specific git ref (branch, tag, commit...) by appending a '#' followed by the ref"),
+                        set_description: Some("Lighthouse tracking driver"),
                         add: &switch_row(
                             "Enable Libsurvive", None,
                             model.profile.borrow().features.libsurvive.enabled,
@@ -260,7 +258,7 @@ impl SimpleComponent for ProfileEditor {
                     },
                     add: openhmdgrp = &adw::PreferencesGroup {
                         set_title: "OpenHMD",
-                        set_description: Some("Legacy driver for older Oculus HMDs\n\nWhen specifying a repository, you can set a specific git ref (branch, tag, commit...) by appending a '#' followed by the ref"),
+                        set_description: Some("Legacy driver for older Oculus HMDs"),
                         add: &switch_row(
                             "Enable OpenHMD", None,
                             model.profile.borrow().features.openhmd.enabled,
@@ -296,7 +294,7 @@ impl SimpleComponent for ProfileEditor {
                     },
                     add: basaltgrp = &adw::PreferencesGroup {
                         set_title: "Basalt",
-                        set_description: Some("Camera based SLAM tracking driver\n\nWhen specifying a repository, you can set a specific git ref (branch, tag, commit...) by appending a '#' followed by the ref"),
+                        set_description: Some("Camera based SLAM tracking driver"),
                         add: &switch_row(
                             "Enable Basalt", None,
                             model.profile.borrow().features.basalt.enabled,
