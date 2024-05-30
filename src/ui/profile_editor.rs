@@ -154,7 +154,7 @@ impl SimpleComponent for ProfileEditor {
                             "Lighthouse Driver",
                             Some(concat!(
                                 "Driver for lighhouse tracked XR devices (ie: Valve Index, HTC Vive...). Only applicable for Monado.\n\n",
-                                " \u{2022} Vive: 3DOF tracking\n",
+                                " \u{2022} Vive: 3DOF tracking; use this if your device doesn't use lighthouses\n",
                                 " \u{2022} Survive: 6DOF reverse engineered lighthouse tracking provided by Libsurvive\n",
                                 " \u{2022} SteamVR: 6DOF lighthouse tracking using the proprietary SteamVR driver",
                             )),
