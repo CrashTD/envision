@@ -47,7 +47,7 @@ use crate::xr_devices::XRDevice;
 use gtk::glib::clone;
 use gtk::prelude::*;
 use relm4::actions::{AccelsPlus, ActionGroupName, RelmAction, RelmActionGroup};
-use relm4::adw::traits::MessageDialogExt;
+use relm4::adw::prelude::MessageDialogExt;
 use relm4::adw::ResponseAppearance;
 use relm4::gtk::glib;
 use relm4::{new_action_group, new_stateful_action, new_stateless_action, prelude::*};
@@ -743,7 +743,7 @@ impl SimpleComponent for App {
 
     fn init(
         init: Self::Init,
-        root: &Self::Root,
+        root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
         let config = Config::get_config();
@@ -751,7 +751,7 @@ impl SimpleComponent for App {
         let profiles = config.profiles();
         let setcap_confirm_dialog = adw::MessageDialog::builder()
             .modal(true)
-            .transient_for(root)
+            .transient_for(&root)
             .heading("Set Capabilities")
             .body(concat!(
                 "We need to set certain capabilities (CAP_SYS_NICE=eip) on the ",
@@ -801,17 +801,17 @@ impl SimpleComponent for App {
                 },
             ),
             about_dialog: AboutDialog::builder()
-                .transient_for(root)
+                .transient_for(&root)
                 .launch(())
                 .detach(),
             build_window: BuildWindow::builder()
-                .transient_for(root)
+                .transient_for(&root)
                 .launch(())
                 .forward(sender.input_sender(), |msg| match msg {
                     BuildWindowOutMsg::CancelBuild => Msg::CancelBuild,
                 }),
             libsurvive_setup_window: LibsurviveSetupWindow::builder()
-                .transient_for(root)
+                .transient_for(&root)
                 .launch(())
                 .detach(),
             split_view: None,

@@ -1,6 +1,6 @@
 use gtk4::gdk;
 use relm4::adw;
-use zoha_vte4::{Terminal, TerminalExt};
+use vte4::{Terminal, TerminalExt};
 
 const MAX_SCROLLBACK: u32 = 2000;
 
@@ -51,7 +51,7 @@ impl TermWidget {
 
     pub fn set_search_term(&self, term: Option<&str>) {
         self.term.search_set_regex(
-            term.map(|txt| zoha_vte4::Regex::for_search(txt, 0).ok())
+            term.map(|txt| vte4::Regex::for_search(txt, 0).ok())
                 .flatten()
                 .as_ref(),
             0,

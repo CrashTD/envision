@@ -1,5 +1,7 @@
 use super::{
-    factories::wivrn_encoder_group_factory::{WivrnEncoderModel, WivrnEncoderModelInit},
+    factories::wivrn_encoder_group_factory::{
+        WivrnEncoderModel, WivrnEncoderModelInit, WivrnEncoderModelOutMsg,
+    },
     util::bits_from_mbits,
 };
 use crate::{
@@ -121,10 +123,7 @@ impl SimpleComponent for WivrnConfEditor {
                                 })
                                 .unwrap_or_default(),
                             false,
-                            {
-                                let sender = sender.clone();
-                                move |_| {}
-                            }
+                            move |_| {}
                         ) -> adw::EntryRow,
                     },
                     add: encodersrgp = &adw::PreferencesGroup {
@@ -207,7 +206,7 @@ impl SimpleComponent for WivrnConfEditor {
 
     fn init(
         init: Self::Init,
-        root: &Self::Root,
+        root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
         let mut model = Self {
@@ -227,7 +226,11 @@ impl SimpleComponent for WivrnConfEditor {
         model.bitrate_row = Some(widgets.bitrate_row.clone());
 
         let mut encoder_models: AsyncFactoryVecDeque<WivrnEncoderModel> =
-            AsyncFactoryVecDeque::new(widgets.pref_page.clone(), sender.input_sender());
+            AsyncFactoryVecDeque::builder()
+                .launch(widgets.pref_page.clone())
+                .forward(sender.input_sender(), |msg| match msg {
+                    WivrnEncoderModelOutMsg::Delete(id) => WivrnConfEditorMsg::DeleteEncoder(id),
+                });
         for encoder_conf in model.conf.encoders.clone() {
             encoder_models.guard().push_back(WivrnEncoderModelInit {
                 encoder_conf: Some(encoder_conf),

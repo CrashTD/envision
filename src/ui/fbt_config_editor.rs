@@ -1,4 +1,4 @@
-use super::factories::tracker_role_group_factory::TrackerRoleModel;
+use super::factories::tracker_role_group_factory::{TrackerRoleModel, TrackerRoleModelOutMsg};
 use crate::{
     file_builders::monado_config_v0::{
         dump_monado_config_v0, get_monado_config_v0, MonadoConfigV0, TrackerRole,
@@ -101,7 +101,7 @@ impl SimpleComponent for FbtConfigEditor {
 
     fn init(
         init: Self::Init,
-        root: &Self::Root,
+        root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
         let page = adw::PreferencesPage::builder().build();
@@ -124,7 +124,15 @@ impl SimpleComponent for FbtConfigEditor {
             win: None,
             tracker: 0,
             monado_config_v0: get_monado_config_v0(),
-            tracker_role_groups: AsyncFactoryVecDeque::new(page, sender.input_sender()),
+            tracker_role_groups: AsyncFactoryVecDeque::builder().launch(page).forward(
+                sender.input_sender(),
+                |msg| match msg {
+                    TrackerRoleModelOutMsg::Changed(index, tracker_role) => {
+                        Self::Input::TrackerRoleChanged(index, tracker_role.clone())
+                    }
+                    TrackerRoleModelOutMsg::Delete(index) => Self::Input::TrackerRoleDeleted(index),
+                },
+            ),
         };
 
         model.populate_tracker_roles();
@@ -141,7 +149,7 @@ impl SimpleComponent for FbtConfigEditor {
                 gtk::ShortcutTrigger::parse_string("Escape"),
                 Some(gtk::CallbackAction::new(move |_, _| {
                     win.close();
-                    true
+                    gtk::glib::Propagation::Proceed
                 })),
             ));
             widgets.win.add_controller(sc);

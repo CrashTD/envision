@@ -1,11 +1,14 @@
 use super::{
     alert::alert,
-    factories::env_var_row_factory::{EnvVarModel, EnvVarModelInit, VarType},
+    factories::env_var_row_factory::{EnvVarModel, EnvVarModelInit},
 };
 use crate::{
     env_var_descriptions::env_var_descriptions_as_paragraph,
     profile::{LighthouseDriver, Profile, XRServiceType},
-    ui::preference_rows::{combo_row, entry_row, path_row, switch_row},
+    ui::{
+        factories::env_var_row_factory::EnvVarModelOutMsg,
+        preference_rows::{combo_row, entry_row, path_row, switch_row},
+    },
 };
 use adw::prelude::*;
 use gtk::glib::clone;
@@ -415,11 +418,9 @@ impl SimpleComponent for ProfileEditor {
                         (var, "".to_string())
                     };
                     prof.environment.insert(name.clone(), value.clone());
-                    self.env_rows.guard().push_back(EnvVarModelInit {
-                        name,
-                        value,
-                        var_type: VarType::EnvVar,
-                    });
+                    self.env_rows
+                        .guard()
+                        .push_back(EnvVarModelInit { name, value });
                 }
             }
             Self::Input::AddXrServiceCmakeFlag(name) => {
@@ -432,7 +433,6 @@ impl SimpleComponent for ProfileEditor {
                         .push_back(EnvVarModelInit {
                             name,
                             value: "".to_string(),
-                            var_type: VarType::XrServiceCmakeFlags,
                         });
                 }
             }
@@ -441,7 +441,7 @@ impl SimpleComponent for ProfileEditor {
 
     fn init(
         init: Self::Init,
-        root: &Self::Root,
+        root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
         let (add_env_var_btn, add_cmake_flag_btn) = {
@@ -499,21 +499,35 @@ impl SimpleComponent for ProfileEditor {
         let mut model = Self {
             profile,
             win: None,
-            env_rows: AsyncFactoryVecDeque::new(
-                adw::PreferencesGroup::builder()
-                    .title("Environment Variables")
-                    .description(env_var_descriptions_as_paragraph())
-                    .header_suffix(&add_env_var_btn)
-                    .build(),
-                sender.input_sender(),
-            ),
-            xrservice_cmake_flags_rows: AsyncFactoryVecDeque::new(
-                adw::PreferencesGroup::builder()
-                    .title("XR Service CMake Flags")
-                    .header_suffix(&add_cmake_flag_btn)
-                    .build(),
-                sender.input_sender(),
-            ),
+            env_rows: AsyncFactoryVecDeque::builder()
+                .launch(
+                    adw::PreferencesGroup::builder()
+                        .title("Environment Variables")
+                        .description(env_var_descriptions_as_paragraph())
+                        .header_suffix(&add_env_var_btn)
+                        .build(),
+                )
+                .forward(sender.input_sender(), |msg| match msg {
+                    EnvVarModelOutMsg::Changed(name, value) => {
+                        ProfileEditorMsg::EnvVarChanged(name, value)
+                    }
+                    EnvVarModelOutMsg::Delete(name) => ProfileEditorMsg::EnvVarDelete(name),
+                }),
+            xrservice_cmake_flags_rows: AsyncFactoryVecDeque::builder()
+                .launch(
+                    adw::PreferencesGroup::builder()
+                        .title("XR Service CMake Flags")
+                        .header_suffix(&add_cmake_flag_btn)
+                        .build(),
+                )
+                .forward(sender.input_sender(), |msg| match msg {
+                    EnvVarModelOutMsg::Changed(name, value) => {
+                        ProfileEditorMsg::XrServiceCmakeFlagsChanged(name, value)
+                    }
+                    EnvVarModelOutMsg::Delete(name) => {
+                        ProfileEditorMsg::XrServiceCmakeFlagsDelete(name)
+                    }
+                }),
             tracker: 0,
         };
         {
@@ -523,7 +537,6 @@ impl SimpleComponent for ProfileEditor {
                 guard.push_back(EnvVarModelInit {
                     name: k.clone(),
                     value: v.clone(),
-                    var_type: VarType::EnvVar,
                 });
             }
         }
@@ -534,7 +547,6 @@ impl SimpleComponent for ProfileEditor {
                 guard.push_back(EnvVarModelInit {
                     name: k.clone(),
                     value: v.clone(),
-                    var_type: VarType::XrServiceCmakeFlags,
                 });
             }
         }

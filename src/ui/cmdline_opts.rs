@@ -4,7 +4,7 @@ use gtk4::{
         prelude::{ApplicationCommandLineExt, ApplicationExt},
         Application, ApplicationCommandLine,
     },
-    glib::{self, IsA},
+    glib::{self, prelude::IsA},
 };
 
 #[derive(Debug, Clone)]

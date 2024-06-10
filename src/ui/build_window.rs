@@ -163,7 +163,7 @@ impl SimpleComponent for BuildWindow {
 
     fn init(
         _init: Self::Init,
-        root: &Self::Root,
+        root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
         let mut model = Self {

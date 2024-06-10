@@ -1,5 +1,5 @@
 use crate::constants::{get_developers, APP_ID, APP_NAME, REPO_URL, SINGLE_DEVELOPER, VERSION};
-use relm4::gtk::traits::GtkWindowExt;
+use relm4::gtk::prelude::GtkWindowExt;
 use relm4::prelude::*;
 use relm4::{ComponentParts, SimpleComponent};
 
@@ -28,7 +28,7 @@ impl SimpleComponent for AboutDialog {
 
     fn init(
         _init: Self::Init,
-        root: &Self::Root,
+        root: Self::Root,
         _sender: relm4::ComponentSender<Self>,
     ) -> relm4::ComponentParts<Self> {
         let model = AboutDialog {};

@@ -1,15 +1,8 @@
 use crate::{
     file_builders::wivrn_config::{Codec, Encoder, WivrnConfEncoder},
-    ui::{
-        preference_rows::{combo_row, number_entry_row, spin_row},
-        util::{bits_from_mbits, bits_to_mbits},
-        wivrn_conf_editor::WivrnConfEditorMsg,
-    },
+    ui::preference_rows::{combo_row, spin_row},
 };
-use relm4::{
-    adw::prelude::*, factory::AsyncFactoryComponent, gtk::prelude::*, prelude::*,
-    AsyncFactorySender,
-};
+use relm4::{adw::prelude::*, factory::AsyncFactoryComponent, prelude::*, AsyncFactorySender};
 use uuid::Uuid;
 
 #[derive(Debug)]
@@ -46,7 +39,6 @@ impl AsyncFactoryComponent for WivrnEncoderModel {
     type Input = WivrnEncoderModelMsg;
     type Output = WivrnEncoderModelOutMsg;
     type CommandOutput = ();
-    type ParentInput = WivrnConfEditorMsg;
     type ParentWidget = adw::PreferencesPage;
 
     view! {
@@ -190,14 +182,10 @@ impl AsyncFactoryComponent for WivrnEncoderModel {
             Self::Input::GroupChanged(val) => {
                 self.encoder_conf.group = val;
             }
-            Self::Input::Delete => sender.output(Self::Output::Delete(self.uid.clone())),
+            Self::Input::Delete => {
+                sender.output(Self::Output::Delete(self.uid.clone()));
+            }
         }
-    }
-
-    fn forward_to_parent(output: Self::Output) -> Option<Self::ParentInput> {
-        Some(match output {
-            Self::Output::Delete(id) => Self::ParentInput::DeleteEncoder(id),
-        })
     }
 
     async fn init_model(

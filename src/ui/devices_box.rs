@@ -182,8 +182,8 @@ impl SimpleComponent for DevicesBox {
 
     fn init(
         _init: Self::Init,
-        root: &Self::Root,
-        sender: ComponentSender<Self>,
+        root: Self::Root,
+        _sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
         let devices_listbox = gtk::ListBox::builder()
             .css_classes(["boxed-list"])
@@ -193,7 +193,9 @@ impl SimpleComponent for DevicesBox {
         let model = Self {
             tracker: 0,
             devices: vec![],
-            device_rows: AsyncFactoryVecDeque::new(devices_listbox.clone(), sender.input_sender()),
+            device_rows: AsyncFactoryVecDeque::builder()
+                .launch(devices_listbox.clone())
+                .detach(),
         };
 
         let widgets = view_output!();

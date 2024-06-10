@@ -36,7 +36,6 @@ impl AsyncFactoryComponent for TrackerRoleModel {
     type Input = TrackerRoleModelMsg;
     type Output = TrackerRoleModelOutMsg;
     type CommandOutput = ();
-    type ParentInput = FbtConfigEditorMsg;
     type ParentWidget = adw::PreferencesPage;
 
     view! {
@@ -82,22 +81,15 @@ impl AsyncFactoryComponent for TrackerRoleModel {
         }
     }
 
-    fn forward_to_parent(output: Self::Output) -> Option<Self::ParentInput> {
-        Some(match output {
-            Self::Output::Changed(index, tracker_role) => {
-                Self::ParentInput::TrackerRoleChanged(index, tracker_role.clone())
-            }
-            Self::Output::Delete(index) => Self::ParentInput::TrackerRoleDeleted(index),
-        })
-    }
-
     async fn update(&mut self, message: Self::Input, sender: AsyncFactorySender<Self>) {
         match message {
             Self::Input::Changed(r) => {
                 self.tracker_role = r;
                 sender.output(Self::Output::Changed(self.index, self.tracker_role.clone()));
             }
-            Self::Input::Delete => sender.output(Self::Output::Delete(self.index)),
+            Self::Input::Delete => {
+                sender.output(Self::Output::Delete(self.index));
+            }
         }
     }
 

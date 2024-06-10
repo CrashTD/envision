@@ -1,5 +1,5 @@
-use gtk::traits::{GtkApplicationExt, GtkWindowExt};
-use relm4::{adw::traits::MessageDialogExt, prelude::*};
+use gtk::prelude::{GtkApplicationExt, GtkWindowExt};
+use relm4::{adw::prelude::MessageDialogExt, prelude::*};
 
 fn alert_base(title: &str, msg: Option<&str>, parent: Option<&gtk::Window>) -> adw::MessageDialog {
     let d = adw::MessageDialog::builder()

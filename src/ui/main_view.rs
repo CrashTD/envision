@@ -22,8 +22,7 @@ use crate::ui::steamvr_calibration_box::SteamVrCalibrationBoxMsg;
 use crate::ui::util::{copy_text, limit_dropdown_width, warning_heading};
 use crate::xr_devices::XRDevice;
 use gtk::prelude::*;
-use relm4::adw::traits::MessageDialogExt;
-use relm4::adw::ResponseAppearance;
+use relm4::adw::{prelude::MessageDialogExt, ResponseAppearance};
 use relm4::prelude::*;
 use relm4::{ComponentParts, ComponentSender, SimpleComponent};
 
@@ -622,7 +621,7 @@ impl SimpleComponent for MainView {
 
     fn init(
         init: Self::Init,
-        root: &Self::Root,
+        root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
         let profile_not_editable_dialog = adw::MessageDialog::builder()

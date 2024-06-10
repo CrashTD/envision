@@ -7,7 +7,7 @@ use gtk::glib::clone;
 use gtk::prelude::*;
 use relm4::prelude::*;
 use relm4::{ComponentSender, SimpleComponent};
-use zoha_vte4::TerminalExt;
+use vte4::TerminalExt;
 
 #[derive(Debug)]
 pub enum SearchDirection {
@@ -195,7 +195,7 @@ impl SimpleComponent for DebugView {
 
     fn init(
         _init: Self::Init,
-        root: &Self::Root,
+        root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
         let log_level_dropdown = gtk::DropDown::from_strings(
@@ -240,10 +240,10 @@ impl SimpleComponent for DebugView {
             sc.add_shortcut(gtk::Shortcut::new(
                 gtk::ShortcutTrigger::parse_string("<Control>c"),
                 Some(gtk::CallbackAction::new(move |_, _| {
-                    if let Some(text) = term.text_selected(zoha_vte4::Format::Text) {
+                    if let Some(text) = term.text_selected(vte4::Format::Text) {
                         copy_text(text.as_str());
                     }
-                    true
+                    gtk::glib::Propagation::Proceed
                 })),
             ));
             let term = model.term.term.clone();
@@ -251,7 +251,7 @@ impl SimpleComponent for DebugView {
                 gtk::ShortcutTrigger::parse_string("<Control>a"),
                 Some(gtk::CallbackAction::new(move |_, _| {
                     term.select_all();
-                    true
+                    gtk::glib::Propagation::Proceed
                 })),
             ));
             model.term.term.add_controller(sc);

@@ -82,7 +82,6 @@ impl AsyncFactoryComponent for DeviceRowModel {
     type Input = ();
     type Output = ();
     type CommandOutput = ();
-    type ParentInput = DevicesBoxMsg;
     type ParentWidget = gtk::ListBox;
 
     view! {
@@ -115,7 +114,7 @@ impl AsyncFactoryComponent for DeviceRowModel {
     fn init_widgets(
         &mut self,
         _index: &DynamicIndex,
-        root: &Self::Root,
+        root: Self::Root,
         _returned_widget: &<Self::ParentWidget as relm4::factory::FactoryView>::ReturnedWidget,
         _sender: AsyncFactorySender<Self>,
     ) -> Self::Widgets {
