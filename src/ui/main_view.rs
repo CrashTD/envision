@@ -7,10 +7,7 @@ use super::steamvr_calibration_box::SteamVrCalibrationBox;
 use crate::config::Config;
 use crate::dependencies::common::dep_pkexec;
 use crate::file_utils::mount_has_nosuid;
-use crate::gpu_profile::{
-    get_amd_gpu_power_profile, get_first_amd_gpu, get_set_amd_vr_pow_prof_cmd, GpuPowerProfile,
-    GpuSysDrm,
-};
+use crate::gpu_profile::{get_amd_gpu_power_profile, GpuPowerProfile};
 use crate::profile::{LighthouseDriver, Profile, XRServiceType};
 use crate::steamvr_utils::chaperone_info_exists;
 use crate::ui::app::{
@@ -19,7 +16,7 @@ use crate::ui::app::{
 };
 use crate::ui::profile_editor::ProfileEditorInit;
 use crate::ui::steamvr_calibration_box::SteamVrCalibrationBoxMsg;
-use crate::ui::util::{copy_text, limit_dropdown_width, warning_heading};
+use crate::ui::util::{limit_dropdown_width, warning_heading};
 use crate::xr_devices::XRDevice;
 use gtk::prelude::*;
 use relm4::adw::{prelude::MessageDialogExt, ResponseAppearance};
@@ -276,62 +273,19 @@ impl SimpleComponent for MainView {
                             },
                             warning_heading(),
                             gtk::Label {
-                                set_label: concat!(
+                                set_use_markup: true,
+                                set_markup: concat!(
                                     "Your AMD GPU Power Profile is not set to VR. ",
                                     "This will cause noticeable stutter when running XR ",
-                                    "applications. Activate the VR profile with the ",
-                                    "following command:",
+                                    "applications.\n\n",
+                                    "You can activate the VR Power Profile using ",
+                                    "GPU overclocking utilities such as ",
+                                    "<a href=\"https://gitlab.com/corectrl/corectrl\">CoreCtrl</a>."
                                 ),
                                 add_css_class: "warning",
                                 set_xalign: 0.0,
                                 set_wrap: true,
                                 set_wrap_mode: gtk::pango::WrapMode::Word,
-                            },
-                            gtk::Box {
-                                set_orientation: gtk::Orientation::Horizontal,
-                                set_spacing: 6,
-                                gtk::ScrolledWindow {
-                                    add_css_class: "card",
-                                    set_vscrollbar_policy: gtk::PolicyType::Never,
-                                    set_overflow: gtk::Overflow::Hidden,
-                                    gtk::TextView {
-                                        set_hexpand: true,
-                                        set_vexpand: false,
-                                        set_monospace: true,
-                                        set_editable: false,
-                                        set_left_margin: 6,
-                                        set_right_margin: 6,
-                                        set_top_margin: 6,
-                                        set_bottom_margin: 18,
-                                        #[wrap(Some)]
-                                        set_buffer: cmdbuf = &gtk::TextBuffer {
-                                            set_text: &{
-                                                let mut res = String::new();
-                                                if let Some(GpuSysDrm::Amd(d)) = get_first_amd_gpu() {
-                                                    let ds = d.as_str();
-                                                    res = get_set_amd_vr_pow_prof_cmd(ds);
-                                                }
-                                                res
-                                            },
-                                            set_enable_undo: false,
-                                        }
-                                    }
-                                },
-                                gtk::Button {
-                                    add_css_class: "flat",
-                                    add_css_class: "circular",
-                                    set_tooltip_text: Some("Copy"),
-                                    set_icon_name: "edit-copy-symbolic",
-                                    set_vexpand: false,
-                                    set_valign: gtk::Align::Center,
-                                    connect_clicked => move |_| {
-                                        if let Some(GpuSysDrm::Amd(d)) = get_first_amd_gpu() {
-                                            copy_text(
-                                                &get_set_amd_vr_pow_prof_cmd(d.as_str())
-                                            )
-                                        }
-                                    }
-                                },
                             },
                             gtk::Button {
                                 set_halign: gtk::Align::Start,
