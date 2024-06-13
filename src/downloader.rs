@@ -1,4 +1,4 @@
-use crate::{constants::APP_ID, file_utils::get_writer};
+use crate::{constants::APP_ID, file_utils::get_writer_legacy};
 use reqwest::{
     header::{HeaderMap, USER_AGENT},
     Method,
@@ -32,7 +32,7 @@ pub fn download_file(url: String, path: String) -> JoinHandle<Result<(), reqwest
                 if status.is_client_error() || status.is_server_error() {
                     return Err(res.error_for_status().unwrap_err());
                 }
-                let mut writer = get_writer(&path);
+                let mut writer = get_writer_legacy(&path);
                 for chunk in res
                     .bytes()
                     .expect("Could not get HTTP response bytes")

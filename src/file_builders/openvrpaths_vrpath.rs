@@ -1,5 +1,5 @@
 use crate::{
-    file_utils::{copy_file, deserialize_file, get_writer, set_file_readonly},
+    file_utils::{copy_file, deserialize_file, get_writer_legacy, set_file_readonly},
     paths::{get_backup_dir, get_xdg_config_dir, get_xdg_data_dir},
     profile::Profile,
 };
@@ -67,7 +67,7 @@ fn dump_openvrpaths_to_path(
     ovr_paths: &OpenVrPaths,
     path_s: &String,
 ) -> Result<(), serde_json::Error> {
-    let writer = get_writer(path_s);
+    let writer = get_writer_legacy(path_s);
     serde_json::to_writer_pretty(writer, ovr_paths)
 }
 

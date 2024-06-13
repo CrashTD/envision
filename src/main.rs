@@ -11,6 +11,7 @@ use relm4::{
     gtk::{self, gdk, gio, glib, prelude::*},
     MessageBroker, RelmApp,
 };
+use steam_linux_runtime_injector::restore_runtime_entrypoint;
 use ui::app::{App, AppInit};
 
 pub mod adb;
@@ -37,6 +38,7 @@ pub mod profile;
 pub mod profiles;
 pub mod runner;
 pub mod runner_pipeline;
+pub mod steam_linux_runtime_injector;
 pub mod steamvr_utils;
 pub mod ui;
 pub mod xr_devices;
@@ -60,6 +62,7 @@ fn restore_steam_xr_files() {
             };
         }
     }
+    restore_runtime_entrypoint();
 }
 
 fn main() -> Result<()> {

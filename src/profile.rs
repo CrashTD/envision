@@ -1,5 +1,5 @@
 use crate::{
-    file_utils::get_writer,
+    file_utils::get_writer_legacy,
     paths::{get_data_dir, get_ipc_file_path, BWRAP_SYSTEM_PREFIX, SYSTEM_PREFIX},
 };
 use serde::{Deserialize, Serialize};
@@ -288,14 +288,19 @@ impl Default for Profile {
 }
 
 impl Profile {
-    pub fn get_steam_launch_options(&self) -> String {
+    pub fn get_env_vars(&self) -> Vec<String> {
+        if self.can_be_built {
+            return vec![
+                "PRESSURE_VESSEL_FILESYSTEMS_RW=\"$XDG_RUNTIME_DIR/wivrn_comp_ipc:$XDG_RUNTIME_DIR/monado_comp_ipc\"".into(),
+            ];
+        }
         vec![
             // format!(
             //     "VR_OVERRIDE={opencomp}/build",
             //     opencomp = self.opencomposite_path,
             // ),
             format!(
-                "XR_RUNTIME_JSON={prefix}/share/openxr/1/openxr_{runtime}.json",
+                "XR_RUNTIME_JSON=\"{prefix}/share/openxr/1/openxr_{runtime}.json\"",
                 prefix = match self.prefix.as_str() {
                     SYSTEM_PREFIX => BWRAP_SYSTEM_PREFIX,
                     other => other,
@@ -306,12 +311,16 @@ impl Profile {
                 }
             ),
             format!(
-                "PRESSURE_VESSEL_FILESYSTEMS_RW={path}",
+                "PRESSURE_VESSEL_FILESYSTEMS_RW=\"{path}\"",
                 path = get_ipc_file_path(&self.xrservice_type),
             ),
-            "%command%".into(),
         ]
-        .join(" ")
+    }
+
+    pub fn get_steam_launch_options(&self) -> String {
+        let mut vars = self.get_env_vars();
+        vars.push("%command%".into());
+        vars.join(" ")
     }
 
     pub fn get_survive_cli_path(&self) -> Option<String> {
@@ -329,7 +338,7 @@ impl Profile {
     }
 
     pub fn dump_profile(&self, path_s: &String) {
-        let writer = get_writer(path_s);
+        let writer = get_writer_legacy(path_s);
         serde_json::to_writer_pretty(writer, self).expect("Could not write profile")
     }
 

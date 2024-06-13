@@ -39,6 +39,9 @@ use crate::log_parser::MonadoLog;
 use crate::paths::{get_data_dir, get_ipc_file_path};
 use crate::profile::{Profile, XRServiceType};
 use crate::stateless_action;
+use crate::steam_linux_runtime_injector::{
+    restore_runtime_entrypoint, set_runtime_entrypoint_launch_opts_from_profile,
+};
 use crate::ui::build_window::{BuildWindowMsg, BuildWindowOutMsg};
 use crate::ui::debug_view::{DebugViewInit, DebugViewOutMsg};
 use crate::ui::libsurvive_setup_window::LibsurviveSetupMsg;
@@ -199,7 +202,7 @@ impl App {
                 debug,
             );
             worker.start();
-            if let Some(autostart_cmd) = prof.autostart_command {
+            if let Some(autostart_cmd) = &prof.autostart_command {
                 let autostart_worker = JobWorker::new_with_timer(
                     Duration::from_secs(5),
                     WorkerJob::new_cmd(
@@ -222,6 +225,8 @@ impl App {
                 .emit(MainViewMsg::XRServiceActiveChanged(
                     true,
                     Some(self.get_selected_profile()),
+                    // show launch opts only if setting the runtime entrypoint fails
+                    set_runtime_entrypoint_launch_opts_from_profile(&prof).is_err(),
                 ));
             self.debug_view
                 .sender()
@@ -265,10 +270,9 @@ impl App {
             worker.stop();
         }
         self.libmonado = None;
-        self.restore_openxr_openvr_files();
         self.main_view
             .sender()
-            .emit(MainViewMsg::XRServiceActiveChanged(false, None));
+            .emit(MainViewMsg::XRServiceActiveChanged(false, None, false));
         self.debug_view
             .sender()
             .emit(DebugViewMsg::XRServiceActiveChanged(false));
@@ -334,9 +338,11 @@ impl SimpleComponent for App {
                 }
             }
             Msg::OnServiceExit(code) => {
+                self.restore_openxr_openvr_files();
+                restore_runtime_entrypoint();
                 self.main_view
                     .sender()
-                    .emit(MainViewMsg::XRServiceActiveChanged(false, None));
+                    .emit(MainViewMsg::XRServiceActiveChanged(false, None, false));
                 self.debug_view
                     .sender()
                     .emit(DebugViewMsg::XRServiceActiveChanged(false));
