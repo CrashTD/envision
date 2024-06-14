@@ -2,7 +2,7 @@ use crate::{
     depcheck::{DepType, Dependency, DependencyCheckResult},
     dependencies::common::{
         dep_cmake, dep_eigen, dep_gcc, dep_git, dep_glslang_validator, dep_gpp, dep_libdrm,
-        dep_ninja, dep_openxr, dep_vulkan_headers, dep_vulkan_icd_loader,
+        dep_libudev, dep_ninja, dep_openxr, dep_vulkan_headers, dep_vulkan_icd_loader,
     },
     linux_distro::LinuxDistro,
 };
@@ -53,6 +53,17 @@ fn monado_deps() -> Vec<Dependency> {
                 (LinuxDistro::Debian, "libsdl2-dev".into()),
                 (LinuxDistro::Fedora, "SDL2-devel".into()),
                 (LinuxDistro::Gentoo, "media-libs/libsdl2".into()),
+            ]),
+        },
+        dep_libudev(),
+        Dependency {
+            name: "mesa-common-dev".into(),
+            dep_type: DepType::Include,
+            filename: "GL/internal/dri_interface.h".into(),
+            packages: HashMap::from([
+                (LinuxDistro::Arch, "mesa".into()),
+                (LinuxDistro::Debian, "mesa-common-dev".into()),
+                (LinuxDistro::Fedora, "mesa-libGL-devel".into()),
             ]),
         },
     ]

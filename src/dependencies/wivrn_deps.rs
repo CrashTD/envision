@@ -2,7 +2,7 @@ use crate::{
     depcheck::{DepType, Dependency, DependencyCheckResult},
     dependencies::common::{
         dep_cmake, dep_eigen, dep_gcc, dep_git, dep_glslang_validator, dep_gpp, dep_libdrm,
-        dep_ninja, dep_openxr, dep_vulkan_headers, dep_vulkan_icd_loader,
+        dep_libudev, dep_ninja, dep_openxr, dep_vulkan_headers, dep_vulkan_icd_loader,
     },
     linux_distro::LinuxDistro,
 };
@@ -120,17 +120,7 @@ fn wivrn_deps() -> Vec<Dependency> {
             ]),
         },
         dep_glslang_validator(),
-        Dependency {
-            name: "libudev".into(),
-            dep_type: DepType::Include,
-            filename: "libudev.h".into(),
-            packages: HashMap::from([
-                (LinuxDistro::Arch, "systemd-libs".into()),
-                (LinuxDistro::Debian, "libudev-dev".into()),
-                (LinuxDistro::Fedora, "systemd-devel".into()),
-                (LinuxDistro::Gentoo, "virtual/libudev".into()),
-            ]),
-        },
+        dep_libudev(),
         Dependency {
             name: "gstreamer".into(),
             dep_type: DepType::SharedObject,

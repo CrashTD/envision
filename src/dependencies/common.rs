@@ -194,3 +194,17 @@ pub fn dep_opencv() -> Dependency {
         ]),
     }
 }
+
+pub fn dep_libudev() -> Dependency {
+    Dependency {
+        name: "libudev".into(),
+        dep_type: DepType::Include,
+        filename: "libudev.h".into(),
+        packages: HashMap::from([
+            (LinuxDistro::Arch, "systemd-libs".into()),
+            (LinuxDistro::Debian, "libudev-dev".into()),
+            (LinuxDistro::Fedora, "systemd-devel".into()),
+            (LinuxDistro::Gentoo, "virtual/libudev".into()),
+        ]),
+    }
+}
