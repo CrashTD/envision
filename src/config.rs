@@ -1,7 +1,7 @@
 use crate::{
     constants::CMD_NAME,
     device_prober::get_xr_usb_devices,
-    file_utils::get_writer,
+    file_utils::get_writer_legacy,
     paths::get_config_dir,
     profile::Profile,
     profiles::{
@@ -78,7 +78,7 @@ impl Config {
     }
 
     fn save_to_path(&self, path_s: &String) -> Result<(), serde_json::Error> {
-        let writer = get_writer(path_s);
+        let writer = get_writer_legacy(path_s);
         serde_json::to_writer_pretty(writer, self)
     }
 

@@ -9,7 +9,23 @@ use std::{
     path::Path,
 };
 
-pub fn get_writer(path_s: &String) -> BufWriter<std::fs::File> {
+pub fn get_writer(path_s: &str) -> anyhow::Result<BufWriter<std::fs::File>> {
+    let path = Path::new(path_s);
+    if let Some(parent) = path.parent() {
+        if !parent.is_dir() {
+            create_dir_all(parent)?;
+        }
+    };
+    let file = OpenOptions::new()
+        .write(true)
+        .create(true)
+        .truncate(true)
+        .open(path)?;
+    Ok(BufWriter::new(file))
+}
+
+#[deprecated]
+pub fn get_writer_legacy(path_s: &str) -> BufWriter<std::fs::File> {
     let path = Path::new(path_s);
     if let Some(parent) = path.parent() {
         if !parent.is_dir() {
@@ -52,7 +68,7 @@ pub fn deserialize_file<T: serde::de::DeserializeOwned>(path_s: &String) -> Opti
     }
 }
 
-pub fn set_file_readonly(path_s: &String, readonly: bool) -> Result<(), std::io::Error> {
+pub fn set_file_readonly(path_s: &str, readonly: bool) -> Result<(), std::io::Error> {
     let path = Path::new(&path_s);
     if !path.is_file() {
         println!("WARN: trying to set readonly on a file that does not exist");
@@ -81,7 +97,7 @@ pub fn rm_rf(path_s: &String) {
     }
 }
 
-pub fn copy_file(source_s: &String, dest_s: &String) {
+pub fn copy_file(source_s: &str, dest_s: &str) {
     let source = Path::new(source_s);
     let dest = Path::new(dest_s);
     if let Some(parent) = dest.parent() {

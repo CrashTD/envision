@@ -7,7 +7,7 @@ use nix::{
 };
 
 use crate::{
-    file_utils::get_writer,
+    file_utils::get_writer_legacy,
     profile::{Profile, XRServiceType},
     runner::{Runner, RunnerStatus},
 };
@@ -172,7 +172,7 @@ impl CmdRunner {
     }
 
     fn save_log(path_s: String, log: &[String]) -> Result<(), std::io::Error> {
-        let mut writer = get_writer(&path_s);
+        let mut writer = get_writer_legacy(&path_s);
         let log_s = log.concat();
         writer.write_all(log_s.as_ref())
     }

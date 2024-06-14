@@ -1,5 +1,5 @@
 use crate::{
-    file_utils::{deserialize_file, get_writer},
+    file_utils::{deserialize_file, get_writer_legacy},
     paths::get_xdg_config_dir,
 };
 use serde::{Deserialize, Serialize};
@@ -202,7 +202,7 @@ pub fn get_monado_config_v0() -> MonadoConfigV0 {
 }
 
 fn dump_monado_config_v0_to_path(config: &MonadoConfigV0, path_s: &String) {
-    let writer = get_writer(path_s);
+    let writer = get_writer_legacy(path_s);
     serde_json::to_writer_pretty(writer, config).expect("Unable to save Monado config V0");
 }
 

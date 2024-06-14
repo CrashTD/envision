@@ -55,7 +55,7 @@ pub enum MainViewMsg {
     ClockTicking,
     StartStopClicked,
     RestartXRService,
-    XRServiceActiveChanged(bool, Option<Profile>),
+    XRServiceActiveChanged(bool, Option<Profile>, bool),
     EnableDebugViewChanged(bool),
     UpdateProfiles(Vec<Profile>, Config),
     SetSelectedProfile(u32),
@@ -450,7 +450,7 @@ impl SimpleComponent for MainView {
                     .output(Self::Output::RestartXRService)
                     .expect("Sender output failed");
             }
-            Self::Input::XRServiceActiveChanged(active, profile) => {
+            Self::Input::XRServiceActiveChanged(active, profile, show_launch_opts) => {
                 self.set_xrservice_active(active);
                 self.steamvr_calibration_box
                     .sender()
@@ -458,9 +458,9 @@ impl SimpleComponent for MainView {
                 if !active {
                     sender.input(Self::Input::UpdateDevices(vec![]));
                 }
-                self.steam_launch_options_box
-                    .sender()
-                    .emit(SteamLaunchOptionsBoxMsg::UpdateXRServiceActive(active));
+                self.steam_launch_options_box.sender().emit(
+                    SteamLaunchOptionsBoxMsg::UpdateXRServiceActive(show_launch_opts),
+                );
                 match profile {
                     None => {}
                     Some(prof) => {
