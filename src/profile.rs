@@ -378,6 +378,7 @@ impl Profile {
         dup.opencomposite_branch = self.opencomposite_branch.clone();
         dup.lighthouse_driver = self.lighthouse_driver;
         dup.xrservice_launch_options = self.xrservice_launch_options.clone();
+        dup.autostart_command = self.autostart_command.clone();
         dup
     }
 
