@@ -2,6 +2,7 @@ use crate::{
     profile::Profile,
     profiles::{lighthouse::lighthouse_profile, wivrn::wivrn_profile, wmr::wmr_profile},
 };
+use rusb::UsbContext;
 use std::fmt::Display;
 
 #[derive(Debug, PartialEq, Eq)]
@@ -137,7 +138,7 @@ impl PhysicalXRDevice {
 * Returns a Vec of tuples, each representing (vendor_id, product_id)
 */
 fn list_usb_devs() -> Vec<(u16, u16)> {
-    let ctx = libusb::Context::new().expect("Failed to create libusb context");
+    let ctx = rusb::Context::new().expect("Failed to create libusb context");
     let devs = ctx
         .devices()
         .expect("Failed to list devices from libusb context");
