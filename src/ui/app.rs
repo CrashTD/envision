@@ -3,7 +3,6 @@ use super::alert::{alert, alert_w_widget};
 use super::build_window::{BuildStatus, BuildWindow};
 use super::cmdline_opts::CmdLineOpts;
 use super::debug_view::{DebugView, DebugViewMsg};
-use super::fbt_config_editor::{FbtConfigEditor, FbtConfigEditorInit, FbtConfigEditorMsg};
 use super::job_worker::internal_worker::JobWorkerOut;
 use super::job_worker::job::WorkerJob;
 use super::job_worker::JobWorker;
@@ -35,7 +34,6 @@ use crate::file_builders::openvrpaths_vrpath::{
 };
 use crate::file_utils::setcap_cap_sys_nice_eip;
 use crate::linux_distro::LinuxDistro;
-use crate::log_parser::MonadoLog;
 use crate::paths::{get_data_dir, get_ipc_file_path};
 use crate::profile::{Profile, XRServiceType};
 use crate::stateless_action;
@@ -100,8 +98,6 @@ pub struct App {
     #[tracker::do_not_track]
     xr_devices: Vec<XRDevice>,
     #[tracker::do_not_track]
-    fbt_config_editor: Option<Controller<FbtConfigEditor>>,
-    #[tracker::do_not_track]
     libmonado: Option<libmonado_rs::Monado>,
 
     #[tracker::do_not_track]
@@ -132,8 +128,6 @@ pub enum Msg {
     OpenLibsurviveSetup,
     SaveWinSize(i32, i32),
     Quit,
-    ParseLog(Vec<String>),
-    ConfigFbt,
     DebugOpenPrefix,
     DebugOpenData,
     OpenWivrnConfig,
@@ -331,7 +325,6 @@ impl SimpleComponent for App {
         match message {
             Msg::OnServiceLog(rows) => {
                 if !rows.is_empty() {
-                    sender.input(Msg::ParseLog(rows.clone()));
                     self.debug_view
                         .sender()
                         .emit(DebugViewMsg::LogUpdated(rows));
@@ -385,20 +378,6 @@ impl SimpleComponent for App {
                             }
                         }
                     }
-                }
-            }
-            Msg::ParseLog(rows) => {
-                for row in rows {
-                    match MonadoLog::new_from_str(row.as_str()) {
-                        None => {}
-                        Some(parsed) => {
-                            if let Some(tracker) =
-                                XRDevice::generic_tracker_from_log_row(parsed.message.as_str())
-                            {
-                                self.xr_devices.push(tracker);
-                            }
-                        }
-                    };
                 }
             }
             Msg::EnableDebugViewChanged(val) => {
@@ -685,19 +664,6 @@ impl SimpleComponent for App {
                     ))
                     .expect("Failed to present Libsurvive Setup Window");
             }
-            Msg::ConfigFbt => {
-                self.fbt_config_editor = Some(
-                    FbtConfigEditor::builder()
-                        .launch(FbtConfigEditorInit {
-                            root_win: self.app_win.clone().upcast::<gtk::Window>(),
-                        })
-                        .detach(),
-                );
-                self.fbt_config_editor
-                    .as_ref()
-                    .unwrap()
-                    .emit(FbtConfigEditorMsg::Present);
-            }
             Msg::SaveWinSize(w, h) => {
                 self.config.win_size = [w, h];
                 self.config.save();
@@ -829,7 +795,6 @@ impl SimpleComponent for App {
             autostart_worker: None,
             build_worker: None,
             xr_devices: vec![],
-            fbt_config_editor: None,
             restart_xrservice: false,
             libmonado: None,
             wivrn_conf_editor: None,
@@ -851,13 +816,6 @@ impl SimpleComponent for App {
             BuildProfileCleanAction,
             clone!(@strong sender => move |_| {
                 sender.input_sender().emit(Msg::BuildProfile(true));
-            })
-        );
-        stateless_action!(
-            actions,
-            ConfigFbtAction,
-            clone!(@strong sender => move |_| {
-                sender.input_sender().emit(Msg::ConfigFbt);
             })
         );
         {
@@ -928,7 +886,6 @@ new_action_group!(pub AppActionGroup, "win");
 new_stateless_action!(pub AboutAction, AppActionGroup, "about");
 new_stateless_action!(pub BuildProfileAction, AppActionGroup, "buildprofile");
 new_stateless_action!(pub BuildProfileCleanAction, AppActionGroup, "buildprofileclean");
-new_stateless_action!(pub ConfigFbtAction, AppActionGroup, "configfbt");
 new_stateless_action!(pub QuitAction, AppActionGroup, "quit");
 new_stateful_action!(pub DebugViewToggleAction, AppActionGroup, "debugviewtoggle", (), bool);
 

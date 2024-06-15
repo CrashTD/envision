@@ -1,11 +1,5 @@
-use super::{
-    alert::alert,
-    factories::device_row_factory::{DeviceRowModel, DeviceRowModelInit, DeviceRowState},
-};
-use crate::{
-    file_builders::monado_config_v0::dump_generic_trackers,
-    xr_devices::{XRDevice, XRDeviceRole},
-};
+use super::factories::device_row_factory::{DeviceRowModel, DeviceRowModelInit, DeviceRowState};
+use crate::xr_devices::{XRDevice, XRDeviceRole};
 use adw::prelude::*;
 use relm4::{factory::AsyncFactoryVecDeque, prelude::*, Sender};
 
@@ -20,25 +14,6 @@ pub struct DevicesBox {
 #[derive(Debug)]
 pub enum DevicesBoxMsg {
     UpdateDevices(Vec<XRDevice>),
-    DumpGenericTrackers,
-}
-
-impl DevicesBox {
-    fn create_save_trackers_btn(sender: Sender<DevicesBoxMsg>) -> gtk::Button {
-        let btn = gtk::Button::builder()
-            .halign(gtk::Align::Center)
-            .valign(gtk::Align::Center)
-            .icon_name("document-save-symbolic")
-            .tooltip_text("Save current trackers")
-            .css_classes(["circular", "flat"])
-            .build();
-
-        btn.connect_clicked(move |_| {
-            sender.emit(DevicesBoxMsg::DumpGenericTrackers);
-        });
-
-        btn
-    }
 }
 
 #[relm4::component(pub)]
@@ -106,13 +81,9 @@ impl SimpleComponent for DevicesBox {
                             subtitle: Some(
                                 generic
                                     .iter()
-                                    .map(|d| d.id.as_str())
-                                    .collect::<Vec<&str>>()
-                                    .join(", "),
-                            ),
-                            suffix: Some(
-                                Self::create_save_trackers_btn(sender.input_sender().clone())
-                                    .upcast::<gtk::Widget>(),
+                                    .map(|d| format!("{} ({})", d.name, d.index))
+                                    .collect::<Vec<String>>()
+                                    .join("\n"),
                             ),
                             ..Default::default()
                         });
@@ -141,41 +112,6 @@ impl SimpleComponent for DevicesBox {
                         guard.push_back(model);
                     }
                 }
-            }
-            Self::Input::DumpGenericTrackers => {
-                let added = dump_generic_trackers(
-                    &self
-                        .devices
-                        .iter()
-                        .filter(|d| d.dev_type == XRDeviceRole::GenericTracker)
-                        .map(|d| d.id.clone())
-                        .collect::<Vec<String>>(),
-                );
-                let multi_title = format!("Added {} new trackers", added);
-                let (title, msg) = match added {
-                    0 => (
-                        "No new trackers found",
-                        concat!(
-                            "All the currently connected trackers ",
-                            "are already present in your configuration"
-                        ),
-                    ),
-                    1 => (
-                        "Added 1 new tracker",
-                        concat!(
-                            "Edit your configuration to make sure that ",
-                            "all the trackers have the appropriate roles assigned"
-                        ),
-                    ),
-                    _ => (
-                        multi_title.as_str(),
-                        concat!(
-                            "Edit your configuration to make sure that ",
-                            "all the trackers have the appropriate roles assigned"
-                        ),
-                    ),
-                };
-                alert(title, Some(msg), None);
             }
         }
     }

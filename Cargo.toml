@@ -18,7 +18,7 @@ lazy_static = "1.4.0"
 libadwaita = { version = "0.6.0", features = [
     "v1_4"
 ] }
-libmonado-rs = { git = "https://github.com/technobaboo/libmonado-rs", version = "0.1.0" }
+libmonado-rs = { git = "https://github.com/technobaboo/libmonado-rs", rev = "e32e78c79ce9ec4a5a5de9eff30661c6c4307347" }
 rusb = "0.9.4"
 nix = { version = "0.29.0", features = [
     "fs",
