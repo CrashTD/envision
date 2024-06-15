@@ -1,3 +1,4 @@
+use libmonado_rs;
 use std::{fmt::Display, slice::Iter};
 
 const GENERIC_TRACKER_PREFIX: &str = "Found generic tracker device: ";
@@ -105,7 +106,6 @@ impl XRDeviceRole {
             Self::Chest,
             Self::Camera,
             Self::Keyboard,
-            Self::GenericTracker,
         ]
         .iter()
     }
@@ -228,7 +228,8 @@ impl XRDeviceRole {
 pub struct XRDevice {
     pub dev_type: XRDeviceRole,
     pub name: String,
-    pub id: String,
+    pub index: String,
+    pub serial: Option<String>,
     pub battery: Option<f32>, // battery percentage, from 0 to 1 maybe
                               // still need to implement it in monado
 }
@@ -238,19 +239,21 @@ impl Default for XRDevice {
         Self {
             dev_type: XRDeviceRole::GenericTracker,
             name: String::default(),
-            id: String::default(),
+            index: String::default(),
+            serial: None,
             battery: Option::default(),
         }
     }
 }
 
 impl XRDevice {
+    #[deprecated]
     pub fn generic_tracker_from_log_row(s: &str) -> Option<Self> {
         if s.starts_with(GENERIC_TRACKER_PREFIX) {
             let n_tracker = s.trim_start_matches(GENERIC_TRACKER_PREFIX);
             return Some(Self {
                 dev_type: XRDeviceRole::GenericTracker,
-                id: n_tracker.into(),
+                index: n_tracker.into(),
                 ..Default::default()
             });
         }
@@ -274,6 +277,7 @@ impl XRDevice {
 
     pub fn from_libmonado(monado: &libmonado_rs::Monado) -> Vec<Self> {
         let mut res = vec![];
+        let mut devs_with_role = vec![];
         [
             XRDeviceRole::Head,
             XRDeviceRole::Left,
@@ -299,17 +303,48 @@ impl XRDevice {
         .iter()
         .for_each(|xrd| {
             if let Ok(dev) = monado.device_from_role(xrd.to_monado_str()) {
+                devs_with_role.push(dev.id);
+                // let serial = match dev.serial() {
+                //     Ok(s) => {
+                //         serials.push(s.clone());
+                //         Some(s)
+                //     }
+                //     Err(e) => {
+                //         eprintln!(
+                //             "Warning: could not get serial for monado device {} ({}): {:#?}",
+                //             dev.name, dev.id, e
+                //         );
+                //         None
+                //     }
+                // };
                 res.push(Self {
                     name: dev.name,
-                    id: dev.id.to_string(),
+                    index: dev.id.to_string(),
+                    // serial,
+                    serial: None,
                     dev_type: xrd.clone(),
                     ..Default::default()
                 })
             }
         });
+        if let Ok(all_devs) = monado.devices() {
+            all_devs
+                .into_iter()
+                .filter(|dev| !devs_with_role.contains(&dev.id))
+                .for_each(|dev_gt| {
+                    res.push(Self {
+                        name: dev_gt.name.clone(),
+                        index: dev_gt.id.to_string(),
+                        serial: dev_gt.serial().ok(),
+                        dev_type: XRDeviceRole::GenericTracker,
+                        ..Default::default()
+                    })
+                })
+        }
         res
     }
 
+    #[deprecated]
     pub fn from_log_message(s: &str) -> Vec<Self> {
         let mut res = vec![];
         let rows = s.split('\n');
@@ -359,19 +394,21 @@ impl XRDevice {
             .filter(|d| !new_dev_types.contains(&d.dev_type))
             .map(Self::clone)
             .collect::<Vec<Self>>();
-        let old_tracker_ids = old
+        let old_tracker_serials = old
             .iter()
             .filter_map(|d| {
                 if d.dev_type == XRDeviceRole::GenericTracker {
-                    return Some(d.id.clone());
+                    return d.serial.clone();
                 }
                 None
             })
             .collect::<Vec<String>>();
         for n_dev in new {
             if n_dev.dev_type == XRDeviceRole::GenericTracker {
-                if !old_tracker_ids.contains(&n_dev.id) {
-                    res.push(n_dev.clone());
+                if let Some(n_serial) = n_dev.serial.as_ref() {
+                    if !old_tracker_serials.contains(n_serial) {
+                        res.push(n_dev.clone());
+                    }
                 }
             } else {
                 res.push(n_dev.clone());

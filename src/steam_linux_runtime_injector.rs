@@ -4,11 +4,7 @@ use crate::{
     profile::Profile,
 };
 use anyhow::bail;
-use std::{
-    fs::read_to_string,
-    io::{Read, Write},
-    path::Path,
-};
+use std::{fs::read_to_string, io::Write, path::Path};
 
 fn get_runtime_entrypoint_path() -> Option<String> {
     let mut out = format!(

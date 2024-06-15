@@ -7,7 +7,6 @@ pub mod cmdline_opts;
 mod debug_view;
 mod devices_box;
 mod factories;
-mod fbt_config_editor;
 mod install_wivrn_box;
 pub mod job_worker;
 mod libsurvive_setup_window;

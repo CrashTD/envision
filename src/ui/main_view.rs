@@ -11,8 +11,7 @@ use crate::gpu_profile::{get_amd_gpu_power_profile, GpuPowerProfile};
 use crate::profile::{LighthouseDriver, Profile, XRServiceType};
 use crate::steamvr_utils::chaperone_info_exists;
 use crate::ui::app::{
-    AboutAction, BuildProfileAction, BuildProfileCleanAction, ConfigFbtAction,
-    DebugViewToggleAction,
+    AboutAction, BuildProfileAction, BuildProfileCleanAction, DebugViewToggleAction,
 };
 use crate::ui::profile_editor::ProfileEditorInit;
 use crate::ui::steamvr_calibration_box::SteamVrCalibrationBoxMsg;
@@ -114,7 +113,6 @@ impl SimpleComponent for MainView {
                 "_Debug View" => DebugViewToggleAction,
                 "_Build Profile" => BuildProfileAction,
                 "C_lean Build Profile" => BuildProfileCleanAction,
-                "Configure Full Body _Tracking" => ConfigFbtAction,
             },
             section! {
                 "_About" => AboutAction,

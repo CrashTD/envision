@@ -51,6 +51,7 @@ impl LinuxDistro {
             let mut buf = String::new();
             if reader.read_to_string(&mut buf).is_ok() {
                 buf = buf.trim().to_lowercase();
+                return Self::name_matcher(&buf);
             }
         }
 
