@@ -6,6 +6,7 @@ pub enum DepType {
     SharedObject,
     Executable,
     Include,
+    UdevRule,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -38,6 +39,7 @@ impl Dependency {
                 .map(str::to_string)
                 .collect(),
             DepType::Include => include_paths(),
+            DepType::UdevRule => udev_rules_paths(),
         } {
             let path_s = &format!("{dir}/{fname}", dir = dir, fname = self.filename);
             let path = Path::new(&path_s);
@@ -119,6 +121,10 @@ fn include_paths() -> Vec<String> {
         "/usr/include/x86_64-linux-gnu".into(),
         "/usr/include/aarch64-linux-gnu".into(),
     ]
+}
+
+fn udev_rules_paths() -> Vec<String> {
+    vec!["/usr/lib/udev/rules.d".into()]
 }
 
 #[cfg(test)]
