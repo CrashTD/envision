@@ -1,6 +1,6 @@
 use crate::{
     depcheck::{DepType, Dependency, DependencyCheckResult},
-    dependencies::common::{dep_eigen, dep_gpp, dep_opencv},
+    dependencies::common::{dep_cmake, dep_eigen, dep_gpp, dep_ninja, dep_opencv},
     linux_distro::LinuxDistro,
 };
 use std::collections::HashMap;
@@ -8,6 +8,8 @@ use std::collections::HashMap;
 fn basalt_deps() -> Vec<Dependency> {
     vec![
         dep_gpp(),
+        dep_cmake(),
+        dep_ninja(),
         Dependency {
             name: "boost".into(),
             dep_type: DepType::SharedObject,
@@ -54,8 +56,18 @@ fn basalt_deps() -> Vec<Dependency> {
                 (LinuxDistro::Debian, "libbz2-dev".into()),
                 (LinuxDistro::Fedora, "bzip2-devel".into()),
                 (LinuxDistro::Alpine, "bzip2-dev".into()),
+                (LinuxDistro::Gentoo, "app-arch/bzip2".into()),
             ]),
         },
+        // Dependency {
+        //     name: "cli11-dev".into(),
+        //     dep_type: DepType::Include,
+        //     filename: "CLI/App.hpp".into(),
+        //     packages: HashMap::from([
+        //         (LinuxDistro::Arch, "cli11".into()),
+        //         (LinuxDistro::Debian, "libcli11-dev")
+        //     ])
+        // },
         dep_eigen(),
         Dependency {
             name: "fmt".into(),
