@@ -7,7 +7,6 @@ use anyhow::bail;
 use std::{fs::read_to_string, io::Write, path::Path};
 
 fn get_runtime_entrypoint_path() -> Option<String> {
-    return None;
     let mut out = format!(
         "{home}/.steam/steam/steamapps/common/SteamLinuxRuntime_sniper/_v2-entry-point",
         home = get_home_dir(),

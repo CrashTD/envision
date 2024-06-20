@@ -239,6 +239,7 @@ impl App {
     }
 
     pub fn restore_openxr_openvr_files(&self) {
+        restore_runtime_entrypoint();
         if let Err(e) = set_current_active_runtime_to_steam() {
             alert(
                 "Could not restore Steam active runtime",
@@ -332,7 +333,6 @@ impl SimpleComponent for App {
             }
             Msg::OnServiceExit(code) => {
                 self.restore_openxr_openvr_files();
-                restore_runtime_entrypoint();
                 self.main_view
                     .sender()
                     .emit(MainViewMsg::XRServiceActiveChanged(false, None, false));
