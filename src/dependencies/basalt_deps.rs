@@ -11,6 +11,28 @@ fn basalt_deps() -> Vec<Dependency> {
         dep_cmake(),
         dep_ninja(),
         Dependency {
+            name: "libepoxy".into(),
+            dep_type: DepType::Include,
+            filename: "epoxy/egl.h".into(),
+            packages: HashMap::from([
+                (LinuxDistro::Arch, "libepoxy".into()),
+                (LinuxDistro::Debian, "libepoxy-dev".into()),
+                (LinuxDistro::Fedora, "libepoxy-devel".into()),
+                (LinuxDistro::Alpine, "libepoxy-dev".into()),
+            ]),
+        },
+        Dependency {
+            name: "catch2".into(),
+            dep_type: DepType::Include,
+            filename: "catch2/catch_all.hpp".into(),
+            packages: HashMap::from([
+                (LinuxDistro::Arch, "catch2".into()),
+                (LinuxDistro::Debian, "catch2".into()),
+                (LinuxDistro::Fedora, "catch2-devel".into()),
+                (LinuxDistro::Alpine, "catch2-3".into()),
+            ]),
+        },
+        Dependency {
             name: "boost".into(),
             dep_type: DepType::SharedObject,
             // just one of the many shared objects boost provides
