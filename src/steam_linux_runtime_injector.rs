@@ -7,25 +7,13 @@ use anyhow::bail;
 use std::{fs::read_to_string, io::Write, path::Path};
 
 fn get_runtime_entrypoint_path() -> Option<String> {
-    let mut out = format!(
+    vec![format!(
         "{home}/.steam/steam/steamapps/common/SteamLinuxRuntime_sniper/_v2-entry-point",
         home = get_home_dir(),
-    );
-
-    if Path::new(&out).is_file() {
-        return Some(out);
-    }
-
-    out = format!(
-        "{data}/Steam/ubuntu12_64/steam-runtime-sniper/_v2-entry-point",
-        data = get_xdg_data_dir()
-    );
-
-    if Path::new(&out).is_file() {
-        return Some(out);
-    }
-
-    None
+    )]
+    .iter()
+    .find(|path| Path::new(&path).is_file())
+    .cloned()
 }
 
 fn get_backup_runtime_entrypoint_location() -> String {
