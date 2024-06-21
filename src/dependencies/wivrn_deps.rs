@@ -139,7 +139,7 @@ fn wivrn_deps() -> Vec<Dependency> {
             packages: HashMap::from([
                 (LinuxDistro::Arch, "gst-plugins-base-libs".into()),
                 (LinuxDistro::Debian, "libgstreamer1.0-dev".into()),
-                (LinuxDistro::Fedora, "gstreamer1-devel".into()),
+                (LinuxDistro::Fedora, "gstreamer1-plugins-base-devel".into()),
                 (LinuxDistro::Gentoo, "media-libs/gst-plugins-base".into()),
             ]),
         },

@@ -117,7 +117,7 @@ pub fn dep_libdrm() -> Dependency {
         packages: HashMap::from([
             (LinuxDistro::Arch, "libdrm".into()),
             (LinuxDistro::Debian, "libdrm-dev".into()),
-            (LinuxDistro::Fedora, "libdrm".into()),
+            (LinuxDistro::Fedora, "libdrm-devel".into()),
             (LinuxDistro::Alpine, "libdrm-dev".into()),
             (LinuxDistro::Gentoo, "x11-libs/libdrm".into()),
         ]),
