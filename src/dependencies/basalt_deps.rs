@@ -24,12 +24,13 @@ fn basalt_deps() -> Vec<Dependency> {
         Dependency {
             name: "catch2".into(),
             dep_type: DepType::Include,
-            filename: "catch2/catch_all.hpp".into(),
+            filename: "catch2/catch.hpp".into(),
             packages: HashMap::from([
-                (LinuxDistro::Arch, "catch2".into()),
+                (LinuxDistro::Arch, "catch2-v2".into()),
+                // WARN: on debian unstable this is v3!
                 (LinuxDistro::Debian, "catch2".into()),
                 (LinuxDistro::Fedora, "catch2-devel".into()),
-                (LinuxDistro::Alpine, "catch2-3".into()),
+                (LinuxDistro::Alpine, "catch2".into()),
             ]),
         },
         Dependency {
