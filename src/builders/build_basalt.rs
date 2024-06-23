@@ -56,14 +56,6 @@ pub fn get_build_basalt_jobs(profile: &Profile, clean_build: bool) -> VecDeque<W
         build_dir: build_dir.clone(),
     };
 
-    jobs.push_back(WorkerJob::new_cmd(None, "bash".into(), Some(vec![
-        "-c".into(),
-        format!(
-            "cd {repo}/thirdparty/Pangolin && git checkout include/pangolin/utils/picojson.h && curl -sSL 'https://aur.archlinux.org/cgit/aur.git/plain/279c17d9c9eb9374c89489b449f92cb93350e8cd.patch?h=basalt-monado-git' -o picojson_fix.patch && git apply picojson_fix.patch &&	sed -i '1s/^/#include <stdint.h>\\n/' include/pangolin/platform.h",
-            repo = git.dir
-        ),
-    ])));
-
     if !Path::new(&build_dir).is_dir() || clean_build {
         rm_rf(&build_dir);
         jobs.push_back(cmake.get_prepare_job());
