@@ -11,6 +11,17 @@ fn basalt_deps() -> Vec<Dependency> {
         dep_cmake(),
         dep_ninja(),
         Dependency {
+            name: "lz4-dev".into(),
+            dep_type: DepType::Include,
+            filename: "lz4.h".into(),
+            packages: HashMap::from([
+                (LinuxDistro::Arch, "lz4".into()),
+                (LinuxDistro::Debian, "liblz4-dev".into()),
+                (LinuxDistro::Fedora, "lz4-devel".into()),
+                (LinuxDistro::Alpine, "lz4-dev".into()),
+            ]),
+        },
+        Dependency {
             name: "libepoxy".into(),
             dep_type: DepType::Include,
             filename: "epoxy/egl.h".into(),
