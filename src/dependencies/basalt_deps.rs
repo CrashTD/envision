@@ -11,6 +11,19 @@ fn basalt_deps() -> Vec<Dependency> {
         dep_cmake(),
         dep_ninja(),
         Dependency {
+            name: "libglvnd-dev".into(),
+            dep_type: DepType::Include,
+            filename: "GL/gl.h".into(),
+            packages: HashMap::from([
+                (LinuxDistro::Arch, "libglvnd".into()),
+                (LinuxDistro::Debian, "libglvnd-dev".into()),
+                (LinuxDistro::Fedora, "libglvnd-devel".into()),
+                // WARN: can't find anything exact for alpine, mesa-dev offers
+                //       GL/gl.h hopefully that's the only one needed
+                 (LinuxDistro::Alpine, "mesa-dev".into()),
+            ]),
+        },
+        Dependency {
             name: "lz4-dev".into(),
             dep_type: DepType::Include,
             filename: "lz4.h".into(),
