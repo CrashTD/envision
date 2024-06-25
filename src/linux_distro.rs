@@ -84,7 +84,10 @@ impl LinuxDistro {
         if s.contains("alpine") || s.contains("postmarket") {
             return Some(Self::Alpine);
         }
-        // TODO: detect suse, sles, rhel, nix
+        if s.contains("suse") {
+            return Some(Self::Suse);
+        }
+        // TODO: detect sles, rhel, nix
 
         None
     }
