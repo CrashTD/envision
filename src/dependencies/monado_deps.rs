@@ -64,6 +64,7 @@ fn monado_deps() -> Vec<Dependency> {
                 (LinuxDistro::Arch, "mesa".into()),
                 (LinuxDistro::Debian, "mesa-common-dev".into()),
                 (LinuxDistro::Fedora, "mesa-libGL-devel".into()),
+                (LinuxDistro::Suse, "Mesa-dri-devel".into()),
             ]),
         },
     ]
