@@ -165,6 +165,17 @@ fn wivrn_deps() -> Vec<Dependency> {
                 (LinuxDistro::Gentoo, "media-libs/libva".into()),
             ]),
         },
+        Dependency {
+            name: "cli11".into(),
+            dep_type: DepType::Include,
+            filename: "CLI/CLI.hpp".into(),
+            packages: HashMap::from([
+                (LinuxDistro::Arch, "cli11".into()),
+                (LinuxDistro::Debian, "libcli11-dev".into()),
+                (LinuxDistro::Fedora, "cli11-devel".into()),
+                (LinuxDistro::Gentoo, "dev-cpp/cli11".into()),
+            ]),
+        },
     ]
 }
 
