@@ -20,7 +20,7 @@ fn basalt_deps() -> Vec<Dependency> {
                 (LinuxDistro::Fedora, "libglvnd-devel".into()),
                 // WARN: can't find anything exact for alpine, mesa-dev offers
                 //       GL/gl.h hopefully that's the only one needed
-                 (LinuxDistro::Alpine, "mesa-dev".into()),
+                (LinuxDistro::Alpine, "mesa-dev".into()),
             ]),
         },
         Dependency {
