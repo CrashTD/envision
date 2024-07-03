@@ -394,7 +394,7 @@ impl SimpleComponent for MainView {
                         },
                     },
                     gtk::Button {
-                        set_icon_name: "edit-symbolic",
+                        set_icon_name: "document-edit-symbolic",
                         set_tooltip_text: Some("Edit Profile"),
                         connect_clicked[sender] => move |_| {
                             sender.input(Self::Input::EditProfile);
