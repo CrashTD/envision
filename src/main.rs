@@ -29,6 +29,7 @@ pub mod file_builders;
 pub mod file_utils;
 pub mod func_runner;
 pub mod gpu_profile;
+pub mod is_appimage;
 pub mod linux_distro;
 pub mod log_level;
 pub mod log_parser;

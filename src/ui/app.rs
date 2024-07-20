@@ -33,6 +33,7 @@ use crate::file_builders::openvrpaths_vrpath::{
     set_current_openvrpaths_to_profile, set_current_openvrpaths_to_steam,
 };
 use crate::file_utils::setcap_cap_sys_nice_eip;
+use crate::is_appimage::IS_APPIMAGE;
 use crate::linux_distro::LinuxDistro;
 use crate::paths::{get_data_dir, get_ipc_file_path};
 use crate::profile::{Profile, XRServiceType};
@@ -105,6 +106,9 @@ pub struct App {
 
     #[tracker::do_not_track]
     skip_depcheck: bool,
+
+    #[tracker::do_not_track]
+    wivrn_appimage_warn_shown: bool,
 }
 
 #[derive(Debug)]
@@ -647,6 +651,17 @@ impl SimpleComponent for App {
                 }
             }
             Msg::ProfileSelected(prof) => {
+                if *IS_APPIMAGE
+                    && !self.wivrn_appimage_warn_shown
+                    && prof.xrservice_type == XRServiceType::Wivrn
+                {
+                    alert(
+                        "Envision is running as an AppImage",
+                        Some("WiVRn does not support running inside an AppImage, and is likely to fail. You might want to install Envision using a different method."),
+                        Some(&self.app_win.clone().upcast()),
+                    );
+                    self.wivrn_appimage_warn_shown = true;
+                }
                 if prof.uuid == self.config.selected_profile_uuid {
                     return;
                 }
@@ -803,6 +818,7 @@ impl SimpleComponent for App {
             libmonado: None,
             wivrn_conf_editor: None,
             skip_depcheck: false,
+            wivrn_appimage_warn_shown: false,
         };
         let widgets = view_output!();
 
