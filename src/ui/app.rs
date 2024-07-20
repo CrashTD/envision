@@ -130,6 +130,7 @@ pub enum Msg {
     Quit,
     DebugOpenPrefix,
     DebugOpenData,
+    DebugCopyEnvVars,
     OpenWivrnConfig,
     HandleCommandLine(CmdLineOpts),
 }
@@ -684,6 +685,9 @@ impl SimpleComponent for App {
                     self.get_selected_profile().prefix
                 ));
             }
+            Msg::DebugCopyEnvVars => {
+                copy_text(&self.get_selected_profile().env_vars_full().join(" "));
+            }
             Msg::OpenWivrnConfig => {
                 let editor = WivrnConfEditor::builder()
                     .launch(WivrnConfEditorInit {
@@ -845,6 +849,13 @@ impl SimpleComponent for App {
                 sender.input(Msg::DebugOpenPrefix);
             })
         );
+        stateless_action!(
+            actions,
+            DebugCopyEnvVarsAction,
+            clone!(@strong sender => move |_| {
+                sender.input(Msg::DebugCopyEnvVars);
+            })
+        );
         actions.add_action(RelmAction::<DebugViewToggleAction>::new_stateful(
             &model.enable_debug_view,
             clone!(@strong sender => move |_, state| {
@@ -891,3 +902,4 @@ new_stateful_action!(pub DebugViewToggleAction, AppActionGroup, "debugviewtoggle
 
 new_stateless_action!(pub DebugOpenDataAction, AppActionGroup, "debugopendata");
 new_stateless_action!(pub DebugOpenPrefixAction, AppActionGroup, "debugopenprefix");
+new_stateless_action!(pub DebugCopyEnvVarsAction, AppActionGroup, "debugcopyenvvars");

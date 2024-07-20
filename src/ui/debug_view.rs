@@ -1,7 +1,7 @@
 use super::term_widget::TermWidget;
 use crate::log_level::LogLevel;
 use crate::log_parser::MonadoLog;
-use crate::ui::app::{DebugOpenDataAction, DebugOpenPrefixAction};
+use crate::ui::app::{DebugCopyEnvVarsAction, DebugOpenDataAction, DebugOpenPrefixAction};
 use crate::ui::util::copy_text;
 use gtk::glib::clone;
 use gtk::prelude::*;
@@ -59,6 +59,7 @@ impl SimpleComponent for DebugView {
             section! {
                 "Open _Data Folder" => DebugOpenDataAction,
                 "Open _Prefix Folder" => DebugOpenPrefixAction,
+                "Copy Profile _Environment Variables" => DebugCopyEnvVarsAction,
             },
         }
     }
