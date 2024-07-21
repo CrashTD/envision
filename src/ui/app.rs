@@ -644,10 +644,7 @@ impl SimpleComponent for App {
                     println!("pkexec not found, skipping setcap");
                 } else {
                     let profile = self.get_selected_profile();
-                    setcap_cap_sys_nice_eip(format!(
-                        "{pfx}/bin/monado-service",
-                        pfx = profile.prefix
-                    ));
+                    setcap_cap_sys_nice_eip(&profile.prefix.join("bin/monado-service"));
                 }
             }
             Msg::ProfileSelected(prof) => {
@@ -692,12 +689,12 @@ impl SimpleComponent for App {
                 self.application.quit();
             }
             Msg::DebugOpenData => {
-                open_with_default_handler(&format!("file://{}", get_data_dir()));
+                open_with_default_handler(&format!("file://{}", get_data_dir().to_string_lossy()));
             }
             Msg::DebugOpenPrefix => {
                 open_with_default_handler(&format!(
                     "file://{}",
-                    self.get_selected_profile().prefix
+                    self.get_selected_profile().prefix.to_string_lossy()
                 ));
             }
             Msg::DebugCopyEnvVars => {

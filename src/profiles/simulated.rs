@@ -7,7 +7,7 @@ use std::collections::HashMap;
 
 pub fn simulated_profile() -> Profile {
     let data_dir = get_data_dir();
-    let prefix = format!("{data}/prefixes/simulated_default", data = data_dir);
+    let prefix = data_dir.join("prefixes/simulated_default");
     let mut environment: HashMap<String, String> = HashMap::new();
     environment.insert("QWERTY_ENABLE".into(), "1".into());
     environment.insert("XRT_JSON_LOG".into(), "1".into());
@@ -18,7 +18,7 @@ pub fn simulated_profile() -> Profile {
     environment.insert("U_PACING_APP_USE_MIN_FRAME_PERIOD".into(), "1".into());
     environment.insert(
         "LD_LIBRARY_PATH".into(),
-        format!("{pfx}/lib:{pfx}/lib64", pfx = prefix),
+        format!("{pfx}/lib:{pfx}/lib64", pfx = prefix.to_string_lossy()),
     );
     Profile {
         uuid: "simulated-default".into(),

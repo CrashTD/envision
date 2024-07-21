@@ -1,10 +1,10 @@
 use crate::ui::job_worker::job::WorkerJob;
-use std::collections::HashMap;
+use std::{collections::HashMap, path::PathBuf};
 
 #[derive(Debug, Clone)]
 pub struct Cmake {
-    pub build_dir: String,
-    pub source_dir: String,
+    pub build_dir: PathBuf,
+    pub source_dir: PathBuf,
     pub vars: Option<HashMap<String, String>>,
     pub env: Option<HashMap<String, String>>,
 }
@@ -13,7 +13,7 @@ impl Cmake {
     pub fn get_prepare_job(&self) -> WorkerJob {
         let mut args = vec![
             "-B".into(),
-            self.build_dir.clone(),
+            self.build_dir.to_string_lossy().to_string(),
             "-G".into(),
             "Ninja".into(),
         ];
@@ -29,7 +29,7 @@ impl Cmake {
                 }
             }
         }
-        args.push(self.source_dir.clone());
+        args.push(self.source_dir.to_string_lossy().to_string());
         WorkerJob::new_cmd(self.env.clone(), "cmake".into(), Some(args))
     }
 
@@ -37,7 +37,10 @@ impl Cmake {
         WorkerJob::new_cmd(
             self.env.clone(),
             "cmake".into(),
-            Some(vec!["--build".into(), self.build_dir.clone()]),
+            Some(vec![
+                "--build".into(),
+                self.build_dir.to_string_lossy().to_string(),
+            ]),
         )
     }
 
@@ -45,7 +48,10 @@ impl Cmake {
         WorkerJob::new_cmd(
             self.env.clone(),
             "cmake".into(),
-            Some(vec!["--install".into(), self.build_dir.clone()]),
+            Some(vec![
+                "--install".into(),
+                self.build_dir.to_string_lossy().to_string(),
+            ]),
         )
     }
 }

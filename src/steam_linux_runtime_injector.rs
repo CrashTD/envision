@@ -1,26 +1,28 @@
 use crate::{
     file_utils::{copy_file, get_writer},
-    paths::{get_backup_dir, get_home_dir, get_xdg_data_dir},
+    paths::{get_backup_dir, get_home_dir},
     profile::Profile,
 };
 use anyhow::bail;
-use std::{fs::read_to_string, io::Write, path::Path};
+use std::{
+    fs::read_to_string,
+    io::Write,
+    path::{Path, PathBuf},
+};
 
-fn get_runtime_entrypoint_path() -> Option<String> {
-    vec![format!(
-        "{home}/.steam/steam/steamapps/common/SteamLinuxRuntime_sniper/_v2-entry-point",
-        home = get_home_dir(),
-    )]
+fn get_runtime_entrypoint_path() -> Option<PathBuf> {
+    vec![get_home_dir()
+        .join(".steam/steam/steamapps/common/SteamLinuxRuntime_sniper/_v2-entry-point")]
     .iter()
-    .find(|path| Path::new(&path).is_file())
+    .find(|p| p.is_file())
     .cloned()
 }
 
-fn get_backup_runtime_entrypoint_location() -> String {
-    format!("{backup}/_v2-entry-point.bak", backup = get_backup_dir())
+fn get_backup_runtime_entrypoint_location() -> PathBuf {
+    get_backup_dir().join("_v2-entry-point.bak")
 }
 
-fn backup_runtime_entrypoint(path: &str) {
+fn backup_runtime_entrypoint(path: &PathBuf) {
     copy_file(&path, &get_backup_runtime_entrypoint_location());
 }
 
@@ -33,7 +35,7 @@ pub fn restore_runtime_entrypoint() {
     }
 }
 
-fn append_to_runtime_entrypoint(data: &str, path: &str) -> anyhow::Result<()> {
+fn append_to_runtime_entrypoint(data: &str, path: &PathBuf) -> anyhow::Result<()> {
     let existing = read_to_string(path)?;
     let new = existing.replace(
         "exec \"${here}/${run}\" \"$@\"\nexit 125",

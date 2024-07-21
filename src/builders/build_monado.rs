@@ -28,25 +28,41 @@ pub fn get_build_monado_jobs(profile: &Profile, clean_build: bool) -> VecDeque<W
 
     jobs.extend(git.get_pre_build_jobs(profile.pull_on_build));
 
-    let build_dir = format!("{}/build", profile.xrservice_path);
+    let build_dir = profile.xrservice_path.join("build");
     let mut env: HashMap<String, String> = HashMap::new();
     env.insert(
         "PKG_CONFIG_PATH".into(),
-        format!("{}/lib/pkgconfig", profile.prefix),
+        profile
+            .prefix
+            .join("lib/pkgconfig")
+            .to_string_lossy()
+            .to_string(),
     );
     let mut cmake_vars: HashMap<String, String> = HashMap::new();
     cmake_vars.insert("CMAKE_EXPORT_COMPILE_COMMANDS".into(), "ON".into());
     cmake_vars.insert("CMAKE_BUILD_TYPE".into(), "RelWithDebInfo".into());
     cmake_vars.insert("XRT_HAVE_SYSTEM_CJSON".into(), "NO".into());
-    cmake_vars.insert("CMAKE_LIBDIR".into(), format!("{}/lib", profile.prefix));
-    cmake_vars.insert("CMAKE_INSTALL_PREFIX".into(), profile.prefix.clone());
+    cmake_vars.insert(
+        "CMAKE_LIBDIR".into(),
+        profile.prefix.join("lib").to_string_lossy().to_string(),
+    );
+    cmake_vars.insert(
+        "CMAKE_INSTALL_PREFIX".into(),
+        profile.prefix.to_string_lossy().to_string(),
+    );
     cmake_vars.insert(
         "CMAKE_C_FLAGS".into(),
-        format!("-Wl,-rpath='{}/lib'", profile.prefix,),
+        format!(
+            "-Wl,-rpath='{}/lib'",
+            profile.prefix.to_string_lossy().to_string(),
+        ),
     );
     cmake_vars.insert(
         "CMAKE_CXX_FLAGS".into(),
-        format!("-Wl,-rpath='{}/lib'", profile.prefix,),
+        format!(
+            "-Wl,-rpath='{}/lib'",
+            profile.prefix.to_string_lossy().to_string(),
+        ),
     );
     profile.xrservice_cmake_flags.iter().for_each(|(k, v)| {
         if k == "CMAKE_C_FLAGS" || k == "CMAKE_CXX_FLAGS" {

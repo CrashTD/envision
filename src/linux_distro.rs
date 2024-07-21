@@ -1,5 +1,8 @@
 use crate::file_utils::get_reader;
-use std::io::{BufRead, Read};
+use std::{
+    io::{BufRead, Read},
+    path::PathBuf,
+};
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 pub enum LinuxDistro {
@@ -18,10 +21,10 @@ impl LinuxDistro {
     }
 
     fn get_from_etc_os_release() -> Option<Self> {
-        Self::get_from_etc_os_release_file("/etc/os-release")
+        Self::get_from_etc_os_release_file(&"/etc/os-release".into())
     }
 
-    fn get_from_etc_os_release_file(fp: &str) -> Option<Self> {
+    fn get_from_etc_os_release_file(fp: &PathBuf) -> Option<Self> {
         if let Some(mut reader) = get_reader(fp) {
             let mut buf = String::new();
             loop {
@@ -47,7 +50,7 @@ impl LinuxDistro {
     }
 
     fn get_from_etc_issue() -> Option<Self> {
-        if let Some(mut reader) = get_reader("/etc/issue") {
+        if let Some(mut reader) = get_reader(&"/etc/issue".into()) {
             let mut buf = String::new();
             if reader.read_to_string(&mut buf).is_ok() {
                 buf = buf.trim().to_lowercase();
@@ -111,7 +114,7 @@ mod tests {
     #[test]
     fn can_detect_arch_linux_from_etc_os_release() {
         assert_eq!(
-            LinuxDistro::get_from_etc_os_release_file("./test/files/archlinux-os-release"),
+            LinuxDistro::get_from_etc_os_release_file(&"./test/files/archlinux-os-release".into()),
             Some(LinuxDistro::Arch)
         )
     }

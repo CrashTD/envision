@@ -14,6 +14,7 @@ use crate::{
 use std::{
     collections::HashMap,
     io::{BufRead, BufReader, Write},
+    path::PathBuf,
     process::{Child, Command, Stdio},
     sync::{
         mpsc::{sync_channel, Receiver, SyncSender},
@@ -99,9 +100,11 @@ impl CmdRunner {
         Self::new(
             Some(env),
             match profile.xrservice_type {
-                XRServiceType::Monado => format!("{pfx}/bin/monado-service", pfx = profile.prefix),
-                XRServiceType::Wivrn => format!("{pfx}/bin/wivrn-server", pfx = profile.prefix),
-            },
+                XRServiceType::Monado => profile.prefix.join("bin/monado-service"),
+                XRServiceType::Wivrn => profile.prefix.join("bin/wivrn-server"),
+            }
+            .to_string_lossy()
+            .to_string(),
             vec![],
         )
     }
@@ -171,13 +174,13 @@ impl CmdRunner {
         }
     }
 
-    fn save_log(path_s: String, log: &[String]) -> Result<(), std::io::Error> {
-        let mut writer = get_writer(&path_s).map_err(std::io::Error::other)?;
+    fn save_log(path: &PathBuf, log: &[String]) -> Result<(), std::io::Error> {
+        let mut writer = get_writer(path).map_err(std::io::Error::other)?;
         let log_s = log.concat();
         writer.write_all(log_s.as_ref())
     }
 
-    pub fn save_output(&mut self, path: String) -> Result<(), std::io::Error> {
+    pub fn save_output(&mut self, path: &PathBuf) -> Result<(), std::io::Error> {
         CmdRunner::save_log(path, &self.output)
     }
 }
@@ -251,14 +254,14 @@ mod tests {
         }
 
         runner
-            .save_output("./target/testout/testlog".into())
+            .save_output(&"./target/testout/testlog".into())
             .expect("Failed to save output file");
     }
 
     #[test]
     fn can_create_from_profile() {
         CmdRunner::xrservice_runner_from_profile(&Profile::load_profile(
-            &"./test/files/profile.json".to_string(),
+            &"./test/files/profile.json".into(),
         ));
     }
 }

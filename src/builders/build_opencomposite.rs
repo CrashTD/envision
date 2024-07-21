@@ -28,7 +28,7 @@ pub fn get_build_opencomposite_jobs(profile: &Profile, clean_build: bool) -> Vec
 
     jobs.extend(git.get_pre_build_jobs(profile.pull_on_build));
 
-    let build_dir = format!("{}/build", profile.opencomposite_path);
+    let build_dir = profile.opencomposite_path.join("build");
     let mut cmake_vars: HashMap<String, String> = HashMap::new();
     cmake_vars.insert("CMAKE_EXPORT_COMPILE_COMMANDS".into(), "ON".into());
     cmake_vars.insert("CMAKE_BUILD_TYPE".into(), "RelWithDebInfo".into());

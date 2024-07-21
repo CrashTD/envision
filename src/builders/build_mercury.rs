@@ -5,10 +5,13 @@ use crate::{
 pub fn get_build_mercury_job(profile: &Profile) -> WorkerJob {
     WorkerJob::new_cmd(
         None,
-        format!(
-            "{sysdata}/scripts/build_mercury.sh",
-            sysdata = pkg_data_dir()
-        ),
-        Some(vec![profile.prefix.clone(), get_cache_dir()]),
+        pkg_data_dir()
+            .join("scripts/build_mercury.sh")
+            .to_string_lossy()
+            .to_string(),
+        Some(vec![
+            profile.prefix.to_string_lossy().to_string(),
+            get_cache_dir().to_string_lossy().to_string(),
+        ]),
     )
 }

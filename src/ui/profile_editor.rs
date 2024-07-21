@@ -13,7 +13,7 @@ use crate::{
 use adw::prelude::*;
 use gtk::glib::clone;
 use relm4::{factory::AsyncFactoryVecDeque, prelude::*};
-use std::{cell::RefCell, rc::Rc};
+use std::{cell::RefCell, path::PathBuf, rc::Rc};
 
 #[tracker::track]
 pub struct ProfileEditor {
@@ -110,10 +110,10 @@ impl SimpleComponent for ProfileEditor {
                         add: &path_row(
                             "Install Prefix",
                             None,
-                            Some(model.profile.borrow().prefix.clone()),
+                            Some(model.profile.borrow().prefix.to_string_lossy().to_string()),
                             Some(init.root_win.clone()),
                             clone!(@strong prof => move |n_path| {
-                                prof.borrow_mut().prefix = n_path.unwrap_or_default()
+                                prof.borrow_mut().prefix = n_path.unwrap_or_default().into();
                             }),
                         ),
                         add: &entry_row("Autostart Command",
@@ -171,10 +171,10 @@ impl SimpleComponent for ProfileEditor {
                         add: &path_row(
                             "XR Service Path",
                             None,
-                            Some(model.profile.borrow().xrservice_path.clone()),
+                            Some(model.profile.borrow().xrservice_path.clone().to_string_lossy().to_string()),
                             Some(init.root_win.clone()),
                             clone!(@strong prof => move |n_path| {
-                                prof.borrow_mut().xrservice_path = n_path.unwrap_or_default()
+                                prof.borrow_mut().xrservice_path = n_path.unwrap_or_default().into();
                             }),
                         ),
                         add: &entry_row(
@@ -200,10 +200,10 @@ impl SimpleComponent for ProfileEditor {
                         set_description: Some("OpenVR driver built on top of OpenXR"),
                         add: &path_row(
                             "OpenComposite Path", None,
-                            Some(model.profile.borrow().opencomposite_path.clone()),
+                            Some(model.profile.borrow().opencomposite_path.clone().to_string_lossy().to_string()),
                             Some(init.root_win.clone()),
                             clone!(@strong prof => move |n_path| {
-                                prof.borrow_mut().opencomposite_path = n_path.unwrap_or_default();
+                                prof.borrow_mut().opencomposite_path = n_path.unwrap_or_default().into();
                             })
                         ),
                         add: &entry_row(
@@ -236,10 +236,10 @@ impl SimpleComponent for ProfileEditor {
                         ),
                         add: &path_row(
                             "Libsurvive Path", None,
-                            model.profile.borrow().features.libsurvive.path.clone(),
+                            model.profile.borrow().features.libsurvive.path.clone().map(|p| p.to_string_lossy().to_string()),
                             Some(init.root_win.clone()),
                             clone!(@strong prof => move |n_path| {
-                                prof.borrow_mut().features.libsurvive.path = n_path;
+                                prof.borrow_mut().features.libsurvive.path = n_path.map(PathBuf::from);
                             })
                         ),
                         add: &entry_row(
@@ -272,10 +272,10 @@ impl SimpleComponent for ProfileEditor {
                         ),
                         add: &path_row(
                             "OpenHMD Path", None,
-                            model.profile.borrow().features.openhmd.path.clone(),
+                            model.profile.borrow().features.openhmd.path.clone().map(|p| p.to_string_lossy().to_string()),
                             Some(init.root_win.clone()),
                             clone!(@strong prof => move |n_path| {
-                                prof.borrow_mut().features.openhmd.path = n_path;
+                                prof.borrow_mut().features.openhmd.path = n_path.map(PathBuf::from);
                             })
                         ),
                         add: &entry_row(
@@ -308,10 +308,10 @@ impl SimpleComponent for ProfileEditor {
                         ),
                         add: &path_row(
                             "Basalt Path", None,
-                            model.profile.borrow().features.basalt.path.clone(),
+                            model.profile.borrow().features.basalt.path.clone().map(|p| p.to_string_lossy().to_string()),
                             Some(init.root_win.clone()),
                             clone!(@strong prof => move |n_path| {
-                                prof.borrow_mut().features.basalt.path = n_path;
+                                prof.borrow_mut().features.basalt.path = n_path.map(PathBuf::from);
                             })
                         ),
                         add: &entry_row(

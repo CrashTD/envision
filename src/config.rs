@@ -1,3 +1,5 @@
+use serde::{de::Error, Deserialize, Serialize};
+
 use crate::{
     constants::CMD_NAME,
     device_prober::get_xr_usb_devices,
@@ -9,8 +11,7 @@ use crate::{
         survive::survive_profile, wivrn::wivrn_profile, wmr::wmr_profile,
     },
 };
-use serde::{ser::Error, Deserialize, Serialize};
-use std::{fs::File, io::BufReader};
+use std::{fs::File, io::BufReader, path::PathBuf};
 
 fn default_win_size() -> [i32; 2] {
     [360, 400]
@@ -56,16 +57,12 @@ impl Config {
         }
     }
 
-    pub fn config_file_path() -> String {
-        format!(
-            "{config}/{name}.json",
-            config = get_config_dir(),
-            name = CMD_NAME
-        )
+    pub fn config_file_path() -> PathBuf {
+        get_config_dir().join(format!("{CMD_NAME}.json"))
     }
 
-    fn from_path(path_s: String) -> Self {
-        match File::open(path_s) {
+    fn from_path(path: &PathBuf) -> Self {
+        match File::open(path) {
             Ok(file) => {
                 let reader = BufReader::new(file);
                 match serde_json::from_reader(reader) {
@@ -77,8 +74,8 @@ impl Config {
         }
     }
 
-    fn save_to_path(&self, path_s: &String) -> Result<(), serde_json::Error> {
-        let writer = get_writer(path_s).map_err(serde_json::Error::custom)?;
+    fn save_to_path(&self, path: &PathBuf) -> Result<(), serde_json::Error> {
+        let writer = get_writer(path).map_err(serde_json::Error::custom)?;
         serde_json::to_writer_pretty(writer, self)
     }
 
@@ -88,7 +85,7 @@ impl Config {
     }
 
     pub fn get_config() -> Self {
-        Self::from_path(Self::config_file_path())
+        Self::from_path(&Self::config_file_path())
     }
 
     pub fn set_profiles(&mut self, profiles: &[Profile]) {
@@ -117,7 +114,7 @@ mod tests {
     #[test]
     fn will_load_default_if_config_does_not_exist() {
         assert_eq!(
-            Config::from_path("/non/existing/file.json".into()).debug_view_enabled,
+            Config::from_path(&"/non/existing/file.json".into()).debug_view_enabled,
             false
         )
     }

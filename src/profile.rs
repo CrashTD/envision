@@ -2,8 +2,16 @@ use crate::{
     file_utils::get_writer,
     paths::{get_data_dir, get_ipc_file_path, BWRAP_SYSTEM_PREFIX, SYSTEM_PREFIX},
 };
+use nix::NixPath;
 use serde::{Deserialize, Serialize};
-use std::{collections::HashMap, fmt::Display, fs::File, io::BufReader, path::Path, slice::Iter};
+use std::{
+    collections::HashMap,
+    fmt::Display,
+    fs::File,
+    io::BufReader,
+    path::{Path, PathBuf},
+    slice::Iter,
+};
 use uuid::Uuid;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -85,7 +93,7 @@ impl Display for ProfileFeatureType {
 pub struct ProfileFeature {
     pub feature_type: ProfileFeatureType,
     pub enabled: bool,
-    pub path: Option<String>,
+    pub path: Option<PathBuf>,
     pub repo: Option<String>,
     pub branch: Option<String>,
 }
@@ -207,18 +215,18 @@ pub struct Profile {
     pub uuid: String,
     pub name: String,
     pub xrservice_type: XRServiceType,
-    pub xrservice_path: String,
+    pub xrservice_path: PathBuf,
     pub xrservice_repo: Option<String>,
     pub xrservice_branch: Option<String>,
     #[serde(default = "HashMap::<String, String>::default")]
     pub xrservice_cmake_flags: HashMap<String, String>,
-    pub opencomposite_path: String,
+    pub opencomposite_path: PathBuf,
     pub opencomposite_repo: Option<String>,
     pub opencomposite_branch: Option<String>,
     pub features: ProfileFeatures,
     pub environment: HashMap<String, String>,
     /** Install prefix */
-    pub prefix: String,
+    pub prefix: PathBuf,
     pub can_be_built: bool,
     pub editable: bool,
     pub pull_on_build: bool,
@@ -239,10 +247,10 @@ impl Display for Profile {
 impl Default for Profile {
     fn default() -> Self {
         let uuid = Uuid::new_v4().to_string();
-        let profile_dir = format!("{}/{}", get_data_dir(), uuid);
+        let profile_dir = get_data_dir().join(&uuid);
         Self {
             name: "Default profile name".into(),
-            xrservice_path: format!("{}/xrservice", profile_dir),
+            xrservice_path: profile_dir.join("xrservice"),
             xrservice_type: XRServiceType::Monado,
             xrservice_repo: None,
             xrservice_branch: None,
@@ -250,21 +258,21 @@ impl Default for Profile {
             features: ProfileFeatures {
                 libsurvive: ProfileFeature {
                     enabled: false,
-                    path: Some(format!("{}/libsurvive", profile_dir)),
+                    path: Some(profile_dir.join("libsurvive")),
                     repo: None,
                     branch: None,
                     feature_type: ProfileFeatureType::Libsurvive,
                 },
                 basalt: ProfileFeature {
                     enabled: false,
-                    path: Some(format!("{}/basalt", profile_dir)),
+                    path: Some(profile_dir.join("basalt")),
                     repo: None,
                     branch: None,
                     feature_type: ProfileFeatureType::Basalt,
                 },
                 openhmd: ProfileFeature {
                     enabled: false,
-                    path: Some(format!("{}/openhmd", profile_dir)),
+                    path: Some(profile_dir.join("openhmd")),
                     repo: None,
                     branch: None,
                     feature_type: ProfileFeatureType::OpenHmd,
@@ -272,10 +280,10 @@ impl Default for Profile {
                 mercury_enabled: false,
             },
             environment: HashMap::new(),
-            prefix: format!("{}/prefixes/{}", get_data_dir(), uuid),
+            prefix: get_data_dir().join("prefixes").join(&uuid),
             can_be_built: true,
             pull_on_build: true,
-            opencomposite_path: format!("{}/opencomposite", profile_dir),
+            opencomposite_path: profile_dir.join("opencomposite"),
             opencomposite_repo: None,
             opencomposite_branch: None,
             editable: true,
@@ -291,7 +299,7 @@ impl Profile {
     pub fn xr_runtime_json_env_var(&self) -> String {
         format!(
             "XR_RUNTIME_JSON=\"{prefix}/share/openxr/1/openxr_{runtime}.json\"",
-            prefix = match self.prefix.as_str() {
+            prefix = match self.prefix.to_string_lossy().to_string().as_str() {
                 SYSTEM_PREFIX => BWRAP_SYSTEM_PREFIX,
                 other => other,
             },
@@ -312,7 +320,7 @@ impl Profile {
             self.xr_runtime_json_env_var(),
             format!(
                 "PRESSURE_VESSEL_FILESYSTEMS_RW=\"{path}\"",
-                path = get_ipc_file_path(&self.xrservice_type),
+                path = get_ipc_file_path(&self.xrservice_type).to_string_lossy(),
             ),
         ]
     }
@@ -332,22 +340,22 @@ impl Profile {
         vars.join(" ")
     }
 
-    pub fn get_survive_cli_path(&self) -> Option<String> {
-        let path_s = format!("{pfx}/bin/survive-cli", pfx = self.prefix);
-        if Path::new(&path_s).is_file() {
-            return Some(path_s);
+    pub fn get_survive_cli_path(&self) -> Option<PathBuf> {
+        let path = self.prefix.join("bin/survive-cli");
+        if path.is_file() {
+            return Some(path);
         }
         None
     }
 
-    pub fn load_profile(path: &String) -> Self {
+    pub fn load_profile(path: &PathBuf) -> Self {
         let file = File::open(path).expect("Unable to open profile");
         let reader = BufReader::new(file);
         serde_json::from_reader(reader).expect("Faiuled to deserialize profile")
     }
 
-    pub fn dump_profile(&self, path_s: &String) {
-        let writer = get_writer(path_s).expect("Could not write profile");
+    pub fn dump_profile(&self, path: &PathBuf) {
+        let writer = get_writer(path).expect("Could not write profile");
         serde_json::to_writer_pretty(writer, self).expect("Could not write profile")
     }
 
@@ -398,53 +406,46 @@ impl Profile {
             && !self.xrservice_path.is_empty()
             && !self.prefix.is_empty()
             && (!self.features.libsurvive.enabled
-                || !self
+                || self
                     .features
                     .libsurvive
                     .path
                     .as_ref()
-                    .unwrap_or(&"".to_string())
-                    .is_empty())
+                    .is_some_and(|p| !p.is_empty()))
             && (!self.features.basalt.enabled
-                || !self
+                || self
                     .features
                     .basalt
                     .path
                     .as_ref()
-                    .unwrap_or(&"".to_string())
-                    .is_empty())
+                    .is_some_and(|p| !p.is_empty()))
             && (!self.features.openhmd.enabled
-                || !self
+                || self
                     .features
                     .openhmd
                     .path
                     .as_ref()
-                    .unwrap_or(&"".to_string())
-                    .is_empty())
+                    .is_some_and(|p| !p.is_empty()))
     }
 
-    pub fn xrservice_binary(&self) -> String {
-        format!(
-            "{}/bin/{}",
-            self.prefix,
-            match self.xrservice_type {
-                XRServiceType::Monado => "monado-service",
-                XRServiceType::Wivrn => "wivrn-server",
-            }
-        )
+    pub fn xrservice_binary(&self) -> PathBuf {
+        self.prefix.join("bin").join(match self.xrservice_type {
+            XRServiceType::Monado => "monado-service",
+            XRServiceType::Wivrn => "wivrn-server",
+        })
     }
 
     pub fn can_start(&self) -> bool {
         Path::new(&self.xrservice_binary()).is_file()
     }
 
-    pub fn libmonado_so(&self) -> Option<String> {
-        let mut res = format!("{}/lib/libmonado.so", self.prefix);
-        if Path::new(&res).is_file() {
+    pub fn libmonado_so(&self) -> Option<PathBuf> {
+        let res = self.prefix.join("lib/libmonado.so");
+        if res.is_file() {
             return Some(res);
         }
-        res = format!("{}/lib64/libmonado.so", self.prefix);
-        if Path::new(&res).is_file() {
+        let res = self.prefix.join("lib64/libmonado.so");
+        if res.is_file() {
             return Some(res);
         }
 
@@ -458,7 +459,7 @@ impl Profile {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
+    use std::{collections::HashMap, path::PathBuf};
 
     use crate::profile::{ProfileFeature, ProfileFeatureType, ProfileFeatures, XRServiceType};
 
@@ -466,14 +467,17 @@ mod tests {
 
     #[test]
     fn profile_can_be_loaded() {
-        let profile = Profile::load_profile(&"./test/files/profile.json".to_string());
+        let profile = Profile::load_profile(&"./test/files/profile.json".into());
         assert_eq!(profile.name, "Demo profile");
-        assert_eq!(profile.xrservice_path, "/home/user/monado");
-        assert_eq!(profile.opencomposite_path, "/home/user/opencomposite");
-        assert_eq!(profile.prefix, "/home/user/envisionprefix");
+        assert_eq!(profile.xrservice_path, PathBuf::from("/home/user/monado"));
         assert_eq!(
-            profile.features.libsurvive.path.as_deref(),
-            Some("/home/user/libsurvive")
+            profile.opencomposite_path,
+            PathBuf::from("/home/user/opencomposite")
+        );
+        assert_eq!(profile.prefix, PathBuf::from("/home/user/envisionprefix"));
+        assert_eq!(
+            profile.features.libsurvive.path,
+            Some(PathBuf::from("/home/user/libsurvive"))
         );
         assert_eq!(profile.features.basalt.path, None);
         assert_eq!(profile.features.libsurvive.enabled, true);
@@ -496,14 +500,14 @@ mod tests {
         let p = Profile {
             uuid: "demo".into(),
             name: "Demo profile".into(),
-            xrservice_path: String::from("/home/user/monado"),
+            xrservice_path: PathBuf::from("/home/user/monado"),
             xrservice_type: XRServiceType::Monado,
-            opencomposite_path: String::from("/home/user/opencomposite"),
+            opencomposite_path: PathBuf::from("/home/user/opencomposite"),
             features: ProfileFeatures {
                 libsurvive: ProfileFeature {
                     feature_type: ProfileFeatureType::Libsurvive,
                     enabled: true,
-                    path: Some(String::from("/home/user/libsurvive")),
+                    path: Some(PathBuf::from("/home/user/libsurvive")),
                     repo: None,
                     branch: None,
                 },
@@ -512,17 +516,17 @@ mod tests {
                 mercury_enabled: false,
             },
             environment: env,
-            prefix: String::from("/home/user/envisionprefix"),
+            prefix: PathBuf::from("/home/user/envisionprefix"),
             editable: true,
             ..Default::default()
         };
-        let fpath = String::from("./target/testout/testprofile.json");
+        let fpath = PathBuf::from("./target/testout/testprofile.json");
         p.dump_profile(&fpath);
         let loaded = Profile::load_profile(&fpath);
         assert_eq!(loaded.name, "Demo profile");
         assert_eq!(
             loaded.features.libsurvive.path,
-            Some(String::from("/home/user/libsurvive"))
+            Some(PathBuf::from("/home/user/libsurvive"))
         );
         assert_eq!(
             loaded
@@ -534,6 +538,6 @@ mod tests {
     }
 }
 
-pub fn prepare_ld_library_path(prefix: &str) -> String {
-    format!("{pfx}/lib:{pfx}/lib64", pfx = prefix)
+pub fn prepare_ld_library_path(prefix: &PathBuf) -> String {
+    format!("{pfx}/lib:{pfx}/lib64", pfx = prefix.to_string_lossy())
 }

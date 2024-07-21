@@ -1,16 +1,16 @@
 use crate::file_utils::get_reader;
-use std::{error::Error, fmt::Display, io::Read, str::FromStr};
+use std::{error::Error, fmt::Display, io::Read, path::PathBuf, str::FromStr};
 
 // const POW_PROF_PATH: &str = "/sys/class/drm/card0/device/pp_power_profile_mode";
 
-fn power_profile_mode_file(card_dir: &str) -> String {
-    format!("{}/device/pp_power_profile_mode", card_dir)
+fn power_profile_mode_file(card_dir: &PathBuf) -> PathBuf {
+    card_dir.join("device/pp_power_profile_mode")
 }
 
-pub fn get_set_amd_vr_pow_prof_cmd(card_dir: &str) -> String {
+pub fn get_set_amd_vr_pow_prof_cmd(card_dir: &PathBuf) -> String {
     format!(
         "sudo sh -c \"echo '4' > {}\"",
-        power_profile_mode_file(card_dir)
+        power_profile_mode_file(card_dir).to_string_lossy()
     )
 }
 
@@ -93,10 +93,10 @@ const AMD_VENDOR_ID: &str = "0x1002";
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum GpuSysDrm {
-    Amd(String),
-    Intel(String),
-    Nvidia(String),
-    Other(String),
+    Amd(PathBuf),
+    Intel(PathBuf),
+    Nvidia(PathBuf),
+    Other(PathBuf),
 }
 
 fn list_gpus() -> Vec<GpuSysDrm> {
@@ -104,8 +104,8 @@ fn list_gpus() -> Vec<GpuSysDrm> {
 
     for i in 0..5 {
         // arbitrary range, find a better way
-        let card_dir = format!("/sys/class/drm/card{}", i);
-        let vendor_file = format!("{}/device/vendor", card_dir);
+        let card_dir = PathBuf::from(format!("/sys/class/drm/card{}", i));
+        let vendor_file = card_dir.join("device/vendor");
         if let Some(mut reader) = get_reader(&vendor_file) {
             let mut buf = String::new();
             if reader.read_to_string(&mut buf).is_ok() {
@@ -131,7 +131,7 @@ pub fn get_first_amd_gpu() -> Option<GpuSysDrm> {
 pub fn get_amd_gpu_power_profile() -> Option<GpuPowerProfile> {
     let amd_gpu = get_first_amd_gpu();
     if let Some(GpuSysDrm::Amd(card_dir)) = amd_gpu {
-        if let Some(mut reader) = get_reader(&power_profile_mode_file(card_dir.as_str())) {
+        if let Some(mut reader) = get_reader(&power_profile_mode_file(&card_dir)) {
             let mut txt = String::new();
             reader.read_to_string(&mut txt).ok()?;
             for line in txt.split('\n') {

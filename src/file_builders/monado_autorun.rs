@@ -1,6 +1,8 @@
+use std::path::PathBuf;
+
 use crate::{
     file_utils::{deserialize_file, get_writer},
-    paths::get_xdg_config_dir,
+    xdg::XDG,
 };
 use serde::{Deserialize, Serialize};
 
@@ -28,15 +30,12 @@ impl Default for MonadoAutorunConfig {
     }
 }
 
-fn get_monado_autorun_config_path() -> String {
-    format!(
-        "{config}/monado/autorun_v0.json",
-        config = get_xdg_config_dir()
-    )
+fn get_monado_autorun_config_path() -> PathBuf {
+    XDG.get_config_home().join("monado/autorun_v0.json")
 }
 
-fn get_monado_autorun_config_from_path(path_s: &String) -> Option<MonadoAutorunConfig> {
-    deserialize_file(path_s)
+fn get_monado_autorun_config_from_path(path: &PathBuf) -> Option<MonadoAutorunConfig> {
+    deserialize_file(path)
 }
 
 pub fn get_monado_autorun_config() -> MonadoAutorunConfig {
@@ -44,8 +43,8 @@ pub fn get_monado_autorun_config() -> MonadoAutorunConfig {
         .unwrap_or(MonadoAutorunConfig::default())
 }
 
-fn dump_monado_autorun_config_to_path(config: &MonadoAutorunConfig, path_s: &String) {
-    let writer = get_writer(path_s).expect("Unable to save Monado Autorun config");
+fn dump_monado_autorun_config_to_path(config: &MonadoAutorunConfig, path: &PathBuf) {
+    let writer = get_writer(path).expect("Unable to save Monado Autorun config");
     serde_json::to_writer_pretty(writer, config).expect("Unable to save Monado Autorun config");
 }
 

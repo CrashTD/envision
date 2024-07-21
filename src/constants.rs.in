@@ -1,5 +1,7 @@
 use crate::paths::get_exec_prefix;
 
+use std::path::PathBuf;
+
 pub const APP_NAME: &str = "@PRETTY_NAME@";
 pub const APP_ID: &str = "@APP_ID@";
 pub const RESOURCES_BASE_PATH: &str = "@RESOURCES_BASE_PATH@";
@@ -17,10 +19,10 @@ pub fn get_developers() -> Vec<String> {
     vec!["Gabriele Musco <gabmus@disroot.org>".to_string()]
 }
 
-pub fn pkg_data_dir() -> String {
-    format!("{}/share/{}", get_exec_prefix(), CMD_NAME)
+pub fn pkg_data_dir() -> PathBuf {
+    get_exec_prefix().join("share").join(CMD_NAME)
 }
 
 pub fn resources() -> String {
-    format!("{}/resources.gresource", pkg_data_dir())
+    format!("{}/resources.gresource", pkg_data_dir().to_string_lossy().to_string())
 }

@@ -1,43 +1,41 @@
+use std::path::PathBuf;
+
 use crate::{
     file_utils::{copy_file, deserialize_file, get_writer, set_file_readonly},
-    paths::{get_backup_dir, get_xdg_config_dir, get_xdg_data_dir},
+    paths::get_backup_dir,
     profile::Profile,
+    xdg::XDG,
 };
 use serde::{ser::Error, Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct OpenVrPaths {
-    config: Vec<String>,
+    config: Vec<PathBuf>,
     external_drivers: Option<Vec<String>>, // never seen it populated
     jsonid: String,
-    log: Vec<String>,
-    runtime: Vec<String>,
+    log: Vec<PathBuf>,
+    runtime: Vec<PathBuf>,
     version: u32,
 }
 
-pub fn get_openvr_conf_dir() -> String {
-    format!("{config}/openvr", config = get_xdg_config_dir())
+pub fn get_openvr_conf_dir() -> PathBuf {
+    XDG.get_config_home().join("openvr")
 }
 
-fn get_openvrpaths_vrpath_path() -> String {
-    format!(
-        "{config}/openvrpaths.vrpath",
-        config = get_openvr_conf_dir()
-    )
+fn get_openvrpaths_vrpath_path() -> PathBuf {
+    get_openvr_conf_dir().join("openvrpaths.vrpath")
 }
 
 pub fn is_steam(ovr_paths: &OpenVrPaths) -> bool {
     ovr_paths.runtime.iter().any(|rt| {
-        rt.to_lowercase()
+        rt.to_string_lossy()
+            .to_lowercase()
             .ends_with("/steam/steamapps/common/steamvr")
     })
 }
 
-fn get_backup_steam_openvrpaths_path() -> String {
-    format!(
-        "{backup}/openvrpaths.vrpath.steam.bak",
-        backup = get_backup_dir()
-    )
+fn get_backup_steam_openvrpaths_path() -> PathBuf {
+    get_backup_dir().join("openvrpaths.vrpath.steam.bak")
 }
 
 fn get_backed_up_steam_openvrpaths() -> Option<OpenVrPaths> {
@@ -55,8 +53,8 @@ fn backup_steam_openvrpaths() {
     }
 }
 
-fn get_openvrpaths_from_path(path_s: &String) -> Option<OpenVrPaths> {
-    deserialize_file(path_s)
+fn get_openvrpaths_from_path(path: &PathBuf) -> Option<OpenVrPaths> {
+    deserialize_file(path)
 }
 
 pub fn get_current_openvrpaths() -> Option<OpenVrPaths> {
@@ -65,9 +63,9 @@ pub fn get_current_openvrpaths() -> Option<OpenVrPaths> {
 
 fn dump_openvrpaths_to_path(
     ovr_paths: &OpenVrPaths,
-    path_s: &String,
+    path: &PathBuf,
 ) -> Result<(), serde_json::Error> {
-    let writer = get_writer(path_s).map_err(serde_json::Error::custom)?;
+    let writer = get_writer(path).map_err(serde_json::Error::custom)?;
     serde_json::to_writer_pretty(writer, ovr_paths)
 }
 
@@ -79,16 +77,13 @@ fn build_steam_openvrpaths() -> OpenVrPaths {
     if let Some(backup) = get_backed_up_steam_openvrpaths() {
         return backup;
     }
-    let datadir = get_xdg_data_dir();
+    let datadir = XDG.get_data_home();
     OpenVrPaths {
-        config: vec![format!("{data}/Steam/config", data = datadir)],
+        config: vec![datadir.join("Steam/config")],
         external_drivers: None,
         jsonid: "vrpathreg".into(),
-        log: vec![format!("{data}/Steam/logs", data = datadir)],
-        runtime: vec![format!(
-            "{data}/Steam/steamapps/common/SteamVR",
-            data = datadir
-        )],
+        log: vec![datadir.join("Steam/logs")],
+        runtime: vec![datadir.join("Steam/steamapps/common/SteamVR")],
         version: 1,
     }
 }
@@ -100,16 +95,13 @@ pub fn set_current_openvrpaths_to_steam() -> anyhow::Result<()> {
 }
 
 pub fn build_profile_openvrpaths(profile: &Profile) -> OpenVrPaths {
-    let datadir = get_xdg_data_dir();
+    let datadir = XDG.get_data_home();
     OpenVrPaths {
-        config: vec![format!("{data}/Steam/config", data = datadir)],
+        config: vec![datadir.join("Steam/config")],
         external_drivers: None,
         jsonid: "vrpathreg".into(),
-        log: vec![format!("{data}/Steam/logs", data = datadir)],
-        runtime: vec![format!(
-            "{opencomp_dir}/build",
-            opencomp_dir = profile.opencomposite_path
-        )],
+        log: vec![datadir.join("Steam/logs")],
+        runtime: vec![profile.opencomposite_path.join("build")],
         version: 1,
     }
 }
@@ -125,6 +117,8 @@ pub fn set_current_openvrpaths_to_profile(profile: &Profile) -> anyhow::Result<(
 
 #[cfg(test)]
 mod tests {
+    use std::path::PathBuf;
+
     use super::{dump_openvrpaths_to_path, get_openvrpaths_from_path, OpenVrPaths};
 
     #[test]
@@ -133,7 +127,7 @@ mod tests {
         assert_eq!(ovrp.config.len(), 1);
         assert_eq!(
             ovrp.config.get(0).unwrap(),
-            "/home/user/.local/share/Steam/config"
+            &PathBuf::from("/home/user/.local/share/Steam/config")
         );
         assert_eq!(ovrp.external_drivers, None);
         assert_eq!(ovrp.jsonid, "vrpathreg");

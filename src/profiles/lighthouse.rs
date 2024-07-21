@@ -7,7 +7,7 @@ use std::collections::HashMap;
 
 pub fn lighthouse_profile() -> Profile {
     let data_dir = get_data_dir();
-    let prefix = format!("{data}/prefixes/lighthouse_default", data = data_dir);
+    let prefix = data_dir.join("prefixes/lighthouse_default");
     let mut environment: HashMap<String, String> = HashMap::new();
     environment.insert("XRT_JSON_LOG".into(), "1".into());
     environment.insert("XRT_COMPOSITOR_SCALE_PERCENTAGE".into(), "140".into());

@@ -1,7 +1,8 @@
 use crate::{
     file_utils::{copy_file, deserialize_file, get_writer, set_file_readonly},
-    paths::{get_backup_dir, get_xdg_config_dir, get_xdg_data_dir, SYSTEM_PREFIX},
+    paths::{get_backup_dir, SYSTEM_PREFIX},
     profile::{Profile, XRServiceType},
+    xdg::XDG,
 };
 use serde::{ser::Error, Deserialize, Serialize};
 use std::path::{Path, PathBuf};
@@ -10,9 +11,9 @@ use std::path::{Path, PathBuf};
 pub struct ActiveRuntimeInnerRuntime {
     #[serde(rename = "VALVE_runtime_is_steamvr")]
     pub valve_runtime_is_steamvr: Option<bool>,
-    pub library_path: String,
     #[serde(rename = "MND_libmonado_path")]
     pub libmonado_path: Option<PathBuf>,
+    pub library_path: PathBuf,
     pub name: Option<String>,
 }
 
@@ -22,26 +23,20 @@ pub struct ActiveRuntime {
     pub runtime: ActiveRuntimeInnerRuntime,
 }
 
-pub fn get_openxr_conf_dir() -> String {
-    format!("{config}/openxr", config = get_xdg_config_dir())
+pub fn get_openxr_conf_dir() -> PathBuf {
+    XDG.get_config_home().join("openxr")
 }
 
-fn get_active_runtime_json_path() -> String {
-    format!(
-        "{config}/1/active_runtime.json",
-        config = get_openxr_conf_dir()
-    )
+fn get_active_runtime_json_path() -> PathBuf {
+    get_openxr_conf_dir().join("1/active_runtime.json")
 }
 
 pub fn is_steam(active_runtime: &ActiveRuntime) -> bool {
     matches!(active_runtime.runtime.valve_runtime_is_steamvr, Some(true))
 }
 
-fn get_backup_steam_active_runtime_path() -> String {
-    format!(
-        "{backup}/active_runtime.json.steam.bak",
-        backup = get_backup_dir()
-    )
+fn get_backup_steam_active_runtime_path() -> PathBuf {
+    get_backup_dir().join("active_runtime.json.steam.bak")
 }
 
 fn get_backed_up_steam_active_runtime() -> Option<ActiveRuntime> {
@@ -59,8 +54,8 @@ fn backup_steam_active_runtime() {
     }
 }
 
-fn get_active_runtime_from_path(path_s: &String) -> Option<ActiveRuntime> {
-    deserialize_file(path_s)
+fn get_active_runtime_from_path(path: &PathBuf) -> Option<ActiveRuntime> {
+    deserialize_file(path)
 }
 
 pub fn get_current_active_runtime() -> Option<ActiveRuntime> {
@@ -69,9 +64,9 @@ pub fn get_current_active_runtime() -> Option<ActiveRuntime> {
 
 fn dump_active_runtime_to_path(
     active_runtime: &ActiveRuntime,
-    path_s: &String,
+    path: &PathBuf,
 ) -> Result<(), serde_json::Error> {
-    let writer = get_writer(path_s).map_err(serde_json::Error::custom)?;
+    let writer = get_writer(path).map_err(serde_json::Error::custom)?;
     serde_json::to_writer_pretty(writer, active_runtime)
 }
 
@@ -89,11 +84,10 @@ fn build_steam_active_runtime() -> ActiveRuntime {
         file_format_version: "1.0.0".into(),
         runtime: ActiveRuntimeInnerRuntime {
             valve_runtime_is_steamvr: Some(true),
-            library_path: format!(
-                "{data}/Steam/steamapps/common/SteamVR/bin/linux64/vrclient.so",
-                data = get_xdg_data_dir()
-            ),
             libmonado_path: None,
+            library_path: XDG
+                .get_data_home()
+                .join("Steam/steamapps/common/SteamVR/bin/linux64/vrclient.so"),
             name: Some("SteamVR".into()),
         },
     }
@@ -144,26 +138,25 @@ pub fn build_profile_active_runtime(profile: &Profile) -> ActiveRuntime {
             name: None,
             valve_runtime_is_steamvr: None,
             libmonado_path: monado_so,
-            library_path: oxr_so.to_string_lossy().into_owned(),
+            library_path: oxr_so,
         },
     }
 }
 
 // for system installs
-fn relativize_active_runtime_lib_path(ar: &ActiveRuntime, dest: &str) -> ActiveRuntime {
+fn relativize_active_runtime_lib_path(ar: &ActiveRuntime, path: &PathBuf) -> ActiveRuntime {
     let mut res = ar.clone();
-    let path = Path::new(dest);
     let mut rel_chain = path
         .components()
         .map(|_| String::from(".."))
         .collect::<Vec<String>>();
     rel_chain.pop();
     rel_chain.pop();
-    res.runtime.library_path = format!(
+    res.runtime.library_path = PathBuf::from(format!(
         "{rels}{fullpath}",
         rels = rel_chain.join("/"),
-        fullpath = ar.runtime.library_path
-    );
+        fullpath = ar.runtime.library_path.to_string_lossy()
+    ));
     res
 }
 
@@ -174,7 +167,7 @@ pub fn set_current_active_runtime_to_profile(profile: &Profile) -> anyhow::Resul
     let pfx = profile.clone().prefix;
     let mut ar = build_profile_active_runtime(profile);
     // hack: relativize libopenxr_monado.so path for system installs
-    if pfx == SYSTEM_PREFIX {
+    if pfx == PathBuf::from(SYSTEM_PREFIX) {
         ar = relativize_active_runtime_lib_path(&ar, &dest);
     }
     dump_current_active_runtime(&ar)?;
@@ -184,6 +177,8 @@ pub fn set_current_active_runtime_to_profile(profile: &Profile) -> anyhow::Resul
 
 #[cfg(test)]
 mod tests {
+    use std::path::PathBuf;
+
     use super::{
         dump_active_runtime_to_path, get_active_runtime_from_path,
         relativize_active_runtime_lib_path, ActiveRuntime, ActiveRuntimeInnerRuntime,
@@ -197,7 +192,9 @@ mod tests {
         assert!(ar.runtime.valve_runtime_is_steamvr.unwrap());
         assert_eq!(
             ar.runtime.library_path,
-            "/home/user/.local/share/Steam/steamapps/common/SteamVR/bin/linux64/vrclient.so"
+            PathBuf::from(
+                "/home/user/.local/share/Steam/steamapps/common/SteamVR/bin/linux64/vrclient.so"
+            )
         );
         assert_eq!(ar.runtime.name.unwrap(), "SteamVR");
     }
@@ -232,10 +229,14 @@ mod tests {
         };
         let relativized = relativize_active_runtime_lib_path(
             &ar,
-            "/home/user/.config/openxr/1/active_runtime.json",
+            &PathBuf::from("/home/user/.config/openxr/1/active_runtime.json"),
         );
         assert_eq!(
-            relativized.runtime.library_path,
+            relativized
+                .runtime
+                .library_path
+                .to_string_lossy()
+                .to_string(),
             "../../../../../usr/lib64/libopenxr_monado.so"
         );
     }

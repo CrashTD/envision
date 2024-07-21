@@ -196,14 +196,21 @@ impl InternalJobWorker {
                     match launch_opts.contains(LAUNCH_OPTS_CMD_PLACEHOLDER) {
                         true => launch_opts.replacen(
                             LAUNCH_OPTS_CMD_PLACEHOLDER,
-                            prof.xrservice_binary().as_str(),
+                            &prof.xrservice_binary().to_string_lossy().to_string(),
                             1,
                         ),
-                        false => format!("{} {}", prof.xrservice_binary(), launch_opts),
+                        false => format!(
+                            "{} {}",
+                            prof.xrservice_binary().to_string_lossy(),
+                            launch_opts
+                        ),
                     },
                 ],
             ),
-            true => (prof.xrservice_binary(), vec![]),
+            true => (
+                prof.xrservice_binary().to_string_lossy().to_string(),
+                vec![],
+            ),
         };
         let data = CmdWorkerData {
             environment: env,

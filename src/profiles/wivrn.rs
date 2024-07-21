@@ -7,7 +7,7 @@ use std::collections::HashMap;
 
 pub fn wivrn_profile() -> Profile {
     let data_dir = get_data_dir();
-    let prefix = format!("{data}/prefixes/wivrn_default", data = data_dir);
+    let prefix = data_dir.join("prefixes/wivrn_default");
     let mut environment: HashMap<String, String> = HashMap::new();
     environment.insert("LD_LIBRARY_PATH".into(), prepare_ld_library_path(&prefix));
     environment.insert("XRT_DEBUG_GUI".into(), "1".into());

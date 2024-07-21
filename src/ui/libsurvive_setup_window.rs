@@ -7,7 +7,13 @@ use crate::{
 use adw::prelude::*;
 use gtk::glib;
 use relm4::prelude::*;
-use std::{cell::Cell, collections::HashMap, path::Path, rc::Rc, time::Duration};
+use std::{
+    cell::Cell,
+    collections::HashMap,
+    path::{Path, PathBuf},
+    rc::Rc,
+    time::Duration,
+};
 
 const NO_FILE_MSG: &str = "(No file selected)";
 const CALIBRATION_RUN_TIME_SECONDS: f64 = 30.0;
@@ -57,7 +63,7 @@ pub enum LibsurviveSetupMsg {
 }
 
 impl LibsurviveSetupWindow {
-    fn create_calibration_runner(&mut self, survive_cli_path: String) -> CmdRunner {
+    fn create_calibration_runner(&mut self, survive_cli_path: &PathBuf) -> CmdRunner {
         let lh_path = self.steam_lighthouse_path.clone();
         let mut env = HashMap::new();
         let profile_prefix = &self.profile.as_ref().unwrap().prefix;
@@ -67,7 +73,7 @@ impl LibsurviveSetupWindow {
         );
         CmdRunner::new(
             Some(env),
-            survive_cli_path,
+            survive_cli_path.to_string_lossy().to_string(),
             vec!["--steamvr-calibration".into(), lh_path],
         )
     }
@@ -369,7 +375,7 @@ impl SimpleComponent for LibsurviveSetupWindow {
                     if let Some(survive_cli_path) =
                         self.profile.as_ref().unwrap().get_survive_cli_path()
                     {
-                        let mut runner = self.create_calibration_runner(survive_cli_path);
+                        let mut runner = self.create_calibration_runner(&survive_cli_path);
                         self.calibration_running.set(true);
                         self.first_run_done = false;
                         self.calibration_seconds_elapsed = 0.0;
@@ -444,7 +450,8 @@ impl SimpleComponent for LibsurviveSetupWindow {
                         let runner = self.calibration_runner.as_mut().unwrap();
                         runner.terminate();
                         let mut n_runner = self.create_calibration_runner(
-                            self.profile
+                            &self
+                                .profile
                                 .as_ref()
                                 .unwrap()
                                 .get_survive_cli_path()

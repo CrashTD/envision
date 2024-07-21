@@ -1,9 +1,9 @@
 use crate::{
     file_utils::{deserialize_file, get_writer},
-    paths::get_xdg_config_dir,
+    xdg::XDG,
 };
 use serde::{Deserialize, Serialize};
-use std::{fmt::Display, slice::Iter};
+use std::{fmt::Display, path::PathBuf, slice::Iter};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -123,20 +123,20 @@ impl Default for WivrnConfig {
     }
 }
 
-fn get_wivrn_config_path() -> String {
-    format!("{config}/wivrn/config.json", config = get_xdg_config_dir())
+fn get_wivrn_config_path() -> PathBuf {
+    XDG.get_config_home().join("wivrn/config.json")
 }
 
-fn get_wivrn_config_from_path(path_s: &String) -> Option<WivrnConfig> {
-    deserialize_file(path_s)
+fn get_wivrn_config_from_path(path: &PathBuf) -> Option<WivrnConfig> {
+    deserialize_file(path)
 }
 
 pub fn get_wivrn_config() -> WivrnConfig {
     get_wivrn_config_from_path(&get_wivrn_config_path()).unwrap_or(WivrnConfig::default())
 }
 
-fn dump_wivrn_config_to_path(config: &WivrnConfig, path_s: &String) {
-    let writer = get_writer(path_s).expect("Unable to save WiVRn config");
+fn dump_wivrn_config_to_path(config: &WivrnConfig, path: &PathBuf) {
+    let writer = get_writer(path).expect("Unable to save WiVRn config");
     serde_json::to_writer_pretty(writer, config).expect("Unable to save WiVRn config");
 }
 

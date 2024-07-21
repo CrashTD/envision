@@ -1,17 +1,17 @@
 use crate::ui::job_worker::job::{FuncWorkerOut, WorkerJob};
 use git2::Repository;
-use std::path::Path;
+use std::path::PathBuf;
 
 #[derive(Debug, Clone)]
 pub struct Git {
     pub repo: String,
-    pub dir: String,
+    pub dir: PathBuf,
     pub branch: String,
 }
 
 impl Git {
     fn cmd(&self, args: Vec<String>) -> WorkerJob {
-        let mut nargs = vec!["-C".into(), self.dir.clone()];
+        let mut nargs = vec!["-C".into(), self.dir.to_string_lossy().to_string()];
         nargs.extend(args);
         WorkerJob::new_cmd(None, "git".into(), Some(nargs))
     }
@@ -81,7 +81,7 @@ impl Git {
             Some(vec![
                 "clone".into(),
                 self.get_repo(),
-                self.dir.clone(),
+                self.dir.to_string_lossy().to_string(),
                 "--recurse-submodules".into(),
             ]),
         )
@@ -101,8 +101,7 @@ impl Git {
     }
 
     pub fn clone_exists(&self) -> bool {
-        let path_s = format!("{}/.git", self.dir.clone());
-        Path::new(&path_s).is_dir()
+        self.dir.join(".git").is_dir()
     }
 
     pub fn get_pre_build_jobs(&self, pull_on_build: bool) -> Vec<WorkerJob> {

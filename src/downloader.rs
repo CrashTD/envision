@@ -3,7 +3,7 @@ use reqwest::{
     header::{HeaderMap, USER_AGENT},
     Method,
 };
-use std::{io::prelude::*, thread::JoinHandle};
+use std::{io::prelude::*, path::PathBuf, thread::JoinHandle};
 use std::{thread, time::Duration};
 
 const TIMEOUT: Duration = Duration::from_secs(60);
@@ -23,7 +23,7 @@ fn client() -> reqwest::blocking::Client {
         .expect("Failed to build reqwest::Client")
 }
 
-pub fn download_file(url: String, path: String) -> JoinHandle<Result<(), reqwest::Error>> {
+pub fn download_file(url: String, path: PathBuf) -> JoinHandle<Result<(), reqwest::Error>> {
     thread::spawn(move || {
         let client = client();
         match client.request(Method::GET, url).send() {

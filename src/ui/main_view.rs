@@ -188,13 +188,13 @@ impl SimpleComponent for MainView {
                             add_css_class: "card",
                             add_css_class: "padded",
                             #[track = "model.changed(Self::selected_profile())"]
-                            set_visible: match mount_has_nosuid(model.selected_profile.prefix.as_str()) {
+                            set_visible: match mount_has_nosuid(&model.selected_profile.prefix) {
                                 Ok(b) => b,
                                 Err(_) => {
                                     // TODO: handle this error better
-                                    println!(
+                                    eprintln!(
                                         "Warning: could not get stat on path {}",
-                                        model.selected_profile.prefix);
+                                        model.selected_profile.prefix.to_string_lossy());
                                     false
                                 },
                             },
