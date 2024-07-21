@@ -4,13 +4,15 @@ use crate::{
     profile::{Profile, XRServiceType},
 };
 use serde::{Deserialize, Serialize};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ActiveRuntimeInnerRuntime {
     #[serde(rename = "VALVE_runtime_is_steamvr")]
     pub valve_runtime_is_steamvr: Option<bool>,
     pub library_path: String,
+    #[serde(rename = "MND_libmonado_path")]
+    pub libmonado_path: Option<PathBuf>,
     pub name: Option<String>,
 }
 
@@ -91,6 +93,7 @@ fn build_steam_active_runtime() -> ActiveRuntime {
                 "{data}/Steam/steamapps/common/SteamVR/bin/linux64/vrclient.so",
                 data = get_xdg_data_dir()
             ),
+            libmonado_path: None,
             name: Some("SteamVR".into()),
         },
     }
@@ -103,27 +106,35 @@ pub fn set_current_active_runtime_to_steam() -> anyhow::Result<()> {
 }
 
 pub fn build_profile_active_runtime(profile: &Profile) -> ActiveRuntime {
-    let build_oxr_so_path = |lib64: bool| {
-        format!(
-            "{prefix}/{libdir}/libopenxr_{xrservice}.so",
-            prefix = profile.prefix,
-            xrservice = match profile.xrservice_type {
-                XRServiceType::Monado => "monado",
-                XRServiceType::Wivrn => "wivrn",
-            },
-            libdir = match lib64 {
+    let build_path = |lib64: bool, prefix: &str| {
+        PathBuf::from(profile.prefix.clone())
+            .join(match lib64 {
                 true => "lib64",
                 false => "lib",
-            }
-        )
+            })
+            .join(
+                prefix.to_string()
+                    + match profile.xrservice_type {
+                        XRServiceType::Monado => "monado.so",
+                        XRServiceType::Wivrn => "wivrn.so",
+                    },
+            )
     };
 
-    let mut oxr_so = build_oxr_so_path(false);
-
-    if !Path::new(&oxr_so).is_file() {
-        let alt = build_oxr_so_path(true);
-        if Path::new(&alt).is_file() {
+    let mut oxr_so = build_path(false, "libopenxr_");
+    if !oxr_so.exists() {
+        let alt = build_path(true, "libopenxr_");
+        if alt.exists() {
             oxr_so = alt;
+        }
+    }
+    let mut monado_so = Some(build_path(false, "lib"));
+    if !monado_so.as_ref().unwrap().exists() {
+        let alt = build_path(true, "lib");
+        if alt.exists() {
+            monado_so = Some(alt);
+        } else {
+            monado_so = None;
         }
     }
 
@@ -132,7 +143,8 @@ pub fn build_profile_active_runtime(profile: &Profile) -> ActiveRuntime {
         runtime: ActiveRuntimeInnerRuntime {
             name: None,
             valve_runtime_is_steamvr: None,
-            library_path: oxr_so,
+            libmonado_path: monado_so,
+            library_path: oxr_so.to_string_lossy().into_owned(),
         },
     }
 }
@@ -199,6 +211,7 @@ mod tests {
                 library_path:
                     "/home/user/.local/share/Steam/steamapps/common/SteamVR/bin/linux64/vrclient.so"
                         .into(),
+                libmonado_path: None,
                 name: Some("SteamVR".into()),
             },
         };
@@ -213,6 +226,7 @@ mod tests {
             runtime: ActiveRuntimeInnerRuntime {
                 valve_runtime_is_steamvr: None,
                 library_path: "/usr/lib64/libopenxr_monado.so".into(),
+                libmonado_path: None,
                 name: None,
             },
         };
