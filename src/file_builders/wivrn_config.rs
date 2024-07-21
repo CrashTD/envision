@@ -1,5 +1,5 @@
 use crate::{
-    file_utils::{deserialize_file, get_writer_legacy},
+    file_utils::{deserialize_file, get_writer},
     paths::get_xdg_config_dir,
 };
 use serde::{Deserialize, Serialize};
@@ -136,7 +136,7 @@ pub fn get_wivrn_config() -> WivrnConfig {
 }
 
 fn dump_wivrn_config_to_path(config: &WivrnConfig, path_s: &String) {
-    let writer = get_writer_legacy(path_s);
+    let writer = get_writer(path_s).expect("Unable to save WiVRn config");
     serde_json::to_writer_pretty(writer, config).expect("Unable to save WiVRn config");
 }
 

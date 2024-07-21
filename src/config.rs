@@ -1,7 +1,7 @@
 use crate::{
     constants::CMD_NAME,
     device_prober::get_xr_usb_devices,
-    file_utils::get_writer_legacy,
+    file_utils::get_writer,
     paths::get_config_dir,
     profile::Profile,
     profiles::{
@@ -9,7 +9,7 @@ use crate::{
         survive::survive_profile, wivrn::wivrn_profile, wmr::wmr_profile,
     },
 };
-use serde::{Deserialize, Serialize};
+use serde::{ser::Error, Deserialize, Serialize};
 use std::{fs::File, io::BufReader};
 
 fn default_win_size() -> [i32; 2] {
@@ -78,7 +78,7 @@ impl Config {
     }
 
     fn save_to_path(&self, path_s: &String) -> Result<(), serde_json::Error> {
-        let writer = get_writer_legacy(path_s);
+        let writer = get_writer(path_s).map_err(serde_json::Error::custom)?;
         serde_json::to_writer_pretty(writer, self)
     }
 

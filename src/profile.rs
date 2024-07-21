@@ -1,5 +1,5 @@
 use crate::{
-    file_utils::get_writer_legacy,
+    file_utils::get_writer,
     paths::{get_data_dir, get_ipc_file_path, BWRAP_SYSTEM_PREFIX, SYSTEM_PREFIX},
 };
 use serde::{Deserialize, Serialize};
@@ -347,7 +347,7 @@ impl Profile {
     }
 
     pub fn dump_profile(&self, path_s: &String) {
-        let writer = get_writer_legacy(path_s);
+        let writer = get_writer(path_s).expect("Could not write profile");
         serde_json::to_writer_pretty(writer, self).expect("Could not write profile")
     }
 

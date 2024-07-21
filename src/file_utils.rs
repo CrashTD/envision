@@ -24,23 +24,6 @@ pub fn get_writer(path_s: &str) -> anyhow::Result<BufWriter<std::fs::File>> {
     Ok(BufWriter::new(file))
 }
 
-#[deprecated]
-pub fn get_writer_legacy(path_s: &str) -> BufWriter<std::fs::File> {
-    let path = Path::new(path_s);
-    if let Some(parent) = path.parent() {
-        if !parent.is_dir() {
-            create_dir_all(parent).expect("Could not create dir")
-        }
-    };
-    let file = OpenOptions::new()
-        .write(true)
-        .create(true)
-        .truncate(true)
-        .open(path)
-        .expect("Could not open file");
-    BufWriter::new(file)
-}
-
 pub fn get_reader(path_s: &str) -> Option<BufReader<File>> {
     let path = Path::new(&path_s);
     if !(path.is_file() || path.is_symlink()) {
