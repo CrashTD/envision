@@ -109,6 +109,8 @@ pub struct App {
 
     #[tracker::do_not_track]
     wivrn_appimage_warn_shown: bool,
+    #[tracker::do_not_track]
+    configure_wivrn_action: gtk::gio::SimpleAction,
 }
 
 #[derive(Debug)]
@@ -659,6 +661,8 @@ impl SimpleComponent for App {
                     );
                     self.wivrn_appimage_warn_shown = true;
                 }
+                self.configure_wivrn_action
+                    .set_enabled(prof.xrservice_type == XRServiceType::Wivrn);
                 if prof.uuid == self.config.selected_profile_uuid {
                     return;
                 }
@@ -762,6 +766,64 @@ impl SimpleComponent for App {
             });
         }
 
+        let mut actions = RelmActionGroup::<AppActionGroup>::new();
+
+        stateless_action!(
+            actions,
+            BuildProfileAction,
+            clone!(@strong sender => move |_| {
+                sender.input_sender().emit(Msg::BuildProfile(false));
+            })
+        );
+        stateless_action!(
+            actions,
+            BuildProfileCleanAction,
+            clone!(@strong sender => move |_| {
+                sender.input_sender().emit(Msg::BuildProfile(true));
+            })
+        );
+        stateless_action!(
+            actions,
+            QuitAction,
+            clone!(@strong sender => move |_| {
+                sender.input(Msg::Quit);
+            })
+        );
+        stateless_action!(
+            actions,
+            DebugOpenDataAction,
+            clone!(@strong sender => move |_| {
+                sender.input(Msg::DebugOpenData);
+            })
+        );
+        stateless_action!(
+            actions,
+            DebugOpenPrefixAction,
+            clone!(@strong sender => move |_| {
+                sender.input(Msg::DebugOpenPrefix);
+            })
+        );
+        stateless_action!(
+            actions,
+            DebugCopyEnvVarsAction,
+            clone!(@strong sender => move |_| {
+                sender.input(Msg::DebugCopyEnvVars);
+            })
+        );
+        // this bypasses the macro because I need the underlying gio action
+        // to enable/disable it in update()
+        let configure_wivrn_action = {
+            let action = RelmAction::<ConfigureWivrnAction>::new_stateless(
+                clone!(@strong sender => move |_| {
+                    sender.input(Msg::OpenWivrnConfig);
+                }),
+            );
+            let ret = action.gio_action().clone();
+            actions.add_action(action);
+            ret.set_enabled(false);
+            ret
+        };
+
         let mut model = App {
             tracker: 0,
             application: init.application,
@@ -780,7 +842,6 @@ impl SimpleComponent for App {
                     MainViewOutMsg::DeleteProfile => Msg::DeleteProfile,
                     MainViewOutMsg::SaveProfile(p) => Msg::SaveProfile(p),
                     MainViewOutMsg::OpenLibsurviveSetup => Msg::OpenLibsurviveSetup,
-                    MainViewOutMsg::OpenWivrnConfig => Msg::OpenWivrnConfig,
                 }),
             debug_view: DebugView::builder().launch(DebugViewInit {}).forward(
                 sender.input_sender(),
@@ -816,59 +877,16 @@ impl SimpleComponent for App {
             wivrn_conf_editor: None,
             skip_depcheck: false,
             wivrn_appimage_warn_shown: false,
+            configure_wivrn_action,
         };
         let widgets = view_output!();
 
-        let mut actions = RelmActionGroup::<AppActionGroup>::new();
-
-        stateless_action!(
-            actions,
-            BuildProfileAction,
-            clone!(@strong sender => move |_| {
-                sender.input_sender().emit(Msg::BuildProfile(false));
-            })
-        );
-        stateless_action!(
-            actions,
-            BuildProfileCleanAction,
-            clone!(@strong sender => move |_| {
-                sender.input_sender().emit(Msg::BuildProfile(true));
-            })
-        );
         {
             let abd_sender = model.about_dialog.sender().clone();
             stateless_action!(actions, AboutAction, move |_| {
                 abd_sender.send(()).unwrap();
             });
         }
-        stateless_action!(
-            actions,
-            QuitAction,
-            clone!(@strong sender => move |_| {
-                sender.input(Msg::Quit);
-            })
-        );
-        stateless_action!(
-            actions,
-            DebugOpenDataAction,
-            clone!(@strong sender => move |_| {
-                sender.input(Msg::DebugOpenData);
-            })
-        );
-        stateless_action!(
-            actions,
-            DebugOpenPrefixAction,
-            clone!(@strong sender => move |_| {
-                sender.input(Msg::DebugOpenPrefix);
-            })
-        );
-        stateless_action!(
-            actions,
-            DebugCopyEnvVarsAction,
-            clone!(@strong sender => move |_| {
-                sender.input(Msg::DebugCopyEnvVars);
-            })
-        );
         actions.add_action(RelmAction::<DebugViewToggleAction>::new_stateful(
             &model.enable_debug_view,
             clone!(@strong sender => move |_, state| {
@@ -912,6 +930,7 @@ new_stateless_action!(pub BuildProfileAction, AppActionGroup, "buildprofile");
 new_stateless_action!(pub BuildProfileCleanAction, AppActionGroup, "buildprofileclean");
 new_stateless_action!(pub QuitAction, AppActionGroup, "quit");
 new_stateful_action!(pub DebugViewToggleAction, AppActionGroup, "debugviewtoggle", (), bool);
+new_stateless_action!(pub ConfigureWivrnAction, AppActionGroup, "configurewivrn");
 
 new_stateless_action!(pub DebugOpenDataAction, AppActionGroup, "debugopendata");
 new_stateless_action!(pub DebugOpenPrefixAction, AppActionGroup, "debugopenprefix");

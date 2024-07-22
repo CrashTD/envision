@@ -82,7 +82,7 @@ impl SimpleComponent for WivrnConfEditor {
                 set_content: pref_page = &adw::PreferencesPage {
                     set_hexpand: true,
                     set_vexpand: true,
-                    set_description: "<a href=\"https://github.com/Meumeu/WiVRn#encoders\">WiVRn Configuration Documentation</a>",
+                    set_description: "<b>Warning</b>: you likely don't need to change the default configuration, this is for advanced users only. Proceed at your own risk!\n\n<a href=\"https://github.com/Meumeu/WiVRn/blob/master/docs/configuration.md\">WiVRn Configuration Documentation</a>",
                     add: scalegrp = &adw::PreferencesGroup {
                         set_title: "Scale",
                         set_description: Some("Render resolution scale. 1.0 is 100%."),
