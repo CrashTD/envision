@@ -300,7 +300,7 @@ impl XRDevice {
             XRDeviceRole::Gamepad,
             XRDeviceRole::Eyes,
         ]
-        .iter()
+        .into_iter()
         .for_each(|xrd| {
             if let Ok(dev) = monado.device_from_role(xrd.to_monado_str()) {
                 devs_with_role.push(dev.id);
@@ -318,11 +318,10 @@ impl XRDevice {
                 //     }
                 // };
                 res.push(Self {
-                    name: dev.name,
                     index: dev.id.to_string(),
-                    // serial,
-                    serial: None,
-                    dev_type: xrd.clone(),
+                    serial: dev.serial().ok(),
+                    name: dev.name,
+                    dev_type: xrd,
                     ..Default::default()
                 })
             }
