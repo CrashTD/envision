@@ -17,6 +17,18 @@ cargo:fmtcheck:
     - cargo fmt --version
     - cargo fmt --all -- --check
 
+cargo:clippy:
+  image: "rust:slim"
+  stage: check
+  variables:
+    RUSTFLAGS: "-Dwarnings"
+  script:
+    - cp src/constants.rs.in src/constants.rs
+    - rustup component add clippy
+    - rustc -Vv && cargo -Vv
+    - cargo clippy --version
+    - cargo clippy --all-targets --all-features
+
 cargo:test:
   stage: test
   script:
