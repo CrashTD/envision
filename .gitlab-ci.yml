@@ -24,6 +24,7 @@ cargo:clippy:
     RUSTFLAGS: "-Dwarnings"
   script:
     - cp src/constants.rs.in src/constants.rs
+    - apt-get install libgtk-4-dev libadwaita-1-dev libssl-dev libjxl-dev libvte-2.91-gtk4-dev meson ninja-build git desktop-file-utils gettext file libusb-dev libusb-1.0-0-dev curl -y
     - rustup component add clippy
     - rustc -Vv && cargo -Vv
     - cargo clippy --version
