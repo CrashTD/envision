@@ -8,7 +8,7 @@ use crate::config::Config;
 use crate::dependencies::common::dep_pkexec;
 use crate::file_utils::mount_has_nosuid;
 use crate::gpu_profile::{get_amd_gpu_power_profile, GpuPowerProfile};
-use crate::profile::{LighthouseDriver, Profile};
+use crate::profile::{LighthouseDriver, Profile, XRServiceType};
 use crate::steamvr_utils::chaperone_info_exists;
 use crate::ui::app::{
     AboutAction, BuildProfileAction, BuildProfileCleanAction, ConfigureWivrnAction,
@@ -48,6 +48,7 @@ pub struct MainView {
     steamvr_calibration_box: Controller<SteamVrCalibrationBox>,
     #[tracker::do_not_track]
     root_win: gtk::Window,
+    xrservice_ready: bool,
 }
 
 #[derive(Debug)]
@@ -67,6 +68,7 @@ pub enum MainViewMsg {
     DuplicateProfile,
     SaveProfile(Profile),
     UpdateDevices(Vec<XRDevice>),
+    UpdateXrServiceReady(bool),
 }
 
 #[derive(Debug)]
@@ -178,6 +180,32 @@ impl SimpleComponent for MainView {
                                 connect_clicked[sender] => move |_| {
                                     sender.input(MainViewMsg::RestartXRService)
                                 },
+                            },
+                        },
+                        adw::Bin {
+                            #[track = "model.changed(Self::xrservice_active())"]
+                            set_visible: model.xrservice_active,
+                            add_css_class: "card",
+                            gtk::Label {
+                                #[track = "model.changed(Self::xrservice_active()) || model.changed(Self::xrservice_ready())"]
+                                set_label: if model.xrservice_ready {
+                                    "Service ready, you can launch XR apps"
+                                } else {
+                                    match model.selected_profile.xrservice_type {
+                                        XRServiceType::Monado =>
+                                            "Starting…",
+                                        XRServiceType::Wivrn =>
+                                            "Starting, please connect your client device…",
+                                    }
+                                },
+                                set_margin_all: 18,
+                                add_css_class: "heading",
+                                add_css_class: "success",
+                                add_css_class: "warning",
+                                #[track = "model.changed(Self::xrservice_active()) || model.changed(Self::xrservice_ready())"]
+                                set_class_active: ("warning", !model.xrservice_ready),
+                                set_wrap: true,
+                                set_justify: gtk::Justification::Center,
                             },
                         },
                         model.devices_box.widget(),
@@ -424,6 +452,9 @@ impl SimpleComponent for MainView {
                     .expect("Sender output failed");
             }
             Self::Input::XRServiceActiveChanged(active, profile, show_launch_opts) => {
+                if !active {
+                    self.set_xrservice_ready(false);
+                }
                 self.set_xrservice_active(active);
                 self.steamvr_calibration_box
                     .sender()
@@ -536,10 +567,14 @@ impl SimpleComponent for MainView {
                     );
                 }
             }
-            Self::Input::UpdateDevices(devs) => self
-                .devices_box
-                .sender()
-                .emit(DevicesBoxMsg::UpdateDevices(devs)),
+            Self::Input::UpdateDevices(devs) => {
+                self.devices_box
+                    .sender()
+                    .emit(DevicesBoxMsg::UpdateDevices(devs));
+            }
+            Self::Input::UpdateXrServiceReady(ready) => {
+                self.set_xrservice_ready(ready);
+            }
         }
     }
 
@@ -621,6 +656,7 @@ impl SimpleComponent for MainView {
             root_win: init.root_win.clone(),
             steamvr_calibration_box,
             profile_editor: None,
+            xrservice_ready: false,
             tracker: 0,
         };
         let widgets = view_output!();

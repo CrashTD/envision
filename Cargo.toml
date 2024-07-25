@@ -26,3 +26,6 @@ tracker = "0.2.1"
 uuid = { version = "1.8.0", features = ["v4", "fast-rng"] }
 vte4 = { version = "0.7.1", features = ["v0_72"] }
 xdg = "2.5.2"
+openxr = { git = "https://github.com/galister/openxrs", rev = "af4a55d", features = [
+  "linked",
+] }

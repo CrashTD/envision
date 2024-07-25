@@ -23,7 +23,7 @@ cargo:clippy:
     RUSTFLAGS: "-Dwarnings"
   script:
     - apt-get update
-    - apt-get install libgtk-4-dev libadwaita-1-dev libssl-dev libjxl-dev libvte-2.91-gtk4-dev meson ninja-build git desktop-file-utils gettext file libusb-dev libusb-1.0-0-dev curl -y
+    - apt-get install libgtk-4-dev libadwaita-1-dev libssl-dev libjxl-dev libvte-2.91-gtk4-dev meson ninja-build git desktop-file-utils gettext file libusb-dev libusb-1.0-0-dev libopenxr-dev curl -y
     - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs -o /tmp/rustup.sh
     - chmod +x /tmp/rustup.sh
     - /tmp/rustup.sh -y
@@ -38,7 +38,7 @@ cargo:test:
   stage: check
   script:
     - apt-get update
-    - apt-get install libgtk-4-dev libadwaita-1-dev libssl-dev libjxl-dev libvte-2.91-gtk4-dev meson ninja-build git desktop-file-utils gettext file libusb-dev libusb-1.0-0-dev curl -y
+    - apt-get install libgtk-4-dev libadwaita-1-dev libssl-dev libjxl-dev libvte-2.91-gtk4-dev meson ninja-build git desktop-file-utils gettext file libusb-dev libusb-1.0-0-dev libopenxr-dev curl -y
     - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs -o /tmp/rustup.sh
     - chmod +x /tmp/rustup.sh
     - /tmp/rustup.sh -y
@@ -55,7 +55,7 @@ appimage:
   stage: deploy
   script:
     - apt-get update
-    - apt-get install libgtk-4-dev libadwaita-1-dev libssl-dev libjxl-dev libvte-2.91-gtk4-dev meson ninja-build git desktop-file-utils gettext file libusb-dev libusb-1.0-0-dev curl -y
+    - apt-get install libgtk-4-dev libadwaita-1-dev libssl-dev libjxl-dev libvte-2.91-gtk4-dev meson ninja-build git desktop-file-utils gettext file libusb-dev libusb-1.0-0-dev libopenxr-dev curl -y
     - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs -o /tmp/rustup.sh
     - chmod +x /tmp/rustup.sh
     - /tmp/rustup.sh -y

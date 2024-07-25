@@ -34,6 +34,7 @@ pub mod linux_distro;
 pub mod log_level;
 pub mod log_parser;
 pub mod monado_utils;
+pub mod openxr_prober;
 pub mod paths;
 pub mod profile;
 pub mod profiles;

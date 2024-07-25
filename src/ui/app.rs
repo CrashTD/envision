@@ -4,7 +4,7 @@ use super::build_window::{BuildStatus, BuildWindow};
 use super::cmdline_opts::CmdLineOpts;
 use super::debug_view::{DebugView, DebugViewMsg};
 use super::job_worker::internal_worker::JobWorkerOut;
-use super::job_worker::job::WorkerJob;
+use super::job_worker::job::{FuncWorkerOut, WorkerJob};
 use super::job_worker::JobWorker;
 use super::libsurvive_setup_window::LibsurviveSetupWindow;
 use super::main_view::MainViewMsg;
@@ -35,6 +35,7 @@ use crate::file_builders::openvrpaths_vrpath::{
 use crate::file_utils::setcap_cap_sys_nice_eip;
 use crate::is_appimage::IS_APPIMAGE;
 use crate::linux_distro::LinuxDistro;
+use crate::openxr_prober::is_openxr_ready;
 use crate::paths::{get_data_dir, get_ipc_file_path};
 use crate::profile::{Profile, XRServiceType};
 use crate::stateless_action;
@@ -111,6 +112,9 @@ pub struct App {
     wivrn_appimage_warn_shown: bool,
     #[tracker::do_not_track]
     configure_wivrn_action: gtk::gio::SimpleAction,
+
+    #[tracker::do_not_track]
+    openxr_prober_worker: Option<JobWorker>,
 }
 
 #[derive(Debug)]
@@ -139,6 +143,9 @@ pub enum Msg {
     DebugCopyEnvVars,
     OpenWivrnConfig,
     HandleCommandLine(CmdLineOpts),
+    StartProber,
+    OnProberExit(bool),
+    NoOp,
 }
 
 impl App {
@@ -203,23 +210,6 @@ impl App {
                 debug,
             );
             worker.start();
-            if let Some(autostart_cmd) = &prof.autostart_command {
-                let autostart_worker = JobWorker::new_with_timer(
-                    Duration::from_secs(5),
-                    WorkerJob::new_cmd(
-                        Some(prof.environment.clone()),
-                        "sh".into(),
-                        Some(vec!["-c".into(), autostart_cmd.clone()]),
-                    ),
-                    sender.input_sender(),
-                    |msg| match msg {
-                        JobWorkerOut::Log(rows) => Msg::OnServiceLog(rows),
-                        JobWorkerOut::Exit(code) => Msg::OnAutostartExit(code),
-                    },
-                );
-                autostart_worker.start();
-                self.autostart_worker = Some(autostart_worker)
-            }
             self.xrservice_worker = Some(worker);
             self.main_view
                 .sender()
@@ -233,6 +223,7 @@ impl App {
                 .sender()
                 .emit(DebugViewMsg::XRServiceActiveChanged(true));
             self.set_inhibit_session(true);
+            sender.input(Msg::StartProber);
         } else {
             alert(
                 "Failed to start profile",
@@ -242,6 +233,24 @@ impl App {
                 )),
                 Some(&self.app_win.clone().upcast::<gtk::Window>()),
             );
+        }
+    }
+
+    pub fn run_autostart(&mut self, sender: ComponentSender<Self>) {
+        let prof = self.get_selected_profile();
+        if let Some(autostart_cmd) = &prof.autostart_command {
+            let mut jobs = VecDeque::new();
+            jobs.push_back(WorkerJob::new_cmd(
+                Some(prof.environment.clone()),
+                "sh".into(),
+                Some(vec!["-c".into(), autostart_cmd.clone()]),
+            ));
+            let autostart_worker = JobWorker::new(jobs, sender.input_sender(), |msg| match msg {
+                JobWorkerOut::Log(rows) => Msg::OnServiceLog(rows),
+                JobWorkerOut::Exit(code) => Msg::OnAutostartExit(code),
+            });
+            autostart_worker.start();
+            self.autostart_worker = Some(autostart_worker);
         }
     }
 
@@ -264,6 +273,11 @@ impl App {
     }
 
     pub fn shutdown_xrservice(&mut self) {
+        if let Some(w) = self.openxr_prober_worker.as_ref() {
+            w.stop();
+            // this can cause threads to remain hanging...
+            self.openxr_prober_worker = None;
+        }
         self.set_inhibit_session(false);
         if let Some(worker) = self.xrservice_worker.as_ref() {
             worker.stop();
@@ -331,6 +345,7 @@ impl SimpleComponent for App {
         self.reset();
 
         match message {
+            Msg::NoOp => {}
             Msg::OnServiceLog(rows) => {
                 if !rows.is_empty() {
                     self.debug_view
@@ -727,6 +742,50 @@ impl SimpleComponent for App {
                     self.skip_depcheck = true;
                 }
             }
+            Msg::StartProber => {
+                if self
+                    .openxr_prober_worker
+                    .as_ref()
+                    .is_some_and(|w| w.exit_code().is_none())
+                {
+                    eprintln!(">>>>>>>>>>>>>>> prober already running!");
+                    // prober already running
+                    return;
+                }
+                let worker = JobWorker::new_with_timer(
+                    Duration::from_millis(500),
+                    WorkerJob::new_func(Box::new(move || {
+                        println!(">>>>>>>>>>>>>>> probing now <<<<<<<<<<<<<<<<<<");
+                        let ready = is_openxr_ready();
+                        println!(">>>>>>>>>>>>>>> ready? {}", ready);
+                        FuncWorkerOut {
+                            success: ready,
+                            ..Default::default()
+                        }
+                    })),
+                    sender.input_sender(),
+                    |msg| match msg {
+                        JobWorkerOut::Exit(code) => Self::Input::OnProberExit(code == 0),
+                        _ => Self::Input::NoOp,
+                    },
+                );
+                worker.start();
+                self.openxr_prober_worker = Some(worker);
+            }
+            Msg::OnProberExit(success) => {
+                self.main_view
+                    .sender()
+                    .emit(MainViewMsg::UpdateXrServiceReady(success));
+                if success {
+                    self.run_autostart(sender.clone());
+                } else if self
+                    .xrservice_worker
+                    .as_ref()
+                    .is_some_and(|w| w.exit_code().is_none())
+                {
+                    sender.input(Msg::StartProber);
+                }
+            }
         }
     }
 
@@ -875,6 +934,7 @@ impl SimpleComponent for App {
             skip_depcheck: false,
             wivrn_appimage_warn_shown: false,
             configure_wivrn_action,
+            openxr_prober_worker: None,
         };
         let widgets = view_output!();
 

@@ -191,7 +191,7 @@ checksum = "c688fc74432808e3eb684cae8830a86be1d66a2bd58e1f248ed0960a590baf6f"
 dependencies = [
  "glob",
  "libc",
- "libloading",
+ "libloading 0.7.4",
 ]
 
 [[package]]
@@ -278,6 +278,7 @@ dependencies = [
  "libadwaita",
  "libmonado-rs",
  "nix",
+ "openxr",
  "phf",
  "phf_macros",
  "relm4",
@@ -1076,6 +1077,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "libloading"
+version = "0.8.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4979f22fdb869068da03c9f7528f8297c6fd2606bc3a4affe42e6a823fdb8da4"
+dependencies = [
+ "cfg-if",
+ "windows-targets 0.48.5",
+]
+
+[[package]]
 name = "libmonado-rs"
 version = "0.1.0"
 source = "git+https://github.com/technobaboo/libmonado-rs#626d8f52d218c59a915edc61e91f849b8dc8922e"
@@ -1255,6 +1266,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "ndk-context"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "27b02d87554356db9e9a873add8782d4ea6e3e58ea071a9adb9a2e8ddb884a8b"
+
+[[package]]
 name = "nix"
 version = "0.29.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1372,6 +1389,25 @@ dependencies = [
  "libc",
  "pkg-config",
  "vcpkg",
+]
+
+[[package]]
+name = "openxr"
+version = "0.18.0"
+source = "git+https://github.com/galister/openxrs?rev=af4a55d#af4a55df60125491c80c61464c824219c6019b76"
+dependencies = [
+ "libc",
+ "libloading 0.8.5",
+ "ndk-context",
+ "openxr-sys",
+]
+
+[[package]]
+name = "openxr-sys"
+version = "0.10.0"
+source = "git+https://github.com/galister/openxrs?rev=af4a55d#af4a55df60125491c80c61464c824219c6019b76"
+dependencies = [
+ "libc",
 ]
 
 [[package]]
