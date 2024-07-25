@@ -55,13 +55,13 @@ impl AsyncFactoryComponent for EnvVarModel {
     async fn update(&mut self, message: Self::Input, sender: AsyncFactorySender<Self>) {
         match message {
             Self::Input::Changed(val) => {
-                self.value = val.clone();
+                self.value.clone_from(&val);
                 sender
                     .output_sender()
                     .emit(Self::Output::Changed(self.name.clone(), val));
             }
             Self::Input::Delete => {
-                sender.output(Self::Output::Delete(self.name.clone()));
+                let _ = sender.output(Self::Output::Delete(self.name.clone()));
             }
         }
     }

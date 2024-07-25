@@ -7,13 +7,7 @@ use crate::{
 use adw::prelude::*;
 use gtk::glib;
 use relm4::prelude::*;
-use std::{
-    cell::Cell,
-    collections::HashMap,
-    path::{Path, PathBuf},
-    rc::Rc,
-    time::Duration,
-};
+use std::{cell::Cell, collections::HashMap, path::Path, rc::Rc, time::Duration};
 
 const NO_FILE_MSG: &str = "(No file selected)";
 const CALIBRATION_RUN_TIME_SECONDS: f64 = 30.0;
@@ -52,6 +46,7 @@ pub struct LibsurviveSetupWindow {
     calibration_runner: Option<CmdRunner>,
 }
 
+#[allow(clippy::large_enum_variant)]
 #[derive(Debug)]
 pub enum LibsurviveSetupMsg {
     Present(Profile),
@@ -63,13 +58,13 @@ pub enum LibsurviveSetupMsg {
 }
 
 impl LibsurviveSetupWindow {
-    fn create_calibration_runner(&mut self, survive_cli_path: &PathBuf) -> CmdRunner {
+    fn create_calibration_runner(&mut self, survive_cli_path: &Path) -> CmdRunner {
         let lh_path = self.steam_lighthouse_path.clone();
         let mut env = HashMap::new();
         let profile_prefix = &self.profile.as_ref().unwrap().prefix;
         env.insert(
             "LD_LIBRARY_PATH".into(),
-            prepare_ld_library_path(&profile_prefix),
+            prepare_ld_library_path(profile_prefix),
         );
         CmdRunner::new(
             Some(env),

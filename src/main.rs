@@ -97,7 +97,7 @@ fn main() -> Result<()> {
     let main_app = adw::Application::builder()
         .application_id(APP_ID)
         .flags(gio::ApplicationFlags::HANDLES_COMMAND_LINE)
-        .resource_base_path(format!("/{}", APP_ID.replace(".", "/")))
+        .resource_base_path(format!("/{}", APP_ID.replace('.', "/")))
         .build();
 
     static BROKER: MessageBroker<Msg> = MessageBroker::new();

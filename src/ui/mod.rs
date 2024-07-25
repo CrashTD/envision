@@ -19,3 +19,5 @@ mod steamvr_calibration_box;
 mod term_widget;
 mod util;
 mod wivrn_conf_editor;
+
+pub const SENDER_IO_ERR_MSG: &str = "relm4 sender i/o failed";

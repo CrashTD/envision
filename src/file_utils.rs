@@ -6,10 +6,10 @@ use nix::{
 use std::{
     fs::{self, copy, create_dir_all, remove_dir_all, File, OpenOptions},
     io::{BufReader, BufWriter},
-    path::{Path, PathBuf},
+    path::Path,
 };
 
-pub fn get_writer(path: &PathBuf) -> anyhow::Result<BufWriter<std::fs::File>> {
+pub fn get_writer(path: &Path) -> anyhow::Result<BufWriter<std::fs::File>> {
     if let Some(parent) = path.parent() {
         if !parent.is_dir() {
             create_dir_all(parent)?;
@@ -23,7 +23,7 @@ pub fn get_writer(path: &PathBuf) -> anyhow::Result<BufWriter<std::fs::File>> {
     Ok(BufWriter::new(file))
 }
 
-pub fn get_reader(path: &PathBuf) -> Option<BufReader<File>> {
+pub fn get_reader(path: &Path) -> Option<BufReader<File>> {
     if !(path.is_file() || path.is_symlink()) {
         return None;
     }
@@ -36,7 +36,7 @@ pub fn get_reader(path: &PathBuf) -> Option<BufReader<File>> {
     }
 }
 
-pub fn deserialize_file<T: serde::de::DeserializeOwned>(path: &PathBuf) -> Option<T> {
+pub fn deserialize_file<T: serde::de::DeserializeOwned>(path: &Path) -> Option<T> {
     match get_reader(path) {
         None => None,
         Some(reader) => match serde_json::from_reader(reader) {
@@ -49,7 +49,7 @@ pub fn deserialize_file<T: serde::de::DeserializeOwned>(path: &PathBuf) -> Optio
     }
 }
 
-pub fn set_file_readonly(path: &PathBuf, readonly: bool) -> Result<(), std::io::Error> {
+pub fn set_file_readonly(path: &Path, readonly: bool) -> Result<(), std::io::Error> {
     if !path.is_file() {
         println!("WARN: trying to set readonly on a file that does not exist");
         return Ok(());
@@ -61,7 +61,7 @@ pub fn set_file_readonly(path: &PathBuf, readonly: bool) -> Result<(), std::io::
     fs::set_permissions(path, perms)
 }
 
-pub fn setcap_cap_sys_nice_eip(file: &PathBuf) {
+pub fn setcap_cap_sys_nice_eip(file: &Path) {
     let mut runner = CmdRunner::new(
         None,
         "pkexec".into(),
@@ -75,13 +75,13 @@ pub fn setcap_cap_sys_nice_eip(file: &PathBuf) {
     runner.join();
 }
 
-pub fn rm_rf(path: &PathBuf) {
+pub fn rm_rf(path: &Path) {
     if remove_dir_all(path).is_err() {
         println!("Failed to remove path {}", path.to_string_lossy());
     }
 }
 
-pub fn copy_file(source: &PathBuf, dest: &PathBuf) {
+pub fn copy_file(source: &Path, dest: &Path) {
     if let Some(parent) = dest.parent() {
         if !parent.is_dir() {
             create_dir_all(parent)
@@ -99,7 +99,7 @@ pub fn copy_file(source: &PathBuf, dest: &PathBuf) {
     });
 }
 
-pub fn mount_has_nosuid(path: &PathBuf) -> Result<bool, Errno> {
+pub fn mount_has_nosuid(path: &Path) -> Result<bool, Errno> {
     match statvfs(path) {
         Ok(fstats) => Ok(fstats.flags().contains(FsFlags::ST_NOSUID)),
         Err(e) => Err(e),
@@ -108,12 +108,13 @@ pub fn mount_has_nosuid(path: &PathBuf) -> Result<bool, Errno> {
 
 #[cfg(test)]
 mod tests {
-    use std::path::PathBuf;
+
+    use std::path::Path;
 
     use crate::file_utils::mount_has_nosuid;
 
     #[test]
     fn can_get_nosuid() {
-        mount_has_nosuid(&PathBuf::from("/tmp")).expect("Error running statvfs");
+        mount_has_nosuid(Path::new("/tmp")).expect("Error running statvfs");
     }
 }

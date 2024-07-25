@@ -348,13 +348,13 @@ impl Profile {
         None
     }
 
-    pub fn load_profile(path: &PathBuf) -> Self {
+    pub fn load_profile(path: &Path) -> Self {
         let file = File::open(path).expect("Unable to open profile");
         let reader = BufReader::new(file);
         serde_json::from_reader(reader).expect("Faiuled to deserialize profile")
     }
 
-    pub fn dump_profile(&self, path: &PathBuf) {
+    pub fn dump_profile(&self, path: &Path) {
         let writer = get_writer(path).expect("Could not write profile");
         serde_json::to_writer_pretty(writer, self).expect("Could not write profile")
     }
@@ -367,35 +367,43 @@ impl Profile {
             dup.editable = true;
             return dup;
         }
-        let mut dup = Self::default();
-        dup.name = format!("Duplicate of {}", self.name);
-        dup.xrservice_type = self.xrservice_type.clone();
-        dup.xrservice_repo = self.xrservice_repo.clone();
-        dup.xrservice_branch = self.xrservice_branch.clone();
-        dup.xrservice_cmake_flags = self.xrservice_cmake_flags.clone();
-        dup.features.libsurvive.enabled = self.features.libsurvive.enabled;
-        dup.features.libsurvive.repo = self.features.libsurvive.repo.clone();
-        dup.features.libsurvive.branch = self.features.libsurvive.branch.clone();
-        dup.features.basalt.enabled = self.features.basalt.enabled;
-        dup.features.basalt.repo = self.features.basalt.repo.clone();
-        dup.features.basalt.branch = self.features.basalt.branch.clone();
-        dup.features.openhmd.enabled = self.features.openhmd.enabled;
-        dup.features.openhmd.repo = self.features.openhmd.repo.clone();
-        dup.features.openhmd.branch = self.features.openhmd.branch.clone();
-        dup.features.mercury_enabled = self.features.mercury_enabled;
-        dup.environment = self.environment.clone();
-        if dup.environment.contains_key("LD_LIBRARY_PATH".into()) {
+        let mut dup = Self {
+            name: format!("Duplicate of {}", self.name),
+            xrservice_type: self.xrservice_type.clone(),
+            xrservice_repo: self.xrservice_repo.clone(),
+            xrservice_branch: self.xrservice_branch.clone(),
+            xrservice_cmake_flags: self.xrservice_cmake_flags.clone(),
+            features: ProfileFeatures {
+                libsurvive: ProfileFeature {
+                    enabled: self.features.libsurvive.enabled,
+                    repo: self.features.libsurvive.repo.clone(),
+                    branch: self.features.libsurvive.branch.clone(),
+                    ..Default::default()
+                },
+                basalt: ProfileFeature {
+                    enabled: self.features.basalt.enabled,
+                    repo: self.features.basalt.repo.clone(),
+                    branch: self.features.basalt.branch.clone(),
+                    ..Default::default()
+                },
+
+                openhmd: ProfileFeature {
+                    enabled: self.features.openhmd.enabled,
+                    repo: self.features.openhmd.repo.clone(),
+                    branch: self.features.openhmd.branch.clone(),
+                    ..Default::default()
+                },
+                mercury_enabled: self.features.mercury_enabled,
+            },
+            environment: self.environment.clone(),
+            ..Default::default()
+        };
+        if dup.environment.contains_key("LD_LIBRARY_PATH") {
             dup.environment.insert(
                 "LD_LIBRARY_PATH".into(),
                 prepare_ld_library_path(&dup.prefix),
             );
         }
-        dup.pull_on_build = self.pull_on_build;
-        dup.opencomposite_repo = self.opencomposite_repo.clone();
-        dup.opencomposite_branch = self.opencomposite_branch.clone();
-        dup.lighthouse_driver = self.lighthouse_driver;
-        dup.xrservice_launch_options = self.xrservice_launch_options.clone();
-        dup.autostart_command = self.autostart_command.clone();
         dup
     }
 
@@ -457,9 +465,16 @@ impl Profile {
     }
 }
 
+pub fn prepare_ld_library_path(prefix: &Path) -> String {
+    format!("{pfx}/lib:{pfx}/lib64", pfx = prefix.to_string_lossy())
+}
+
 #[cfg(test)]
 mod tests {
-    use std::{collections::HashMap, path::PathBuf};
+    use std::{
+        collections::HashMap,
+        path::{Path, PathBuf},
+    };
 
     use crate::profile::{ProfileFeature, ProfileFeatureType, ProfileFeatures, XRServiceType};
 
@@ -467,7 +482,7 @@ mod tests {
 
     #[test]
     fn profile_can_be_loaded() {
-        let profile = Profile::load_profile(&"./test/files/profile.json".into());
+        let profile = Profile::load_profile(Path::new("./test/files/profile.json"));
         assert_eq!(profile.name, "Demo profile");
         assert_eq!(profile.xrservice_path, PathBuf::from("/home/user/monado"));
         assert_eq!(
@@ -480,9 +495,9 @@ mod tests {
             Some(PathBuf::from("/home/user/libsurvive"))
         );
         assert_eq!(profile.features.basalt.path, None);
-        assert_eq!(profile.features.libsurvive.enabled, true);
-        assert_eq!(profile.features.basalt.enabled, false);
-        assert_eq!(profile.features.mercury_enabled, false);
+        assert!(profile.features.libsurvive.enabled);
+        assert!(!profile.features.basalt.enabled);
+        assert!(!profile.features.mercury_enabled);
         assert!(profile
             .environment
             .contains_key("XRT_COMPOSITOR_SCALE_PERCENTAGE"));
@@ -536,8 +551,4 @@ mod tests {
             "1"
         );
     }
-}
-
-pub fn prepare_ld_library_path(prefix: &PathBuf) -> String {
-    format!("{pfx}/lib:{pfx}/lib64", pfx = prefix.to_string_lossy())
 }

@@ -61,11 +61,11 @@ pub fn entry_row<F: Fn(&adw::EntryRow) + 'static>(
 }
 
 fn is_int(t: &str) -> bool {
-    t.find(|c: char| !c.is_digit(10)).is_none()
+    t.find(|c: char| !c.is_ascii_digit()).is_none()
 }
 
 fn convert_to_int(t: &str) -> String {
-    t.trim().chars().filter(|c| c.is_digit(10)).collect()
+    t.trim().chars().filter(|c| c.is_ascii_digit()).collect()
 }
 
 fn is_float(t: &str) -> bool {
@@ -76,7 +76,7 @@ fn is_float(t: &str) -> bool {
                 return false;
             }
             has_dot = true;
-        } else if !c.is_digit(10) {
+        } else if !c.is_ascii_digit() {
             return false;
         }
     }
@@ -87,7 +87,7 @@ fn convert_to_float(t: &str) -> String {
     let mut s = String::new();
     let mut has_dot = false;
     for c in t.trim().chars() {
-        if c.is_digit(10) {
+        if c.is_ascii_digit() {
             s.push(c);
         } else if c == '.' && !has_dot {
             s.push(c);

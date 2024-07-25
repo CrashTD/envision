@@ -190,7 +190,10 @@ impl SimpleComponent for SteamVrCalibrationBox {
                 self.server_worker = Some(server_worker);
                 self.calibration_worker = Some(cal_worker);
             }
-            Self::Input::OnServerWorkerExit(_) => {
+            Self::Input::OnServerWorkerExit(code) => {
+                if code != 0 {
+                    eprintln!("Calibration exited with code {code}");
+                }
                 self.calibration_running = false;
             }
             Self::Input::OnCalWorkerExit(code) => {
@@ -209,7 +212,7 @@ impl SimpleComponent for SteamVrCalibrationBox {
     }
 
     fn init(
-        init: Self::Init,
+        _init: Self::Init,
         root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {

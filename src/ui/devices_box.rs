@@ -1,7 +1,7 @@
 use super::factories::device_row_factory::{DeviceRowModel, DeviceRowModelInit, DeviceRowState};
 use crate::xr_devices::{XRDevice, XRDeviceRole};
 use adw::prelude::*;
-use relm4::{factory::AsyncFactoryVecDeque, prelude::*, Sender};
+use relm4::{factory::AsyncFactoryVecDeque, prelude::*};
 
 #[tracker::track]
 pub struct DevicesBox {
@@ -34,7 +34,7 @@ impl SimpleComponent for DevicesBox {
         }
     }
 
-    fn update(&mut self, message: Self::Input, sender: ComponentSender<Self>) {
+    fn update(&mut self, message: Self::Input, _sender: ComponentSender<Self>) {
         self.reset();
 
         match message {
@@ -52,7 +52,7 @@ impl SimpleComponent for DevicesBox {
                         match dev.dev_type {
                             XRDeviceRole::Head => {
                                 has_head = true;
-                                let mut init = DeviceRowModelInit::from_xr_device(&dev);
+                                let mut init = DeviceRowModelInit::from_xr_device(dev);
                                 if dev.name == "Simulated HMD" {
                                     init.state = Some(DeviceRowState::Warning);
                                     init.subtitle = Some("No HMD detected (Simulated HMD)".into());
@@ -61,17 +61,17 @@ impl SimpleComponent for DevicesBox {
                             }
                             XRDeviceRole::Left => {
                                 has_left = true;
-                                models.push(DeviceRowModelInit::from_xr_device(&dev));
+                                models.push(DeviceRowModelInit::from_xr_device(dev));
                             }
                             XRDeviceRole::Right => {
                                 has_right = true;
-                                models.push(DeviceRowModelInit::from_xr_device(&dev));
+                                models.push(DeviceRowModelInit::from_xr_device(dev));
                             }
                             XRDeviceRole::GenericTracker => {
                                 generic.push(dev);
                             }
                             _ => {
-                                models.push(DeviceRowModelInit::from_xr_device(&dev));
+                                models.push(DeviceRowModelInit::from_xr_device(dev));
                             }
                         };
                     }

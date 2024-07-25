@@ -175,7 +175,7 @@ impl SimpleComponent for DebugView {
                                 lvl = o.level,
                                 file = o.file,
                                 func = o.func,
-                                msg = o.message.replace("\n", "\r\n")
+                                msg = o.message.replace('\n', "\r\n")
                             )),
                         },
                         None => Some(row),

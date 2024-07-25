@@ -35,6 +35,7 @@ pub struct InstallWivrnBox {
     root_win: gtk::Window,
 }
 
+#[allow(clippy::large_enum_variant)]
 #[derive(Debug)]
 pub enum InstallWivrnBoxMsg {
     ClockTicking,

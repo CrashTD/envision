@@ -11,7 +11,11 @@ use crate::{
         survive::survive_profile, wivrn::wivrn_profile, wmr::wmr_profile,
     },
 };
-use std::{fs::File, io::BufReader, path::PathBuf};
+use std::{
+    fs::File,
+    io::BufReader,
+    path::{Path, PathBuf},
+};
 
 fn default_win_size() -> [i32; 2] {
     [360, 400]
@@ -40,14 +44,14 @@ impl Default for Config {
 
 impl Config {
     pub fn get_selected_profile(&self, profiles: &[Profile]) -> Profile {
-        let def = || profiles.get(0).expect("No profiles found").clone();
+        let def = || profiles.first().expect("No profiles found").clone();
 
         match profiles
             .iter()
             .find(|p| p.uuid == self.selected_profile_uuid)
         {
             Some(p) => p.clone(),
-            None => match get_xr_usb_devices().get(0) {
+            None => match get_xr_usb_devices().first() {
                 Some(dev) => match dev.get_default_profile() {
                     Some(p) => p,
                     None => def(),
@@ -61,7 +65,7 @@ impl Config {
         get_config_dir().join(format!("{CMD_NAME}.json"))
     }
 
-    fn from_path(path: &PathBuf) -> Self {
+    fn from_path(path: &Path) -> Self {
         match File::open(path) {
             Ok(file) => {
                 let reader = BufReader::new(file);
@@ -74,7 +78,7 @@ impl Config {
         }
     }
 
-    fn save_to_path(&self, path: &PathBuf) -> Result<(), serde_json::Error> {
+    fn save_to_path(&self, path: &Path) -> Result<(), serde_json::Error> {
         let writer = get_writer(path).map_err(serde_json::Error::custom)?;
         serde_json::to_writer_pretty(writer, self)
     }
@@ -109,13 +113,12 @@ impl Config {
 
 #[cfg(test)]
 mod tests {
+    use std::path::Path;
+
     use crate::config::Config;
 
     #[test]
     fn will_load_default_if_config_does_not_exist() {
-        assert_eq!(
-            Config::from_path(&"/non/existing/file.json".into()).debug_view_enabled,
-            false
-        )
+        assert!(!Config::from_path(Path::new("/non/existing/file.json")).debug_view_enabled,)
     }
 }

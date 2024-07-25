@@ -26,8 +26,8 @@ impl TermWidget {
             .vexpand(true)
             .child(&term)
             .build();
-        let this = Self { container, term };
-        this
+
+        Self { container, term }
     }
 
     pub fn set_color_scheme(&self) {
@@ -51,8 +51,7 @@ impl TermWidget {
 
     pub fn set_search_term(&self, term: Option<&str>) {
         self.term.search_set_regex(
-            term.map(|txt| vte4::Regex::for_search(txt, 0).ok())
-                .flatten()
+            term.and_then(|txt| vte4::Regex::for_search(txt, 0).ok())
                 .as_ref(),
             0,
         );

@@ -1,3 +1,5 @@
+use crate::ui::SENDER_IO_ERR_MSG;
+
 use super::term_widget::TermWidget;
 use gtk::prelude::*;
 use relm4::prelude::*;
@@ -91,16 +93,13 @@ impl SimpleComponent for BuildWindow {
                         },
                         gtk::Button {
                             #[track = "model.changed(BuildWindow::build_status())"]
-                            set_visible: match &model.build_status {
-                                BuildStatus::Building => true,
-                                _ => false,
-                            },
+                            set_visible: matches!(&model.build_status, BuildStatus::Building),
                             add_css_class: "destructive-action",
                             add_css_class: "circular",
                             set_icon_name: "window-close-symbolic",
                             set_tooltip_text: Some("Cancel build"),
                             connect_clicked[sender] => move |_| {
-                                sender.output(Self::Output::CancelBuild);
+                                sender.output(Self::Output::CancelBuild).expect(SENDER_IO_ERR_MSG);
                             }
                         },
                     },

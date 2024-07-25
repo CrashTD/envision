@@ -54,7 +54,7 @@ fn backup_steam_active_runtime() {
     }
 }
 
-fn get_active_runtime_from_path(path: &PathBuf) -> Option<ActiveRuntime> {
+fn get_active_runtime_from_path(path: &Path) -> Option<ActiveRuntime> {
     deserialize_file(path)
 }
 
@@ -64,7 +64,7 @@ pub fn get_current_active_runtime() -> Option<ActiveRuntime> {
 
 fn dump_active_runtime_to_path(
     active_runtime: &ActiveRuntime,
-    path: &PathBuf,
+    path: &Path,
 ) -> Result<(), serde_json::Error> {
     let writer = get_writer(path).map_err(serde_json::Error::custom)?;
     serde_json::to_writer_pretty(writer, active_runtime)
@@ -101,7 +101,9 @@ pub fn set_current_active_runtime_to_steam() -> anyhow::Result<()> {
 
 pub fn build_profile_active_runtime(profile: &Profile) -> ActiveRuntime {
     let build_path = |lib64: bool, prefix: &str| {
-        PathBuf::from(profile.prefix.clone())
+        profile
+            .prefix
+            .clone()
             .join(match lib64 {
                 true => "lib64",
                 false => "lib",
@@ -144,7 +146,7 @@ pub fn build_profile_active_runtime(profile: &Profile) -> ActiveRuntime {
 }
 
 // for system installs
-fn relativize_active_runtime_lib_path(ar: &ActiveRuntime, path: &PathBuf) -> ActiveRuntime {
+fn relativize_active_runtime_lib_path(ar: &ActiveRuntime, path: &Path) -> ActiveRuntime {
     let mut res = ar.clone();
     let mut rel_chain = path
         .components()
@@ -177,7 +179,7 @@ pub fn set_current_active_runtime_to_profile(profile: &Profile) -> anyhow::Resul
 
 #[cfg(test)]
 mod tests {
-    use std::path::PathBuf;
+    use std::path::{Path, PathBuf};
 
     use super::{
         dump_active_runtime_to_path, get_active_runtime_from_path,
@@ -186,8 +188,9 @@ mod tests {
 
     #[test]
     fn can_read_active_runtime_json_steamvr() {
-        let ar = get_active_runtime_from_path(&"./test/files/active_runtime.json.steamvr".into())
-            .unwrap();
+        let ar =
+            get_active_runtime_from_path(Path::new("./test/files/active_runtime.json.steamvr"))
+                .unwrap();
         assert_eq!(ar.file_format_version, "1.0.0");
         assert!(ar.runtime.valve_runtime_is_steamvr.unwrap());
         assert_eq!(
@@ -212,8 +215,11 @@ mod tests {
                 name: Some("SteamVR".into()),
             },
         };
-        dump_active_runtime_to_path(&ar, &"./target/testout/active_runtime.json.steamvr".into())
-            .expect("could not dump active runtime to path");
+        dump_active_runtime_to_path(
+            &ar,
+            Path::new("./target/testout/active_runtime.json.steamvr"),
+        )
+        .expect("could not dump active runtime to path");
     }
 
     #[test]
@@ -229,7 +235,7 @@ mod tests {
         };
         let relativized = relativize_active_runtime_lib_path(
             &ar,
-            &PathBuf::from("/home/user/.config/openxr/1/active_runtime.json"),
+            Path::new("/home/user/.config/openxr/1/active_runtime.json"),
         );
         assert_eq!(
             relativized

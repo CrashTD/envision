@@ -1,13 +1,19 @@
 use crate::file_utils::get_reader;
-use std::{error::Error, fmt::Display, io::Read, path::PathBuf, str::FromStr};
+use std::{
+    error::Error,
+    fmt::Display,
+    io::Read,
+    path::{Path, PathBuf},
+    str::FromStr,
+};
 
 // const POW_PROF_PATH: &str = "/sys/class/drm/card0/device/pp_power_profile_mode";
 
-fn power_profile_mode_file(card_dir: &PathBuf) -> PathBuf {
+fn power_profile_mode_file(card_dir: &Path) -> PathBuf {
     card_dir.join("device/pp_power_profile_mode")
 }
 
-pub fn get_set_amd_vr_pow_prof_cmd(card_dir: &PathBuf) -> String {
+pub fn get_set_amd_vr_pow_prof_cmd(card_dir: &Path) -> String {
     format!(
         "sudo sh -c \"echo '4' > {}\"",
         power_profile_mode_file(card_dir).to_string_lossy()
@@ -32,6 +38,12 @@ pub struct GpuPowerProfileParseErr;
 impl GpuPowerProfileParseErr {
     pub fn new() -> Self {
         Self {}
+    }
+}
+
+impl Default for GpuPowerProfileParseErr {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -123,8 +135,7 @@ fn list_gpus() -> Vec<GpuSysDrm> {
 pub fn get_first_amd_gpu() -> Option<GpuSysDrm> {
     list_gpus()
         .iter()
-        .filter(|g| matches!(g, GpuSysDrm::Amd(_)))
-        .next()
+        .find(|g| matches!(g, GpuSysDrm::Amd(_)))
         .cloned()
 }
 

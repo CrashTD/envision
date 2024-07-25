@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use crate::{
     file_utils::{copy_file, deserialize_file, get_writer, set_file_readonly},
@@ -53,7 +53,7 @@ fn backup_steam_openvrpaths() {
     }
 }
 
-fn get_openvrpaths_from_path(path: &PathBuf) -> Option<OpenVrPaths> {
+fn get_openvrpaths_from_path(path: &Path) -> Option<OpenVrPaths> {
     deserialize_file(path)
 }
 
@@ -61,10 +61,7 @@ pub fn get_current_openvrpaths() -> Option<OpenVrPaths> {
     get_openvrpaths_from_path(&get_openvrpaths_vrpath_path())
 }
 
-fn dump_openvrpaths_to_path(
-    ovr_paths: &OpenVrPaths,
-    path: &PathBuf,
-) -> Result<(), serde_json::Error> {
+fn dump_openvrpaths_to_path(ovr_paths: &OpenVrPaths, path: &Path) -> Result<(), serde_json::Error> {
     let writer = get_writer(path).map_err(serde_json::Error::custom)?;
     serde_json::to_writer_pretty(writer, ovr_paths)
 }
@@ -117,17 +114,17 @@ pub fn set_current_openvrpaths_to_profile(profile: &Profile) -> anyhow::Result<(
 
 #[cfg(test)]
 mod tests {
-    use std::path::PathBuf;
+    use std::path::Path;
 
     use super::{dump_openvrpaths_to_path, get_openvrpaths_from_path, OpenVrPaths};
 
     #[test]
     fn can_read_openvrpaths_vrpath_steamvr() {
-        let ovrp = get_openvrpaths_from_path(&"./test/files/openvrpaths.vrpath".into()).unwrap();
+        let ovrp = get_openvrpaths_from_path(Path::new("./test/files/openvrpaths.vrpath")).unwrap();
         assert_eq!(ovrp.config.len(), 1);
         assert_eq!(
-            ovrp.config.get(0).unwrap(),
-            &PathBuf::from("/home/user/.local/share/Steam/config")
+            ovrp.config.first().unwrap(),
+            &Path::new("/home/user/.local/share/Steam/config")
         );
         assert_eq!(ovrp.external_drivers, None);
         assert_eq!(ovrp.jsonid, "vrpathreg");
@@ -144,7 +141,7 @@ mod tests {
             runtime: vec!["/home/user/.local/share/Steam/steamapps/common/SteamVR".into()],
             version: 1,
         };
-        dump_openvrpaths_to_path(&ovrp, &"./target/testout/openvrpaths.vrpath".into())
+        dump_openvrpaths_to_path(&ovrp, Path::new("./target/testout/openvrpaths.vrpath"))
             .expect("could not dump openvrpaths to path");
     }
 }

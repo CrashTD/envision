@@ -14,7 +14,7 @@ use crate::{
 use std::{
     collections::HashMap,
     io::{BufRead, BufReader, Write},
-    path::PathBuf,
+    path::Path,
     process::{Child, Command, Stdio},
     sync::{
         mpsc::{sync_channel, Receiver, SyncSender},
@@ -174,13 +174,13 @@ impl CmdRunner {
         }
     }
 
-    fn save_log(path: &PathBuf, log: &[String]) -> Result<(), std::io::Error> {
+    fn save_log(path: &Path, log: &[String]) -> Result<(), std::io::Error> {
         let mut writer = get_writer(path).map_err(std::io::Error::other)?;
         let log_s = log.concat();
         writer.write_all(log_s.as_ref())
     }
 
-    pub fn save_output(&mut self, path: &PathBuf) -> Result<(), std::io::Error> {
+    pub fn save_output(&mut self, path: &Path) -> Result<(), std::io::Error> {
         CmdRunner::save_log(path, &self.output)
     }
 }
@@ -222,7 +222,7 @@ mod tests {
     use crate::profile::Profile;
     use crate::runner::Runner;
     use core::time;
-    use std::{collections::HashMap, thread::sleep};
+    use std::{collections::HashMap, path::Path, thread::sleep};
 
     #[test]
     fn can_run_command_and_read_env() {
@@ -254,14 +254,14 @@ mod tests {
         }
 
         runner
-            .save_output(&"./target/testout/testlog".into())
+            .save_output(Path::new("./target/testout/testlog"))
             .expect("Failed to save output file");
     }
 
     #[test]
     fn can_create_from_profile() {
-        CmdRunner::xrservice_runner_from_profile(&Profile::load_profile(
-            &"./test/files/profile.json".into(),
-        ));
+        CmdRunner::xrservice_runner_from_profile(&Profile::load_profile(Path::new(
+            "./test/files/profile.json",
+        )));
     }
 }

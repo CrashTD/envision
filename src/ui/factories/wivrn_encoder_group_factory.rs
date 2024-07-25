@@ -1,6 +1,9 @@
 use crate::{
     file_builders::wivrn_config::{Codec, Encoder, WivrnConfEncoder},
-    ui::preference_rows::{combo_row, spin_row},
+    ui::{
+        preference_rows::{combo_row, spin_row},
+        SENDER_IO_ERR_MSG,
+    },
 };
 use relm4::{adw::prelude::*, factory::AsyncFactoryComponent, prelude::*, AsyncFactorySender};
 use uuid::Uuid;
@@ -183,7 +186,9 @@ impl AsyncFactoryComponent for WivrnEncoderModel {
                 self.encoder_conf.group = val;
             }
             Self::Input::Delete => {
-                sender.output(Self::Output::Delete(self.uid.clone()));
+                sender
+                    .output(Self::Output::Delete(self.uid.clone()))
+                    .expect(SENDER_IO_ERR_MSG);
             }
         }
     }

@@ -11,19 +11,19 @@ use std::{
 };
 
 fn get_runtime_entrypoint_path() -> Option<PathBuf> {
-    vec![get_home_dir()
-        .join(".steam/steam/steamapps/common/SteamLinuxRuntime_sniper/_v2-entry-point")]
-    .iter()
-    .find(|p| p.is_file())
-    .cloned()
+    Some(
+        get_home_dir()
+            .join(".steam/steam/steamapps/common/SteamLinuxRuntime_sniper/_v2-entry-point"),
+    )
+    .filter(|p| p.is_file())
 }
 
 fn get_backup_runtime_entrypoint_location() -> PathBuf {
     get_backup_dir().join("_v2-entry-point.bak")
 }
 
-fn backup_runtime_entrypoint(path: &PathBuf) {
-    copy_file(&path, &get_backup_runtime_entrypoint_location());
+fn backup_runtime_entrypoint(path: &Path) {
+    copy_file(path, &get_backup_runtime_entrypoint_location());
 }
 
 pub fn restore_runtime_entrypoint() {
@@ -35,14 +35,14 @@ pub fn restore_runtime_entrypoint() {
     }
 }
 
-fn append_to_runtime_entrypoint(data: &str, path: &PathBuf) -> anyhow::Result<()> {
+fn append_to_runtime_entrypoint(data: &str, path: &Path) -> anyhow::Result<()> {
     let existing = read_to_string(path)?;
     let new = existing.replace(
         "exec \"${here}/${run}\" \"$@\"\nexit 125",
         &format!("\n\n# envision\n{data}\n\nexec \"${{here}}/${{run}}\" \"$@\"\nexit 125"),
     );
     let mut writer = get_writer(path)?;
-    writer.write(&new.as_bytes())?;
+    writer.write_all(new.as_bytes())?;
     Ok(())
 }
 

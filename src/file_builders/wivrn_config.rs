@@ -3,7 +3,11 @@ use crate::{
     xdg::XDG,
 };
 use serde::{Deserialize, Serialize};
-use std::{fmt::Display, path::PathBuf, slice::Iter};
+use std::{
+    fmt::Display,
+    path::{Path, PathBuf},
+    slice::Iter,
+};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -127,15 +131,15 @@ fn get_wivrn_config_path() -> PathBuf {
     XDG.get_config_home().join("wivrn/config.json")
 }
 
-fn get_wivrn_config_from_path(path: &PathBuf) -> Option<WivrnConfig> {
+fn get_wivrn_config_from_path(path: &Path) -> Option<WivrnConfig> {
     deserialize_file(path)
 }
 
 pub fn get_wivrn_config() -> WivrnConfig {
-    get_wivrn_config_from_path(&get_wivrn_config_path()).unwrap_or(WivrnConfig::default())
+    get_wivrn_config_from_path(&get_wivrn_config_path()).unwrap_or_default()
 }
 
-fn dump_wivrn_config_to_path(config: &WivrnConfig, path: &PathBuf) {
+fn dump_wivrn_config_to_path(config: &WivrnConfig, path: &Path) {
     let writer = get_writer(path).expect("Unable to save WiVRn config");
     serde_json::to_writer_pretty(writer, config).expect("Unable to save WiVRn config");
 }
@@ -146,22 +150,24 @@ pub fn dump_wivrn_config(config: &WivrnConfig) {
 
 #[cfg(test)]
 mod tests {
+    use std::path::Path;
+
     use crate::file_builders::wivrn_config::{Codec, Encoder};
 
     use super::get_wivrn_config_from_path;
 
     #[test]
     fn can_read_wivrn_config() {
-        let conf = get_wivrn_config_from_path(&"./test/files/wivrn_config.json".into())
+        let conf = get_wivrn_config_from_path(Path::new("./test/files/wivrn_config.json"))
             .expect("Couldn't find wivrn config");
         assert_eq!(conf.scale, Some([0.8, 0.8]));
         assert_eq!(conf.encoders.len(), 1);
-        assert_eq!(conf.encoders.get(0).unwrap().encoder, Encoder::X264);
-        assert_eq!(conf.encoders.get(0).unwrap().codec, Codec::H264);
+        assert_eq!(conf.encoders.first().unwrap().encoder, Encoder::X264);
+        assert_eq!(conf.encoders.first().unwrap().codec, Codec::H264);
         assert_eq!(conf.bitrate, Some(100000000));
-        assert_eq!(conf.encoders.get(0).unwrap().width, Some(1.0));
-        assert_eq!(conf.encoders.get(0).unwrap().height, Some(1.0));
-        assert_eq!(conf.encoders.get(0).unwrap().offset_x, Some(0.0));
-        assert_eq!(conf.encoders.get(0).unwrap().offset_y, Some(0.0));
+        assert_eq!(conf.encoders.first().unwrap().width, Some(1.0));
+        assert_eq!(conf.encoders.first().unwrap().height, Some(1.0));
+        assert_eq!(conf.encoders.first().unwrap().offset_x, Some(0.0));
+        assert_eq!(conf.encoders.first().unwrap().offset_y, Some(0.0));
     }
 }

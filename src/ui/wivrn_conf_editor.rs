@@ -116,11 +116,7 @@ impl SimpleComponent for WivrnConfEditor {
                         add: bitrate_row = &number_entry_row(
                             "Bitrate (Mbps)",
                             &model.conf.bitrate
-                                .and_then(|n| if let Some(mbits) = bits_to_mbits(n) {
-                                    Some(mbits.to_string())
-                                } else {
-                                    None
-                                })
+                                .and_then(|n| bits_to_mbits(n).map(|mbits| mbits.to_string()))
                                 .unwrap_or_default(),
                             false,
                             move |_| {}

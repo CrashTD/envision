@@ -9,6 +9,7 @@ pub struct SteamLaunchOptionsBox {
     launch_options: String,
 }
 
+#[allow(clippy::large_enum_variant)]
 #[derive(Debug)]
 pub enum SteamLaunchOptionsBoxMsg {
     UpdateXRServiceActive(bool),

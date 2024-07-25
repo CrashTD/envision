@@ -1,7 +1,7 @@
 use crate::file_utils::get_reader;
 use std::{
     io::{BufRead, Read},
-    path::PathBuf,
+    path::Path,
 };
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
@@ -17,14 +17,14 @@ pub enum LinuxDistro {
 
 impl LinuxDistro {
     pub fn get() -> Option<Self> {
-        Self::get_from_etc_os_release().or_else(|| Self::get_from_etc_issue())
+        Self::get_from_etc_os_release().or_else(Self::get_from_etc_issue)
     }
 
     fn get_from_etc_os_release() -> Option<Self> {
-        Self::get_from_etc_os_release_file(&"/etc/os-release".into())
+        Self::get_from_etc_os_release_file(Path::new("/etc/os-release"))
     }
 
-    fn get_from_etc_os_release_file(fp: &PathBuf) -> Option<Self> {
+    fn get_from_etc_os_release_file(fp: &Path) -> Option<Self> {
         if let Some(mut reader) = get_reader(fp) {
             let mut buf = String::new();
             loop {
@@ -33,7 +33,7 @@ impl LinuxDistro {
                     Ok(_) => {
                         if buf.starts_with("NAME=\"") {
                             let name = buf
-                                .split("=")
+                                .split('=')
                                 .last()
                                 .unwrap_or_default()
                                 .to_string()
@@ -50,7 +50,7 @@ impl LinuxDistro {
     }
 
     fn get_from_etc_issue() -> Option<Self> {
-        if let Some(mut reader) = get_reader(&"/etc/issue".into()) {
+        if let Some(mut reader) = get_reader(Path::new("/etc/issue")) {
             let mut buf = String::new();
             if reader.read_to_string(&mut buf).is_ok() {
                 buf = buf.trim().to_lowercase();
@@ -109,12 +109,16 @@ impl LinuxDistro {
 
 #[cfg(test)]
 mod tests {
+    use std::path::Path;
+
     use super::LinuxDistro;
 
     #[test]
     fn can_detect_arch_linux_from_etc_os_release() {
         assert_eq!(
-            LinuxDistro::get_from_etc_os_release_file(&"./test/files/archlinux-os-release".into()),
+            LinuxDistro::get_from_etc_os_release_file(Path::new(
+                "./test/files/archlinux-os-release"
+            )),
             Some(LinuxDistro::Arch)
         )
     }

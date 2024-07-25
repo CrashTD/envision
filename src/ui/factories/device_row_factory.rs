@@ -1,5 +1,5 @@
 use crate::{
-    ui::{battery_status::BatteryStatus, devices_box::DevicesBoxMsg},
+    ui::battery_status::BatteryStatus,
     xr_devices::{XRDevice, XRDeviceRole},
 };
 use adw::prelude::*;

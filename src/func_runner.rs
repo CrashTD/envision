@@ -33,8 +33,8 @@ impl Runner for FuncRunner {
         if self.res.is_some() {
             panic!("Cannot start a FuncRunner twice!");
         }
-        let f = mem::replace(&mut self.func, Box::new(move || FuncRunnerOut::default()));
-        self.thread = Some(thread::spawn(move || f()));
+        let f = mem::replace(&mut self.func, Box::new(FuncRunnerOut::default));
+        self.thread = Some(thread::spawn(f));
     }
 
     fn status(&mut self) -> RunnerStatus {

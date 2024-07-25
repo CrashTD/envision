@@ -190,7 +190,7 @@ impl App {
         self.debug_view.sender().emit(DebugViewMsg::ClearLog);
         self.xr_devices = vec![];
         if prof.can_start() {
-            remove_file(&get_ipc_file_path(&prof.xrservice_type))
+            remove_file(get_ipc_file_path(&prof.xrservice_type))
                 .is_err()
                 .then(|| println!("Failed to remove xrservice IPC file"));
             let worker = JobWorker::xrservice_worker_wrap_from_profile(
@@ -364,10 +364,11 @@ impl SimpleComponent for App {
             Msg::ClockTicking => {
                 self.main_view.sender().emit(MainViewMsg::ClockTicking);
                 if let Some(w) = self.xrservice_worker.as_ref() {
-                    if {
+                    let stop_condition = {
                         let state = w.state.lock().unwrap();
                         state.exit_status.is_none() && !state.stop_requested
-                    } {
+                    };
+                    if stop_condition {
                         if let Some(monado) = self.libmonado.as_ref() {
                             self.xr_devices = XRDevice::merge(
                                 &self.xr_devices,
@@ -376,12 +377,10 @@ impl SimpleComponent for App {
                             self.main_view
                                 .sender()
                                 .emit(MainViewMsg::UpdateDevices(self.xr_devices.clone()));
-                        } else {
-                            if let Some(so) = self.get_selected_profile().libmonado_so() {
-                                self.libmonado = libmonado_rs::Monado::create(so).ok();
-                                if self.libmonado.is_some() {
-                                    sender.input(Msg::ClockTicking);
-                                }
+                        } else if let Some(so) = self.get_selected_profile().libmonado_so() {
+                            self.libmonado = libmonado_rs::Monado::create(so).ok();
+                            if self.libmonado.is_some() {
+                                sender.input(Msg::ClockTicking);
                             }
                         }
                     }
@@ -410,7 +409,7 @@ impl SimpleComponent for App {
                     self.start_xrservice(sender, false);
                 }
                 Some(worker) => {
-                    let status = worker.state.lock().unwrap().exit_status.clone();
+                    let status = worker.state.lock().unwrap().exit_status;
                     match status {
                         Some(_) => {
                             self.start_xrservice(sender, false);
@@ -472,9 +471,7 @@ impl SimpleComponent for App {
                             {
                                 let packages = missing_deps
                                     .iter()
-                                    .filter_map(|dep| {
-                                        dep.packages.get(&d).and_then(|s| Some(s.clone()))
-                                    })
+                                    .filter_map(|dep| dep.packages.get(&d).cloned())
                                     .collect::<Vec<String>>();
                                 if packages.is_empty() {
                                     None

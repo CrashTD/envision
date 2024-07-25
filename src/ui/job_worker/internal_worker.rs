@@ -2,7 +2,10 @@ use super::{
     job::{CmdWorkerData, FuncWorkerOut, WorkerJob},
     state::JobWorkerState,
 };
-use crate::profile::{LighthouseDriver, Profile};
+use crate::{
+    profile::{LighthouseDriver, Profile},
+    ui::SENDER_IO_ERR_MSG,
+};
 use nix::unistd::Pid;
 use relm4::{prelude::*, Worker};
 use std::{
@@ -102,7 +105,7 @@ impl Worker for InternalJobWorker {
                                 ));
                                 let stdout = cmd.stdout.take().unwrap();
                                 let stderr = cmd.stderr.take().unwrap();
-                                let stdin = cmd.stdin.take().unwrap();
+                                let _stdin = cmd.stdin.take().unwrap();
                                 let stdout_sender = sender.clone();
                                 let stderr_sender = sender.clone();
                                 let stdout_logger = logger_thread!(stdout, stdout_sender);
@@ -120,18 +123,20 @@ impl Worker for InternalJobWorker {
                                 stderr_logger.join().expect("Failed to join reader thread");
                             } else {
                                 let msg = "Failed to run command".to_string();
-                                sender.output(Self::Output::Log(vec![msg]));
+                                sender
+                                    .output(Self::Output::Log(vec![msg]))
+                                    .expect(SENDER_IO_ERR_MSG);
                                 self.state.lock().unwrap().exit_status = Some(1);
                                 break;
                             }
                         }
                         WorkerJob::Func(data) => {
-                            let func = mem::replace(
-                                &mut data.func,
-                                Box::new(move || FuncWorkerOut::default()),
-                            );
+                            let func =
+                                mem::replace(&mut data.func, Box::new(FuncWorkerOut::default));
                             let out = func();
-                            sender.output(Self::Output::Log(out.out.clone()));
+                            sender
+                                .output(Self::Output::Log(out.out.clone()))
+                                .expect(SENDER_IO_ERR_MSG);
                             if !out.success {
                                 self.state.lock().unwrap().exit_status = Some(1);
                                 break;
@@ -196,7 +201,7 @@ impl InternalJobWorker {
                     match launch_opts.contains(LAUNCH_OPTS_CMD_PLACEHOLDER) {
                         true => launch_opts.replacen(
                             LAUNCH_OPTS_CMD_PLACEHOLDER,
-                            &prof.xrservice_binary().to_string_lossy().to_string(),
+                            prof.xrservice_binary().to_string_lossy().as_ref(),
                             1,
                         ),
                         false => format!(

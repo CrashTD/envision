@@ -8,7 +8,7 @@ use crate::config::Config;
 use crate::dependencies::common::dep_pkexec;
 use crate::file_utils::mount_has_nosuid;
 use crate::gpu_profile::{get_amd_gpu_power_profile, GpuPowerProfile};
-use crate::profile::{LighthouseDriver, Profile, XRServiceType};
+use crate::profile::{LighthouseDriver, Profile};
 use crate::steamvr_utils::chaperone_info_exists;
 use crate::ui::app::{
     AboutAction, BuildProfileAction, BuildProfileCleanAction, ConfigureWivrnAction,
@@ -434,13 +434,10 @@ impl SimpleComponent for MainView {
                 self.steam_launch_options_box.sender().emit(
                     SteamLaunchOptionsBoxMsg::UpdateXRServiceActive(show_launch_opts),
                 );
-                match profile {
-                    None => {}
-                    Some(prof) => {
-                        self.steam_launch_options_box
-                            .sender()
-                            .emit(SteamLaunchOptionsBoxMsg::UpdateLaunchOptions(prof));
-                    }
+                if let Some(prof) = profile {
+                    self.steam_launch_options_box
+                        .sender()
+                        .emit(SteamLaunchOptionsBoxMsg::UpdateLaunchOptions(prof));
                 }
             }
             Self::Input::EnableDebugViewChanged(val) => {
