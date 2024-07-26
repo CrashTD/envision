@@ -3,12 +3,18 @@ use super::{
         WivrnEncoderModel, WivrnEncoderModelInit, WivrnEncoderModelOutMsg,
     },
     util::bits_from_mbits,
+    wivrn_encoder_presets_win::{
+        WivrnEncoderPresetsWin, WivrnEncoderPresetsWinMsg, WivrnEncoderPresetsWinOutMsg,
+    },
 };
 use crate::{
-    file_builders::wivrn_config::{dump_wivrn_config, get_wivrn_config, WivrnConfig},
+    file_builders::wivrn_config::{
+        dump_wivrn_config, get_wivrn_config, WivrnConfEncoder, WivrnConfig,
+    },
     ui::{
         preference_rows::{number_entry_row, spin_row, switch_row},
         util::bits_to_mbits,
+        wivrn_encoder_presets_win::WivrnEncoderPresetsWinInit,
     },
 };
 use adw::prelude::*;
@@ -28,6 +34,8 @@ pub struct WivrnConfEditor {
     pub scaley_row: Option<adw::SpinRow>,
     #[tracker::do_not_track]
     bitrate_row: Option<adw::EntryRow>,
+    #[tracker::do_not_track]
+    wivrn_encoder_presets_win: Option<Controller<WivrnEncoderPresetsWin>>,
 }
 
 #[derive(Debug)]
@@ -37,6 +45,8 @@ pub enum WivrnConfEditorMsg {
     AddEncoder,
     DeleteEncoder(String),
     TcpOnlyChanged(bool),
+    OpenEncoderPresetsWin,
+    SetEncoderPreset(Vec<WivrnConfEncoder>),
 }
 
 pub struct WivrnConfEditorInit {
@@ -145,6 +155,13 @@ impl SimpleComponent for WivrnConfEditor {
                         set_title: "Encoders",
                         adw::ActionRow {
                             set_title: "Add encoder",
+                            add_suffix: presets_btn = &gtk::Button {
+                                set_valign: gtk::Align::Center,
+                                set_label: "Use Preset",
+                                connect_clicked[sender] => move |_| {
+                                    sender.input(Self::Input::OpenEncoderPresetsWin)
+                                }
+                            },
                             add_suffix: add_encoder_btn = &gtk::Button {
                                 set_halign: gtk::Align::Center,
                                 set_valign: gtk::Align::Center,
@@ -169,6 +186,23 @@ impl SimpleComponent for WivrnConfEditor {
             Self::Input::Present => {
                 self.set_conf(get_wivrn_config());
                 self.win.as_ref().unwrap().present();
+            }
+            Self::Input::OpenEncoderPresetsWin => {
+                self.wivrn_encoder_presets_win
+                    .as_ref()
+                    .unwrap()
+                    .sender()
+                    .emit(WivrnEncoderPresetsWinMsg::Present);
+            }
+            Self::Input::SetEncoderPreset(preset) => {
+                self.encoder_models.as_mut().unwrap().guard().clear();
+                preset.iter().for_each(|enc| {
+                    self.encoder_models.as_mut().unwrap().guard().push_back(
+                        WivrnEncoderModelInit {
+                            encoder_conf: Some(enc.clone()),
+                        },
+                    );
+                });
             }
             Self::Input::Save => {
                 let x = self.scalex_row.as_ref().unwrap().adjustment().value();
@@ -234,6 +268,7 @@ impl SimpleComponent for WivrnConfEditor {
             scalex_row: None,
             scaley_row: None,
             bitrate_row: None,
+            wivrn_encoder_presets_win: None,
             tracker: 0,
         };
 
@@ -257,6 +292,18 @@ impl SimpleComponent for WivrnConfEditor {
         model.encoder_models = Some(encoder_models);
 
         model.win = Some(widgets.win.clone());
+
+        model.wivrn_encoder_presets_win = Some(
+            WivrnEncoderPresetsWin::builder()
+                .launch(WivrnEncoderPresetsWinInit {
+                    parent_win: widgets.win.clone().upcast(),
+                })
+                .forward(sender.input_sender(), move |msg| match msg {
+                    WivrnEncoderPresetsWinOutMsg::Selected(preset) => {
+                        Self::Input::SetEncoderPreset(preset)
+                    }
+                }),
+        );
 
         ComponentParts { model, widgets }
     }

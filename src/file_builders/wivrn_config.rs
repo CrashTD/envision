@@ -95,7 +95,7 @@ pub struct WivrnConfEncoder {
     pub group: Option<i32>,
     /// contains unknown fields
     #[serde(flatten)]
-    other: Map<String, Value>,
+    pub other: Map<String, Value>,
 }
 
 impl Default for WivrnConfEncoder {
@@ -128,6 +128,7 @@ pub struct WivrnConfig {
     pub scale: Option<[f32; 2]>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub bitrate: Option<u32>,
+    #[serde(default)]
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub encoders: Vec<WivrnConfEncoder>,
     #[serde(skip_serializing_if = "Option::is_none")]
