@@ -1,6 +1,8 @@
 use serde::{de::Visitor, Deserialize, Serialize};
 use std::{fmt::Display, slice::Iter, str::FromStr};
 
+use crate::termcolor::TermColor;
+
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Serialize)]
 pub enum LogLevel {
     Trace,
@@ -88,6 +90,17 @@ impl LogLevel {
             Self::Warning => 3,
             Self::Error => 99,
         }
+    }
+
+    pub fn colored(&self) -> String {
+        match self {
+            Self::Trace => TermColor::Gray,
+            Self::Debug => TermColor::Gray,
+            Self::Info => TermColor::Blue,
+            Self::Warning => TermColor::Yellow,
+            Self::Error => TermColor::Red,
+        }
+        .colorize(&self.to_string())
     }
 }
 

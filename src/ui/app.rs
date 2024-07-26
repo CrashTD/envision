@@ -12,7 +12,7 @@ use super::util::{copy_text, open_with_default_handler};
 use super::wivrn_conf_editor::{WivrnConfEditor, WivrnConfEditorInit, WivrnConfEditorMsg};
 use crate::builders::build_basalt::get_build_basalt_jobs;
 use crate::builders::build_libsurvive::get_build_libsurvive_jobs;
-use crate::builders::build_mercury::get_build_mercury_job;
+use crate::builders::build_mercury::get_build_mercury_jobs;
 use crate::builders::build_monado::get_build_monado_jobs;
 use crate::builders::build_opencomposite::get_build_opencomposite_jobs;
 use crate::builders::build_openhmd::get_build_openhmd_jobs;
@@ -460,7 +460,7 @@ impl SimpleComponent for App {
                     }
                     if profile.features.mercury_enabled {
                         missing_deps.extend(get_missing_mercury_deps());
-                        jobs.push_back(get_build_mercury_job(&profile));
+                        jobs.extend(get_build_mercury_jobs(&profile));
                     }
                     jobs.extend(match profile.xrservice_type {
                         XRServiceType::Monado => get_build_monado_jobs(&profile, clean_build),

@@ -2,6 +2,7 @@ use crate::{
     build_tools::{cmake::Cmake, git::Git},
     file_utils::rm_rf,
     profile::Profile,
+    termcolor::TermColor,
     ui::job_worker::job::WorkerJob,
 };
 use std::{
@@ -11,6 +12,10 @@ use std::{
 
 pub fn get_build_libsurvive_jobs(profile: &Profile, clean_build: bool) -> VecDeque<WorkerJob> {
     let mut jobs = VecDeque::<WorkerJob>::new();
+    jobs.push_back(WorkerJob::new_printer(
+        "Building Libsurvive...",
+        Some(TermColor::Blue),
+    ));
 
     let git = Git {
         repo: profile

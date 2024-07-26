@@ -1,6 +1,6 @@
 use gtk4::gdk;
 use relm4::adw;
-use vte4::{Terminal, TerminalExt};
+use vte4::{Terminal, TerminalExt, TerminalExtManual};
 
 const MAX_SCROLLBACK: u32 = 2000;
 
@@ -9,6 +9,13 @@ pub struct TermWidget {
     pub container: gtk4::ScrolledWindow,
     pub term: Terminal,
 }
+
+const ADW_LIGHT_FG: &str = "#000000";
+const ADW_DARK_FG: &str = "#ffffff";
+const ADW_PALETTE: [&str; 16] = [
+    "#241f31", "#c01c28", "#2ec27e", "#f5c211", "#1e78e4", "#9841bb", "#0ab9dc", "#c0bfbc",
+    "#5e5c64", "#ed333b", "#57e389", "#f8e45c", "#51a1ff", "#c061cb", "#4fd2fd", "#f6f5f4",
+];
 
 impl TermWidget {
     pub fn new() -> Self {
@@ -31,14 +38,21 @@ impl TermWidget {
     }
 
     pub fn set_color_scheme(&self) {
-        // TODO: use theme colors
-        if adw::StyleManager::default().is_dark() {
-            self.term
-                .set_color_foreground(&gdk::RGBA::new(1.0, 1.0, 1.0, 1.0));
+        let fg = if adw::StyleManager::default().is_dark() {
+            ADW_DARK_FG
         } else {
-            self.term
-                .set_color_foreground(&gdk::RGBA::new(0.0, 0.0, 0.0, 1.0));
-        }
+            ADW_LIGHT_FG
+        };
+        let rgba_palette = ADW_PALETTE
+            .iter()
+            .map(|c| gdk::RGBA::parse(*c).unwrap())
+            .collect::<Vec<gdk::RGBA>>();
+        self.term.set_colors(
+            Some(&gdk::RGBA::parse(fg).unwrap()),
+            None,
+            // better way to convert to vec of references?
+            rgba_palette.iter().collect::<Vec<&gdk::RGBA>>().as_slice(),
+        );
     }
 
     pub fn feed(&self, txt: &str) {

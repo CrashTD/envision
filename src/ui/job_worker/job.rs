@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use crate::termcolor::TermColor;
+
 #[derive(Debug, Clone)]
 pub struct CmdWorkerData {
     pub environment: HashMap<String, String>,
@@ -42,6 +44,21 @@ impl WorkerJob {
             command: cmd,
             args: args.unwrap_or_default(),
         })
+    }
+
+    pub fn new_printer(txt: &str, color: Option<TermColor>) -> Self {
+        let out = format!(
+            "{}\n",
+            if let Some(c) = color {
+                c.colorize(txt)
+            } else {
+                txt.to_string()
+            }
+        );
+        Self::new_func(Box::new(move || FuncWorkerOut {
+            out: vec![out],
+            success: true,
+        }))
     }
 
     pub fn new_func(func: Box<dyn FnOnce() -> FuncWorkerOut + Send + Sync + 'static>) -> Self {

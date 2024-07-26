@@ -172,7 +172,7 @@ impl SimpleComponent for DebugView {
                             false => None,
                             true => Some(format!(
                                 "{lvl}\t[{file}:{func}]\r\n\t{msg}\r\n",
-                                lvl = o.level,
+                                lvl = o.level.colored(),
                                 file = o.file,
                                 func = o.func,
                                 msg = o.message.replace('\n', "\r\n")
