@@ -3,6 +3,7 @@ use crate::{
     xdg::XDG,
 };
 use serde::{Deserialize, Serialize};
+use serde_json::{Map, Value};
 use std::{
     fmt::Display,
     path::{Path, PathBuf},
@@ -92,6 +93,9 @@ pub struct WivrnConfEncoder {
     pub offset_y: Option<f32>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub group: Option<i32>,
+    /// contains unknown fields
+    #[serde(flatten)]
+    other: Map<String, Value>,
 }
 
 impl Default for WivrnConfEncoder {
@@ -104,6 +108,7 @@ impl Default for WivrnConfEncoder {
             offset_x: Some(0.0),
             offset_y: Some(0.0),
             group: None,
+            other: Map::default(),
         }
     }
 }
@@ -129,6 +134,9 @@ pub struct WivrnConfig {
     pub application: Option<WivrnConfigApplication>,
     #[serde(default)]
     pub tcp_only: bool,
+    /// contains unknown fields
+    #[serde(flatten)]
+    other: Map<String, Value>,
 }
 
 impl Default for WivrnConfig {
@@ -139,6 +147,7 @@ impl Default for WivrnConfig {
             encoders: vec![],
             application: None,
             tcp_only: false,
+            other: Map::default(),
         }
     }
 }
@@ -190,6 +199,9 @@ mod tests {
             Some(WivrnConfigApplication::Str("foobar".into()))
         );
         assert!(!conf.tcp_only);
+        assert!(serde_json::to_string(&conf)
+            .unwrap()
+            .contains("\"extraneous\":\"field\",\"other\":{\"weird\":[\"stuff\"]}"));
         let conf = get_wivrn_config_from_path(Path::new("./test/files/wivrn_config2.json"))
             .expect("Couln't find wivrn config 2");
         assert_eq!(

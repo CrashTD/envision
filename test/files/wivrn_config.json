@@ -11,5 +11,7 @@
       "offset_y": 0.0
     }
   ],
-  "application": "foobar"
+  "application": "foobar",
+  "extraneous": "field",
+  "other": {"weird": ["stuff"]}
 }
