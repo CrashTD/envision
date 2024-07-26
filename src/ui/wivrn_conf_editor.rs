@@ -7,11 +7,12 @@ use super::{
 use crate::{
     file_builders::wivrn_config::{dump_wivrn_config, get_wivrn_config, WivrnConfig},
     ui::{
-        preference_rows::{number_entry_row, spin_row},
+        preference_rows::{number_entry_row, spin_row, switch_row},
         util::bits_to_mbits,
     },
 };
 use adw::prelude::*;
+use gtk4::glib::clone;
 use relm4::{factory::AsyncFactoryVecDeque, prelude::*};
 
 #[tracker::track]
@@ -35,6 +36,7 @@ pub enum WivrnConfEditorMsg {
     Save,
     AddEncoder,
     DeleteEncoder(String),
+    TcpOnlyChanged(bool),
 }
 
 pub struct WivrnConfEditorInit {
@@ -122,6 +124,23 @@ impl SimpleComponent for WivrnConfEditor {
                             move |_| {}
                         ) -> adw::EntryRow,
                     },
+                    // TODO: add application? conflicts with envision autostart
+                    add: networkgrp = &adw::PreferencesGroup {
+                        set_title: "Network",
+                        add: &switch_row(
+                            "TCP Only Mode",
+                            Some(concat!(
+                                "Only use TCP for communications with the client, ",
+                                "this may have increased latency. If off, WiVRn ",
+                                "will use both TCP and UDP."
+                            )),
+                            model.conf.tcp_only,
+                            clone!(@strong sender => move |_, val| {
+                                sender.input(Self::Input::TcpOnlyChanged(val));
+                                gtk::glib::Propagation::Proceed
+                            }),
+                        ),
+                    },
                     add: encodersrgp = &adw::PreferencesGroup {
                         set_title: "Encoders",
                         adw::ActionRow {
@@ -176,6 +195,9 @@ impl SimpleComponent for WivrnConfEditor {
                     .collect();
                 dump_wivrn_config(&self.conf);
                 self.win.as_ref().unwrap().close();
+            }
+            Self::Input::TcpOnlyChanged(val) => {
+                self.conf.tcp_only = val;
             }
             Self::Input::AddEncoder => {
                 self.encoder_models
