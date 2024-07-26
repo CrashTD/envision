@@ -123,6 +123,7 @@ pub struct WivrnConfig {
     pub scale: Option<[f32; 2]>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub bitrate: Option<u32>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub encoders: Vec<WivrnConfEncoder>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub application: Option<WivrnConfigApplication>,
@@ -135,7 +136,7 @@ impl Default for WivrnConfig {
         Self {
             scale: Some([0.8, 0.8]),
             bitrate: Some(50000000),
-            encoders: vec![WivrnConfEncoder::default()],
+            encoders: vec![],
             application: None,
             tcp_only: false,
         }
