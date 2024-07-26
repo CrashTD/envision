@@ -211,18 +211,26 @@ impl SimpleComponent for DebugView {
         if let Some(btn) = log_level_dropdown.first_child() {
             btn.add_css_class("flat");
         }
-        log_level_dropdown.connect_selected_notify(clone!(@strong sender => move |dd| {
-            sender.input(Self::Input::LogLevelChanged(
-                *LogLevel::iter()
-                    .as_slice()
-                    .get(dd.selected() as usize)
-                    .unwrap(),
-            ));
-        }));
+        log_level_dropdown.connect_selected_notify(clone!(
+            #[strong]
+            sender,
+            move |dd| {
+                sender.input(Self::Input::LogLevelChanged(
+                    *LogLevel::iter()
+                        .as_slice()
+                        .get(dd.selected() as usize)
+                        .unwrap(),
+                ));
+            }
+        ));
 
-        adw::StyleManager::default().connect_dark_notify(clone!(@strong sender => move |_| {
-            sender.input(Self::Input::SetColorScheme);
-        }));
+        adw::StyleManager::default().connect_dark_notify(clone!(
+            #[strong]
+            sender,
+            move |_| {
+                sender.input(Self::Input::SetColorScheme);
+            }
+        ));
 
         let mut model = Self {
             xrservice_active: false,

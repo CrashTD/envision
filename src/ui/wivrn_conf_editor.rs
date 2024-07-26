@@ -135,7 +135,7 @@ impl SimpleComponent for WivrnConfEditor {
                                 "will use both TCP and UDP."
                             )),
                             model.conf.tcp_only,
-                            clone!(@strong sender => move |_, val| {
+                            clone!(#[strong] sender, move |_, val| {
                                 sender.input(Self::Input::TcpOnlyChanged(val));
                                 gtk::glib::Propagation::Proceed
                             }),

@@ -11,7 +11,7 @@ use crate::{
     },
 };
 use adw::prelude::*;
-use gtk::glib::clone;
+use gtk::glib::{self, clone};
 use relm4::{factory::AsyncFactoryVecDeque, prelude::*};
 use std::{cell::RefCell, path::PathBuf, rc::Rc};
 
@@ -95,14 +95,14 @@ impl SimpleComponent for ProfileEditor {
                         add: &entry_row(
                             "Profile Name",
                             model.profile.borrow().name.as_str(),
-                            clone!(@strong prof => move |row| {
+                            clone!(#[strong] prof, move |row| {
                                 prof.borrow_mut().name = row.text().to_string();
                             })
                         ),
                         add: &switch_row(
                             "Update on Build", None,
                             model.profile.borrow().pull_on_build,
-                            clone!(@strong prof => move |_, state| {
+                            clone!(#[strong] prof, move |_, state| {
                                 prof.borrow_mut().pull_on_build = state;
                                 gtk::glib::Propagation::Proceed
                             })
@@ -112,13 +112,13 @@ impl SimpleComponent for ProfileEditor {
                             None,
                             Some(model.profile.borrow().prefix.to_string_lossy().to_string()),
                             Some(init.root_win.clone()),
-                            clone!(@strong prof => move |n_path| {
+                            clone!(#[strong] prof, move |n_path| {
                                 prof.borrow_mut().prefix = n_path.unwrap_or_default().into();
                             }),
                         ),
                         add: &entry_row("Autostart Command",
                             model.profile.borrow().autostart_command.as_ref().unwrap_or(&String::default()),
-                            clone!(@strong prof => move |row| {
+                            clone!(#[strong] prof, move |row| {
                                 let txt = row.text().trim().to_string();
                                 prof.borrow_mut().autostart_command =
                                     if txt.is_empty() {None} else {Some(txt)};
@@ -139,7 +139,7 @@ impl SimpleComponent for ProfileEditor {
                             XRServiceType::iter()
                                 .map(XRServiceType::to_string)
                                 .collect::<Vec<String>>(),
-                            clone!(@strong prof => move |row| {
+                            clone!(#[strong] prof, move |row| {
                                 prof.borrow_mut().xrservice_type =
                                     XRServiceType::from_number(row.selected());
                             }),
@@ -147,7 +147,7 @@ impl SimpleComponent for ProfileEditor {
                         add: &entry_row(
                             "XR Service Launch Options",
                             model.profile.borrow().xrservice_launch_options.as_str(),
-                            clone!(@strong prof => move |row| {
+                            clone!(#[strong] prof, move |row| {
                                 prof.borrow_mut().xrservice_launch_options = row.text().trim().to_string();
                             })
                         ),
@@ -163,7 +163,7 @@ impl SimpleComponent for ProfileEditor {
                             LighthouseDriver::iter()
                                 .map(LighthouseDriver::to_string)
                                 .collect::<Vec<String>>(),
-                            clone!(@strong prof => move |row| {
+                            clone!(#[strong] prof, move |row| {
                                 prof.borrow_mut().lighthouse_driver =
                                     LighthouseDriver::from_number(row.selected());
                             })
@@ -173,14 +173,14 @@ impl SimpleComponent for ProfileEditor {
                             None,
                             Some(model.profile.borrow().xrservice_path.clone().to_string_lossy().to_string()),
                             Some(init.root_win.clone()),
-                            clone!(@strong prof => move |n_path| {
+                            clone!(#[strong] prof, move |n_path| {
                                 prof.borrow_mut().xrservice_path = n_path.unwrap_or_default().into();
                             }),
                         ),
                         add: &entry_row(
                             "XR Service Repo",
                             model.profile.borrow().xrservice_repo.clone().unwrap_or_default().as_str(),
-                            clone!(@strong prof => move |row| {
+                            clone!(#[strong] prof, move |row| {
                                 let n_val = row.text().to_string();
                                 prof.borrow_mut().xrservice_repo = (!n_val.is_empty()).then_some(n_val);
                             })
@@ -188,7 +188,7 @@ impl SimpleComponent for ProfileEditor {
                         add: &entry_row(
                             "XR Service Branch",
                             model.profile.borrow().xrservice_branch.clone().unwrap_or_default().as_str(),
-                            clone!(@strong prof => move |row| {
+                            clone!(#[strong] prof, move |row| {
                                 let n_val = row.text().to_string();
                                 prof.borrow_mut().xrservice_branch = (!n_val.is_empty()).then_some(n_val);
                             })
@@ -202,14 +202,14 @@ impl SimpleComponent for ProfileEditor {
                             "OpenComposite Path", None,
                             Some(model.profile.borrow().opencomposite_path.clone().to_string_lossy().to_string()),
                             Some(init.root_win.clone()),
-                            clone!(@strong prof => move |n_path| {
+                            clone!(#[strong] prof, move |n_path| {
                                 prof.borrow_mut().opencomposite_path = n_path.unwrap_or_default().into();
                             })
                         ),
                         add: &entry_row(
                             "OpenComposite Repo",
                             model.profile.borrow().opencomposite_repo.clone().unwrap_or_default().as_str(),
-                            clone!(@strong prof => move |row| {
+                            clone!(#[strong] prof, move |row| {
                                 let n_val = row.text().to_string();
                                 prof.borrow_mut().opencomposite_repo = (!n_val.is_empty()).then_some(n_val);
                             })
@@ -217,7 +217,7 @@ impl SimpleComponent for ProfileEditor {
                         add: &entry_row(
                             "OpenComposite Branch",
                             model.profile.borrow().opencomposite_branch.clone().unwrap_or_default().as_str(),
-                            clone!(@strong prof => move |row| {
+                            clone!(#[strong] prof, move |row| {
                                 let n_val = row.text().to_string();
                                 prof.borrow_mut().opencomposite_branch = (!n_val.is_empty()).then_some(n_val);
                             })
@@ -229,7 +229,7 @@ impl SimpleComponent for ProfileEditor {
                         add: &switch_row(
                             "Enable Libsurvive", None,
                             model.profile.borrow().features.libsurvive.enabled,
-                            clone!(@strong prof => move |_, state| {
+                            clone!(#[strong] prof, move |_, state| {
                                 prof.borrow_mut().features.libsurvive.enabled = state;
                                 gtk::glib::Propagation::Proceed
                             })
@@ -238,14 +238,14 @@ impl SimpleComponent for ProfileEditor {
                             "Libsurvive Path", None,
                             model.profile.borrow().features.libsurvive.path.clone().map(|p| p.to_string_lossy().to_string()),
                             Some(init.root_win.clone()),
-                            clone!(@strong prof => move |n_path| {
+                            clone!(#[strong] prof, move |n_path| {
                                 prof.borrow_mut().features.libsurvive.path = n_path.map(PathBuf::from);
                             })
                         ),
                         add: &entry_row(
                             "Libsurvive Repo",
                             model.profile.borrow().features.libsurvive.repo.clone().unwrap_or_default().as_str(),
-                            clone!(@strong prof => move |row| {
+                            clone!(#[strong] prof, move |row| {
                                 let n_val = row.text().to_string();
                                 prof.borrow_mut().features.libsurvive.repo = (!n_val.is_empty()).then_some(n_val);
                             })
@@ -253,7 +253,7 @@ impl SimpleComponent for ProfileEditor {
                         add: &entry_row(
                             "Libsurvive Branch",
                             model.profile.borrow().features.libsurvive.branch.clone().unwrap_or_default().as_str(),
-                            clone!(@strong prof => move |row| {
+                            clone!(#[strong] prof, move |row| {
                                 let n_val = row.text().to_string();
                                 prof.borrow_mut().features.libsurvive.branch = (!n_val.is_empty()).then_some(n_val);
                             })
@@ -265,7 +265,7 @@ impl SimpleComponent for ProfileEditor {
                         add: &switch_row(
                             "Enable OpenHMD", None,
                             model.profile.borrow().features.openhmd.enabled,
-                            clone!(@strong prof => move |_, state| {
+                            clone!(#[strong] prof, move |_, state| {
                                 prof.borrow_mut().features.openhmd.enabled = state;
                                 gtk::glib::Propagation::Proceed
                             })
@@ -274,14 +274,14 @@ impl SimpleComponent for ProfileEditor {
                             "OpenHMD Path", None,
                             model.profile.borrow().features.openhmd.path.clone().map(|p| p.to_string_lossy().to_string()),
                             Some(init.root_win.clone()),
-                            clone!(@strong prof => move |n_path| {
+                            clone!(#[strong] prof, move |n_path| {
                                 prof.borrow_mut().features.openhmd.path = n_path.map(PathBuf::from);
                             })
                         ),
                         add: &entry_row(
                             "OpenHMD Repo",
                             model.profile.borrow().features.openhmd.repo.clone().unwrap_or_default().as_str(),
-                            clone!(@strong prof => move |row| {
+                            clone!(#[strong] prof, move |row| {
                                 let n_val = row.text().to_string();
                                 prof.borrow_mut().features.openhmd.repo = (!n_val.is_empty()).then_some(n_val);
                             })
@@ -289,7 +289,7 @@ impl SimpleComponent for ProfileEditor {
                         add: &entry_row(
                             "OpenHMD Branch",
                             model.profile.borrow().features.openhmd.branch.clone().unwrap_or_default().as_str(),
-                            clone!(@strong prof => move |row| {
+                            clone!(#[strong] prof, move |row| {
                                 let n_val = row.text().to_string();
                                 prof.borrow_mut().features.openhmd.branch = (!n_val.is_empty()).then_some(n_val);
                             })
@@ -301,7 +301,7 @@ impl SimpleComponent for ProfileEditor {
                         add: &switch_row(
                             "Enable Basalt", None,
                             model.profile.borrow().features.basalt.enabled,
-                            clone!(@strong prof => move |_, state| {
+                            clone!(#[strong] prof, move |_, state| {
                                 prof.borrow_mut().features.basalt.enabled = state;
                                 gtk::glib::Propagation::Proceed
                             })
@@ -310,14 +310,14 @@ impl SimpleComponent for ProfileEditor {
                             "Basalt Path", None,
                             model.profile.borrow().features.basalt.path.clone().map(|p| p.to_string_lossy().to_string()),
                             Some(init.root_win.clone()),
-                            clone!(@strong prof => move |n_path| {
+                            clone!(#[strong] prof, move |n_path| {
                                 prof.borrow_mut().features.basalt.path = n_path.map(PathBuf::from);
                             })
                         ),
                         add: &entry_row(
                             "Basalt Repo",
                             model.profile.borrow().features.basalt.repo.clone().unwrap_or_default().as_str(),
-                            clone!(@strong prof => move |row| {
+                            clone!(#[strong] prof, move |row| {
                                 let n_val = row.text().to_string();
                                 prof.borrow_mut().features.basalt.repo = (!n_val.is_empty()).then_some(n_val);
                             })
@@ -325,7 +325,7 @@ impl SimpleComponent for ProfileEditor {
                         add: &entry_row(
                             "Basalt Branch",
                             model.profile.borrow().features.basalt.branch.clone().unwrap_or_default().as_str(),
-                            clone!(@strong prof => move |row| {
+                            clone!(#[strong] prof, move |row| {
                                 let n_val = row.text().to_string();
                                 prof.borrow_mut().features.basalt.branch = (!n_val.is_empty()).then_some(n_val);
                             })
@@ -337,7 +337,7 @@ impl SimpleComponent for ProfileEditor {
                         add: &switch_row(
                             "Enable Mercury", None,
                             model.profile.borrow().features.mercury_enabled,
-                            clone!(@strong prof => move |_, state| {
+                            clone!(#[strong] prof, move |_, state| {
                                 prof.borrow_mut().features.mercury_enabled = state;
                                 gtk::glib::Propagation::Proceed
                             })
@@ -473,8 +473,14 @@ impl SimpleComponent for ProfileEditor {
                         .halign(gtk::Align::End)
                         .build();
 
-                    add_btn.connect_clicked(
-                        clone!(@strong sender, @strong name_entry, @strong popover => move |_| {
+                    add_btn.connect_clicked(clone!(
+                        #[strong]
+                        sender,
+                        #[weak]
+                        name_entry,
+                        #[weak]
+                        popover,
+                        move |_| {
                             let key_gstr = name_entry.text();
                             let key = key_gstr.trim();
                             if !key.is_empty() {
@@ -482,8 +488,8 @@ impl SimpleComponent for ProfileEditor {
                                 name_entry.set_text("");
                                 sender.input($event(key.to_string()));
                             }
-                        })
-                    );
+                        }
+                    ));
                     btn
                 }};
             }

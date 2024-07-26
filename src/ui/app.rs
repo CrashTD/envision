@@ -506,9 +506,11 @@ impl SimpleComponent for App {
                                             .valign(gtk::Align::Center)
                                             .halign(gtk::Align::Center)
                                             .build();
-                                        btn.connect_clicked(
-                                            clone!(@strong cmd => move |_| copy_text(&cmd)),
-                                        );
+                                        btn.connect_clicked(clone!(
+                                            #[to_owned]
+                                            cmd,
+                                            move |_| copy_text(&cmd)
+                                        ));
                                         container.append(
                                             &gtk::ScrolledWindow::builder()
                                                 .vscrollbar_policy(gtk::PolicyType::Never)
@@ -827,53 +829,79 @@ impl SimpleComponent for App {
         stateless_action!(
             actions,
             BuildProfileAction,
-            clone!(@strong sender => move |_| {
-                sender.input_sender().emit(Msg::BuildProfile(false));
-            })
+            clone!(
+                #[strong]
+                sender,
+                move |_| {
+                    sender.input_sender().emit(Msg::BuildProfile(false));
+                }
+            )
         );
         stateless_action!(
             actions,
             BuildProfileCleanAction,
-            clone!(@strong sender => move |_| {
-                sender.input_sender().emit(Msg::BuildProfile(true));
-            })
+            clone!(
+                #[strong]
+                sender,
+                move |_| {
+                    sender.input_sender().emit(Msg::BuildProfile(true));
+                }
+            )
         );
         stateless_action!(
             actions,
             QuitAction,
-            clone!(@strong sender => move |_| {
-                sender.input(Msg::Quit);
-            })
+            clone!(
+                #[strong]
+                sender,
+                move |_| {
+                    sender.input(Msg::Quit);
+                }
+            )
         );
         stateless_action!(
             actions,
             DebugOpenDataAction,
-            clone!(@strong sender => move |_| {
-                sender.input(Msg::DebugOpenData);
-            })
+            clone!(
+                #[strong]
+                sender,
+                move |_| {
+                    sender.input(Msg::DebugOpenData);
+                }
+            )
         );
         stateless_action!(
             actions,
             DebugOpenPrefixAction,
-            clone!(@strong sender => move |_| {
-                sender.input(Msg::DebugOpenPrefix);
-            })
+            clone!(
+                #[strong]
+                sender,
+                move |_| {
+                    sender.input(Msg::DebugOpenPrefix);
+                }
+            )
         );
         stateless_action!(
             actions,
             DebugCopyEnvVarsAction,
-            clone!(@strong sender => move |_| {
-                sender.input(Msg::DebugCopyEnvVars);
-            })
+            clone!(
+                #[strong]
+                sender,
+                move |_| {
+                    sender.input(Msg::DebugCopyEnvVars);
+                }
+            )
         );
         // this bypasses the macro because I need the underlying gio action
         // to enable/disable it in update()
         let configure_wivrn_action = {
-            let action = RelmAction::<ConfigureWivrnAction>::new_stateless(
-                clone!(@strong sender => move |_| {
+            let action = RelmAction::<ConfigureWivrnAction>::new_stateless(clone!(
+                #[strong]
+                sender,
+                move |_| {
                     sender.input(Msg::OpenWivrnConfig);
-                }),
-            );
+                }
+            ));
             let ret = action.gio_action().clone();
             actions.add_action(action);
             ret.set_enabled(false);
@@ -946,11 +974,15 @@ impl SimpleComponent for App {
         }
         actions.add_action(RelmAction::<DebugViewToggleAction>::new_stateful(
             &model.enable_debug_view,
-            clone!(@strong sender => move |_, state| {
-                let s = *state;
-                *state = !s;
-                sender.input(Msg::EnableDebugViewChanged(*state));
-            }),
+            clone!(
+                #[strong]
+                sender,
+                move |_, state| {
+                    let s = *state;
+                    *state = !s;
+                    sender.input(Msg::EnableDebugViewChanged(*state));
+                }
+            ),
         ));
 
         root.insert_action_group(AppActionGroup::NAME, Some(&actions.into_action_group()));
@@ -969,10 +1001,14 @@ impl SimpleComponent for App {
 
         glib::timeout_add_local(
             Duration::from_millis(1000),
-            clone!(@strong sender => move || {
-                sender.input(Msg::ClockTicking);
-                glib::ControlFlow::Continue
-            }),
+            clone!(
+                #[strong]
+                sender,
+                move || {
+                    sender.input(Msg::ClockTicking);
+                    glib::ControlFlow::Continue
+                }
+            ),
         );
 
         model.split_view = Some(widgets.split_view.clone());
