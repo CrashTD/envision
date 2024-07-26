@@ -108,6 +108,15 @@ impl Default for WivrnConfEncoder {
     }
 }
 
+/// An application to start when connection with the headset is established,
+/// can be a string or an array of strings if parameters need to be provided.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(untagged)]
+pub enum WivrnConfigApplication {
+    Str(String),
+    StrArr(Vec<String>),
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct WivrnConfig {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -115,6 +124,10 @@ pub struct WivrnConfig {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub bitrate: Option<u32>,
     pub encoders: Vec<WivrnConfEncoder>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub application: Option<WivrnConfigApplication>,
+    #[serde(default)]
+    pub tcp_only: bool,
 }
 
 impl Default for WivrnConfig {
@@ -123,6 +136,8 @@ impl Default for WivrnConfig {
             scale: Some([0.8, 0.8]),
             bitrate: Some(50000000),
             encoders: vec![WivrnConfEncoder::default()],
+            application: None,
+            tcp_only: false,
         }
     }
 }
@@ -152,7 +167,7 @@ pub fn dump_wivrn_config(config: &WivrnConfig) {
 mod tests {
     use std::path::Path;
 
-    use crate::file_builders::wivrn_config::{Codec, Encoder};
+    use crate::file_builders::wivrn_config::{Codec, Encoder, WivrnConfigApplication};
 
     use super::get_wivrn_config_from_path;
 
@@ -169,5 +184,20 @@ mod tests {
         assert_eq!(conf.encoders.first().unwrap().height, Some(1.0));
         assert_eq!(conf.encoders.first().unwrap().offset_x, Some(0.0));
         assert_eq!(conf.encoders.first().unwrap().offset_y, Some(0.0));
+        assert_eq!(
+            conf.application,
+            Some(WivrnConfigApplication::Str("foobar".into()))
+        );
+        assert!(!conf.tcp_only);
+        let conf = get_wivrn_config_from_path(Path::new("./test/files/wivrn_config2.json"))
+            .expect("Couln't find wivrn config 2");
+        assert_eq!(
+            conf.application,
+            Some(WivrnConfigApplication::StrArr(vec![
+                "foobar".into(),
+                "baz".into()
+            ]))
+        );
+        assert!(conf.tcp_only);
     }
 }
