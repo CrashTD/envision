@@ -2,12 +2,10 @@ use super::term_widget::TermWidget;
 use crate::log_level::LogLevel;
 use crate::log_parser::MonadoLog;
 use crate::ui::app::{DebugCopyEnvVarsAction, DebugOpenDataAction, DebugOpenPrefixAction};
-use crate::ui::util::copy_text;
 use gtk::glib::clone;
 use gtk::prelude::*;
 use relm4::prelude::*;
 use relm4::{ComponentSender, SimpleComponent};
-use vte4::TerminalExt;
 
 #[derive(Debug)]
 pub enum SearchDirection {
@@ -242,29 +240,6 @@ impl SimpleComponent for DebugView {
             term: TermWidget::new(),
         };
         model.term.set_color_scheme();
-
-        {
-            let sc = gtk::ShortcutController::new();
-            let term = model.term.term.clone();
-            sc.add_shortcut(gtk::Shortcut::new(
-                gtk::ShortcutTrigger::parse_string("<Control>c"),
-                Some(gtk::CallbackAction::new(move |_, _| {
-                    if let Some(text) = term.text_selected(vte4::Format::Text) {
-                        copy_text(text.as_str());
-                    }
-                    gtk::glib::Propagation::Proceed
-                })),
-            ));
-            let term = model.term.term.clone();
-            sc.add_shortcut(gtk::Shortcut::new(
-                gtk::ShortcutTrigger::parse_string("<Control>a"),
-                Some(gtk::CallbackAction::new(move |_, _| {
-                    term.select_all();
-                    gtk::glib::Propagation::Proceed
-                })),
-            ));
-            model.term.term.add_controller(sc);
-        }
 
         let widgets = view_output!();
         model.searchbar = Some(widgets.searchbar.clone());

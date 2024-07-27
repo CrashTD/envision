@@ -1,6 +1,8 @@
-use gtk4::gdk;
+use gtk4::{gdk, glib::clone};
 use relm4::adw;
-use vte4::{Terminal, TerminalExt, TerminalExtManual};
+use vte4::{Terminal, TerminalExt, TerminalExtManual, WidgetExt};
+
+use super::util::copy_text;
 
 const MAX_SCROLLBACK: u32 = 2000;
 
@@ -34,7 +36,48 @@ impl TermWidget {
             .child(&term)
             .build();
 
-        Self { container, term }
+        let this = Self { container, term };
+
+        this.setup_shortcuts();
+
+        this
+    }
+
+    fn setup_shortcuts(&self) {
+        let sc = gtk4::ShortcutController::new();
+        ["<Control>c", "<Shift><Control>c"]
+            .iter()
+            .for_each(|combo| {
+                sc.add_shortcut(gtk4::Shortcut::new(
+                    gtk4::ShortcutTrigger::parse_string(combo),
+                    Some(gtk4::CallbackAction::new(clone!(
+                        #[strong(rename_to = term)]
+                        self.term,
+                        move |_, _| {
+                            if let Some(text) = term.text_selected(vte4::Format::Text) {
+                                copy_text(text.as_str());
+                            }
+                            gtk4::glib::Propagation::Proceed
+                        }
+                    ))),
+                ));
+            });
+        ["<Control>a", "<Shift><Control>a"]
+            .iter()
+            .for_each(|combo| {
+                sc.add_shortcut(gtk4::Shortcut::new(
+                    gtk4::ShortcutTrigger::parse_string(combo),
+                    Some(gtk4::CallbackAction::new(clone!(
+                        #[strong(rename_to = term)]
+                        self.term,
+                        move |_, _| {
+                            term.select_all();
+                            gtk4::glib::Propagation::Proceed
+                        }
+                    ))),
+                ));
+            });
+        self.term.add_controller(sc);
     }
 
     pub fn set_color_scheme(&self) {
