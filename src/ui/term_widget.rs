@@ -1,6 +1,6 @@
-use gtk4::{gdk, glib::clone};
+use gtk4::{gdk, glib::clone, prelude::*};
 use relm4::adw;
-use vte4::{Terminal, TerminalExt, TerminalExtManual, WidgetExt};
+use vte4::{Terminal, TerminalExt, TerminalExtManual};
 
 use super::util::copy_text;
 
@@ -8,8 +8,9 @@ const MAX_SCROLLBACK: u32 = 2000;
 
 #[derive(Debug, Clone)]
 pub struct TermWidget {
-    pub container: gtk4::ScrolledWindow,
+    pub container: gtk4::Box,
     pub term: Terminal,
+    popover_menu: gtk4::PopoverMenu,
 }
 
 const ADW_LIGHT_FG: &str = "#000000";
@@ -30,17 +31,82 @@ impl TermWidget {
             .build();
         term.set_clear_background(false);
         term.search_set_wrap_around(true);
-        let container = gtk4::ScrolledWindow::builder()
+        let container = gtk4::Box::builder().hexpand(true).vexpand(true).build();
+
+        let sw = gtk4::ScrolledWindow::builder()
             .hexpand(true)
             .vexpand(true)
             .child(&term)
             .build();
 
-        let this = Self { container, term };
+        container.append(&sw);
+
+        let action_grp = gtk4::gio::SimpleActionGroup::new();
+        let selectall_action = gtk4::gio::SimpleAction::new("selectall", None);
+        selectall_action.connect_activate(clone!(
+            #[strong]
+            term,
+            move |_, _| {
+                term.select_all();
+            }
+        ));
+        action_grp.add_action(&selectall_action);
+        let copy_action = gtk4::gio::SimpleAction::new("copy", None);
+        copy_action.connect_activate(clone!(
+            #[strong]
+            term,
+            move |_, _| {
+                Self::copy_selected(&term);
+            }
+        ));
+        action_grp.add_action(&copy_action);
+
+        container.insert_action_group("term", Some(&action_grp));
+
+        let menu = gtk4::gio::Menu::new();
+        menu.append(Some("Select all"), Some("term.selectall"));
+        menu.append(Some("Copy"), Some("term.copy"));
+
+        let popover_menu = gtk4::PopoverMenu::builder()
+            .pointing_to(&term.allocation())
+            .autohide(true)
+            .menu_model(&menu)
+            .build();
+
+        container.append(&popover_menu);
+
+        let this = Self {
+            container,
+            term,
+            popover_menu,
+        };
 
         this.setup_shortcuts();
+        this.setup_rightclick_gesture();
 
         this
+    }
+
+    fn setup_rightclick_gesture(&self) {
+        let gesture = gtk4::GestureClick::builder()
+            .button(gtk4::gdk::BUTTON_SECONDARY)
+            .build();
+        gesture.connect_pressed(clone!(
+            #[strong(rename_to=popover)]
+            self.popover_menu,
+            move |gesture, _, x, y| {
+                gesture.set_state(gtk4::EventSequenceState::Claimed);
+                popover.set_pointing_to(Some(&gtk4::gdk::Rectangle::new(x as i32, y as i32, 1, 1)));
+                popover.popup();
+            }
+        ));
+        self.term.add_controller(gesture);
+    }
+
+    fn copy_selected(term: &Terminal) {
+        if let Some(text) = term.text_selected(vte4::Format::Text) {
+            copy_text(text.as_str());
+        }
     }
 
     fn setup_shortcuts(&self) {
@@ -54,9 +120,7 @@ impl TermWidget {
                         #[strong(rename_to = term)]
                         self.term,
                         move |_, _| {
-                            if let Some(text) = term.text_selected(vte4::Format::Text) {
-                                copy_text(text.as_str());
-                            }
+                            Self::copy_selected(&term);
                             gtk4::glib::Propagation::Proceed
                         }
                     ))),
