@@ -1,4 +1,4 @@
-use gtk4::{gdk, gio, prelude::*};
+use gtk4::{gdk, gio, glib::clone, prelude::*};
 
 pub fn limit_dropdown_width(dd: &gtk4::DropDown, chars: i32) {
     let mut dd_child = dd
@@ -68,4 +68,53 @@ pub fn bits_to_mbits(bits: u32) -> Option<u32> {
 
 pub fn bits_from_mbits(mbits: u32) -> Option<u32> {
     mbits.checked_mul(1000000)
+}
+
+pub fn copiable_code_snippet(code: &str) -> gtk4::Widget {
+    let container = gtk4::Box::builder()
+        .orientation(gtk4::Orientation::Horizontal)
+        .spacing(6)
+        .build();
+    let btn = gtk4::Button::builder()
+        .css_classes(["flat", "circular"])
+        .tooltip_text("Copy")
+        .icon_name("edit-copy-symbolic")
+        .vexpand(false)
+        .hexpand(false)
+        .valign(gtk4::Align::Center)
+        .halign(gtk4::Align::Center)
+        .build();
+    btn.connect_clicked(clone!(
+        #[to_owned]
+        code,
+        move |_| copy_text(&code)
+    ));
+    container.append(
+        &gtk4::ScrolledWindow::builder()
+            .vscrollbar_policy(gtk4::PolicyType::Never)
+            .hscrollbar_policy(gtk4::PolicyType::Automatic)
+            .css_classes(["card"])
+            .overflow(gtk4::Overflow::Hidden)
+            .child(
+                &gtk4::TextView::builder()
+                    .hexpand(true)
+                    .vexpand(false)
+                    .monospace(true)
+                    .editable(false)
+                    .left_margin(6)
+                    .right_margin(6)
+                    .top_margin(6)
+                    .bottom_margin(18)
+                    .buffer(
+                        &gtk4::TextBuffer::builder()
+                            .text(code)
+                            .enable_undo(false)
+                            .build(),
+                    )
+                    .build(),
+            )
+            .build(),
+    );
+    container.append(&btn);
+    container.upcast()
 }

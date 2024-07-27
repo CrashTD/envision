@@ -8,7 +8,7 @@ use super::job_worker::job::{FuncWorkerOut, WorkerJob};
 use super::job_worker::JobWorker;
 use super::libsurvive_setup_window::LibsurviveSetupWindow;
 use super::main_view::MainViewMsg;
-use super::util::{copy_text, open_with_default_handler};
+use super::util::{copiable_code_snippet, copy_text, open_with_default_handler};
 use super::wivrn_conf_editor::{WivrnConfEditor, WivrnConfEditorInit, WivrnConfEditorMsg};
 use crate::builders::build_basalt::get_build_basalt_jobs;
 use crate::builders::build_libsurvive::get_build_libsurvive_jobs;
@@ -32,7 +32,7 @@ use crate::file_builders::active_runtime_json::{
 use crate::file_builders::openvrpaths_vrpath::{
     set_current_openvrpaths_to_profile, set_current_openvrpaths_to_steam,
 };
-use crate::file_utils::setcap_cap_sys_nice_eip;
+use crate::file_utils::{setcap_cap_sys_nice_eip, setcap_cap_sys_nice_eip_cmd};
 use crate::is_appimage::IS_APPIMAGE;
 use crate::linux_distro::LinuxDistro;
 use crate::openxr_prober::is_openxr_ready;
@@ -492,54 +492,7 @@ impl SimpleComponent for App {
                                     None
                                 } else {
                                     let cmd = d.install_command(&packages);
-                                    {
-                                        let container = gtk::Box::builder()
-                                            .orientation(gtk::Orientation::Horizontal)
-                                            .spacing(6)
-                                            .build();
-                                        let btn = gtk::Button::builder()
-                                            .css_classes(["flat", "circular"])
-                                            .tooltip_text("Copy")
-                                            .icon_name("edit-copy-symbolic")
-                                            .vexpand(false)
-                                            .hexpand(false)
-                                            .valign(gtk::Align::Center)
-                                            .halign(gtk::Align::Center)
-                                            .build();
-                                        btn.connect_clicked(clone!(
-                                            #[to_owned]
-                                            cmd,
-                                            move |_| copy_text(&cmd)
-                                        ));
-                                        container.append(
-                                            &gtk::ScrolledWindow::builder()
-                                                .vscrollbar_policy(gtk::PolicyType::Never)
-                                                .hscrollbar_policy(gtk::PolicyType::Automatic)
-                                                .css_classes(["card"])
-                                                .overflow(gtk::Overflow::Hidden)
-                                                .child(
-                                                    &gtk::TextView::builder()
-                                                        .hexpand(true)
-                                                        .vexpand(false)
-                                                        .monospace(true)
-                                                        .editable(false)
-                                                        .left_margin(6)
-                                                        .right_margin(6)
-                                                        .top_margin(6)
-                                                        .bottom_margin(18)
-                                                        .buffer(
-                                                            &gtk::TextBuffer::builder()
-                                                                .text(&cmd)
-                                                                .enable_undo(false)
-                                                                .build(),
-                                                        )
-                                                        .build(),
-                                                )
-                                                .build(),
-                                        );
-                                        container.append(&btn);
-                                        Some(container.upcast())
-                                    }
+                                    Some(copiable_code_snippet(&cmd))
                                 }
                             },
                         )
@@ -600,8 +553,22 @@ impl SimpleComponent for App {
                         self.build_window
                             .sender()
                             .emit(BuildWindowMsg::UpdateBuildStatus(BuildStatus::Done));
-                        if self.get_selected_profile().xrservice_type == XRServiceType::Monado {
-                            self.setcap_confirm_dialog.present();
+                        let profile = self.get_selected_profile();
+                        if profile.xrservice_type == XRServiceType::Monado {
+                            if dep_pkexec().check() {
+                                self.setcap_confirm_dialog.present();
+                            } else {
+                                alert_w_widget(
+                                    "pkexec not found",
+                                    Some(&format!(
+                                        "The build is complete, but we need to set certain capabilities (CAP_SYS_NICE=eip) on the OpenXR server executable.\n\n{APP_NAME} can do that using pkexec, but it doesn't seem to be installed on your system.\n\nYou can do this step on your own by running the following command:"
+                                    )),
+                                    Some(&copiable_code_snippet(
+                                        &format!("sudo {}", setcap_cap_sys_nice_eip_cmd(&profile).join(" "))
+                                    )),
+                                    Some(&self.app_win.clone().upcast())
+                                );
+                            }
                         }
                         self.build_window
                             .sender()
@@ -660,7 +627,7 @@ impl SimpleComponent for App {
                     println!("pkexec not found, skipping setcap");
                 } else {
                     let profile = self.get_selected_profile();
-                    setcap_cap_sys_nice_eip(&profile.prefix.join("bin/monado-service"));
+                    setcap_cap_sys_nice_eip(&profile);
                 }
             }
             Msg::ProfileSelected(prof) => {

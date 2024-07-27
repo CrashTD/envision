@@ -1,4 +1,4 @@
-use crate::{cmd_runner::CmdRunner, runner::Runner};
+use crate::{cmd_runner::CmdRunner, profile::Profile, runner::Runner};
 use nix::{
     errno::Errno,
     sys::statvfs::{statvfs, FsFlags},
@@ -61,16 +61,21 @@ pub fn set_file_readonly(path: &Path, readonly: bool) -> Result<(), std::io::Err
     fs::set_permissions(path, perms)
 }
 
-pub fn setcap_cap_sys_nice_eip(file: &Path) {
-    let mut runner = CmdRunner::new(
-        None,
-        "pkexec".into(),
-        vec![
-            "setcap".into(),
-            "CAP_SYS_NICE=eip".into(),
-            file.to_string_lossy().to_string(),
-        ],
-    );
+pub fn setcap_cap_sys_nice_eip_cmd(profile: &Profile) -> Vec<String> {
+    vec![
+        "setcap".into(),
+        "CAP_SYS_NICE=eip".into(),
+        profile
+            .prefix
+            // not needed for wivrn, that's why monado is hardcoded
+            .join("bin/monado-service")
+            .to_string_lossy()
+            .to_string(),
+    ]
+}
+
+pub fn setcap_cap_sys_nice_eip(profile: &Profile) {
+    let mut runner = CmdRunner::new(None, "pkexec".into(), setcap_cap_sys_nice_eip_cmd(profile));
     runner.start();
     runner.join();
 }
