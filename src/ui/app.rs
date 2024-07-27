@@ -750,16 +750,13 @@ impl SimpleComponent for App {
                     .as_ref()
                     .is_some_and(|w| w.exit_code().is_none())
                 {
-                    eprintln!(">>>>>>>>>>>>>>> prober already running!");
                     // prober already running
                     return;
                 }
                 let worker = JobWorker::new_with_timer(
                     Duration::from_millis(500),
                     WorkerJob::new_func(Box::new(move || {
-                        println!(">>>>>>>>>>>>>>> probing now <<<<<<<<<<<<<<<<<<");
                         let ready = is_openxr_ready();
-                        println!(">>>>>>>>>>>>>>> ready? {}", ready);
                         FuncWorkerOut {
                             success: ready,
                             ..Default::default()
