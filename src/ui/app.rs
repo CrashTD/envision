@@ -955,8 +955,8 @@ impl SimpleComponent for App {
         {
             let app = &model.application;
             app.set_accelerators_for_action::<QuitAction>(&["<Control>q"]);
-            app.set_accelerators_for_action::<BuildProfileAction>(&["F5"]);
             app.set_accelerators_for_action::<BuildProfileCleanAction>(&["<Control>F5"]);
+            app.set_accelerators_for_action::<BuildProfileAction>(&["F5"]);
         }
 
         model.main_view.sender().emit(MainViewMsg::UpdateProfiles(
