@@ -1,7 +1,6 @@
-use crate::ui::SENDER_IO_ERR_MSG;
-
 use super::term_widget::TermWidget;
-use gtk::prelude::*;
+use crate::ui::SENDER_IO_ERR_MSG;
+use adw::prelude::*;
 use relm4::prelude::*;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -18,11 +17,13 @@ pub struct BuildWindow {
     build_status: BuildStatus,
 
     #[tracker::do_not_track]
-    pub win: Option<adw::Window>,
+    pub win: Option<adw::Dialog>,
     #[tracker::do_not_track]
     build_status_label: Option<gtk::Label>,
     #[tracker::do_not_track]
     term: TermWidget,
+    #[tracker::do_not_track]
+    parent: gtk::Widget,
 }
 
 #[derive(Debug)]
@@ -39,19 +40,27 @@ pub enum BuildWindowOutMsg {
     CancelBuild,
 }
 
+#[derive(Debug)]
+pub struct BuildWindowInit {
+    pub parent: gtk::Widget,
+}
+
 #[relm4::component(pub)]
 impl SimpleComponent for BuildWindow {
-    type Init = ();
+    type Init = BuildWindowInit;
     type Input = BuildWindowMsg;
     type Output = BuildWindowOutMsg;
 
     view! {
         #[name(win)]
-        adw::Window {
-            set_modal: true,
-            set_default_size: (520, 400),
-            set_hide_on_close: true,
-            adw::ToolbarView {
+        adw::Dialog {
+            set_presentation_mode: adw::DialogPresentationMode::BottomSheet,
+            set_content_height: 2000,
+            set_content_width: 1000,
+            #[track = "model.changed(BuildWindow::can_close())"]
+            set_can_close: model.can_close,
+            #[wrap(Some)]
+            set_child: tbview = &adw::ToolbarView {
                 set_top_bar_style: adw::ToolbarStyle::Flat,
                 set_bottom_bar_style: adw::ToolbarStyle::Flat,
                 set_vexpand: true,
@@ -129,7 +138,7 @@ impl SimpleComponent for BuildWindow {
                 self.term.set_color_scheme();
                 sender.input(BuildWindowMsg::UpdateBuildStatus(BuildStatus::Building));
                 self.term.clear();
-                self.win.as_ref().unwrap().present();
+                self.win.as_ref().unwrap().present(Some(&self.parent));
             }
             Self::Input::UpdateTitle(t) => {
                 self.set_title(t);
@@ -161,7 +170,7 @@ impl SimpleComponent for BuildWindow {
     }
 
     fn init(
-        _init: Self::Init,
+        init: Self::Init,
         root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
@@ -172,6 +181,7 @@ impl SimpleComponent for BuildWindow {
             build_status: BuildStatus::Building,
             win: None,
             build_status_label: None,
+            parent: init.parent,
             term: {
                 let t = TermWidget::new();
                 t.container.add_css_class("card");

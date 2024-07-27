@@ -42,7 +42,7 @@ use crate::stateless_action;
 use crate::steam_linux_runtime_injector::{
     restore_runtime_entrypoint, set_runtime_entrypoint_launch_opts_from_profile,
 };
-use crate::ui::build_window::{BuildWindowMsg, BuildWindowOutMsg};
+use crate::ui::build_window::{BuildWindowInit, BuildWindowMsg, BuildWindowOutMsg};
 use crate::ui::debug_view::{DebugViewInit, DebugViewOutMsg};
 use crate::ui::libsurvive_setup_window::LibsurviveSetupMsg;
 use crate::ui::main_view::{MainView, MainViewInit, MainViewOutMsg};
@@ -935,8 +935,9 @@ impl SimpleComponent for App {
                 .launch(())
                 .detach(),
             build_window: BuildWindow::builder()
-                .transient_for(&root)
-                .launch(())
+                .launch(BuildWindowInit {
+                    parent: root.clone().upcast(),
+                })
                 .forward(sender.input_sender(), |msg| match msg {
                     BuildWindowOutMsg::CancelBuild => Msg::CancelBuild,
                 }),

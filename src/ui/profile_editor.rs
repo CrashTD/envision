@@ -19,11 +19,13 @@ use std::{cell::RefCell, path::PathBuf, rc::Rc};
 pub struct ProfileEditor {
     profile: Rc<RefCell<Profile>>,
     #[tracker::do_not_track]
-    win: Option<adw::Window>,
+    win: Option<adw::Dialog>,
     #[tracker::do_not_track]
     env_rows: AsyncFactoryVecDeque<EnvVarModel>,
     #[tracker::do_not_track]
     xrservice_cmake_flags_rows: AsyncFactoryVecDeque<EnvVarModel>,
+    #[tracker::do_not_track]
+    parent: gtk::Window,
 }
 
 #[derive(Debug)]
@@ -56,14 +58,12 @@ impl SimpleComponent for ProfileEditor {
 
     view! {
         #[name(win)]
-        adw::Window {
-            set_modal: true,
-            set_transient_for: Some(&init.root_win),
+        adw::Dialog {
             #[track = "model.changed(Self::profile())"]
-            set_title: Some(model.profile.borrow().name.as_str()),
-            set_default_height: 500,
-            set_default_width: 600,
-            adw::ToolbarView {
+            set_title: model.profile.borrow().name.as_str(),
+            set_follows_content_size: true,
+            #[wrap(Some)]
+            set_child: tbview = &adw::ToolbarView {
                 set_top_bar_style: adw::ToolbarStyle::Flat,
                 set_hexpand: true,
                 set_vexpand: true,
@@ -354,7 +354,7 @@ impl SimpleComponent for ProfileEditor {
 
         match message {
             Self::Input::Present => {
-                self.win.as_ref().unwrap().present();
+                self.win.as_ref().unwrap().present(Some(&self.parent));
             }
             Self::Input::SaveProfile => {
                 let prof = self.profile.borrow();
@@ -367,7 +367,7 @@ impl SimpleComponent for ProfileEditor {
                     alert(
                         "Profile validation failed",
                         Some("Check the values you set and try again"),
-                        Some(&self.win.as_ref().unwrap().clone().upcast::<gtk::Window>()),
+                        Some(&self.parent),
                     );
                 }
             }
@@ -534,6 +534,7 @@ impl SimpleComponent for ProfileEditor {
                         ProfileEditorMsg::XrServiceCmakeFlagsDelete(name)
                     }
                 }),
+            parent: init.root_win.clone(),
             tracker: 0,
         };
         {

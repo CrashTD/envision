@@ -25,7 +25,7 @@ use relm4::{factory::AsyncFactoryVecDeque, prelude::*};
 pub struct WivrnConfEditor {
     conf: WivrnConfig,
     #[tracker::do_not_track]
-    win: Option<adw::Window>,
+    win: Option<adw::Dialog>,
     #[tracker::do_not_track]
     pub encoder_models: Option<AsyncFactoryVecDeque<WivrnEncoderModel>>,
     #[tracker::do_not_track]
@@ -36,6 +36,8 @@ pub struct WivrnConfEditor {
     bitrate_row: Option<adw::EntryRow>,
     #[tracker::do_not_track]
     wivrn_encoder_presets_win: Option<Controller<WivrnEncoderPresetsWin>>,
+    #[tracker::do_not_track]
+    parent: gtk::Window,
 }
 
 #[derive(Debug)]
@@ -61,13 +63,10 @@ impl SimpleComponent for WivrnConfEditor {
 
     view! {
         #[name(win)]
-        adw::Window {
-            set_modal: true,
-            set_transient_for: Some(&init.root_win),
-            set_title: Some("WiVRn Configuration"),
-            set_default_height: 500,
-            set_default_width: 600,
-            adw::ToolbarView {
+        adw::Dialog {
+            set_title: "WiVRn Configuration",
+            #[wrap(Some)]
+            set_child: tbview = &adw::ToolbarView {
                 set_top_bar_style: adw::ToolbarStyle::Flat,
                 set_hexpand: true,
                 set_vexpand: true,
@@ -185,7 +184,7 @@ impl SimpleComponent for WivrnConfEditor {
         match message {
             Self::Input::Present => {
                 self.set_conf(get_wivrn_config());
-                self.win.as_ref().unwrap().present();
+                self.win.as_ref().unwrap().present(Some(&self.parent));
             }
             Self::Input::OpenEncoderPresetsWin => {
                 self.wivrn_encoder_presets_win
@@ -269,6 +268,7 @@ impl SimpleComponent for WivrnConfEditor {
             scaley_row: None,
             bitrate_row: None,
             wivrn_encoder_presets_win: None,
+            parent: init.root_win,
             tracker: 0,
         };
 

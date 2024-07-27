@@ -7,9 +7,9 @@ use crate::file_builders::{
 
 use super::SENDER_IO_ERR_MSG;
 
-#[tracker::track]
 pub struct WivrnEncoderPresetsWin {
-    win: Option<adw::Window>,
+    win: Option<adw::Dialog>,
+    parent: gtk::Widget,
 }
 
 #[derive(Debug)]
@@ -24,7 +24,7 @@ pub enum WivrnEncoderPresetsWinOutMsg {
 }
 
 pub struct WivrnEncoderPresetsWinInit {
-    pub parent_win: gtk::Window,
+    pub parent_win: gtk::Widget,
 }
 
 #[relm4::component(pub)]
@@ -35,14 +35,11 @@ impl SimpleComponent for WivrnEncoderPresetsWin {
 
     view! {
         #[name(win)]
-        adw::Window {
-            set_modal: true,
-            set_hide_on_close: true,
-            set_transient_for: Some(&init.parent_win),
-            set_title: Some("WiVRn Encoder Presets"),
-            set_default_height: 400,
-            set_default_width: 300,
-            adw::ToolbarView {
+        adw::Dialog {
+            set_title: "WiVRn Encoder Presets",
+            set_presentation_mode: adw::DialogPresentationMode::BottomSheet,
+            #[wrap(Some)]
+            set_child: tbview = &adw::ToolbarView {
                 set_top_bar_style: adw::ToolbarStyle::Flat,
                 set_hexpand: true,
                 set_vexpand: true,
@@ -52,20 +49,16 @@ impl SimpleComponent for WivrnEncoderPresetsWin {
                 #[wrap(Some)]
                 set_content: prefpage = &adw::PreferencesPage {
                     set_title: "Encoder Presets",
-                    add: prefgrp = &adw::PreferencesGroup {
-
-                    }
+                    add: prefgrp = &adw::PreferencesGroup {}
                 }
             },
         }
     }
 
     fn update(&mut self, message: Self::Input, sender: ComponentSender<Self>) {
-        self.reset();
-
         match message {
             Self::Input::Present => {
-                self.win.as_ref().unwrap().present();
+                self.win.as_ref().unwrap().present(Some(&self.parent));
             }
             Self::Input::Selected(preset) => {
                 sender
@@ -83,7 +76,7 @@ impl SimpleComponent for WivrnEncoderPresetsWin {
     ) -> ComponentParts<Self> {
         let mut model = Self {
             win: None,
-            tracker: 0,
+            parent: init.parent_win,
         };
 
         let widgets = view_output!();
