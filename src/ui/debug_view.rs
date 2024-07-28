@@ -1,6 +1,8 @@
 use super::term_widget::TermWidget;
+use super::util::copy_text;
 use crate::log_level::LogLevel;
 use crate::log_parser::MonadoLog;
+use crate::profile::Profile;
 use crate::ui::app::{DebugCopyEnvVarsAction, DebugOpenDataAction, DebugOpenPrefixAction};
 use gtk::glib::clone;
 use gtk::prelude::*;
@@ -13,6 +15,7 @@ pub enum SearchDirection {
     Backward,
 }
 
+#[allow(clippy::large_enum_variant)]
 #[derive(Debug)]
 pub enum DebugViewMsg {
     LogUpdated(Vec<String>),
@@ -21,6 +24,8 @@ pub enum DebugViewMsg {
     SearchFindMatch(SearchDirection),
     LogLevelChanged(LogLevel),
     XRServiceActiveChanged(bool),
+    UpdateSelectedProfile(Profile),
+    CopyProfileId,
     SetColorScheme,
 }
 
@@ -42,9 +47,15 @@ pub struct DebugView {
     log_level: LogLevel,
     #[tracker::do_not_track]
     term: TermWidget,
+    #[tracker::do_not_track]
+    profile_id_widget: gtk::Button,
+    #[no_eq]
+    profile: Profile,
 }
 
-pub struct DebugViewInit {}
+pub struct DebugViewInit {
+    pub profile: Profile,
+}
 
 #[relm4::component(pub)]
 impl SimpleComponent for DebugView {
@@ -54,6 +65,9 @@ impl SimpleComponent for DebugView {
 
     menu! {
         debug_menu: {
+            section! {
+                custom: "profile_id_widget",
+            },
             section! {
                 "Open _Data Folder" => DebugOpenDataAction,
                 "Open _Prefix Folder" => DebugOpenPrefixAction,
@@ -72,7 +86,7 @@ impl SimpleComponent for DebugView {
                 add_css_class: "flat",
                 pack_end: debug_menu_btn = &gtk::MenuButton {
                     set_icon_name: "view-more-symbolic",
-                    set_tooltip_text: Some("Debug Actions..."),
+                    set_tooltip_text: Some("Debug Actions"),
                     set_menu_model: Some(&debug_menu),
                 },
                 pack_end: search_toggle = &gtk::ToggleButton {
@@ -189,11 +203,19 @@ impl SimpleComponent for DebugView {
             Self::Input::SetColorScheme => {
                 self.term.set_color_scheme();
             }
+            Self::Input::UpdateSelectedProfile(prof) => {
+                self.set_profile(prof);
+                self.profile_id_widget
+                    .set_label(&format!("Profile id: {}", self.profile.uuid))
+            }
+            Self::Input::CopyProfileId => {
+                copy_text(&self.profile.uuid);
+            }
         }
     }
 
     fn init(
-        _init: Self::Init,
+        init: Self::Init,
         root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
@@ -238,13 +260,36 @@ impl SimpleComponent for DebugView {
             dropdown: None,
             log_level: LogLevel::Trace,
             term: TermWidget::new(),
+            profile_id_widget: gtk::Button::builder()
+                .css_classes(["flat", "dim-label", "caption"])
+                .label(format!("Profile id: {}", init.profile.uuid))
+                .tooltip_text("Copy")
+                .build(),
+            profile: init.profile,
         };
         model.term.set_color_scheme();
+
+        model.profile_id_widget.connect_clicked(clone!(
+            #[strong]
+            sender,
+            move |_| {
+                sender.input(Self::Input::CopyProfileId);
+            }
+        ));
 
         let widgets = view_output!();
         model.searchbar = Some(widgets.searchbar.clone());
         model.search_entry = Some(widgets.search_entry.clone());
         model.dropdown = Some(log_level_dropdown.clone());
+
+        widgets
+            .debug_menu_btn
+            .popover()
+            .clone()
+            .unwrap()
+            .downcast::<gtk::PopoverMenu>()
+            .unwrap()
+            .add_child(&model.profile_id_widget, "profile_id_widget");
 
         ComponentParts { model, widgets }
     }

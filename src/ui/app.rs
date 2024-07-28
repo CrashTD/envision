@@ -653,6 +653,9 @@ impl SimpleComponent for App {
                 self.main_view
                     .sender()
                     .emit(MainViewMsg::UpdateSelectedProfile(profile.clone()));
+                self.debug_view
+                    .sender()
+                    .emit(DebugViewMsg::UpdateSelectedProfile(profile.clone()));
             }
             Msg::OpenLibsurviveSetup => {
                 self.libsurvive_setup_window
@@ -871,6 +874,7 @@ impl SimpleComponent for App {
             ret.set_enabled(false);
             ret
         };
+        let selected_profile = config.get_selected_profile(&profiles);
 
         let mut model = App {
             tracker: 0,
@@ -880,7 +884,7 @@ impl SimpleComponent for App {
             main_view: MainView::builder()
                 .launch(MainViewInit {
                     config: config.clone(),
-                    selected_profile: config.get_selected_profile(&profiles),
+                    selected_profile: selected_profile.clone(),
                     root_win: root.clone().into(),
                 })
                 .forward(sender.input_sender(), |message| match message {
@@ -891,12 +895,13 @@ impl SimpleComponent for App {
                     MainViewOutMsg::SaveProfile(p) => Msg::SaveProfile(p),
                     MainViewOutMsg::OpenLibsurviveSetup => Msg::OpenLibsurviveSetup,
                 }),
-            debug_view: DebugView::builder().launch(DebugViewInit {}).forward(
-                sender.input_sender(),
-                |message| match message {
+            debug_view: DebugView::builder()
+                .launch(DebugViewInit {
+                    profile: selected_profile,
+                })
+                .forward(sender.input_sender(), |message| match message {
                     DebugViewOutMsg::StartWithDebug => Msg::StartWithDebug,
-                },
-            ),
+                }),
             about_dialog: AboutDialog::builder()
                 .transient_for(&root)
                 .launch(())
