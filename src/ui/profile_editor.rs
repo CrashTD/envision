@@ -8,6 +8,7 @@ use crate::{
     ui::{
         factories::env_var_row_factory::EnvVarModelOutMsg,
         preference_rows::{combo_row, entry_row, path_row, switch_row},
+        ADW_DIALOG_WIDTH,
     },
 };
 use adw::prelude::*;
@@ -61,7 +62,7 @@ impl SimpleComponent for ProfileEditor {
         adw::Dialog {
             #[track = "model.changed(Self::profile())"]
             set_title: model.profile.borrow().name.as_str(),
-            set_follows_content_size: true,
+            set_content_width: ADW_DIALOG_WIDTH,
             #[wrap(Some)]
             set_child: tbview = &adw::ToolbarView {
                 set_top_bar_style: adw::ToolbarStyle::Flat,

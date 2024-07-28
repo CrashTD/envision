@@ -22,3 +22,4 @@ mod wivrn_conf_editor;
 pub mod wivrn_encoder_presets_win;
 
 pub const SENDER_IO_ERR_MSG: &str = "relm4 sender i/o failed";
+pub const ADW_DIALOG_WIDTH: i32 = 600;

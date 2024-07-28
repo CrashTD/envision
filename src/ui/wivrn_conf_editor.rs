@@ -15,6 +15,7 @@ use crate::{
         preference_rows::{number_entry_row, spin_row, switch_row},
         util::bits_to_mbits,
         wivrn_encoder_presets_win::WivrnEncoderPresetsWinInit,
+        ADW_DIALOG_WIDTH,
     },
 };
 use adw::prelude::*;
@@ -65,6 +66,7 @@ impl SimpleComponent for WivrnConfEditor {
         #[name(win)]
         adw::Dialog {
             set_title: "WiVRn Configuration",
+            set_content_width: ADW_DIALOG_WIDTH,
             #[wrap(Some)]
             set_child: tbview = &adw::ToolbarView {
                 set_top_bar_style: adw::ToolbarStyle::Flat,
