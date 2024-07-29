@@ -44,6 +44,7 @@ pub mod steam_linux_runtime_injector;
 pub mod steamvr_utils;
 pub mod termcolor;
 pub mod ui;
+pub mod vulkaninfo;
 pub mod xdg;
 pub mod xr_devices;
 

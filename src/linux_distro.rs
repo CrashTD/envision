@@ -1,5 +1,6 @@
 use crate::file_utils::get_reader;
 use std::{
+    fmt::Display,
     io::{BufRead, Read},
     path::Path,
 };
@@ -15,6 +16,19 @@ pub enum LinuxDistro {
     Suse,
 }
 
+impl Display for LinuxDistro {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
+            Self::Alpine => "Alpine",
+            Self::Arch => "Arch",
+            Self::Debian => "Debian",
+            Self::Fedora => "Fedora",
+            Self::Gentoo => "Gentoo",
+            Self::Suse => "Suse",
+        })
+    }
+}
+
 impl LinuxDistro {
     pub fn get() -> Option<Self> {
         Self::get_from_etc_os_release().or_else(Self::get_from_etc_issue)
@@ -24,12 +38,40 @@ impl LinuxDistro {
         Self::get_from_etc_os_release_file(Path::new("/etc/os-release"))
     }
 
+    // does it make sense to be here?
+    pub fn get_specific_distro() -> Option<String> {
+        let mut name: Option<String> = None;
+        if let Some(mut reader) = get_reader(Path::new("/etc/os-release")) {
+            let mut buf = String::new();
+            loop {
+                match reader.read_line(&mut buf) {
+                    Ok(0) | Err(_) => break,
+                    Ok(_) if buf.starts_with("PRETTY_NAME=\"") => {
+                        return buf
+                            .split('=')
+                            .last()
+                            .map(|b| b.trim().trim_matches('"').trim().to_string());
+                    }
+                    Ok(_) if buf.starts_with("NAME=\"") => {
+                        name = buf
+                            .split('=')
+                            .last()
+                            .map(|b| b.trim().trim_matches('"').trim().to_string());
+                    }
+                    _ => {}
+                };
+                buf.clear();
+            }
+        }
+        name
+    }
+
     fn get_from_etc_os_release_file(fp: &Path) -> Option<Self> {
         if let Some(mut reader) = get_reader(fp) {
             let mut buf = String::new();
             loop {
                 match reader.read_line(&mut buf) {
-                    Ok(0) => break,
+                    Ok(0) | Err(_) => break,
                     Ok(_) => {
                         if buf.starts_with("NAME=\"")
                             || buf.starts_with("ID=\"")
@@ -39,7 +81,7 @@ impl LinuxDistro {
                                 .split('=')
                                 .last()
                                 .unwrap_or_default()
-                                .to_string()
+                                .trim()
                                 .trim_matches('"')
                                 .to_lowercase();
                             let res = Self::name_matcher(&name);
@@ -48,8 +90,8 @@ impl LinuxDistro {
                             }
                         }
                     }
-                    Err(_) => break,
                 }
+                buf.clear();
             }
         }
         None

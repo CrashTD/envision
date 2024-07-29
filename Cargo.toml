@@ -29,3 +29,4 @@ xdg = "2.5.2"
 openxr = { git = "https://github.com/galister/openxrs", rev = "af4a55d", features = [
   "linked",
 ] }
+ash = "0.38.0"

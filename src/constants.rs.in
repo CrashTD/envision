@@ -9,11 +9,13 @@ pub const PKG_DATA_DIR: &str = "@PKGDATADIR@";
 pub const RESOURCES: &str = concat!("@PKGDATADIR@", "/resources.gresource");
 pub const CMD_NAME: &str = "@CMD_NAME@";
 pub const VERSION: &str = "@VERSION@";
-pub const REPO_URL: &str = "@UPSTREAM_REPO_URL@";
+pub const REPO_URL: &str = "@REPO_URL@";
+pub const ISSUES_URL: &str = "@ISSUES_URL@";
 pub const SINGLE_DEVELOPER: &str = "@AUTHOR@";
 pub const GETTEXT_PACKAGE: &str = "@GETTEXT_PACKAGE@";
 pub const LOCALE_DIR: &str = "@LOCALEDIR@";
 pub const BUILD_PROFILE: &str = "@PROFILE@";
+pub const BUILD_DATETIME: &str = "@BUILD_DATETIME@";
 
 pub fn get_developers() -> Vec<String> {
     vec!["Gabriele Musco <gabmus@disroot.org>".to_string()]

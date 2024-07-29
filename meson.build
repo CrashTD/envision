@@ -13,7 +13,7 @@ base_id = 'org.gabmus.envision'
 pretty_name = 'Envision'
 upstream_repo = 'https://gitlab.com/gabmus/envision'
 author = 'The Envision Team'
-description = 'GUI for Monado'  # temporary
+description = 'Orchestrator for the free XR stack' # temporary
 
 dependency('glib-2.0', version: '>= 2.66')
 dependency('gio-2.0', version: '>= 2.66')
@@ -55,8 +55,10 @@ endif
 
 meson.add_dist_script(
   'build-aux/dist-vendor.sh',
-  meson.project_build_root() / 'meson-dist' / meson.project_name() + '-' + version,
-  meson.project_source_root()
+  meson.project_build_root() / 'meson-dist' / meson.project_name()
+  + '-'
+  + version,
+  meson.project_source_root(),
 )
 
 global_conf = configuration_data()
@@ -71,6 +73,11 @@ global_conf.set('AUTHOR', author)
 global_conf.set('PRETTY_NAME', pretty_name)
 global_conf.set('CMD_NAME', meson.project_name())
 global_conf.set('REPO_URL', upstream_repo)
+global_conf.set('ISSUES_URL', upstream_repo + '/-/issues')
+global_conf.set(
+  'BUILD_DATETIME',
+  run_command('date', '-Iseconds', '--utc', check: true).stdout().strip(),
+)
 
 subdir('data')
 subdir('po')

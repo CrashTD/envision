@@ -41,7 +41,7 @@ use crate::stateless_action;
 use crate::steam_linux_runtime_injector::{
     restore_runtime_entrypoint, set_runtime_entrypoint_launch_opts_from_profile,
 };
-use crate::ui::about_dialog::create_about_dialog;
+use crate::ui::about_dialog::{create_about_dialog, populate_debug_info};
 use crate::ui::build_window::{BuildWindowInit, BuildWindowMsg, BuildWindowOutMsg};
 use crate::ui::debug_view::{DebugViewInit, DebugViewOutMsg};
 use crate::ui::libsurvive_setup_window::LibsurviveSetupMsg;
@@ -942,6 +942,7 @@ impl SimpleComponent for App {
                 #[strong(rename_to = app_win)]
                 model.app_win,
                 move |_| {
+                    populate_debug_info(&about_dialog);
                     about_dialog.present(Some(&app_win));
                 }
             )
