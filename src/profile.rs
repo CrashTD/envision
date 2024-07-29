@@ -407,33 +407,67 @@ impl Profile {
         dup
     }
 
-    pub fn validate(&self) -> bool {
-        !self.name.is_empty()
-            && self.editable
-            && !self.uuid.is_empty()
-            && !self.xrservice_path.is_empty()
-            && !self.prefix.is_empty()
-            && (!self.features.libsurvive.enabled
+    pub fn validate(&self) -> Result<(), Vec<&str>> {
+        let mut errors = vec![];
+        // impossible
+        if !self.editable {
+            errors.push("You somehow managed to edit a non-editable profile. Congratulations, you found a bug! Please report it.");
+        }
+        // impossible
+        if self.uuid.is_empty() {
+            errors.push("For some reason this profile's UUID is empty. Congratulations, you found a bug! Please report it.");
+        }
+        if self.name.is_empty() {
+            errors.push("The profile name cannot be empty.");
+        }
+        if self.xrservice_path.is_empty() {
+            errors.push("The XR service path cannot be empty.")
+        }
+        if self.prefix.is_empty() {
+            errors.push("The prefix path cannot be empty.")
+        }
+        if self.features.libsurvive.enabled
+            && (self.features.libsurvive.path.is_none()
                 || self
                     .features
                     .libsurvive
                     .path
                     .as_ref()
-                    .is_some_and(|p| !p.is_empty()))
-            && (!self.features.basalt.enabled
+                    .is_some_and(|p| p.is_empty()))
+        {
+            errors.push("You enabled Libsurvive, but its path is empty. Disable Libsurvive or set a path for it.")
+        }
+        if self.features.basalt.enabled
+            && (self.features.basalt.path.is_none()
                 || self
                     .features
                     .basalt
                     .path
                     .as_ref()
-                    .is_some_and(|p| !p.is_empty()))
-            && (!self.features.openhmd.enabled
+                    .is_some_and(|p| p.is_empty()))
+        {
+            errors.push(
+                "You enabled Basalt, but its path is empty. Disable Basalt or set a path for it.",
+            )
+        }
+        if self.features.openhmd.enabled
+            && (self.features.openhmd.path.is_none()
                 || self
                     .features
                     .openhmd
                     .path
                     .as_ref()
-                    .is_some_and(|p| !p.is_empty()))
+                    .is_some_and(|p| p.is_empty()))
+        {
+            errors.push(
+                "You enabled OpenHMD, but its path is empty. Disable OpenHMD or set a path for it.",
+            )
+        }
+        if errors.is_empty() {
+            Ok(())
+        } else {
+            Err(errors)
+        }
     }
 
     pub fn xrservice_binary(&self) -> PathBuf {

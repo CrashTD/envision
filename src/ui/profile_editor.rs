@@ -1,5 +1,5 @@
 use super::{
-    alert::alert,
+    alert::alert_w_widget,
     factories::env_var_row_factory::{EnvVarModel, EnvVarModelInit},
 };
 use crate::{
@@ -359,17 +359,32 @@ impl SimpleComponent for ProfileEditor {
             }
             Self::Input::SaveProfile => {
                 let prof = self.profile.borrow();
-                if prof.validate() {
+                if let Err(errors) = prof.validate() {
+                    alert_w_widget(
+                        "Profile validation failed",
+                        None,
+                        Some(
+                            &gtk::Label::builder()
+                                .label(
+                                    errors
+                                        .iter()
+                                        .map(|e| format!(" \u{2022} {e}"))
+                                        .collect::<Vec<String>>()
+                                        .join("\n"),
+                                )
+                                .wrap(true)
+                                .xalign(0.0)
+                                .max_width_chars(40)
+                                .build()
+                                .upcast(),
+                        ),
+                        Some(&self.parent),
+                    );
+                } else {
                     sender
                         .output(ProfileEditorOutMsg::SaveProfile(prof.clone()))
                         .expect("Sender output failed");
                     self.win.as_ref().unwrap().close();
-                } else {
-                    alert(
-                        "Profile validation failed",
-                        Some("Check the values you set and try again"),
-                        Some(&self.parent),
-                    );
                 }
             }
             Self::Input::EnvVarChanged(name, value) => {
