@@ -1,4 +1,3 @@
-use super::about_dialog::AboutDialog;
 use super::alert::{alert, alert_w_widget};
 use super::build_window::{BuildStatus, BuildWindow};
 use super::cmdline_opts::CmdLineOpts;
@@ -42,13 +41,14 @@ use crate::stateless_action;
 use crate::steam_linux_runtime_injector::{
     restore_runtime_entrypoint, set_runtime_entrypoint_launch_opts_from_profile,
 };
+use crate::ui::about_dialog::create_about_dialog;
 use crate::ui::build_window::{BuildWindowInit, BuildWindowMsg, BuildWindowOutMsg};
 use crate::ui::debug_view::{DebugViewInit, DebugViewOutMsg};
 use crate::ui::libsurvive_setup_window::LibsurviveSetupMsg;
 use crate::ui::main_view::{MainView, MainViewInit, MainViewOutMsg};
 use crate::xr_devices::XRDevice;
+use adw::prelude::*;
 use gtk::glib::clone;
-use gtk::prelude::*;
 use relm4::actions::{AccelsPlus, ActionGroupName, RelmAction, RelmActionGroup};
 use relm4::adw::prelude::MessageDialogExt;
 use relm4::adw::ResponseAppearance;
@@ -77,7 +77,7 @@ pub struct App {
     #[tracker::do_not_track]
     split_view: Option<adw::NavigationSplitView>,
     #[tracker::do_not_track]
-    about_dialog: Controller<AboutDialog>,
+    about_dialog: adw::AboutDialog,
     #[tracker::do_not_track]
     build_window: Controller<BuildWindow>,
     #[tracker::do_not_track]
@@ -902,10 +902,7 @@ impl SimpleComponent for App {
                 .forward(sender.input_sender(), |message| match message {
                     DebugViewOutMsg::StartWithDebug => Msg::StartWithDebug,
                 }),
-            about_dialog: AboutDialog::builder()
-                .transient_for(&root)
-                .launch(())
-                .detach(),
+            about_dialog: create_about_dialog(),
             build_window: BuildWindow::builder()
                 .launch(BuildWindowInit {
                     parent: root.clone().upcast(),
@@ -936,12 +933,19 @@ impl SimpleComponent for App {
         };
         let widgets = view_output!();
 
-        {
-            let abd_sender = model.about_dialog.sender().clone();
-            stateless_action!(actions, AboutAction, move |_| {
-                abd_sender.send(()).unwrap();
-            });
-        }
+        stateless_action!(
+            actions,
+            AboutAction,
+            clone!(
+                #[strong(rename_to = about_dialog)]
+                model.about_dialog,
+                #[strong(rename_to = app_win)]
+                model.app_win,
+                move |_| {
+                    about_dialog.present(Some(&app_win));
+                }
+            )
+        );
         actions.add_action(RelmAction::<DebugViewToggleAction>::new_stateful(
             &model.enable_debug_view,
             clone!(
