@@ -31,7 +31,10 @@ impl LinuxDistro {
                 match reader.read_line(&mut buf) {
                     Ok(0) => break,
                     Ok(_) => {
-                        if buf.starts_with("NAME=\"") {
+                        if buf.starts_with("NAME=\"")
+                            || buf.starts_with("ID=\"")
+                            || buf.starts_with("ID_LIKE=\"")
+                        {
                             let name = buf
                                 .split('=')
                                 .last()
@@ -39,7 +42,10 @@ impl LinuxDistro {
                                 .to_string()
                                 .trim_matches('"')
                                 .to_lowercase();
-                            return Self::name_matcher(&name);
+                            let res = Self::name_matcher(&name);
+                            if res.is_some() {
+                                return res;
+                            }
                         }
                     }
                     Err(_) => break,
@@ -62,11 +68,12 @@ impl LinuxDistro {
     }
 
     fn name_matcher(s: &str) -> Option<Self> {
-        if s.contains("arch linux")
+        if s.contains("arch")
             || s.contains("manjaro")
             || s.contains("steamos")
             || s.contains("steam os")
-            || s.contains("endeavouros")
+            || s.contains("endeavour")
+            || s.contains("garuda")
         {
             return Some(Self::Arch);
         }
