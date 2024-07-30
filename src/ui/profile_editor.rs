@@ -124,7 +124,15 @@ impl SimpleComponent for ProfileEditor {
                                 prof.borrow_mut().autostart_command =
                                     if txt.is_empty() {None} else {Some(txt)};
                             })
-                        )
+                        ),
+                        add: &switch_row("Dependency Check",
+                            Some("Warning: disabling dependency checks may result in build failures"),
+                            !model.profile.borrow().skip_dependency_check,
+                            clone!(#[strong] prof, move |_, state| {
+                                prof.borrow_mut().skip_dependency_check = !state;
+                                gtk::glib::Propagation::Proceed
+                            })
+                        ),
                     },
                     add: xrservicegrp = &adw::PreferencesGroup {
                         set_title: "XR Service",

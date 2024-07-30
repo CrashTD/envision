@@ -236,6 +236,8 @@ pub struct Profile {
     #[serde(default = "String::default")]
     pub xrservice_launch_options: String,
     pub autostart_command: Option<String>,
+    #[serde(default)]
+    pub skip_dependency_check: bool,
 }
 
 impl Display for Profile {
@@ -291,6 +293,7 @@ impl Default for Profile {
             xrservice_launch_options: String::default(),
             uuid,
             autostart_command: None,
+            skip_dependency_check: false,
         }
     }
 }

@@ -469,7 +469,8 @@ impl SimpleComponent for App {
                     // no listed deps for opencomp
                 }
                 jobs.extend(get_build_opencomposite_jobs(&profile, clean_build));
-                if !(self.skip_depcheck || missing_deps.is_empty()) {
+                if !(self.skip_depcheck || profile.skip_dependency_check || missing_deps.is_empty())
+                {
                     missing_deps.sort_unstable();
                     missing_deps.dedup(); // dedup only works if sorted, hence the above
                     let distro = LinuxDistro::get();
