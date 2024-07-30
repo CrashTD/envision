@@ -5,7 +5,7 @@ fn wivrn_encoder_presets() -> Vec<(&'static str, &'static str, Vec<WivrnConfEnco
     vec![
         (
             "3x VAAPI",
-            "Use 3 hardware accelerated encoders using VAAPI and the H265 codec.",
+            "Split encoding in 3 slices using VAAPI h265 hardware acceleration.",
             vec![
                 WivrnConfEncoder {
                     encoder: Encoder::Vaapi,
@@ -33,7 +33,7 @@ fn wivrn_encoder_presets() -> Vec<(&'static str, &'static str, Vec<WivrnConfEnco
                     height: Some(1.0),
                     offset_x: Some(0.5),
                     offset_y: Some(0.0),
-                    group: Some(1),
+                    group: Some(0),
                     codec: Codec::H265,
                     ..Default::default()
                 },
@@ -41,7 +41,7 @@ fn wivrn_encoder_presets() -> Vec<(&'static str, &'static str, Vec<WivrnConfEnco
         ),
         (
             "2x VAAPI + 1 Software",
-            "Use 2 hardware accelerated encoders using VAAPI and a third one using software encoding. The hardware encoders use the H265 codec, while the software encoder uses H264.",
+            "Split encoding in 3 slices, half the image using VAAPI h265 hardware acceleration, the other half using h264 software encoding. Lowest possible latency at the cost of CPU usage and some quality degradation.",
             vec![
                 WivrnConfEncoder {
                     encoder: Encoder::Vaapi,
