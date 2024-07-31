@@ -1,4 +1,4 @@
-use libmonado_rs;
+use libmonado_rs::{self, BatteryStatus};
 use std::{fmt::Display, slice::Iter};
 
 const GENERIC_TRACKER_PREFIX: &str = "Found generic tracker device: ";
@@ -224,14 +224,13 @@ impl XRDeviceRole {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 pub struct XRDevice {
     pub dev_type: XRDeviceRole,
     pub name: String,
     pub index: String,
     pub serial: Option<String>,
-    pub battery: Option<f32>, // battery percentage, from 0 to 1 maybe
-                              // still need to implement it in monado
+    pub battery: Option<BatteryStatus>,
 }
 
 impl Default for XRDevice {
@@ -320,9 +319,9 @@ impl XRDevice {
                 res.push(Self {
                     index: dev.id.to_string(),
                     serial: dev.serial().ok(),
+                    battery: dev.battery_status().ok(),
                     name: dev.name,
                     dev_type: xrd,
-                    ..Default::default()
                 })
             }
         });

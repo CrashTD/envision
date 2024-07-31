@@ -5,6 +5,7 @@ use relm4::{factory::AsyncFactoryVecDeque, prelude::*};
 
 #[tracker::track]
 pub struct DevicesBox {
+    #[no_eq]
     devices: Vec<XRDevice>,
 
     #[tracker::do_not_track]

@@ -1,5 +1,5 @@
 use crate::{
-    ui::battery_status::BatteryStatus,
+    ui::battery_status::EnvisionBatteryStatus,
     xr_devices::{XRDevice, XRDeviceRole},
 };
 use adw::prelude::*;
@@ -42,7 +42,7 @@ pub struct DeviceRowModel {
     subtitle: String,
     state: DeviceRowState,
     suffix: Option<gtk::Widget>,
-    battery_status: Option<BatteryStatus>,
+    battery_status: Option<EnvisionBatteryStatus>,
 }
 
 #[derive(Debug, Default)]
@@ -51,7 +51,7 @@ pub struct DeviceRowModelInit {
     pub subtitle: Option<String>,
     pub state: Option<DeviceRowState>,
     pub suffix: Option<gtk::Widget>,
-    pub battery_status: Option<BatteryStatus>,
+    pub battery_status: Option<EnvisionBatteryStatus>,
 }
 
 impl DeviceRowModelInit {
@@ -59,9 +59,7 @@ impl DeviceRowModelInit {
         Self {
             title: Some(d.dev_type.to_string()),
             subtitle: Some(d.name.clone()),
-            battery_status: d
-                .battery
-                .map(|bat| BatteryStatus::new((bat * 100.0).trunc() as u8)),
+            battery_status: d.battery.map(EnvisionBatteryStatus::from),
             ..Default::default()
         }
     }
