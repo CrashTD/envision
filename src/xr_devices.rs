@@ -319,7 +319,13 @@ impl XRDevice {
                 res.push(Self {
                     index: dev.id.to_string(),
                     serial: dev.serial().ok(),
-                    battery: dev.battery_status().ok(),
+                    battery: dev.battery_status().ok().and_then(|bs| {
+                        if bs.present {
+                            Some(bs)
+                        } else {
+                            None
+                        }
+                    }),
                     name: dev.name,
                     dev_type: xrd,
                 })

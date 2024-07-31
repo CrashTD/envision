@@ -95,7 +95,7 @@ impl AsyncFactoryComponent for DeviceRowModel {
                 gtk::Image {
                     set_icon_name: self.battery_status
                         .as_ref()
-                        .map(|bs| bs.icon()),
+                        .map(|bs| bs.icon()).as_deref(),
                 },
                 gtk::Label {
                     set_text: &self.battery_status
