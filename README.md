@@ -10,16 +10,20 @@ Also consider that due to the unstable nature of the app, it's possible to encou
 
 ![](./data/icons/org.gabmus.envision.svg)
 
-UI for building, configuring and running Monado, the open source OpenXR runtime.
+Orchestrator for the free XR stack.
 
-Download the latest AppImage snapshot: [GitLab Pipelines](https://gitlab.com/gabmus/envision/-/pipelines?page=1&scope=all&ref=main)
+# Download Envision
+
+You can download the latest AppImage snapshot: [GitLab Pipelines](https://gitlab.com/gabmus/envision/-/pipelines?page=1&scope=all&ref=main)
 
 <details>
 <summary>
 
-## Dependencies
+# Build instructions (for package maintainers and advanced users only)
 
 </summary>
+
+## Dependencies
 
 ### Arch
 
@@ -28,10 +32,6 @@ You can find the Arch dependencies in the `PKGBUILD` in `dist/arch/PKGBUILD`.
 ### Debian/Ubuntu
 
 You can find the Debian dependencies in the `.gitlab-ci.yml` file in this repository, in particular you can find the install command used by the CI in the `appimage` stage.
-
-</details>
-
-
 
 ## Building and running from source
 
@@ -52,6 +52,8 @@ git clone https://gitlab.com/gabmus/envision
 cd envision
 ./dist/appimage/build_appimage.sh
 ```
+
+</details>
 
 # Common issues
 
