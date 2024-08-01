@@ -3,7 +3,7 @@ use super::{
     factories::env_var_row_factory::{EnvVarModel, EnvVarModelInit},
 };
 use crate::{
-    env_var_descriptions::env_var_descriptions_as_paragraph,
+    env_var_descriptions::ENV_VAR_DESCRIPTIONS_AS_PARAGRAPH,
     profile::{LighthouseDriver, Profile, XRServiceType},
     ui::{
         factories::env_var_row_factory::EnvVarModelOutMsg,
@@ -533,7 +533,7 @@ impl SimpleComponent for ProfileEditor {
                 .launch(
                     adw::PreferencesGroup::builder()
                         .title("Environment Variables")
-                        .description(env_var_descriptions_as_paragraph())
+                        .description(ENV_VAR_DESCRIPTIONS_AS_PARAGRAPH.as_str())
                         .header_suffix(&add_env_var_btn)
                         .build(),
                 )
