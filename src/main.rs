@@ -14,7 +14,6 @@ use relm4::{
 use steam_linux_runtime_injector::restore_runtime_entrypoint;
 use ui::app::{App, AppInit};
 
-pub mod adb;
 pub mod build_tools;
 pub mod builders;
 pub mod cmd_runner;

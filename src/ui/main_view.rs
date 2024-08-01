@@ -436,11 +436,7 @@ impl SimpleComponent for MainView {
         self.reset();
 
         match message {
-            Self::Input::ClockTicking => {
-                self.install_wivrn_box
-                    .sender()
-                    .emit(InstallWivrnBoxMsg::ClockTicking);
-            }
+            Self::Input::ClockTicking => {}
             Self::Input::StartStopClicked => {
                 sender
                     .output(Self::Output::DoStartStopXRService)

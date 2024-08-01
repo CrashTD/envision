@@ -1,20 +1,27 @@
-use super::alert::alert;
+use super::{
+    alert::alert,
+    job_worker::{
+        internal_worker::JobWorkerOut,
+        job::{FuncWorkerOut, WorkerJob},
+        JobWorker,
+    },
+};
 use crate::{
-    adb::get_adb_install_runner,
-    cmd_runner::CmdRunner,
     dependencies::adb_dep::adb_dep,
-    downloader::download_file,
+    downloader::download_file_sync,
     paths::wivrn_apk_download_path,
     profile::{Profile, XRServiceType},
-    runner::{Runner, RunnerStatus},
 };
 use gtk::prelude::*;
+use gtk4::glib::clone;
 use relm4::{
     actions::{ActionGroupName, RelmAction, RelmActionGroup},
     new_action_group, new_stateless_action,
     prelude::*,
 };
-use std::thread::JoinHandle;
+use std::collections::VecDeque;
+
+const DOWNLOAD_ERROR: &str = "download error";
 
 #[derive(PartialEq, Eq, Debug, Clone)]
 pub enum InstallWivrnStatus {
@@ -28,9 +35,9 @@ pub struct InstallWivrnBox {
     selected_profile: Profile,
     install_wivrn_status: InstallWivrnStatus,
     #[tracker::do_not_track]
-    download_thread: Option<JoinHandle<Result<(), reqwest::Error>>>,
+    install_runner: Option<JobWorker>,
     #[tracker::do_not_track]
-    install_runner: Option<CmdRunner>,
+    install_runner_log: String,
     #[tracker::do_not_track]
     root_win: gtk::Window,
 }
@@ -38,10 +45,10 @@ pub struct InstallWivrnBox {
 #[allow(clippy::large_enum_variant)]
 #[derive(Debug)]
 pub enum InstallWivrnBoxMsg {
-    ClockTicking,
     UpdateSelectedProfile(Profile),
-    DownloadWivrn(String),
-    InstallWivrnApk,
+    InstallWivrnApk(String),
+    OnInstallRunnerLog(Vec<String>),
+    OnInstallRunnerExit(i32),
 }
 
 #[derive(Debug)]
@@ -128,69 +135,95 @@ impl SimpleComponent for InstallWivrnBox {
         self.reset();
 
         match message {
-            Self::Input::ClockTicking => {
-                if self.download_thread.is_some() {
-                    let finished = self.download_thread.as_ref().unwrap().is_finished();
-                    if finished {
-                        let joinh = self.download_thread.take().unwrap();
-                        match joinh.join().unwrap() {
-                            Ok(_) => {
-                                sender.input(Self::Input::InstallWivrnApk);
-                            }
-                            Err(_) => self.set_install_wivrn_status(InstallWivrnStatus::Done(
-                                Some("Error downloading WiVRn APK".into()),
-                            )),
-                        }
-                    }
-                }
-                if self.install_runner.is_some() {
-                    let runner = self.install_runner.as_mut().unwrap();
-                    let output = runner.consume_output().to_lowercase();
-                    let fallback_msg =
-                        |code: i32| Some(format!("ADB exited with code \"{}\"", code));
-                    match runner.status() {
-                        RunnerStatus::Running => {}
-                        RunnerStatus::Stopped(status) => {
-                            self.install_runner.take();
-                            self.set_install_wivrn_status(match status {
-                                None | Some(0) => InstallWivrnStatus::Success,
-                                Some(255) => {
-                                    InstallWivrnStatus::Done(Some(concat!(
-                                        "You need to authorize this computer to run developer ",
-                                        "commands in your headset. Authorize it and try again.",
-                                    ).into()))
-                                }
-                                Some(1) => {
-                                    if output.contains("no devices/emulators found") {
-                                        InstallWivrnStatus::Done(Some(concat!(
-                                            "No devices connected. Make sure your headset is connected ",
-                                            "to this computer and USB debugging is turned on."
-                                        ).into()))
-                                    } else {
-                                    InstallWivrnStatus::Done(fallback_msg(1))
-                                    }
-                                }
-                                Some(err_code) => InstallWivrnStatus::Done(fallback_msg(err_code)),
-                            });
-                        }
-                    };
-                }
-            }
-            Self::Input::DownloadWivrn(link) => {
+            Self::Input::InstallWivrnApk(link) => {
                 if !adb_dep().check() {
                     alert("ADB is not installed", Some("Please install ADB on your computer to install WiVRn on your Android headset"), Some(&self.root_win));
-                } else {
-                    self.set_install_wivrn_status(InstallWivrnStatus::InProgress);
-                    self.download_thread = Some(download_file(link, wivrn_apk_download_path()));
+                    return;
                 }
-            }
-            Self::Input::InstallWivrnApk => {
-                let mut runner = get_adb_install_runner(&wivrn_apk_download_path());
+                self.set_install_wivrn_status(InstallWivrnStatus::InProgress);
+                self.install_runner_log = String::default();
+                let mut jobs = VecDeque::new();
+                let wivrn_apk_path = wivrn_apk_download_path();
+                jobs.push_back(WorkerJob::new_func(Box::new(clone!(
+                    #[strong]
+                    wivrn_apk_path,
+                    move || {
+                        if download_file_sync(&link, &wivrn_apk_path).is_err() {
+                            FuncWorkerOut {
+                                out: vec![DOWNLOAD_ERROR.into()],
+                                success: false,
+                            }
+                        } else if wivrn_apk_path.is_file() {
+                            FuncWorkerOut {
+                                out: Vec::default(),
+                                success: true,
+                            }
+                        } else {
+                            FuncWorkerOut {
+                                out: vec![format!(
+                                    "Provided apk path {} does not exist",
+                                    wivrn_apk_path.to_string_lossy()
+                                )],
+                                success: false,
+                            }
+                        }
+                    }
+                ))));
+                jobs.push_back(WorkerJob::new_cmd(
+                    None,
+                    "adb".into(),
+                    Some(vec![
+                        "install".into(),
+                        wivrn_apk_path.to_string_lossy().to_string(),
+                    ]),
+                ));
+                let runner = JobWorker::new(
+                    jobs,
+                    sender.input_sender(),
+                    Box::new(move |e| match e {
+                        JobWorkerOut::Log(log) => Self::Input::OnInstallRunnerLog(log),
+                        JobWorkerOut::Exit(code) => Self::Input::OnInstallRunnerExit(code),
+                    }),
+                );
                 runner.start();
                 self.install_runner = Some(runner);
             }
             Self::Input::UpdateSelectedProfile(p) => {
                 self.set_selected_profile(p);
+            }
+            Self::Input::OnInstallRunnerLog(rows) => {
+                self.install_runner_log.push('\n');
+                self.install_runner_log.push_str(&rows.join("\n"));
+            }
+            Self::Input::OnInstallRunnerExit(code) => {
+                self.set_install_wivrn_status(match code {
+                    0 => InstallWivrnStatus::Success,
+                    255 => InstallWivrnStatus::Done(Some(
+                        concat!(
+                            "You need to authorize this computer to run developer ",
+                            "commands in your headset. Authorize it and try again.",
+                        )
+                        .into(),
+                    )),
+                    1 if self.install_runner_log.contains(DOWNLOAD_ERROR) => {
+                        InstallWivrnStatus::Done(Some("Error downloading WiVRn APK".into()))
+                    }
+                    1 if self
+                        .install_runner_log
+                        .contains("no devices/emulators found") =>
+                    {
+                        InstallWivrnStatus::Done(Some(
+                            concat!(
+                                "No devices connected. Make sure your headset is connected ",
+                                "to this computer and USB debugging is turned on."
+                            )
+                            .into(),
+                        ))
+                    }
+                    _ => {
+                        InstallWivrnStatus::Done(Some(format!("ADB exited with code \"{}\"", code)))
+                    }
+                });
             }
         }
     }
@@ -203,8 +236,8 @@ impl SimpleComponent for InstallWivrnBox {
         let model = Self {
             selected_profile: init.selected_profile,
             install_wivrn_status: InstallWivrnStatus::Done(None),
-            download_thread: None,
             install_runner: None,
+            install_runner_log: String::default(),
             root_win: init.root_win,
             tracker: 0,
         };
@@ -216,7 +249,7 @@ impl SimpleComponent for InstallWivrnBox {
         let apk_oculus_action = {
             let oculus_sender = sender.clone();
             RelmAction::<WivrnApkStandardAction>::new_stateless(move |_| {
-                oculus_sender.input(Self::Input::DownloadWivrn(
+                oculus_sender.input(Self::Input::InstallWivrnApk(
                     "https://github.com/Meumeu/WiVRn/releases/latest/download/WiVRn-standard-release.apk".into()
                 ));
             })
@@ -225,7 +258,7 @@ impl SimpleComponent for InstallWivrnBox {
         let apk_pico_action = {
             let pico_sender = sender.clone();
             RelmAction::<WivrnApkPicoAction>::new_stateless(move |_| {
-                pico_sender.input(Self::Input::DownloadWivrn(
+                pico_sender.input(Self::Input::InstallWivrnApk(
                     "https://github.com/Meumeu/WiVRn/releases/latest/download/WiVRn-pico-release.apk".into()
                 ));
             })

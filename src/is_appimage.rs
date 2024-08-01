@@ -1,6 +1,5 @@
-use std::env;
-
 use lazy_static::lazy_static;
+use std::env;
 
 fn is_appimage() -> bool {
     env::var("APPIMAGE").is_ok_and(|s| !s.trim().is_empty())

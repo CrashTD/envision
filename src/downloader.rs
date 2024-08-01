@@ -3,8 +3,8 @@ use reqwest::{
     header::{HeaderMap, USER_AGENT},
     Method,
 };
-use std::{io::prelude::*, path::PathBuf, thread::JoinHandle};
-use std::{thread, time::Duration};
+use std::time::Duration;
+use std::{io::prelude::*, path::Path};
 
 const TIMEOUT: Duration = Duration::from_secs(60);
 const CHUNK_SIZE: usize = 1024;
@@ -23,27 +23,21 @@ fn client() -> reqwest::blocking::Client {
         .expect("Failed to build reqwest::Client")
 }
 
-pub fn download_file(url: String, path: PathBuf) -> JoinHandle<Result<(), reqwest::Error>> {
-    thread::spawn(move || {
-        let client = client();
-        match client.request(Method::GET, url).send() {
-            Ok(res) => {
-                let status = res.status();
-                if status.is_client_error() || status.is_server_error() {
-                    return Err(res.error_for_status().unwrap_err());
-                }
-                let mut writer = get_writer(&path).expect("Unable to write to path");
-                for chunk in res
-                    .bytes()
-                    .expect("Could not get HTTP response bytes")
-                    .chunks(CHUNK_SIZE)
-                {
-                    writer.write_all(chunk).expect("Failed to write chunk");
-                }
-                writer.flush().expect("Failed to flush download writer");
-                Ok(())
-            }
-            Err(e) => Err(e),
-        }
-    })
+pub fn download_file_sync(url: &str, path: &Path) -> Result<(), reqwest::Error> {
+    let client = client();
+    let res = client.request(Method::GET, url).send()?;
+    let status = res.status();
+    if status.is_client_error() || status.is_server_error() {
+        return Err(res.error_for_status().unwrap_err());
+    }
+    let mut writer = get_writer(path).expect("Unable to write to path");
+    for chunk in res
+        .bytes()
+        .expect("Could not get HTTP response bytes")
+        .chunks(CHUNK_SIZE)
+    {
+        writer.write_all(chunk).expect("Failed to write chunk");
+    }
+    writer.flush().expect("Failed to flush download writer");
+    Ok(())
 }
