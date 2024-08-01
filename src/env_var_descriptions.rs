@@ -41,7 +41,7 @@ fn env_var_descriptions() -> Vec<(&'static str, &'static str)> {
         ),
         (
             "LH_DRIVER",
-            "Lighthouse driver, this overrides the \"Lighthouse driver option in the profile\"; Valid options are: \"vive\" for the default built-in driver, \"survive\" for Libsurvive, \"steamvr\" for the SteamVR based implementation."
+            "Lighthouse driver, this overrides the \"Lighthouse driver option in the profile\"; Valid options are:\n\"vive\" for the default built-in driver;\n\"survive\" for Libsurvive;\n\"steamvr\" for the SteamVR based implementation."
         ),
         (
             "LH_LOG",
@@ -53,7 +53,7 @@ fn env_var_descriptions() -> Vec<(&'static str, &'static str)> {
         ),
         (
             "LH_HANDTRACKING",
-            "Controls when to enable mercury optical hand tracking. Valid options are: \"0\" (off) to disable hand tracking, \"1\" (auto) to only enable hand tracking if no controllers are found, \"2\" (on) to enable hand tracking even if controllers are found."
+            "Controls when to enable mercury optical hand tracking. Valid options are:\n\"0\" (off) to disable hand tracking;\n\"1\" (auto) to only enable hand tracking if no controllers are found;\n\"2\" (on) to enable hand tracking even if controllers are found."
         ),
     ]
 }
@@ -61,7 +61,7 @@ fn env_var_descriptions() -> Vec<(&'static str, &'static str)> {
 fn env_var_descriptions_as_paragraph() -> String {
     ENV_VAR_DESCRIPTIONS
         .iter()
-        .map(|(k, v)| format!(" \u{2022} <b>{}</b>: {}", k, v))
+        .map(|(k, v)| format!("<span size=\"large\" weight=\"bold\">{}</span>\n{}", k, v))
         .collect::<Vec<String>>()
         .join("\n\n")
 }
