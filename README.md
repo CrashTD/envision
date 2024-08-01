@@ -14,7 +14,12 @@ Orchestrator for the free XR stack.
 
 # Download Envision
 
-You can download the latest AppImage snapshot: [GitLab Pipelines](https://gitlab.com/gabmus/envision/-/pipelines?page=1&scope=all&ref=main)
+- You can download the latest AppImage snapshot: [GitLab Pipelines](https://gitlab.com/gabmus/envision/-/pipelines?page=1&scope=all&ref=main).
+- Once downloaded, unzip the archive and you should find a file named `Envision-x86_64.AppImage`.
+- Make it executable
+  - From your file manager: right click > properties > "executable as program", or under permissions enable "is executable" (this depends on your file manager)
+  - From the terminal: `chmod +x Envision-x86_64.AppImage`
+- Double click the AppImage file to run it.
 
 <details>
 <summary>
