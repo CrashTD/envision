@@ -43,75 +43,57 @@ impl SimpleComponent for DevicesBox {
                 self.set_devices(devs);
                 let mut guard = self.device_rows.guard();
                 guard.clear();
-                if !self.devices.is_empty() {
-                    let mut has_head = false;
-                    let mut has_left = false;
-                    let mut has_right = false;
-                    let mut models: Vec<DeviceRowModelInit> = vec![];
-                    let mut generic: Vec<&XRDevice> = vec![];
-                    for dev in &self.devices {
-                        match dev.dev_type {
-                            XRDeviceRole::Head => {
-                                has_head = true;
-                                let mut init = DeviceRowModelInit::from_xr_device(dev);
-                                if dev.name == "Simulated HMD" {
-                                    init.state = Some(DeviceRowState::Warning);
-                                    init.subtitle = Some("No HMD detected (Simulated HMD)".into());
-                                }
-                                models.push(init);
+                if self.devices.is_empty() {
+                    return;
+                }
+                let mut has_head = false;
+                let mut has_left = false;
+                let mut has_right = false;
+                let mut models: Vec<DeviceRowModelInit> = Vec::new();
+                for dev in &self.devices {
+                    match dev.dev_type {
+                        XRDeviceRole::Head => {
+                            has_head = true;
+                            let mut init = DeviceRowModelInit::from(dev);
+                            if dev.name == "Simulated HMD" || dev.name == "Qwerty HMD" {
+                                init.state = Some(DeviceRowState::Warning);
+                                init.subtitle = Some(format!("No HMD detected ({})", dev.name));
                             }
-                            XRDeviceRole::Left => {
-                                has_left = true;
-                                models.push(DeviceRowModelInit::from_xr_device(dev));
-                            }
-                            XRDeviceRole::Right => {
-                                has_right = true;
-                                models.push(DeviceRowModelInit::from_xr_device(dev));
-                            }
-                            XRDeviceRole::GenericTracker => {
-                                generic.push(dev);
-                            }
-                            _ => {
-                                models.push(DeviceRowModelInit::from_xr_device(dev));
-                            }
-                        };
-                    }
-                    if !generic.is_empty() {
-                        models.push(DeviceRowModelInit {
-                            title: Some(XRDeviceRole::GenericTracker.to_string()),
-                            subtitle: Some(
-                                generic
-                                    .iter()
-                                    .map(|d| format!("{} ({})", d.name, d.index))
-                                    .collect::<Vec<String>>()
-                                    .join("\n"),
-                            ),
-                            ..Default::default()
-                        });
-                    }
-                    if !has_right {
-                        models.push(DeviceRowModelInit::new_missing(XRDeviceRole::Right));
-                    }
-                    if !has_left {
-                        models.push(DeviceRowModelInit::new_missing(XRDeviceRole::Left));
-                    }
-                    if !has_head {
-                        models.push(DeviceRowModelInit::new_missing(XRDeviceRole::Head));
-                    }
+                            models.push(init);
+                        }
+                        XRDeviceRole::Left => {
+                            has_left = true;
+                            models.push(DeviceRowModelInit::from(dev));
+                        }
+                        XRDeviceRole::Right => {
+                            has_right = true;
+                            models.push(DeviceRowModelInit::from(dev));
+                        }
+                        _ => {
+                            models.push(DeviceRowModelInit::from(dev));
+                        }
+                    };
+                }
+                if !has_right {
+                    models.push(DeviceRowModelInit::new_missing(XRDeviceRole::Right));
+                }
+                if !has_left {
+                    models.push(DeviceRowModelInit::new_missing(XRDeviceRole::Left));
+                }
+                if !has_head {
+                    models.push(DeviceRowModelInit::new_missing(XRDeviceRole::Head));
+                }
 
-                    models.sort_by(|m1, m2| {
-                        let dt1 = XRDeviceRole::from_display_str(
-                            m1.title.as_ref().unwrap_or(&String::new()),
-                        );
-                        let dt2 = XRDeviceRole::from_display_str(
-                            m2.title.as_ref().unwrap_or(&String::new()),
-                        );
-                        dt1.cmp(&dt2)
-                    });
+                models.sort_by(|m1, m2| {
+                    let dt1 =
+                        XRDeviceRole::from_display_str(m1.title.as_deref().unwrap_or_default());
+                    let dt2 =
+                        XRDeviceRole::from_display_str(m2.title.as_deref().unwrap_or_default());
+                    dt1.cmp(&dt2)
+                });
 
-                    for model in models {
-                        guard.push_back(model);
-                    }
+                for model in models {
+                    guard.push_back(model);
                 }
             }
         }

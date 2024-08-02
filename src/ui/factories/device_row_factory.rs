@@ -54,8 +54,8 @@ pub struct DeviceRowModelInit {
     pub battery_status: Option<EnvisionBatteryStatus>,
 }
 
-impl DeviceRowModelInit {
-    pub fn from_xr_device(d: &XRDevice) -> Self {
+impl From<&XRDevice> for DeviceRowModelInit {
+    fn from(d: &XRDevice) -> Self {
         Self {
             title: Some(d.dev_type.to_string()),
             subtitle: Some(d.name.clone()),
@@ -63,7 +63,9 @@ impl DeviceRowModelInit {
             ..Default::default()
         }
     }
+}
 
+impl DeviceRowModelInit {
     pub fn new_missing(t: XRDeviceRole) -> Self {
         DeviceRowModelInit {
             title: Some(t.to_string()),
