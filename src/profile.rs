@@ -485,16 +485,14 @@ impl Profile {
     }
 
     pub fn libmonado_so(&self) -> Option<PathBuf> {
-        let res = self.prefix.join("lib/libmonado.so");
-        if res.is_file() {
-            return Some(res);
-        }
-        let res = self.prefix.join("lib64/libmonado.so");
-        if res.is_file() {
-            return Some(res);
-        }
+        let paths = [
+            self.prefix.join("lib/libmonado.so"),
+            self.prefix.join("lib64/libmonado.so"),
+            self.prefix.join("lib/wivrn/libmonado.so"),
+            self.prefix.join("lib64/wivrn/libmonado.so"),
+        ];
 
-        None
+        paths.into_iter().find(|path| path.is_file())
     }
 
     pub fn has_libmonado(&self) -> bool {

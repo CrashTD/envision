@@ -7,6 +7,29 @@ use crate::{
 use serde::{ser::Error, Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 
+#[derive(Debug, Copy, Clone)]
+struct RuntimePathInfo {
+    libopenxr_path: &'static str,
+    libmonado_path: Option<&'static str>,
+}
+
+impl RuntimePathInfo {
+    const RUNTIME_PATH_INFO: [RuntimePathInfo; 2] = [
+        RuntimePathInfo {
+            libopenxr_path: "libopenxr_monado.so",
+            libmonado_path: Some("libmonado.so"),
+        },
+        RuntimePathInfo {
+            libopenxr_path: "wivrn/libopenxr_wivrn.so",
+            libmonado_path: Some("wivrn/libmonado.so"),
+        },
+    ];
+
+    fn get_for(xr_service_type: XRServiceType) -> Self {
+        Self::RUNTIME_PATH_INFO[xr_service_type as usize]
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ActiveRuntimeInnerRuntime {
     #[serde(rename = "VALVE_runtime_is_steamvr")]
@@ -99,50 +122,35 @@ pub fn set_current_active_runtime_to_steam() -> anyhow::Result<()> {
     Ok(())
 }
 
-pub fn build_profile_active_runtime(profile: &Profile) -> ActiveRuntime {
-    let build_path = |lib64: bool, prefix: &str| {
-        profile
-            .prefix
-            .clone()
-            .join(match lib64 {
-                true => "lib64",
-                false => "lib",
-            })
-            .join(
-                prefix.to_string()
-                    + match profile.xrservice_type {
-                        XRServiceType::Monado => "monado.so",
-                        XRServiceType::Wivrn => "wivrn.so",
-                    },
-            )
+pub fn build_profile_active_runtime(profile: &Profile) -> anyhow::Result<ActiveRuntime> {
+    let info = RuntimePathInfo::get_for(profile.xrservice_type.clone());
+
+    let path_to = |end_path: &str| {
+        ["lib", "lib64"].iter().find_map(|lib| {
+            let p = profile.prefix.clone().join(lib).join(end_path);
+            if p.exists() {
+                Some(p)
+            } else {
+                None
+            }
+        })
     };
 
-    let mut oxr_so = build_path(false, "libopenxr_");
-    if !oxr_so.exists() {
-        let alt = build_path(true, "libopenxr_");
-        if alt.exists() {
-            oxr_so = alt;
-        }
-    }
-    let mut monado_so = Some(build_path(false, "lib"));
-    if !monado_so.as_ref().unwrap().exists() {
-        let alt = build_path(true, "lib");
-        if alt.exists() {
-            monado_so = Some(alt);
-        } else {
-            monado_so = None;
-        }
-    }
+    let Some(oxr_so) = path_to(info.libopenxr_path) else {
+        anyhow::bail!("Could not find path to {}!", info.libopenxr_path);
+    };
 
-    ActiveRuntime {
+    let mnd_so = info.libmonado_path.and_then(path_to);
+
+    Ok(ActiveRuntime {
         file_format_version: "1.0.0".into(),
         runtime: ActiveRuntimeInnerRuntime {
             name: None,
             valve_runtime_is_steamvr: None,
-            libmonado_path: monado_so,
+            libmonado_path: mnd_so,
             library_path: oxr_so,
         },
-    }
+    })
 }
 
 // for system installs
@@ -167,7 +175,7 @@ pub fn set_current_active_runtime_to_profile(profile: &Profile) -> anyhow::Resul
     set_file_readonly(&dest, false)?;
     backup_steam_active_runtime();
     let pfx = profile.clone().prefix;
-    let mut ar = build_profile_active_runtime(profile);
+    let mut ar = build_profile_active_runtime(profile)?;
     // hack: relativize libopenxr_monado.so path for system installs
     if pfx == PathBuf::from(SYSTEM_PREFIX) {
         ar = relativize_active_runtime_lib_path(&ar, &dest);
