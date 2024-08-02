@@ -138,12 +138,12 @@ impl SimpleComponent for ProfileEditor {
                         set_title: "XR Service",
                         set_description: Some(concat!(
                             "For launch options, you can insert %command% as ",
-                            "a placeholder for the actual XR Service command,",
+                            "a placeholder for the actual XR Service command, ",
                             "similarly to how Steam launch options work.",
                         )),
                         add: &combo_row(
                             "XR Service Type",
-                            Some("Monado is for PCVR headsets, while WiVRn is for Andorid standalone headsets"),
+                            Some("Monado is for PCVR headsets, while WiVRn is for Android standalone headsets"),
                             model.profile.borrow().xrservice_type.to_string().as_str(),
                             XRServiceType::iter()
                                 .map(XRServiceType::to_string)

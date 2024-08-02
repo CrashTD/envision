@@ -41,7 +41,7 @@ fn env_var_descriptions() -> Vec<(&'static str, &'static str)> {
         ),
         (
             "LH_DRIVER",
-            "Lighthouse driver, this overrides the \"Lighthouse driver option in the profile\"; Valid options are:\n\"vive\" for the default built-in driver;\n\"survive\" for Libsurvive;\n\"steamvr\" for the SteamVR based implementation."
+            "Lighthouse driver, this overrides the \"Lighthouse driver\" option in the profile; Valid options are:\n\"vive\" for the default built-in driver;\n\"survive\" for Libsurvive;\n\"steamvr\" for the SteamVR based implementation."
         ),
         (
             "LH_LOG",
