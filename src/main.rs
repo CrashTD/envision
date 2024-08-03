@@ -11,6 +11,7 @@ use relm4::{
     gtk::{self, gdk, gio, glib, prelude::*},
     MessageBroker, RelmApp,
 };
+use std::env;
 use steam_linux_runtime_injector::restore_runtime_entrypoint;
 use ui::app::{App, AppInit};
 
@@ -69,6 +70,9 @@ fn restore_steam_xr_files() {
 }
 
 fn main() -> Result<()> {
+    if env::var("USER").unwrap_or_else(|_| env::var("USERNAME").unwrap_or_default()) == "root" {
+        panic!("{APP_NAME} cannot run as root");
+    }
     restore_steam_xr_files();
 
     // Prepare i18n
