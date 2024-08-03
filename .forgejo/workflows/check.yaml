@@ -1,0 +1,54 @@
+on: [push, pull_request]
+jobs:
+  cargo-fmtcheck:
+    runs-on: docker
+    container:
+      image: rust:slim
+    steps:
+      - run: apt-get update
+      - run: apt-get install nodejs git -y
+      - uses: actions/checkout@v4
+      - run: rustup component add rustfmt
+      # Create blank versions of our configured files
+      # so rustfmt does not yell about non-existent files or completely empty files
+      - run: echo "" >> src/constants.rs
+      - run: rustc -Vv && cargo -Vv
+      - run: cargo fmt --version
+      - run: cargo fmt --all -- --check
+  cargo-clippy:
+    runs-on: docker
+    container:
+      image: debian:unstable
+    steps:
+      - run: apt-get update
+      - run: apt-get install nodejs git -y
+      - uses: actions/checkout@v4
+      - run: apt-get install libgtk-4-dev libadwaita-1-dev libssl-dev libjxl-dev libvte-2.91-gtk4-dev meson ninja-build git desktop-file-utils gettext file libusb-dev libusb-1.0-0-dev libopenxr-dev curl -y
+      - run: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs -o /tmp/rustup.sh
+      - run: chmod +x /tmp/rustup.sh
+      - run: /tmp/rustup.sh -y
+      - run: |
+         . "$HOME/.cargo/env"
+         rustup component add clippy
+         rustc -Vv && cargo -Vv
+         cp src/constants.rs.in src/constants.rs
+         cargo clippy --version
+         cargo clippy --all-targets --all-features
+  cargo-test:
+    runs-on: docker
+    container:
+      image: debian:unstable
+    steps:
+      - run: apt-get update
+      - run: apt-get install nodejs git -y
+      - uses: actions/checkout@v4
+      - run: apt-get install libgtk-4-dev libadwaita-1-dev libssl-dev libjxl-dev libvte-2.91-gtk4-dev meson ninja-build git desktop-file-utils gettext file libusb-dev libusb-1.0-0-dev libopenxr-dev curl -y
+      - run: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs -o /tmp/rustup.sh
+      - run: chmod +x /tmp/rustup.sh
+      - run: /tmp/rustup.sh -y
+      - run: |
+         . "$HOME/.cargo/env"
+         rustc --version && cargo --version  # Print version info for debugging
+         meson setup build -Dprefix="$PWD/build/localprefix" -Dprofile=development
+         ninja -C build
+         cargo test --workspace --verbose

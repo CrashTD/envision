@@ -2,7 +2,6 @@ image: "debian:unstable"
 
 stages:
   - check
-  - test
   - deploy
 
 cargo:fmtcheck:

@@ -1,0 +1,19 @@
+on: [push, pull_request]
+jobs:
+  appimage:
+    runs-on: docker
+    container:
+      image: debian:unstable
+    steps:
+      - run: apt-get update
+      - run: apt-get install nodejs git -y
+      - uses: actions/checkout@v4
+      - run: apt-get install libgtk-4-dev libadwaita-1-dev libssl-dev libjxl-dev libvte-2.91-gtk4-dev meson ninja-build git desktop-file-utils gettext file libusb-dev libusb-1.0-0-dev libopenxr-dev curl -y
+      - run: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs -o /tmp/rustup.sh
+      - run: chmod +x /tmp/rustup.sh
+      - run: /tmp/rustup.sh -y
+      - run: . "$HOME/.cargo/env" && bash ./dist/appimage/build_appimage.sh
+      - uses: actions/upload-artifact@v3
+        with:
+          name: Envision-x86_64.AppImage
+          path: Envision-x86_64.AppImage
