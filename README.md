@@ -14,7 +14,7 @@ Orchestrator for the free XR stack.
 
 # Download Envision
 
-- You can download the latest AppImage snapshot: [GitLab Pipelines](https://gitlab.com/gabmus/envision/-/pipelines?page=1&scope=all&ref=main).
+- You can download the latest [AppImage snapshot](https://codeberg.org/gabmus/envision/actions?workflow=deploy.yml&status=1).
 - Once downloaded, unzip the archive and you should find a file named `Envision-x86_64.AppImage`.
 - Make it executable
   - From your file manager: right click > properties > "executable as program", or under permissions enable "is executable" (this depends on your file manager)
@@ -42,7 +42,7 @@ You can find the Debian dependencies in the `.gitlab-ci.yml` file in this reposi
 
 
 ```bash
-git clone https://gitlab.com/gabmus/envision/
+git clone https://codeberg.org/gabmus/envision/
 cd envision
 meson setup build -Dprefix="$PWD/build/localprefix" -Dprofile=development
 ninja -C build
@@ -53,7 +53,7 @@ ninja -C build install
 ## Build AppImage
 
 ```bash
-git clone https://gitlab.com/gabmus/envision
+git clone https://codeberg.org/gabmus/envision
 cd envision
 ./dist/appimage/build_appimage.sh
 ```
