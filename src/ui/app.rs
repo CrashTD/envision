@@ -59,61 +59,32 @@ use std::collections::VecDeque;
 use std::fs::remove_file;
 use std::time::Duration;
 
-#[tracker::track]
 pub struct App {
-    enable_debug_view: bool,
-
-    #[tracker::do_not_track]
     application: adw::Application,
-    #[tracker::do_not_track]
     app_win: adw::ApplicationWindow,
-    #[tracker::do_not_track]
     inhibit_id: Option<u32>,
 
-    #[tracker::do_not_track]
     main_view: Controller<MainView>,
-    #[tracker::do_not_track]
     debug_view: Controller<DebugView>,
-    #[tracker::do_not_track]
     split_view: Option<adw::NavigationSplitView>,
-    #[tracker::do_not_track]
     about_dialog: adw::AboutDialog,
-    #[tracker::do_not_track]
     build_window: Controller<BuildWindow>,
-    #[tracker::do_not_track]
     setcap_confirm_dialog: adw::MessageDialog,
-    #[tracker::do_not_track]
     libsurvive_setup_window: Controller<LibsurviveSetupWindow>,
 
-    #[tracker::do_not_track]
     config: Config,
-    #[tracker::do_not_track]
     xrservice_worker: Option<JobWorker>,
-    #[tracker::do_not_track]
     autostart_worker: Option<JobWorker>,
-    #[tracker::do_not_track]
     restart_xrservice: bool,
-    #[tracker::do_not_track]
     build_worker: Option<JobWorker>,
-    #[tracker::do_not_track]
     profiles: Vec<Profile>,
-    #[tracker::do_not_track]
     xr_devices: Vec<XRDevice>,
-    #[tracker::do_not_track]
     libmonado: Option<libmonado_rs::Monado>,
 
-    #[tracker::do_not_track]
     wivrn_conf_editor: Option<Controller<WivrnConfEditor>>,
-
-    #[tracker::do_not_track]
     skip_depcheck: bool,
-
-    #[tracker::do_not_track]
     wivrn_appimage_warn_shown: bool,
-    #[tracker::do_not_track]
     configure_wivrn_action: gtk::gio::SimpleAction,
-
-    #[tracker::do_not_track]
     openxr_prober_worker: Option<JobWorker>,
 }
 
@@ -348,8 +319,6 @@ impl SimpleComponent for App {
     }
 
     fn update(&mut self, message: Self::Input, sender: ComponentSender<Self>) {
-        self.reset();
-
         match message {
             Msg::NoOp => {}
             Msg::OnServiceLog(rows) => {
@@ -391,10 +360,7 @@ impl SimpleComponent for App {
                     };
                     if stop_condition {
                         if let Some(monado) = self.libmonado.as_ref() {
-                            self.xr_devices = XRDevice::merge(
-                                &self.xr_devices,
-                                &XRDevice::from_libmonado(monado),
-                            );
+                            self.xr_devices = XRDevice::from_libmonado(monado);
                             self.main_view
                                 .sender()
                                 .emit(MainViewMsg::UpdateDevices(self.xr_devices.clone()));
@@ -408,7 +374,6 @@ impl SimpleComponent for App {
                 }
             }
             Msg::EnableDebugViewChanged(val) => {
-                self.set_enable_debug_view(val);
                 self.config.debug_view_enabled = val;
                 self.config.save();
                 self.split_view.clone().unwrap().set_collapsed(!val);
@@ -884,7 +849,6 @@ impl SimpleComponent for App {
         let selected_profile = config.get_selected_profile(&profiles);
 
         let mut model = App {
-            tracker: 0,
             application: init.application,
             app_win: root.clone(),
             inhibit_id: None,
@@ -923,7 +887,6 @@ impl SimpleComponent for App {
                 .detach(),
             split_view: None,
             setcap_confirm_dialog,
-            enable_debug_view: config.debug_view_enabled,
             config,
             profiles,
             xrservice_worker: None,
@@ -955,7 +918,7 @@ impl SimpleComponent for App {
             )
         );
         actions.add_action(RelmAction::<DebugViewToggleAction>::new_stateful(
-            &model.enable_debug_view,
+            &model.config.debug_view_enabled,
             clone!(
                 #[strong]
                 sender,
