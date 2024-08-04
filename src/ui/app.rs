@@ -86,6 +86,7 @@ pub struct App {
     wivrn_appimage_warn_shown: bool,
     configure_wivrn_action: gtk::gio::SimpleAction,
     openxr_prober_worker: Option<JobWorker>,
+    xrservice_ready: bool,
 }
 
 #[derive(Debug)]
@@ -150,6 +151,7 @@ impl App {
     }
 
     pub fn start_xrservice(&mut self, sender: ComponentSender<Self>, debug: bool) {
+        self.xrservice_ready = false;
         let prof = self.get_selected_profile();
         if let Err(e) = set_current_active_runtime_to_profile(&prof) {
             alert(
@@ -250,6 +252,7 @@ impl App {
     }
 
     pub fn shutdown_xrservice(&mut self) {
+        self.xrservice_ready = false;
         if let Some(w) = self.openxr_prober_worker.as_ref() {
             w.stop();
             // this can cause threads to remain hanging...
@@ -353,22 +356,21 @@ impl SimpleComponent for App {
             Msg::OnAutostartExit(_) => self.autostart_worker = None,
             Msg::ClockTicking => {
                 self.main_view.sender().emit(MainViewMsg::ClockTicking);
-                if let Some(w) = self.xrservice_worker.as_ref() {
-                    let stop_condition = {
+                let should_poll_for_devices = self.xrservice_ready
+                    && self.xrservice_worker.as_ref().is_some_and(|w| {
                         let state = w.state.lock().unwrap();
                         state.exit_status.is_none() && !state.stop_requested
-                    };
-                    if stop_condition {
-                        if let Some(monado) = self.libmonado.as_ref() {
-                            self.xr_devices = XRDevice::from_libmonado(monado);
-                            self.main_view
-                                .sender()
-                                .emit(MainViewMsg::UpdateDevices(self.xr_devices.clone()));
-                        } else if let Some(so) = self.get_selected_profile().libmonado_so() {
-                            self.libmonado = libmonado_rs::Monado::create(so).ok();
-                            if self.libmonado.is_some() {
-                                sender.input(Msg::ClockTicking);
-                            }
+                    });
+                if should_poll_for_devices {
+                    if let Some(monado) = self.libmonado.as_ref() {
+                        self.xr_devices = XRDevice::from_libmonado(monado);
+                        self.main_view
+                            .sender()
+                            .emit(MainViewMsg::UpdateDevices(self.xr_devices.clone()));
+                    } else if let Some(so) = self.get_selected_profile().libmonado_so() {
+                        self.libmonado = libmonado_rs::Monado::create(so).ok();
+                        if self.libmonado.is_some() {
+                            sender.input(Msg::ClockTicking);
                         }
                     }
                 }
@@ -714,6 +716,7 @@ impl SimpleComponent for App {
                 self.openxr_prober_worker = Some(worker);
             }
             Msg::OnProberExit(success) => {
+                self.xrservice_ready = success;
                 self.main_view
                     .sender()
                     .emit(MainViewMsg::UpdateXrServiceReady(success));
@@ -900,7 +903,9 @@ impl SimpleComponent for App {
             wivrn_appimage_warn_shown: false,
             configure_wivrn_action,
             openxr_prober_worker: None,
+            xrservice_ready: false,
         };
+
         let widgets = view_output!();
 
         stateless_action!(
