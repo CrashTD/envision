@@ -158,16 +158,22 @@ impl App {
             if self.inhibit_id.is_some() {
                 return;
             }
-            self.inhibit_id = Some(self.application.inhibit(
+            let inhibit_id = self.application.inhibit(
                 Some(&self.app_win),
                 gtk::ApplicationInhibitFlags::all(),
-                Some("XR Session running"),
-            ));
-        } else {
-            if self.inhibit_id.is_none() {
-                return;
+                Some("XR session running"),
+            );
+            if inhibit_id == 0 {
+                alert(
+                    "Failed to inhibit desktop locking",
+                    Some(&format!("{APP_NAME} tries to inhibit desktop locking to avoid automatic suspension or screen locking kicking in while the XR session is active, but this process failed.\n\nThe session is still running but you might want to manually disable automatic suspension and screen locking.")),
+                    Some(&self.app_win.clone().upcast())
+                );
+            } else {
+                self.inhibit_id = Some(inhibit_id);
             }
-            self.application.uninhibit(self.inhibit_id.unwrap());
+        } else if let Some(id) = self.inhibit_id {
+            self.application.uninhibit(id);
             self.inhibit_id = None;
         }
     }
