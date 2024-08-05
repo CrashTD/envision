@@ -11,7 +11,7 @@ gnome = import('gnome')
 
 base_id = 'org.gabmus.envision'
 pretty_name = 'Envision'
-upstream_repo = 'https://codeberg.org/gabmus/envision'
+upstream_repo = 'https://gitlab.com/gabmus/envision'
 author = 'The Envision Team'
 description = 'Orchestrator for the free XR stack' # temporary
 
