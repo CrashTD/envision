@@ -1,6 +1,6 @@
 use gtk4::{gdk, gio, glib::clone, prelude::*};
 
-pub fn limit_dropdown_width(dd: &gtk4::DropDown, chars: i32) {
+pub fn limit_dropdown_width(dd: &gtk4::DropDown) {
     let mut dd_child = dd
         .first_child()
         .unwrap()
@@ -14,7 +14,6 @@ pub fn limit_dropdown_width(dd: &gtk4::DropDown, chars: i32) {
             break;
         }
         if let Ok(label) = dd_child.clone().unwrap().downcast::<gtk4::Label>() {
-            label.set_max_width_chars(chars);
             label.set_ellipsize(gtk4::pango::EllipsizeMode::End);
         }
         let nc = dd_child.unwrap().first_child().clone();
