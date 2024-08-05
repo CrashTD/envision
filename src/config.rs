@@ -2,7 +2,7 @@ use serde::{de::Error, Deserialize, Serialize};
 
 use crate::{
     constants::CMD_NAME,
-    device_prober::get_xr_usb_devices,
+    device_prober::PhysicalXRDevice,
     file_utils::get_writer,
     paths::get_config_dir,
     profile::Profile,
@@ -46,18 +46,16 @@ impl Config {
     pub fn get_selected_profile(&self, profiles: &[Profile]) -> Profile {
         let def = || profiles.first().expect("No profiles found").clone();
 
-        match profiles
+        if let Some(p) = profiles
             .iter()
             .find(|p| p.uuid == self.selected_profile_uuid)
         {
-            Some(p) => p.clone(),
-            None => match get_xr_usb_devices().first() {
-                Some(dev) => match dev.get_default_profile() {
-                    Some(p) => p,
-                    None => def(),
-                },
-                None => def(),
-            },
+            p.clone()
+        } else {
+            PhysicalXRDevice::from_usb()
+                .first()
+                .and_then(|xrd| xrd.get_default_profile())
+                .unwrap_or_else(def)
         }
     }
 

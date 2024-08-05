@@ -151,38 +151,40 @@ fn list_usb_devs() -> Vec<(u16, u16)> {
         .collect()
 }
 
-pub fn get_xr_usb_devices() -> Vec<PhysicalXRDevice> {
-    list_usb_devs()
-        .into_iter()
-        .filter_map(|t| match t {
-            // PCVR
-            (0x28de, 0x2102) => Some(PhysicalXRDevice::ValveIndex),
-            // this is the index controller, shouldn't dictate the driver
-            // so it's commented out
-            // (0x28de, 0x2300) => Some(PhysicalXRDevice::ValveIndex),
-            (0x0bb4, 0x2c87) => Some(PhysicalXRDevice::HTCVive),
-            (0x0bb4, 0x0309) => Some(PhysicalXRDevice::HTCVivePro),
-            (0x0bb4, 0x0313) => Some(PhysicalXRDevice::HTCViveCosmos),
-            (0x0bb4, 0x0342) => Some(PhysicalXRDevice::HTCVivePro2),
-            (0x2833, 0x0031) => Some(PhysicalXRDevice::OculusRift),
-            (0x2833, 0x0051) => Some(PhysicalXRDevice::OculusRiftS),
-            (0x1532, 0x0300) => Some(PhysicalXRDevice::RazerHydra),
-            (0x0483, 0x0021) => Some(PhysicalXRDevice::Pimax4K),
-            (0x054c, 0x09af) => Some(PhysicalXRDevice::PlayStationVR),
-            (0x054c, 0x0cde) => Some(PhysicalXRDevice::PlayStationVR2),
-            (0x03f0, 0x0c6a) => Some(PhysicalXRDevice::HPReverbG1),
-            (0x03f0, 0x0580) => Some(PhysicalXRDevice::HPReverbG2),
-            (0x04b4, 0x6504) => Some(PhysicalXRDevice::LenovoExplorer),
-            (0x35bd, 0x0101) => Some(PhysicalXRDevice::BigscreenBeyond),
-            (0x04e8, 0x7312) => Some(PhysicalXRDevice::SamsungOdysseyPlus),
-            (0x04e8, 0x7084) => Some(PhysicalXRDevice::SamsungOdysseyPlus),
-            (0x413c, 0xb0d5) => Some(PhysicalXRDevice::DellVisor),
-            // Standalone
-            (0x2833, 0x0137) => Some(PhysicalXRDevice::OculusQuest),
-            (0x2833, 0x0186) => Some(PhysicalXRDevice::OculusQuest2),
-            (0x2d40, 0x00b7) => Some(PhysicalXRDevice::Pico4),
-            (0x0bb4, 0x0344) => Some(PhysicalXRDevice::ViveFocus3),
-            _ => None,
-        })
-        .collect()
+impl PhysicalXRDevice {
+    pub fn from_usb() -> Vec<Self> {
+        list_usb_devs()
+            .into_iter()
+            .filter_map(|t| match t {
+                // PCVR
+                (0x28de, 0x2102) => Some(PhysicalXRDevice::ValveIndex),
+                // this is the index controller, shouldn't dictate the driver
+                // so it's commented out
+                // (0x28de, 0x2300) => Some(PhysicalXRDevice::ValveIndex),
+                (0x0bb4, 0x2c87) => Some(PhysicalXRDevice::HTCVive),
+                (0x0bb4, 0x0309) => Some(PhysicalXRDevice::HTCVivePro),
+                (0x0bb4, 0x0313) => Some(PhysicalXRDevice::HTCViveCosmos),
+                (0x0bb4, 0x0342) => Some(PhysicalXRDevice::HTCVivePro2),
+                (0x2833, 0x0031) => Some(PhysicalXRDevice::OculusRift),
+                (0x2833, 0x0051) => Some(PhysicalXRDevice::OculusRiftS),
+                (0x1532, 0x0300) => Some(PhysicalXRDevice::RazerHydra),
+                (0x0483, 0x0021) => Some(PhysicalXRDevice::Pimax4K),
+                (0x054c, 0x09af) => Some(PhysicalXRDevice::PlayStationVR),
+                (0x054c, 0x0cde) => Some(PhysicalXRDevice::PlayStationVR2),
+                (0x03f0, 0x0c6a) => Some(PhysicalXRDevice::HPReverbG1),
+                (0x03f0, 0x0580) => Some(PhysicalXRDevice::HPReverbG2),
+                (0x04b4, 0x6504) => Some(PhysicalXRDevice::LenovoExplorer),
+                (0x35bd, 0x0101) => Some(PhysicalXRDevice::BigscreenBeyond),
+                (0x04e8, 0x7312) => Some(PhysicalXRDevice::SamsungOdysseyPlus),
+                (0x04e8, 0x7084) => Some(PhysicalXRDevice::SamsungOdysseyPlus),
+                (0x413c, 0xb0d5) => Some(PhysicalXRDevice::DellVisor),
+                // Standalone
+                (0x2833, 0x0137) => Some(PhysicalXRDevice::OculusQuest),
+                (0x2833, 0x0186) => Some(PhysicalXRDevice::OculusQuest2),
+                (0x2d40, 0x00b7) => Some(PhysicalXRDevice::Pico4),
+                (0x0bb4, 0x0344) => Some(PhysicalXRDevice::ViveFocus3),
+                _ => None,
+            })
+            .collect()
+    }
 }
