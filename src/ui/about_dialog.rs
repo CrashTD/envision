@@ -3,6 +3,7 @@ use crate::{
         get_developers, APP_ID, APP_NAME, BUILD_DATETIME, ISSUES_URL, REPO_URL, SINGLE_DEVELOPER,
         VERSION,
     },
+    device_prober::PhysicalXRDevice,
     linux_distro::LinuxDistro,
     vulkaninfo::gpu_names,
     xdg::XDG,
@@ -55,6 +56,17 @@ pub fn populate_debug_info(dialog: &adw::AboutDialog) {
                     .map(|names| names.join(", "))
                     .unwrap_or("unknown".into())
             ),
+            format!("Detected XR Devices: {}", {
+                let devs = PhysicalXRDevice::from_usb();
+                if devs.is_empty() {
+                    "None".into()
+                } else {
+                    devs.iter()
+                        .map(PhysicalXRDevice::to_string)
+                        .collect::<Vec<String>>()
+                        .join(", ")
+                }
+            }),
             format!(
                 "Steam found: {}",
                 if XDG.get_data_home().join("Steam").is_dir()
@@ -66,6 +78,7 @@ pub fn populate_debug_info(dialog: &adw::AboutDialog) {
                 }
             ),
         ]
+        .map(|s| format!("- {s}"))
         .join("\n"),
     );
 }
