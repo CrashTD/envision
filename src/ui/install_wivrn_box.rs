@@ -11,6 +11,7 @@ use crate::{
     downloader::download_file_sync,
     paths::wivrn_apk_download_path,
     profile::{Profile, XRServiceType},
+    stateless_action,
 };
 use gtk::prelude::*;
 use gtk4::glib::clone;
@@ -246,26 +247,32 @@ impl SimpleComponent for InstallWivrnBox {
 
         let mut actions = RelmActionGroup::<InstallWivrnActionGroup>::new();
 
-        let apk_oculus_action = {
-            let oculus_sender = sender.clone();
-            RelmAction::<WivrnApkStandardAction>::new_stateless(move |_| {
-                oculus_sender.input(Self::Input::InstallWivrnApk(
+        stateless_action!(
+            actions,
+            WivrnApkStandardAction,
+            clone!(
+                #[strong]
+                sender,
+                move |_| {
+                    sender.input(Self::Input::InstallWivrnApk(
                     "https://github.com/Meumeu/WiVRn/releases/latest/download/WiVRn-standard-release.apk".into()
                 ));
-            })
-        };
-
-        let apk_pico_action = {
-            let pico_sender = sender.clone();
-            RelmAction::<WivrnApkPicoAction>::new_stateless(move |_| {
-                pico_sender.input(Self::Input::InstallWivrnApk(
+                }
+            )
+        );
+        stateless_action!(
+            actions,
+            WivrnApkPicoAction,
+            clone!(
+                #[strong]
+                sender,
+                move |_| {
+                    sender.input(Self::Input::InstallWivrnApk(
                     "https://github.com/Meumeu/WiVRn/releases/latest/download/WiVRn-pico-release.apk".into()
                 ));
-            })
-        };
-
-        actions.add_action(apk_oculus_action);
-        actions.add_action(apk_pico_action);
+                }
+            )
+        );
 
         root.insert_action_group(
             InstallWivrnActionGroup::NAME,
