@@ -46,18 +46,6 @@ fn basalt_deps() -> Vec<Dependency> {
             ]),
         },
         Dependency {
-            name: "catch2".into(),
-            dep_type: DepType::Include,
-            filename: "catch2/catch.hpp".into(),
-            packages: HashMap::from([
-                (LinuxDistro::Arch, "catch2-v2".into()),
-                // WARN: on debian unstable this is v3!
-                (LinuxDistro::Debian, "catch2".into()),
-                (LinuxDistro::Fedora, "catch2-devel".into()),
-                (LinuxDistro::Alpine, "catch2".into()),
-            ]),
-        },
-        Dependency {
             name: "boost".into(),
             dep_type: DepType::SharedObject,
             // just one of the many shared objects boost provides
