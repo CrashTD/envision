@@ -23,10 +23,9 @@ use crate::ui::profile_editor::ProfileEditorInit;
 use crate::ui::steamvr_calibration_box::SteamVrCalibrationBoxMsg;
 use crate::ui::util::{limit_dropdown_width, warning_heading};
 use crate::xr_devices::XRDevice;
-use adw::prelude::*;
+use adw::{prelude::*, ResponseAppearance};
 use gtk::glib::clone;
 use relm4::actions::{ActionGroupName, RelmAction, RelmActionGroup};
-use relm4::adw::{prelude::MessageDialogExt, ResponseAppearance};
 use relm4::{new_action_group, new_stateless_action, prelude::*};
 use relm4::{ComponentParts, ComponentSender, SimpleComponent};
 
@@ -46,9 +45,9 @@ pub struct MainView {
     #[tracker::do_not_track]
     devices_box: Controller<DevicesBox>,
     #[tracker::do_not_track]
-    profile_not_editable_dialog: adw::MessageDialog,
+    profile_not_editable_dialog: adw::AlertDialog,
     #[tracker::do_not_track]
-    profile_delete_confirm_dialog: adw::MessageDialog,
+    profile_delete_confirm_dialog: adw::AlertDialog,
     #[tracker::do_not_track]
     profile_editor: Option<Controller<ProfileEditor>>,
     #[tracker::do_not_track]
@@ -521,14 +520,16 @@ impl SimpleComponent for MainView {
                         self.selected_profile.clone(),
                     ));
                 } else {
-                    self.profile_not_editable_dialog.present();
+                    self.profile_not_editable_dialog
+                        .present(Some(&self.root_win));
                 }
             }
             Self::Input::CreateProfile => {
                 sender.input(Self::Input::OpenProfileEditor(Profile::default()));
             }
             Self::Input::DeleteProfile => {
-                self.profile_delete_confirm_dialog.present();
+                self.profile_delete_confirm_dialog
+                    .present(Some(&self.root_win));
             }
             Self::Input::SaveProfile(prof) => {
                 sender
@@ -678,10 +679,7 @@ impl SimpleComponent for MainView {
         root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
-        let profile_not_editable_dialog = adw::MessageDialog::builder()
-            .modal(true)
-            .transient_for(&init.root_win)
-            .hide_on_close(true)
+        let profile_not_editable_dialog = adw::AlertDialog::builder()
             .heading("This profile is not editable")
             .body(concat!(
                 "You can duplicate it and edit the new copy. ",
@@ -690,40 +688,43 @@ impl SimpleComponent for MainView {
             .build();
         profile_not_editable_dialog.add_response("no", "_No");
         profile_not_editable_dialog.add_response("yes", "_Yes");
-        profile_not_editable_dialog.set_response_appearance("no", ResponseAppearance::Destructive);
         profile_not_editable_dialog.set_response_appearance("yes", ResponseAppearance::Suggested);
 
-        {
-            let pne_sender = sender.clone();
-            profile_not_editable_dialog.connect_response(None, move |_, res| {
-                if res == "yes" {
-                    pne_sender.input(Self::Input::DuplicateProfile);
+        profile_not_editable_dialog.connect_response(
+            None,
+            clone!(
+                #[strong]
+                sender,
+                move |_, res| {
+                    if res == "yes" {
+                        sender.input(Self::Input::DuplicateProfile);
+                    }
                 }
-            });
-        }
+            ),
+        );
 
-        let profile_delete_confirm_dialog = adw::MessageDialog::builder()
-            .modal(true)
-            .transient_for(&init.root_win)
-            .hide_on_close(true)
+        let profile_delete_confirm_dialog = adw::AlertDialog::builder()
             .heading("Are you sure you want to delete this profile?")
             .build();
         profile_delete_confirm_dialog.add_response("no", "_No");
         profile_delete_confirm_dialog.add_response("yes", "_Yes");
         profile_delete_confirm_dialog
-            .set_response_appearance("no", ResponseAppearance::Destructive);
-        profile_delete_confirm_dialog.set_response_appearance("yes", ResponseAppearance::Suggested);
+            .set_response_appearance("yes", ResponseAppearance::Destructive);
 
-        {
-            let pdc_sender = sender.clone();
-            profile_delete_confirm_dialog.connect_response(None, move |_, res| {
-                if res == "yes" {
-                    pdc_sender
-                        .output(Self::Output::DeleteProfile)
-                        .expect("Sender output failed");
+        profile_delete_confirm_dialog.connect_response(
+            None,
+            clone!(
+                #[strong]
+                sender,
+                move |_, res| {
+                    if res == "yes" {
+                        sender
+                            .output(Self::Output::DeleteProfile)
+                            .expect("Sender output failed");
+                    }
                 }
-            });
-        }
+            ),
+        );
 
         let steamvr_calibration_box = SteamVrCalibrationBox::builder().launch(()).detach();
         steamvr_calibration_box

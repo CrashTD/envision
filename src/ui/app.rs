@@ -50,7 +50,6 @@ use crate::xr_devices::XRDevice;
 use adw::prelude::*;
 use gtk::glib::clone;
 use relm4::actions::{AccelsPlus, ActionGroupName, RelmAction, RelmActionGroup};
-use relm4::adw::prelude::MessageDialogExt;
 use relm4::adw::ResponseAppearance;
 use relm4::gtk::glib;
 use relm4::{new_action_group, new_stateful_action, new_stateless_action, prelude::*};
@@ -69,7 +68,7 @@ pub struct App {
     split_view: Option<adw::NavigationSplitView>,
     about_dialog: adw::AboutDialog,
     build_window: Controller<BuildWindow>,
-    setcap_confirm_dialog: adw::MessageDialog,
+    setcap_confirm_dialog: adw::AlertDialog,
     libsurvive_setup_window: Controller<LibsurviveSetupWindow>,
 
     config: Config,
@@ -530,7 +529,7 @@ impl SimpleComponent for App {
                         let profile = self.get_selected_profile();
                         if profile.xrservice_type == XRServiceType::Monado {
                             if dep_pkexec().check() {
-                                self.setcap_confirm_dialog.present();
+                                self.setcap_confirm_dialog.present(Some(&self.app_win));
                             } else {
                                 alert_w_widget(
                                     "pkexec not found",
@@ -741,16 +740,13 @@ impl SimpleComponent for App {
         let config = Config::get_config();
         let win_size = config.win_size;
         let profiles = config.profiles();
-        let setcap_confirm_dialog = adw::MessageDialog::builder()
-            .modal(true)
-            .transient_for(&root)
+        let setcap_confirm_dialog = adw::AlertDialog::builder()
             .heading("Set Capabilities")
             .body(concat!(
                 "We need to set certain capabilities (CAP_SYS_NICE=eip) on the ",
                 "OpenXR server executable. This requires your superuser password.\n\n",
                 "Do you want to continue?",
             ))
-            .hide_on_close(true)
             .build();
         setcap_confirm_dialog.add_response("no", "_No");
         setcap_confirm_dialog.add_response("yes", "_Yes");
