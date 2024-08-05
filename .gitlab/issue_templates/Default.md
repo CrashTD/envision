@@ -1,7 +1,7 @@
 # Debugging Information
 
 <!--
-You can find the troubleshooting information inside Envision:
+You can find the debugging information inside Envision:
 
 - Click on the main menu button
 - Click "About"
