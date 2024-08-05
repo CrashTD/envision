@@ -9,7 +9,7 @@ use crate::{
     xdg::XDG,
 };
 use relm4::prelude::*;
-use std::env;
+use std::{env, fs::read_to_string};
 
 pub fn create_about_dialog() -> adw::AboutDialog {
     adw::AboutDialog::builder()
@@ -40,6 +40,12 @@ pub fn populate_debug_info(dialog: &adw::AboutDialog) {
                 f = distro_family
                     .map(|f| f.to_string())
                     .unwrap_or("unknown".into())
+            ),
+            format!(
+                "Kernel: {}",
+                read_to_string("/proc/version")
+                    .unwrap_or("Unable to read /proc/version".into())
+                    .trim()
             ),
             format!(
                 "Session type: {}",
