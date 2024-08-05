@@ -248,7 +248,7 @@ impl Display for Profile {
 
 impl Default for Profile {
     fn default() -> Self {
-        let uuid = Uuid::new_v4().to_string();
+        let uuid = Self::new_uuid();
         let profile_dir = get_data_dir().join(&uuid);
         Self {
             name: "Default profile name".into(),
@@ -362,10 +362,14 @@ impl Profile {
         serde_json::to_writer_pretty(writer, self).expect("Could not write profile")
     }
 
+    pub fn new_uuid() -> String {
+        Uuid::new_v4().to_string()
+    }
+
     pub fn create_duplicate(&self) -> Self {
         if !self.can_be_built {
             let mut dup = self.clone();
-            dup.uuid = Uuid::new_v4().to_string();
+            dup.uuid = Self::new_uuid();
             dup.name = format!("Duplicate of {}", dup.name);
             dup.editable = true;
             return dup;
