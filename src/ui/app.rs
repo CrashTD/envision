@@ -252,6 +252,9 @@ impl App {
     }
 
     pub fn shutdown_xrservice(&mut self) {
+        if let Some(worker) = self.autostart_worker.as_ref() {
+            worker.stop();
+        }
         self.xrservice_ready = false;
         if let Some(w) = self.openxr_prober_worker.as_ref() {
             w.stop();
@@ -260,9 +263,6 @@ impl App {
         }
         self.set_inhibit_session(false);
         if let Some(worker) = self.xrservice_worker.as_ref() {
-            worker.stop();
-        }
-        if let Some(worker) = self.autostart_worker.as_ref() {
             worker.stop();
         }
         self.libmonado = None;

@@ -89,17 +89,26 @@ impl JobWorker {
     }
 
     pub fn stop(&self) {
-        if self.state.lock().unwrap().started && !self.state.lock().unwrap().exited {
+        let should_stop_manually = {
+            let state = self.state.lock().unwrap();
+            state.started && !state.exited
+        };
+        if should_stop_manually {
             self.state.lock().unwrap().stop_requested = true;
             if let Some(pid) = self.state.lock().unwrap().current_pid {
-                kill(pid, SIGTERM).expect("Could not send sigterm to process");
+                if let Err(e) = kill(pid, SIGTERM) {
+                    eprintln!("Failed to send SIGTERM: {e:#?}");
+                }
                 let state = self.state.clone();
                 thread::spawn(move || {
                     sleep(Duration::from_secs(2));
                     if let Ok(s) = state.lock() {
                         if !s.exited {
                             // process is still alive
-                            kill(pid, SIGKILL).expect("Failed to kill process");
+                            eprintln!("Process is still alive 2 seconds after SIGTERM, proceeding to send SIGKILL...");
+                            if let Err(e) = kill(pid, SIGKILL) {
+                                eprintln!("Failed to send SIGKILL: {e:#?}");
+                            };
                         }
                     }
                 });
