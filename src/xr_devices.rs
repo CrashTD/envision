@@ -298,11 +298,11 @@ impl XRDevice {
         })
         .collect::<Vec<Self>>();
         if let Ok(all_devs) = monado.devices() {
-            res.extend(
-                all_devs
-                    .into_iter()
-                    .filter(|dev| !devs_with_role.contains(&dev.id))
-                    .map(|dev| Self {
+            res.extend(all_devs.into_iter().filter_map(|dev| {
+                if devs_with_role.contains(&dev.id) {
+                    None
+                } else {
+                    Some(Self {
                         index: dev.id.to_string(),
                         serial: dev.serial().ok(),
                         battery: dev.battery_status().ok().and_then(|bs| {
@@ -314,8 +314,9 @@ impl XRDevice {
                         }),
                         name: dev.name,
                         dev_type: XRDeviceRole::GenericTracker,
-                    }),
-            )
+                    })
+                }
+            }))
         }
         res
     }
