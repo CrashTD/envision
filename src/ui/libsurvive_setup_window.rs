@@ -497,7 +497,7 @@ impl SimpleComponent for LibsurviveSetupWindow {
             calibration_done_page: None,
             calibration_cancelled_page: None,
             steam_lighthouse_path: NO_FILE_MSG.into(),
-            filefilter_listmodel: gtk4::gio::ListStore::builder()
+            filefilter_listmodel: gtk::gio::ListStore::builder()
                 .item_type(gtk::FileFilter::static_type())
                 .build(),
             profile: None,

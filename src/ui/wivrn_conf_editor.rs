@@ -19,7 +19,7 @@ use crate::{
     },
 };
 use adw::prelude::*;
-use gtk4::glib::clone;
+use gtk::glib::clone;
 use relm4::{factory::AsyncFactoryVecDeque, prelude::*};
 
 #[tracker::track]

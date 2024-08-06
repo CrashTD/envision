@@ -1,5 +1,5 @@
 use crate::config::Config;
-use gtk4::{
+use gtk::{
     gio::{
         prelude::{ApplicationCommandLineExt, ApplicationExt},
         Application, ApplicationCommandLine,

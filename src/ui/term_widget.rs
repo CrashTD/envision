@@ -1,5 +1,4 @@
-use gtk4::{gdk, glib::clone, prelude::*};
-use relm4::adw;
+use gtk::{gdk, glib::clone, prelude::*};
 use vte4::{prelude::*, Terminal};
 
 use super::util::copy_text;
@@ -8,9 +7,9 @@ const MAX_SCROLLBACK: u32 = 2000;
 
 #[derive(Debug, Clone)]
 pub struct TermWidget {
-    pub container: gtk4::Box,
+    pub container: gtk::Box,
     pub term: Terminal,
-    popover_menu: gtk4::PopoverMenu,
+    popover_menu: gtk::PopoverMenu,
 }
 
 const ADW_LIGHT_FG: &str = "#000000";
@@ -31,9 +30,9 @@ impl TermWidget {
             .build();
         term.set_clear_background(false);
         term.search_set_wrap_around(true);
-        let container = gtk4::Box::builder().hexpand(true).vexpand(true).build();
+        let container = gtk::Box::builder().hexpand(true).vexpand(true).build();
 
-        let sw = gtk4::ScrolledWindow::builder()
+        let sw = gtk::ScrolledWindow::builder()
             .hexpand(true)
             .vexpand(true)
             .child(&term)
@@ -41,8 +40,8 @@ impl TermWidget {
 
         container.append(&sw);
 
-        let action_grp = gtk4::gio::SimpleActionGroup::new();
-        let selectall_action = gtk4::gio::SimpleAction::new("selectall", None);
+        let action_grp = gtk::gio::SimpleActionGroup::new();
+        let selectall_action = gtk::gio::SimpleAction::new("selectall", None);
         selectall_action.connect_activate(clone!(
             #[strong]
             term,
@@ -51,7 +50,7 @@ impl TermWidget {
             }
         ));
         action_grp.add_action(&selectall_action);
-        let copy_action = gtk4::gio::SimpleAction::new("copy", None);
+        let copy_action = gtk::gio::SimpleAction::new("copy", None);
         copy_action.connect_activate(clone!(
             #[strong]
             term,
@@ -63,11 +62,11 @@ impl TermWidget {
 
         container.insert_action_group("term", Some(&action_grp));
 
-        let menu = gtk4::gio::Menu::new();
+        let menu = gtk::gio::Menu::new();
         menu.append(Some("Select all"), Some("term.selectall"));
         menu.append(Some("Copy"), Some("term.copy"));
 
-        let popover_menu = gtk4::PopoverMenu::builder()
+        let popover_menu = gtk::PopoverMenu::builder()
             .pointing_to(&term.allocation())
             .autohide(true)
             .menu_model(&menu)
@@ -88,15 +87,15 @@ impl TermWidget {
     }
 
     fn setup_rightclick_gesture(&self) {
-        let gesture = gtk4::GestureClick::builder()
-            .button(gtk4::gdk::BUTTON_SECONDARY)
+        let gesture = gtk::GestureClick::builder()
+            .button(gtk::gdk::BUTTON_SECONDARY)
             .build();
         gesture.connect_pressed(clone!(
             #[strong(rename_to=popover)]
             self.popover_menu,
             move |gesture, _, x, y| {
-                gesture.set_state(gtk4::EventSequenceState::Claimed);
-                popover.set_pointing_to(Some(&gtk4::gdk::Rectangle::new(x as i32, y as i32, 1, 1)));
+                gesture.set_state(gtk::EventSequenceState::Claimed);
+                popover.set_pointing_to(Some(&gtk::gdk::Rectangle::new(x as i32, y as i32, 1, 1)));
                 popover.popup();
             }
         ));
@@ -110,18 +109,18 @@ impl TermWidget {
     }
 
     fn setup_shortcuts(&self) {
-        let sc = gtk4::ShortcutController::new();
+        let sc = gtk::ShortcutController::new();
         ["<Control>c", "<Shift><Control>c"]
             .iter()
             .for_each(|combo| {
-                sc.add_shortcut(gtk4::Shortcut::new(
-                    gtk4::ShortcutTrigger::parse_string(combo),
-                    Some(gtk4::CallbackAction::new(clone!(
+                sc.add_shortcut(gtk::Shortcut::new(
+                    gtk::ShortcutTrigger::parse_string(combo),
+                    Some(gtk::CallbackAction::new(clone!(
                         #[strong(rename_to = term)]
                         self.term,
                         move |_, _| {
                             Self::copy_selected(&term);
-                            gtk4::glib::Propagation::Proceed
+                            gtk::glib::Propagation::Proceed
                         }
                     ))),
                 ));
@@ -129,14 +128,14 @@ impl TermWidget {
         ["<Control>a", "<Shift><Control>a"]
             .iter()
             .for_each(|combo| {
-                sc.add_shortcut(gtk4::Shortcut::new(
-                    gtk4::ShortcutTrigger::parse_string(combo),
-                    Some(gtk4::CallbackAction::new(clone!(
+                sc.add_shortcut(gtk::Shortcut::new(
+                    gtk::ShortcutTrigger::parse_string(combo),
+                    Some(gtk::CallbackAction::new(clone!(
                         #[strong(rename_to = term)]
                         self.term,
                         move |_, _| {
                             term.select_all();
-                            gtk4::glib::Propagation::Proceed
+                            gtk::glib::Propagation::Proceed
                         }
                     ))),
                 ));
