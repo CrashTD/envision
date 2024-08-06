@@ -248,9 +248,8 @@ impl SimpleComponent for MainView {
                             set_visible: match mount_has_nosuid(&model.selected_profile.prefix) {
                                 Ok(b) => b,
                                 Err(_) => {
-                                    // TODO: handle this error better
                                     eprintln!(
-                                        "Warning: could not get stat on path {}",
+                                        "Warning (nosuid detection): could not get stat on path {}",
                                         model.selected_profile.prefix.to_string_lossy());
                                     false
                                 },

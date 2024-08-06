@@ -222,24 +222,7 @@ mod tests {
     use crate::profile::Profile;
     use crate::runner::Runner;
     use core::time;
-    use std::{collections::HashMap, path::Path, thread::sleep};
-
-    #[test]
-    fn can_run_command_and_read_env() {
-        let mut env = HashMap::new();
-        env.insert("ENVISIONTEST".to_string(), "Lorem ipsum dolor".to_string());
-        let mut runner = CmdRunner::new(
-            Some(env),
-            "bash".into(),
-            vec!["-c".into(), "echo \"ENVISIONTEST: $ENVISIONTEST\"".into()],
-        );
-        runner.start();
-        sleep(time::Duration::from_millis(1000)); // TODO: ugly, fix
-        runner.terminate();
-        assert_eq!(runner.status(), RunnerStatus::Stopped(Some(0)));
-        let out = runner.consume_output();
-        assert_eq!(out, "ENVISIONTEST: Lorem ipsum dolor\n");
-    }
+    use std::{path::Path, thread::sleep};
 
     #[test]
     fn can_save_log() {

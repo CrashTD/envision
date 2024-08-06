@@ -33,7 +33,7 @@ pub struct Config {
 impl Default for Config {
     fn default() -> Self {
         Config {
-            // TODO: handle first start with no profile selected
+            // TODO: using an empty string here is ugly
             selected_profile_uuid: "".to_string(),
             debug_view_enabled: false,
             user_profiles: vec![],

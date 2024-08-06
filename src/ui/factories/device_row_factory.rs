@@ -86,7 +86,6 @@ impl AsyncFactoryComponent for DeviceRowModel {
 
     view! {
         root = adw::ActionRow {
-            // TODO: replace with flat button that spawns popover
             add_prefix: icon = &gtk::Image {
                 set_icon_name: Some(self.state.icon()),
             },
