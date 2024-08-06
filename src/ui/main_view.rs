@@ -1,33 +1,36 @@
-use std::fs::read_to_string;
-use std::io::Write;
-
-use super::alert::alert;
-use super::devices_box::{DevicesBox, DevicesBoxMsg};
-use super::install_wivrn_box::{InstallWivrnBox, InstallWivrnBoxInit, InstallWivrnBoxMsg};
-use super::profile_editor::{ProfileEditor, ProfileEditorMsg, ProfileEditorOutMsg};
-use super::steam_launch_options_box::{SteamLaunchOptionsBox, SteamLaunchOptionsBoxMsg};
-use super::steamvr_calibration_box::SteamVrCalibrationBox;
-use crate::config::Config;
-use crate::dependencies::common::dep_pkexec;
-use crate::file_utils::{get_writer, mount_has_nosuid};
-use crate::gpu_profile::{get_amd_gpu_power_profile, GpuPowerProfile};
-use crate::paths::{get_data_dir, get_home_dir};
-use crate::profile::{LighthouseDriver, Profile, XRServiceType};
-use crate::stateless_action;
-use crate::steamvr_utils::chaperone_info_exists;
-use crate::ui::app::{
-    AboutAction, BuildProfileAction, BuildProfileCleanAction, ConfigureWivrnAction,
-    DebugViewToggleAction,
+use super::{
+    alert::alert,
+    app::{
+        AboutAction, BuildProfileAction, BuildProfileCleanAction, ConfigureWivrnAction,
+        DebugViewToggleAction,
+    },
+    devices_box::{DevicesBox, DevicesBoxMsg},
+    install_wivrn_box::{InstallWivrnBox, InstallWivrnBoxInit, InstallWivrnBoxMsg},
+    profile_editor::{ProfileEditor, ProfileEditorInit, ProfileEditorMsg, ProfileEditorOutMsg},
+    steam_launch_options_box::{SteamLaunchOptionsBox, SteamLaunchOptionsBoxMsg},
+    steamvr_calibration_box::{SteamVrCalibrationBox, SteamVrCalibrationBoxMsg},
+    util::{limit_dropdown_width, warning_heading},
 };
-use crate::ui::profile_editor::ProfileEditorInit;
-use crate::ui::steamvr_calibration_box::SteamVrCalibrationBoxMsg;
-use crate::ui::util::{limit_dropdown_width, warning_heading};
-use crate::xr_devices::XRDevice;
+use crate::{
+    config::Config,
+    dependencies::common::dep_pkexec,
+    file_utils::{get_writer, mount_has_nosuid},
+    gpu_profile::{get_amd_gpu_power_profile, GpuPowerProfile},
+    paths::{get_data_dir, get_home_dir},
+    profile::{LighthouseDriver, Profile, XRServiceType},
+    stateless_action,
+    steamvr_utils::chaperone_info_exists,
+    xr_devices::XRDevice,
+};
 use adw::{prelude::*, ResponseAppearance};
 use gtk::glib::clone;
-use relm4::actions::{ActionGroupName, RelmAction, RelmActionGroup};
-use relm4::{new_action_group, new_stateless_action, prelude::*};
-use relm4::{ComponentParts, ComponentSender, SimpleComponent};
+use relm4::{
+    actions::{ActionGroupName, RelmAction, RelmActionGroup},
+    new_action_group, new_stateless_action,
+    prelude::*,
+    ComponentParts, ComponentSender, SimpleComponent,
+};
+use std::{fs::read_to_string, io::Write};
 
 #[tracker::track]
 pub struct MainView {

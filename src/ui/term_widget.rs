@@ -1,6 +1,6 @@
 use gtk4::{gdk, glib::clone, prelude::*};
 use relm4::adw;
-use vte4::{Terminal, TerminalExt, TerminalExtManual};
+use vte4::{prelude::*, Terminal};
 
 use super::util::copy_text;
 

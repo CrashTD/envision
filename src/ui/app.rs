@@ -1,62 +1,63 @@
-use super::alert::{alert, alert_w_widget};
-use super::build_window::{BuildStatus, BuildWindow};
-use super::cmdline_opts::CmdLineOpts;
-use super::debug_view::{DebugView, DebugViewMsg};
-use super::job_worker::internal_worker::JobWorkerOut;
-use super::job_worker::job::{FuncWorkerOut, WorkerJob};
-use super::job_worker::JobWorker;
-use super::libsurvive_setup_window::LibsurviveSetupWindow;
-use super::main_view::MainViewMsg;
-use super::util::{copiable_code_snippet, copy_text, open_with_default_handler};
-use super::wivrn_conf_editor::{WivrnConfEditor, WivrnConfEditorInit, WivrnConfEditorMsg};
-use crate::builders::build_basalt::get_build_basalt_jobs;
-use crate::builders::build_libsurvive::get_build_libsurvive_jobs;
-use crate::builders::build_mercury::get_build_mercury_jobs;
-use crate::builders::build_monado::get_build_monado_jobs;
-use crate::builders::build_opencomposite::get_build_opencomposite_jobs;
-use crate::builders::build_openhmd::get_build_openhmd_jobs;
-use crate::builders::build_wivrn::get_build_wivrn_jobs;
-use crate::config::Config;
-use crate::constants::APP_NAME;
-use crate::dependencies::basalt_deps::get_missing_basalt_deps;
-use crate::dependencies::common::dep_pkexec;
-use crate::dependencies::libsurvive_deps::get_missing_libsurvive_deps;
-use crate::dependencies::mercury_deps::get_missing_mercury_deps;
-use crate::dependencies::monado_deps::get_missing_monado_deps;
-use crate::dependencies::openhmd_deps::get_missing_openhmd_deps;
-use crate::dependencies::wivrn_deps::get_missing_wivrn_deps;
-use crate::file_builders::active_runtime_json::{
-    set_current_active_runtime_to_profile, set_current_active_runtime_to_steam,
+use super::{
+    about_dialog::{create_about_dialog, populate_debug_info},
+    alert::{alert, alert_w_widget},
+    build_window::{BuildStatus, BuildWindow, BuildWindowInit, BuildWindowMsg, BuildWindowOutMsg},
+    cmdline_opts::CmdLineOpts,
+    debug_view::{DebugView, DebugViewInit, DebugViewMsg, DebugViewOutMsg},
+    job_worker::{
+        internal_worker::JobWorkerOut,
+        job::{FuncWorkerOut, WorkerJob},
+        JobWorker,
+    },
+    libsurvive_setup_window::{LibsurviveSetupMsg, LibsurviveSetupWindow},
+    main_view::{MainView, MainViewInit, MainViewMsg, MainViewOutMsg},
+    util::{copiable_code_snippet, copy_text, open_with_default_handler},
+    wivrn_conf_editor::{WivrnConfEditor, WivrnConfEditorInit, WivrnConfEditorMsg},
 };
-use crate::file_builders::openvrpaths_vrpath::{
-    set_current_openvrpaths_to_profile, set_current_openvrpaths_to_steam,
+use crate::{
+    builders::{
+        build_basalt::get_build_basalt_jobs, build_libsurvive::get_build_libsurvive_jobs,
+        build_mercury::get_build_mercury_jobs, build_monado::get_build_monado_jobs,
+        build_opencomposite::get_build_opencomposite_jobs, build_openhmd::get_build_openhmd_jobs,
+        build_wivrn::get_build_wivrn_jobs,
+    },
+    config::Config,
+    constants::APP_NAME,
+    dependencies::{
+        basalt_deps::get_missing_basalt_deps, common::dep_pkexec,
+        libsurvive_deps::get_missing_libsurvive_deps, mercury_deps::get_missing_mercury_deps,
+        monado_deps::get_missing_monado_deps, openhmd_deps::get_missing_openhmd_deps,
+        wivrn_deps::get_missing_wivrn_deps,
+    },
+    file_builders::{
+        active_runtime_json::{
+            set_current_active_runtime_to_profile, set_current_active_runtime_to_steam,
+        },
+        openvrpaths_vrpath::{
+            set_current_openvrpaths_to_profile, set_current_openvrpaths_to_steam,
+        },
+    },
+    file_utils::{setcap_cap_sys_nice_eip, setcap_cap_sys_nice_eip_cmd},
+    is_appimage::IS_APPIMAGE,
+    linux_distro::LinuxDistro,
+    openxr_prober::is_openxr_ready,
+    paths::{get_data_dir, get_ipc_file_path},
+    profile::{Profile, XRServiceType},
+    stateless_action,
+    steam_linux_runtime_injector::{
+        restore_runtime_entrypoint, set_runtime_entrypoint_launch_opts_from_profile,
+    },
+    xr_devices::XRDevice,
 };
-use crate::file_utils::{setcap_cap_sys_nice_eip, setcap_cap_sys_nice_eip_cmd};
-use crate::is_appimage::IS_APPIMAGE;
-use crate::linux_distro::LinuxDistro;
-use crate::openxr_prober::is_openxr_ready;
-use crate::paths::{get_data_dir, get_ipc_file_path};
-use crate::profile::{Profile, XRServiceType};
-use crate::stateless_action;
-use crate::steam_linux_runtime_injector::{
-    restore_runtime_entrypoint, set_runtime_entrypoint_launch_opts_from_profile,
+use adw::{prelude::*, ResponseAppearance};
+use gtk::glib::{self, clone};
+use relm4::{
+    actions::{AccelsPlus, ActionGroupName, RelmAction, RelmActionGroup},
+    new_action_group, new_stateful_action, new_stateless_action,
+    prelude::*,
+    {ComponentParts, ComponentSender, SimpleComponent},
 };
-use crate::ui::about_dialog::{create_about_dialog, populate_debug_info};
-use crate::ui::build_window::{BuildWindowInit, BuildWindowMsg, BuildWindowOutMsg};
-use crate::ui::debug_view::{DebugViewInit, DebugViewOutMsg};
-use crate::ui::libsurvive_setup_window::LibsurviveSetupMsg;
-use crate::ui::main_view::{MainView, MainViewInit, MainViewOutMsg};
-use crate::xr_devices::XRDevice;
-use adw::prelude::*;
-use gtk::glib::clone;
-use relm4::actions::{AccelsPlus, ActionGroupName, RelmAction, RelmActionGroup};
-use relm4::adw::ResponseAppearance;
-use relm4::gtk::glib;
-use relm4::{new_action_group, new_stateful_action, new_stateless_action, prelude::*};
-use relm4::{ComponentParts, ComponentSender, SimpleComponent};
-use std::collections::VecDeque;
-use std::fs::remove_file;
-use std::time::Duration;
+use std::{collections::VecDeque, fs::remove_file, time::Duration};
 
 pub struct App {
     application: adw::Application,

@@ -1,13 +1,11 @@
-use super::term_widget::TermWidget;
-use super::util::copy_text;
-use crate::log_level::LogLevel;
-use crate::log_parser::MonadoLog;
-use crate::profile::Profile;
-use crate::ui::app::{DebugCopyEnvVarsAction, DebugOpenDataAction, DebugOpenPrefixAction};
-use gtk::glib::clone;
-use gtk::prelude::*;
-use relm4::prelude::*;
-use relm4::{ComponentSender, SimpleComponent};
+use super::{
+    app::{DebugCopyEnvVarsAction, DebugOpenDataAction, DebugOpenPrefixAction},
+    term_widget::TermWidget,
+    util::copy_text,
+};
+use crate::{log_level::LogLevel, log_parser::MonadoLog, profile::Profile};
+use gtk::{glib::clone, prelude::*};
+use relm4::{prelude::*, ComponentSender, SimpleComponent};
 
 #[derive(Debug)]
 pub enum SearchDirection {

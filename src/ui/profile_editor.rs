@@ -1,15 +1,12 @@
 use super::{
     alert::alert_w_widget,
-    factories::env_var_row_factory::{EnvVarModel, EnvVarModelInit},
+    factories::env_var_row_factory::{EnvVarModel, EnvVarModelInit, EnvVarModelOutMsg},
+    preference_rows::{combo_row, entry_row, path_row, switch_row},
+    ADW_DIALOG_WIDTH,
 };
 use crate::{
     env_var_descriptions::ENV_VAR_DESCRIPTIONS_AS_PARAGRAPH,
     profile::{LighthouseDriver, Profile, XRServiceType},
-    ui::{
-        factories::env_var_row_factory::EnvVarModelOutMsg,
-        preference_rows::{combo_row, entry_row, path_row, switch_row},
-        ADW_DIALOG_WIDTH,
-    },
 };
 use adw::prelude::*;
 use gtk::glib::{self, clone};

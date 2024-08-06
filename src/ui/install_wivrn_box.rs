@@ -13,8 +13,7 @@ use crate::{
     profile::{Profile, XRServiceType},
     stateless_action,
 };
-use gtk::prelude::*;
-use gtk4::glib::clone;
+use gtk::{glib::clone, prelude::*};
 use relm4::{
     actions::{ActionGroupName, RelmAction, RelmActionGroup},
     new_action_group, new_stateless_action,

@@ -1,5 +1,4 @@
-use super::term_widget::TermWidget;
-use crate::ui::SENDER_IO_ERR_MSG;
+use super::{term_widget::TermWidget, SENDER_IO_ERR_MSG};
 use adw::prelude::*;
 use relm4::prelude::*;
 
