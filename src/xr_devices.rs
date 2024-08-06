@@ -316,7 +316,7 @@ impl XRDevice {
                         dev_type: XRDeviceRole::GenericTracker,
                     })
                 }
-            }))
+            }));
         }
         res
     }
