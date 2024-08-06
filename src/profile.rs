@@ -403,6 +403,13 @@ impl Profile {
                 mercury_enabled: self.features.mercury_enabled,
             },
             environment: self.environment.clone(),
+            autostart_command: self.autostart_command.clone(),
+            pull_on_build: self.pull_on_build,
+            lighthouse_driver: self.lighthouse_driver,
+            opencomposite_repo: self.opencomposite_repo.clone(),
+            opencomposite_branch: self.opencomposite_branch.clone(),
+            skip_dependency_check: self.skip_dependency_check,
+            xrservice_launch_options: self.xrservice_launch_options.clone(),
             ..Default::default()
         };
         if dup.environment.contains_key("LD_LIBRARY_PATH") {
