@@ -1,9 +1,9 @@
-use libmonado_rs::{self, BatteryStatus};
-use std::{fmt::Display, slice::Iter};
+use libmonado_rs::{self, BatteryStatus, DeviceRole};
+use std::{collections::HashMap, fmt::Display, slice::Iter};
 
 const GENERIC_TRACKER_PREFIX: &str = "Found generic tracker device: ";
 
-#[derive(Debug, Clone, PartialEq, Eq, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum XRDeviceRole {
     Head,
     Eyes,
@@ -228,6 +228,20 @@ impl XRDeviceRole {
     }
 }
 
+impl From<DeviceRole> for XRDeviceRole {
+    fn from(value: DeviceRole) -> Self {
+        match value {
+            DeviceRole::Head => XRDeviceRole::Head,
+            DeviceRole::Eyes => XRDeviceRole::Eyes,
+            DeviceRole::Left => XRDeviceRole::Left,
+            DeviceRole::Right => XRDeviceRole::Right,
+            DeviceRole::Gamepad => XRDeviceRole::Gamepad,
+            DeviceRole::HandTrackingLeft => XRDeviceRole::HandTrackingLeft,
+            DeviceRole::HandTrackingRight => XRDeviceRole::HandTrackingRight,
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct XRDevice {
     pub dev_type: XRDeviceRole,
@@ -264,22 +278,28 @@ impl XRDevice {
     }
 
     pub fn from_libmonado(monado: &libmonado_rs::Monado) -> Vec<Self> {
-        let mut devs_with_role = vec![];
-        // only roles in src/xrt/targets/libmonado/monado.c:role_enum
-        let mut res = [
-            XRDeviceRole::Head,
-            XRDeviceRole::Eyes,
-            XRDeviceRole::Left,
-            XRDeviceRole::Right,
-            XRDeviceRole::Gamepad,
-            XRDeviceRole::HandTrackingLeft,
-            XRDeviceRole::HandTrackingRight,
-        ]
-        .into_iter()
-        .filter_map(|xrd| {
-            if let Ok(dev) = monado.device_from_role(xrd.to_monado_str()) {
-                devs_with_role.push(dev.id);
-                Some(Self {
+        let mut dev_indices_with_role: HashMap<u32, XRDeviceRole> = HashMap::from_iter(
+            [
+                DeviceRole::Head,
+                DeviceRole::Eyes,
+                DeviceRole::Left,
+                DeviceRole::Right,
+                DeviceRole::Gamepad,
+                DeviceRole::HandTrackingLeft,
+                DeviceRole::HandTrackingRight,
+            ]
+            .into_iter()
+            .filter_map(|role| {
+                if let Ok(index) = monado.device_index_from_role(role) {
+                    Some((index, XRDeviceRole::from(role)))
+                } else {
+                    None
+                }
+            }),
+        );
+        if let Ok(devs) = monado.devices() {
+            devs.into_iter()
+                .map(|dev| Self {
                     index: dev.id.to_string(),
                     serial: dev.serial().ok(),
                     battery: dev.battery_status().ok().and_then(|bs| {
@@ -290,34 +310,13 @@ impl XRDevice {
                         }
                     }),
                     name: dev.name,
-                    dev_type: xrd,
+                    dev_type: dev_indices_with_role
+                        .remove(&dev.index)
+                        .unwrap_or(XRDeviceRole::GenericTracker),
                 })
-            } else {
-                None
-            }
-        })
-        .collect::<Vec<Self>>();
-        if let Ok(all_devs) = monado.devices() {
-            res.extend(all_devs.into_iter().filter_map(|dev| {
-                if devs_with_role.contains(&dev.id) {
-                    None
-                } else {
-                    Some(Self {
-                        index: dev.id.to_string(),
-                        serial: dev.serial().ok(),
-                        battery: dev.battery_status().ok().and_then(|bs| {
-                            if bs.present {
-                                Some(bs)
-                            } else {
-                                None
-                            }
-                        }),
-                        name: dev.name,
-                        dev_type: XRDeviceRole::GenericTracker,
-                    })
-                }
-            }));
+                .collect()
+        } else {
+            Vec::default()
         }
-        res
     }
 }
