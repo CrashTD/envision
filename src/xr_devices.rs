@@ -1,5 +1,5 @@
 use libmonado_rs::{self, BatteryStatus, DeviceRole};
-use std::{collections::HashMap, fmt::Display, slice::Iter};
+use std::{collections::HashSet, fmt::Display, slice::Iter};
 
 const GENERIC_TRACKER_PREFIX: &str = "Found generic tracker device: ";
 
@@ -278,28 +278,22 @@ impl XRDevice {
     }
 
     pub fn from_libmonado(monado: &libmonado_rs::Monado) -> Vec<Self> {
-        let mut dev_indices_with_role: HashMap<u32, XRDeviceRole> = HashMap::from_iter(
-            [
-                DeviceRole::Head,
-                DeviceRole::Eyes,
-                DeviceRole::Left,
-                DeviceRole::Right,
-                DeviceRole::Gamepad,
-                DeviceRole::HandTrackingLeft,
-                DeviceRole::HandTrackingRight,
-            ]
-            .into_iter()
-            .filter_map(|role| {
-                if let Ok(index) = monado.device_index_from_role(role) {
-                    Some((index, XRDeviceRole::from(role)))
-                } else {
-                    None
-                }
-            }),
-        );
-        if let Ok(devs) = monado.devices() {
-            devs.into_iter()
-                .map(|dev| Self {
+        let mut devs_with_role = HashSet::new();
+        // only roles in src/xrt/targets/libmonado/monado.c:role_enum
+        let mut res = [
+            DeviceRole::Head,
+            DeviceRole::Eyes,
+            DeviceRole::Left,
+            DeviceRole::Right,
+            DeviceRole::Gamepad,
+            DeviceRole::HandTrackingLeft,
+            DeviceRole::HandTrackingRight,
+        ]
+        .into_iter()
+        .filter_map(|role| {
+            if let Ok(dev) = monado.device_from_role(role) {
+                devs_with_role.insert(dev.id);
+                Some(Self {
                     index: dev.id.to_string(),
                     serial: dev.serial().ok(),
                     battery: dev.battery_status().ok().and_then(|bs| {
@@ -310,13 +304,34 @@ impl XRDevice {
                         }
                     }),
                     name: dev.name,
-                    dev_type: dev_indices_with_role
-                        .remove(&dev.index)
-                        .unwrap_or(XRDeviceRole::GenericTracker),
+                    dev_type: XRDeviceRole::from(role),
                 })
-                .collect()
-        } else {
-            Vec::default()
+            } else {
+                None
+            }
+        })
+        .collect::<Vec<Self>>();
+        if let Ok(all_devs) = monado.devices() {
+            res.extend(all_devs.into_iter().filter_map(|dev| {
+                if devs_with_role.contains(&dev.id) {
+                    None
+                } else {
+                    Some(Self {
+                        index: dev.id.to_string(),
+                        serial: dev.serial().ok(),
+                        battery: dev.battery_status().ok().and_then(|bs| {
+                            if bs.present {
+                                Some(bs)
+                            } else {
+                                None
+                            }
+                        }),
+                        name: dev.name,
+                        dev_type: XRDeviceRole::GenericTracker,
+                    })
+                }
+            }));
         }
+        res
     }
 }
