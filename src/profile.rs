@@ -47,6 +47,20 @@ impl XRServiceType {
             _ => panic!("XRServiceType index out of bounds"),
         }
     }
+
+    pub fn libopenxr_path(&self) -> &'static str {
+        match self {
+            Self::Monado => "libopenxr_monado.so",
+            Self::Wivrn => "wivrn/libopenxr_wivrn.so"
+        }
+    }
+
+    pub fn libmonado_path(&self) -> &'static str {
+        match self {
+            Self::Monado => "libmonado.so",
+            Self::Wivrn => "wivrn/libmonado.so"
+        }
+    }
 }
 
 impl Display for XRServiceType {

@@ -1,34 +1,11 @@
 use crate::{
     file_utils::{copy_file, deserialize_file, get_writer, set_file_readonly},
     paths::{get_backup_dir, SYSTEM_PREFIX},
-    profile::{Profile, XRServiceType},
+    profile::Profile,
     xdg::XDG,
 };
 use serde::{ser::Error, Deserialize, Serialize};
 use std::path::{Path, PathBuf};
-
-#[derive(Debug, Copy, Clone)]
-struct RuntimePathInfo {
-    libopenxr_path: &'static str,
-    libmonado_path: Option<&'static str>,
-}
-
-impl RuntimePathInfo {
-    const RUNTIME_PATH_INFO: [RuntimePathInfo; 2] = [
-        RuntimePathInfo {
-            libopenxr_path: "libopenxr_monado.so",
-            libmonado_path: Some("libmonado.so"),
-        },
-        RuntimePathInfo {
-            libopenxr_path: "wivrn/libopenxr_wivrn.so",
-            libmonado_path: Some("wivrn/libmonado.so"),
-        },
-    ];
-
-    fn get_for(xr_service_type: XRServiceType) -> Self {
-        Self::RUNTIME_PATH_INFO[xr_service_type as usize]
-    }
-}
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ActiveRuntimeInnerRuntime {
@@ -123,8 +100,6 @@ pub fn set_current_active_runtime_to_steam() -> anyhow::Result<()> {
 }
 
 pub fn build_profile_active_runtime(profile: &Profile) -> anyhow::Result<ActiveRuntime> {
-    let info = RuntimePathInfo::get_for(profile.xrservice_type.clone());
-
     let path_to = |end_path: &str| {
         ["lib", "lib64"].iter().find_map(|lib| {
             let p = profile.prefix.clone().join(lib).join(end_path);
@@ -136,19 +111,18 @@ pub fn build_profile_active_runtime(profile: &Profile) -> anyhow::Result<ActiveR
         })
     };
 
-    let Some(oxr_so) = path_to(info.libopenxr_path) else {
-        anyhow::bail!("Could not find path to {}!", info.libopenxr_path);
+    let libopenxr_end_path = profile.xrservice_type.libopenxr_path();
+    let Some(libopenxr_path) = path_to(libopenxr_end_path) else {
+        anyhow::bail!("Could not find path to {}!", libopenxr_end_path);
     };
-
-    let mnd_so = info.libmonado_path.and_then(path_to);
 
     Ok(ActiveRuntime {
         file_format_version: "1.0.0".into(),
         runtime: ActiveRuntimeInnerRuntime {
             name: None,
             valve_runtime_is_steamvr: None,
-            libmonado_path: mnd_so,
-            library_path: oxr_so,
+            libmonado_path: path_to(profile.xrservice_type.libmonado_path()),
+            library_path: libopenxr_path,
         },
     })
 }
