@@ -1107,7 +1107,7 @@ dependencies = [
 [[package]]
 name = "libmonado-rs"
 version = "0.1.0"
-source = "git+https://github.com/gabmus/libmonado-rs?rev=6ce5ef19f41413cda6a280087fd9411892f778f0#6ce5ef19f41413cda6a280087fd9411892f778f0"
+source = "git+https://github.com/technobaboo/libmonado-rs?rev=6edb1163627d87db9904c57d7ed9dd4dcc7228b7#6edb1163627d87db9904c57d7ed9dd4dcc7228b7"
 dependencies = [
  "bindgen",
  "cmake",
