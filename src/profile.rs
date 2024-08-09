@@ -51,14 +51,14 @@ impl XRServiceType {
     pub fn libopenxr_path(&self) -> &'static str {
         match self {
             Self::Monado => "libopenxr_monado.so",
-            Self::Wivrn => "wivrn/libopenxr_wivrn.so"
+            Self::Wivrn => "wivrn/libopenxr_wivrn.so",
         }
     }
 
     pub fn libmonado_path(&self) -> &'static str {
         match self {
             Self::Monado => "libmonado.so",
-            Self::Wivrn => "wivrn/libmonado.so"
+            Self::Wivrn => "wivrn/libmonado.so",
         }
     }
 }
