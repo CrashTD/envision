@@ -51,28 +51,21 @@ impl SimpleComponent for DevicesBox {
                 let mut has_right = false;
                 let mut models: Vec<DeviceRowModelInit> = Vec::new();
                 for dev in &self.devices {
-                    match dev.dev_type {
-                        XRDeviceRole::Head => {
-                            has_head = true;
-                            let mut init = DeviceRowModelInit::from(dev);
-                            if dev.name == "Simulated HMD" || dev.name == "Qwerty HMD" {
-                                init.state = Some(DeviceRowState::Warning);
-                                init.subtitle = Some(format!("No HMD detected ({})", dev.name));
-                            }
-                            models.push(init);
+                    let mut row_model = DeviceRowModelInit::from(dev);
+                    if !has_head && dev.roles.contains(&XRDeviceRole::Head) {
+                        has_head = true;
+                        if ["Simulated HMD", "Qwerty HMD"].contains(&dev.name.as_str()) {
+                            row_model.state = Some(DeviceRowState::Warning);
+                            row_model.subtitle = Some(format!("No HMD detected ({})", dev.name));
                         }
-                        XRDeviceRole::Left => {
-                            has_left = true;
-                            models.push(DeviceRowModelInit::from(dev));
-                        }
-                        XRDeviceRole::Right => {
-                            has_right = true;
-                            models.push(DeviceRowModelInit::from(dev));
-                        }
-                        _ => {
-                            models.push(DeviceRowModelInit::from(dev));
-                        }
-                    };
+                    }
+                    if !has_left && dev.roles.contains(&XRDeviceRole::Left) {
+                        has_left = true;
+                    }
+                    if !has_right && dev.roles.contains(&XRDeviceRole::Right) {
+                        has_right = true;
+                    }
+                    models.push(row_model);
                 }
                 if !has_right {
                     models.push(DeviceRowModelInit::new_missing(XRDeviceRole::Right));
@@ -84,13 +77,7 @@ impl SimpleComponent for DevicesBox {
                     models.push(DeviceRowModelInit::new_missing(XRDeviceRole::Head));
                 }
 
-                models.sort_by(|m1, m2| {
-                    let dt1 =
-                        XRDeviceRole::from_display_str(m1.title.as_deref().unwrap_or_default());
-                    let dt2 =
-                        XRDeviceRole::from_display_str(m2.title.as_deref().unwrap_or_default());
-                    dt1.cmp(&dt2)
-                });
+                models.sort_by(|m1, m2| m1.sort_index.cmp(&m2.sort_index));
 
                 for model in models {
                     guard.push_back(model);

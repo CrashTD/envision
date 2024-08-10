@@ -52,14 +52,29 @@ pub struct DeviceRowModelInit {
     pub state: Option<DeviceRowState>,
     pub suffix: Option<gtk::Widget>,
     pub battery_status: Option<EnvisionBatteryStatus>,
+    pub sort_index: u32,
 }
 
 impl From<&XRDevice> for DeviceRowModelInit {
     fn from(d: &XRDevice) -> Self {
         Self {
-            title: Some(d.dev_type.to_string()),
+            title: Some(if d.roles.is_empty() {
+                XRDeviceRole::GenericTracker.to_string()
+            } else {
+                d.roles
+                    .iter()
+                    .map(XRDeviceRole::to_string)
+                    .collect::<Vec<String>>()
+                    .join("\n")
+            }),
             subtitle: Some(d.name.clone()),
             battery_status: d.battery.map(EnvisionBatteryStatus::from),
+            sort_index: d
+                .roles
+                .iter()
+                .min()
+                .unwrap_or(&XRDeviceRole::GenericTracker)
+                .as_number(),
             ..Default::default()
         }
     }

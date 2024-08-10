@@ -1,7 +1,5 @@
 use libmonado_rs::{self, BatteryStatus, DeviceRole};
-use std::{collections::HashSet, fmt::Display, slice::Iter};
-
-const GENERIC_TRACKER_PREFIX: &str = "Found generic tracker device: ";
+use std::{collections::HashMap, fmt::Display, slice::Iter};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum XRDeviceRole {
@@ -132,7 +130,7 @@ impl XRDeviceRole {
             Self::Camera => "camera",
             Self::Keyboard => "keyboard",
 
-            Self::GenericTracker => "generic-tracker", // not actually in monado
+            Self::GenericTracker => "generic-tracker",
         }
     }
 
@@ -235,96 +233,64 @@ impl From<DeviceRole> for XRDeviceRole {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct XRDevice {
-    pub dev_type: XRDeviceRole,
+    pub roles: Vec<XRDeviceRole>,
     pub name: String,
-    pub index: String,
+    pub id: String,
     pub serial: Option<String>,
     pub battery: Option<BatteryStatus>,
 }
 
-impl Default for XRDevice {
-    fn default() -> Self {
-        Self {
-            dev_type: XRDeviceRole::GenericTracker,
-            name: String::default(),
-            index: String::default(),
-            serial: None,
-            battery: Option::default(),
-        }
-    }
-}
-
 impl XRDevice {
-    #[deprecated]
-    pub fn generic_tracker_from_log_row(s: &str) -> Option<Self> {
-        if s.starts_with(GENERIC_TRACKER_PREFIX) {
-            let n_tracker = s.trim_start_matches(GENERIC_TRACKER_PREFIX);
-            return Some(Self {
-                dev_type: XRDeviceRole::GenericTracker,
-                index: n_tracker.into(),
-                ..Default::default()
-            });
-        }
-        None
-    }
-
     pub fn from_libmonado(monado: &libmonado_rs::Monado) -> Vec<Self> {
-        let mut devs_with_role = HashSet::new();
-        // only roles in src/xrt/targets/libmonado/monado.c:role_enum
-        let mut res = [
-            DeviceRole::Head,
-            DeviceRole::Eyes,
-            DeviceRole::Left,
-            DeviceRole::Right,
-            DeviceRole::Gamepad,
-            DeviceRole::HandTrackingLeft,
-            DeviceRole::HandTrackingRight,
-        ]
-        .into_iter()
-        .filter_map(|role| {
-            if let Ok(dev) = monado.device_from_role(role) {
-                devs_with_role.insert(dev.id);
-                Some(Self {
-                    index: dev.id.to_string(),
-                    serial: dev.serial().ok(),
-                    battery: dev.battery_status().ok().and_then(|bs| {
-                        if bs.present {
-                            Some(bs)
-                        } else {
-                            None
-                        }
-                    }),
-                    name: dev.name,
-                    dev_type: XRDeviceRole::from(role),
+        if let Ok(monado_devs) = monado.devices() {
+            let mut devs: HashMap<u32, XRDevice> = monado_devs
+                .into_iter()
+                .map(|dev| {
+                    (
+                        dev.index,
+                        Self {
+                            id: dev.id.to_string(),
+                            serial: dev.serial().ok(),
+                            battery: dev.battery_status().ok().and_then(|bs| {
+                                if bs.present {
+                                    Some(bs)
+                                } else {
+                                    None
+                                }
+                            }),
+                            name: dev.name,
+                            roles: Vec::default(),
+                        },
+                    )
                 })
-            } else {
-                None
-            }
-        })
-        .collect::<Vec<Self>>();
-        if let Ok(all_devs) = monado.devices() {
-            res.extend(all_devs.into_iter().filter_map(|dev| {
-                if devs_with_role.contains(&dev.id) {
-                    None
-                } else {
-                    Some(Self {
-                        index: dev.id.to_string(),
-                        serial: dev.serial().ok(),
-                        battery: dev.battery_status().ok().and_then(|bs| {
-                            if bs.present {
-                                Some(bs)
-                            } else {
-                                None
-                            }
-                        }),
-                        name: dev.name,
-                        dev_type: XRDeviceRole::GenericTracker,
-                    })
+                .collect();
+            [
+                DeviceRole::Head,
+                DeviceRole::Eyes,
+                DeviceRole::Left,
+                DeviceRole::Right,
+                DeviceRole::Gamepad,
+                DeviceRole::HandTrackingLeft,
+                DeviceRole::HandTrackingRight,
+            ]
+            .into_iter()
+            .for_each(|role| {
+                if let Ok(index) = monado.device_index_from_role(role) {
+                    if let Some(target) = devs.get_mut(&index) {
+                        target.roles.push(role.into());
+                    } else {
+                        eprintln!(
+                            "Could not find device index {index} for role {}",
+                            XRDeviceRole::from(role)
+                        )
+                    }
                 }
-            }));
+            });
+            devs.drain().map(|(_, d)| d).collect()
+        } else {
+            Vec::default()
         }
-        res
     }
 }
