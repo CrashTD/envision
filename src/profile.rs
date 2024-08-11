@@ -48,6 +48,7 @@ impl XRServiceType {
         }
     }
 
+    /// relative path from the prefix lib dir of the libopenxr shared object
     pub fn libopenxr_path(&self) -> &'static str {
         match self {
             Self::Monado => "libopenxr_monado.so",
@@ -55,6 +56,7 @@ impl XRServiceType {
         }
     }
 
+    /// relative path from the prefix lib dir of the libmonado shared object
     pub fn libmonado_path(&self) -> &'static str {
         match self {
             Self::Monado => "libmonado.so",
@@ -506,22 +508,25 @@ impl Profile {
     }
 
     pub fn can_start(&self) -> bool {
-        Path::new(&self.xrservice_binary()).is_file()
+        self.xrservice_binary().is_file()
     }
 
+    /// absolute path to a given shared object in the profile prefix
+    pub fn find_so(&self, rel_path: &str) -> Option<PathBuf> {
+        ["lib", "lib64"]
+            .into_iter()
+            .map(|lib| self.prefix.join(lib).join(rel_path))
+            .find(|path| path.is_file())
+    }
+
+    /// absolute path to the libmonado shared object
     pub fn libmonado_so(&self) -> Option<PathBuf> {
-        let paths = [
-            self.prefix.join("lib/libmonado.so"),
-            self.prefix.join("lib64/libmonado.so"),
-            self.prefix.join("lib/wivrn/libmonado.so"),
-            self.prefix.join("lib64/wivrn/libmonado.so"),
-        ];
-
-        paths.into_iter().find(|path| path.is_file())
+        self.find_so(self.xrservice_type.libmonado_path())
     }
 
-    pub fn has_libmonado(&self) -> bool {
-        self.libmonado_so().is_some()
+    /// absolute path to the libopenxr shared object
+    pub fn libopenxr_so(&self) -> Option<PathBuf> {
+        self.find_so(self.xrservice_type.libopenxr_path())
     }
 }
 

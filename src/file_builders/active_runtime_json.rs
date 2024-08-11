@@ -100,20 +100,11 @@ pub fn set_current_active_runtime_to_steam() -> anyhow::Result<()> {
 }
 
 pub fn build_profile_active_runtime(profile: &Profile) -> anyhow::Result<ActiveRuntime> {
-    let path_to = |end_path: &str| {
-        ["lib", "lib64"].iter().find_map(|lib| {
-            let p = profile.prefix.clone().join(lib).join(end_path);
-            if p.exists() {
-                Some(p)
-            } else {
-                None
-            }
-        })
-    };
-
-    let libopenxr_end_path = profile.xrservice_type.libopenxr_path();
-    let Some(libopenxr_path) = path_to(libopenxr_end_path) else {
-        anyhow::bail!("Could not find path to {}!", libopenxr_end_path);
+    let Some(libopenxr_path) = profile.libopenxr_so() else {
+        anyhow::bail!(
+            "Could not find path to {}!",
+            profile.xrservice_type.libopenxr_path()
+        );
     };
 
     Ok(ActiveRuntime {
@@ -121,7 +112,7 @@ pub fn build_profile_active_runtime(profile: &Profile) -> anyhow::Result<ActiveR
         runtime: ActiveRuntimeInnerRuntime {
             name: None,
             valve_runtime_is_steamvr: None,
-            libmonado_path: path_to(profile.xrservice_type.libmonado_path()),
+            libmonado_path: profile.libmonado_so(),
             library_path: libopenxr_path,
         },
     })
