@@ -239,13 +239,13 @@ pub struct Profile {
     pub opencomposite_branch: Option<String>,
     pub features: ProfileFeatures,
     pub environment: HashMap<String, String>,
-    /** Install prefix */
+    /// Install prefix
     pub prefix: PathBuf,
     pub can_be_built: bool,
     pub editable: bool,
     pub pull_on_build: bool,
     #[serde(default = "LighthouseDriver::default")]
-    /** Only applicable for Monado */
+    /// Only applicable for Monado
     pub lighthouse_driver: LighthouseDriver,
     #[serde(default = "String::default")]
     pub xrservice_launch_options: String,

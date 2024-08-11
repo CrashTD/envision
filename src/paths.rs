@@ -35,7 +35,7 @@ pub fn wivrn_apk_download_path() -> PathBuf {
 
 pub const SYSTEM_PREFIX: &str = "/usr";
 
-/** System prefix inside a bubblewrap environment (flatpak or pressure vessel) */
+/// System prefix inside a bubblewrap environment (flatpak or pressure vessel)
 pub const BWRAP_SYSTEM_PREFIX: &str = "/run/host/usr";
 
 pub fn get_home_dir() -> PathBuf {

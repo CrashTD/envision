@@ -134,9 +134,7 @@ impl PhysicalXRDevice {
     }
 }
 
-/**
-* Returns a Vec of tuples, each representing (vendor_id, product_id)
-*/
+/// Returns a Vec of tuples, each representing (vendor_id, product_id)
 fn list_usb_devs() -> Vec<(u16, u16)> {
     let ctx = rusb::Context::new().expect("Failed to create libusb context");
     let devs = ctx
