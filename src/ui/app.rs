@@ -357,10 +357,10 @@ impl SimpleComponent for App {
             Msg::ClockTicking => {
                 self.main_view.sender().emit(MainViewMsg::ClockTicking);
                 let should_poll_for_devices = self.xrservice_ready
-                    && self.xrservice_worker.as_ref().is_some_and(|w| {
-                        let state = w.state.lock().unwrap();
-                        state.exit_status.is_none() && !state.stop_requested
-                    });
+                    && self
+                        .xrservice_worker
+                        .as_ref()
+                        .is_some_and(JobWorker::is_alive);
                 if should_poll_for_devices {
                     if let Some(monado) = self.libmonado.as_ref() {
                         self.xr_devices = XRDevice::from_libmonado(monado);
@@ -722,15 +722,17 @@ impl SimpleComponent for App {
                 self.xrservice_ready = success;
                 self.main_view
                     .sender()
-                    .emit(MainViewMsg::UpdateXrServiceReady(success));
-                if success {
-                    self.run_autostart(sender.clone());
-                } else if self
+                    .emit(MainViewMsg::UpdateXrServiceReady(true));
+                if self
                     .xrservice_worker
                     .as_ref()
-                    .is_some_and(|w| w.exit_code().is_none())
+                    .is_some_and(JobWorker::is_alive)
                 {
-                    sender.input(Msg::StartProber);
+                    if success {
+                        self.run_autostart(sender.clone());
+                    } else {
+                        sender.input(Msg::StartProber);
+                    }
                 }
             }
         }

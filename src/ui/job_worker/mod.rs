@@ -123,4 +123,9 @@ impl JobWorker {
 
         None
     }
+
+    pub fn is_alive(&self) -> bool {
+        let state = self.state.lock().unwrap();
+        !state.stop_requested && state.started && !state.exited && state.exit_status.is_none()
+    }
 }
