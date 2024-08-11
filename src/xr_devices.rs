@@ -28,15 +28,11 @@ pub enum XRDeviceRole {
     Keyboard,
 
     GenericTracker,
-    /**
-     * Devices with no role
-     */
-    Other,
 }
 
 impl Default for XRDeviceRole {
     fn default() -> Self {
-        Self::Other
+        Self::GenericTracker
     }
 }
 
@@ -67,7 +63,6 @@ impl Display for XRDeviceRole {
             Self::Keyboard => "Keyboard",
 
             Self::GenericTracker => "Generic tracker",
-            Self::Other => "",
         })
     }
 }
@@ -138,7 +133,6 @@ impl XRDeviceRole {
             Self::Keyboard => "keyboard",
 
             Self::GenericTracker => "generic-tracker", // not actually in monado
-            Self::Other => "other",                    // not actually in monado
         }
     }
 
@@ -168,7 +162,6 @@ impl XRDeviceRole {
             Self::Keyboard => 19,
 
             Self::GenericTracker => 20,
-            Self::Other => 21,
         }
     }
 
