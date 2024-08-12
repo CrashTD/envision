@@ -390,31 +390,37 @@ impl Profile {
             dup.editable = true;
             return dup;
         }
+        let uuid = Self::new_uuid();
+        let profile_dir = get_data_dir().join(&uuid);
         let mut dup = Self {
+            uuid,
             name: format!("Duplicate of {}", self.name),
             xrservice_type: self.xrservice_type.clone(),
             xrservice_repo: self.xrservice_repo.clone(),
             xrservice_branch: self.xrservice_branch.clone(),
             xrservice_cmake_flags: self.xrservice_cmake_flags.clone(),
+            xrservice_path: profile_dir.join("xrservice"),
             features: ProfileFeatures {
                 libsurvive: ProfileFeature {
+                    feature_type: ProfileFeatureType::Libsurvive,
                     enabled: self.features.libsurvive.enabled,
                     repo: self.features.libsurvive.repo.clone(),
                     branch: self.features.libsurvive.branch.clone(),
-                    ..Default::default()
+                    path: Some(profile_dir.join("libsurvive")),
                 },
                 basalt: ProfileFeature {
+                    feature_type: ProfileFeatureType::Basalt,
                     enabled: self.features.basalt.enabled,
                     repo: self.features.basalt.repo.clone(),
                     branch: self.features.basalt.branch.clone(),
-                    ..Default::default()
+                    path: Some(profile_dir.join("basalt")),
                 },
-
                 openhmd: ProfileFeature {
+                    feature_type: ProfileFeatureType::OpenHmd,
                     enabled: self.features.openhmd.enabled,
                     repo: self.features.openhmd.repo.clone(),
                     branch: self.features.openhmd.branch.clone(),
-                    ..Default::default()
+                    path: Some(profile_dir.join("openhmd")),
                 },
                 mercury_enabled: self.features.mercury_enabled,
             },
@@ -424,6 +430,7 @@ impl Profile {
             lighthouse_driver: self.lighthouse_driver,
             opencomposite_repo: self.opencomposite_repo.clone(),
             opencomposite_branch: self.opencomposite_branch.clone(),
+            opencomposite_path: profile_dir.join("opencomposite"),
             skip_dependency_check: self.skip_dependency_check,
             xrservice_launch_options: self.xrservice_launch_options.clone(),
             ..Default::default()
