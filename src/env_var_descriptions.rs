@@ -55,6 +55,10 @@ fn env_var_descriptions() -> Vec<(&'static str, &'static str)> {
             "LH_HANDTRACKING",
             "Controls when to enable mercury optical hand tracking. Valid options are:\n\"0\" (off) to disable hand tracking;\n\"1\" (auto) to only enable hand tracking if no controllers are found;\n\"2\" (on) to enable hand tracking even if controllers are found."
         ),
+        (
+            "WMR_HANDTRACKING",
+            "Controls whether to enable hand tracking for WMR contorllers. Valid options are:\n\"0\" (off) to disable hand tracking;\n\"1\" (on) to enable hand tracking."
+        ),
     ]
 }
 
