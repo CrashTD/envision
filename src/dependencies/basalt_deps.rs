@@ -1,6 +1,6 @@
 use crate::{
     depcheck::{DepType, Dependency, DependencyCheckResult},
-    dependencies::common::{dep_cmake, dep_eigen, dep_gpp, dep_ninja, dep_opencv},
+    dependencies::common::{dep_cmake, dep_eigen, dep_gpp, dep_libglvnd, dep_ninja, dep_opencv},
     linux_distro::LinuxDistro,
 };
 use std::collections::HashMap;
@@ -10,19 +10,7 @@ fn basalt_deps() -> Vec<Dependency> {
         dep_gpp(),
         dep_cmake(),
         dep_ninja(),
-        Dependency {
-            name: "libglvnd-dev".into(),
-            dep_type: DepType::Include,
-            filename: "GL/gl.h".into(),
-            packages: HashMap::from([
-                (LinuxDistro::Arch, "libglvnd".into()),
-                (LinuxDistro::Debian, "libglvnd-dev".into()),
-                (LinuxDistro::Fedora, "libglvnd-devel".into()),
-                // WARN: can't find anything exact for alpine, mesa-dev offers
-                //       GL/gl.h hopefully that's the only one needed
-                (LinuxDistro::Alpine, "mesa-dev".into()),
-            ]),
-        },
+        dep_libglvnd(),
         Dependency {
             name: "lz4-dev".into(),
             dep_type: DepType::Include,
