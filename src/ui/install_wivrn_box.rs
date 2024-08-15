@@ -11,14 +11,9 @@ use crate::{
     downloader::download_file_sync,
     paths::wivrn_apk_download_path,
     profile::{Profile, XRServiceType},
-    stateless_action,
 };
 use gtk::{glib::clone, prelude::*};
-use relm4::{
-    actions::{ActionGroupName, RelmAction, RelmActionGroup},
-    new_action_group, new_stateless_action,
-    prelude::*,
-};
+use relm4::{new_action_group, new_stateless_action, prelude::*};
 use std::collections::VecDeque;
 
 const DOWNLOAD_ERROR: &str = "download error";
@@ -63,15 +58,6 @@ impl SimpleComponent for InstallWivrnBox {
     type Input = InstallWivrnBoxMsg;
     type Output = ();
 
-    menu! {
-        install_wivrn_menu: {
-            section! {
-                "_Standard (Oculus and other devices)" => WivrnApkStandardAction,
-                "_Pico" => WivrnApkPicoAction,
-            }
-        }
-    }
-
     view! {
         gtk::Box {
             set_orientation: gtk::Orientation::Vertical,
@@ -100,13 +86,17 @@ impl SimpleComponent for InstallWivrnBox {
                 set_wrap: true,
                 set_wrap_mode: gtk::pango::WrapMode::Word,
             },
-            gtk::MenuButton {
+            gtk::Button {
                 add_css_class: "suggested-action",
                 set_label: "Install WiVRn",
                 set_halign: gtk::Align::Start,
                 #[track = "model.changed(Self::install_wivrn_status())"]
                 set_sensitive: model.install_wivrn_status != InstallWivrnStatus::InProgress,
-                set_menu_model: Some(&install_wivrn_menu),
+                connect_clicked[sender] => move |_| {
+                     sender.input(Self::Input::InstallWivrnApk(
+                        "https://github.com/WiVRn/WiVRn/releases/latest/download/WiVRn-standard-release.apk".into()
+                     ))
+                },
             },
             gtk::Label {
                 add_css_class: "error",
@@ -243,40 +233,6 @@ impl SimpleComponent for InstallWivrnBox {
         };
 
         let widgets = view_output!();
-
-        let mut actions = RelmActionGroup::<InstallWivrnActionGroup>::new();
-
-        stateless_action!(
-            actions,
-            WivrnApkStandardAction,
-            clone!(
-                #[strong]
-                sender,
-                move |_| {
-                    sender.input(Self::Input::InstallWivrnApk(
-                    "https://github.com/Meumeu/WiVRn/releases/latest/download/WiVRn-standard-release.apk".into()
-                ));
-                }
-            )
-        );
-        stateless_action!(
-            actions,
-            WivrnApkPicoAction,
-            clone!(
-                #[strong]
-                sender,
-                move |_| {
-                    sender.input(Self::Input::InstallWivrnApk(
-                    "https://github.com/Meumeu/WiVRn/releases/latest/download/WiVRn-pico-release.apk".into()
-                ));
-                }
-            )
-        );
-
-        root.insert_action_group(
-            InstallWivrnActionGroup::NAME,
-            Some(&actions.into_action_group()),
-        );
 
         ComponentParts { model, widgets }
     }

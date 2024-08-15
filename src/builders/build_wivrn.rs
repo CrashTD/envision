@@ -21,7 +21,7 @@ pub fn get_build_wivrn_jobs(profile: &Profile, clean_build: bool) -> VecDeque<Wo
         repo: profile
             .xrservice_repo
             .as_ref()
-            .unwrap_or(&"https://github.com/Meumeu/WiVRn".into())
+            .unwrap_or(&"https://github.com/WiVRn/WiVRn".into())
             .clone(),
         dir: profile.xrservice_path.clone(),
         branch: profile
