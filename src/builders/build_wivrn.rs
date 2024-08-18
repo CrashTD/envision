@@ -27,7 +27,7 @@ pub fn get_build_wivrn_jobs(profile: &Profile, clean_build: bool) -> VecDeque<Wo
         branch: profile
             .xrservice_branch
             .as_ref()
-            .unwrap_or(&"master".into())
+            .unwrap_or(&"release".into())
             .clone(),
     };
 
