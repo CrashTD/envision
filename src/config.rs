@@ -18,7 +18,9 @@ use std::{
 
 const DEFAULT_WIN_SIZE: [i32; 2] = [360, 400];
 
-const fn default_win_size() -> [i32; 2] { DEFAULT_WIN_SIZE }
+const fn default_win_size() -> [i32; 2] {
+    DEFAULT_WIN_SIZE
+}
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Config {
