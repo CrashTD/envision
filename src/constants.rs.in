@@ -1,5 +1,4 @@
 use crate::paths::get_exec_prefix;
-
 use std::path::PathBuf;
 
 pub const APP_NAME: &str = "@PRETTY_NAME@";
@@ -18,7 +17,7 @@ pub const BUILD_PROFILE: &str = "@PROFILE@";
 pub const BUILD_DATETIME: &str = "@BUILD_DATETIME@";
 
 pub fn get_developers() -> Vec<String> {
-    vec!["Gabriele Musco <gabmus@disroot.org>".to_string()]
+    vec!["Gabriele Musco <gabmus@disroot.org>".into()]
 }
 
 pub fn pkg_data_dir() -> PathBuf {
