@@ -8,6 +8,7 @@ if [[ ! -f Cargo.toml ]]; then
 fi
 
 meson setup appimage_build -Dprefix=/usr -Dprofile=default
+meson test -C appimage_build --print-errorlogs
 DESTDIR="$PWD/AppDir" ninja -C appimage_build install
 curl -SsLO https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
 chmod +x linuxdeploy-x86_64.AppImage

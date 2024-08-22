@@ -3,7 +3,7 @@ config = configure_file(
   output: 'constants.rs',
   configuration: global_conf
 )
-# Copy the config.rs output to the source directory.
+# Copy the constants.rs output to the source directory.
 run_command(
   'cp',
   meson.project_build_root() / 'src' / 'constants.rs',
@@ -42,4 +42,25 @@ cargo_build = custom_target(
     '&&',
     'cp', 'src' / rust_target / meson.project_name(), '@OUTPUT@',
   ]
+)
+
+test(
+  'cargo-fmt-check',
+  cargo,
+  args: ['fmt', '--all', '--check']
+)
+
+test(
+  'cargo-clippy',
+  cargo,
+  env: ['RUSTFLAGS=-Dwarnings'],
+  args: ['clippy', '--all-targets', '--all-features'],
+  timeout: 0,
+)
+
+test(
+  'cargo-test',
+  cargo,
+  args: ['test'],
+  timeout: 0,
 )

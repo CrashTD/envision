@@ -24,6 +24,7 @@ pub mod build_tools;
 pub mod builders;
 pub mod cmd_runner;
 pub mod config;
+#[rustfmt::skip]
 pub mod constants;
 pub mod depcheck;
 pub mod device_prober;

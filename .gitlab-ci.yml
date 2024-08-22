@@ -13,52 +13,6 @@ commitcheck:
     # only run for merge requests
     - if [ -z "$CI_MERGE_REQUEST_TITLTE" ]; then true; else python ./dist/tagging/check_conventional_commit.py "$CI_MERGE_REQUEST_TARGET_BRANCH_NAME"; fi
 
-cargo:fmtcheck:
-  image: "rust:slim"
-  stage: check
-  script:
-    - rustup component add rustfmt
-    # Create blank versions of our configured files
-    # so rustfmt does not yell about non-existent files or completely empty files
-    - echo -e "" >> src/constants.rs
-    - rustc -Vv && cargo -Vv
-    - cargo fmt --version
-    - cargo fmt --all -- --check
-
-cargo:clippy:
-  stage: check
-  variables:
-    RUSTFLAGS: "-Dwarnings"
-  script:
-    - apt-get update
-    - apt-get install libgtk-4-dev libadwaita-1-dev libssl-dev libjxl-dev libvte-2.91-gtk4-dev meson ninja-build git desktop-file-utils gettext file libusb-dev libusb-1.0-0-dev libopenxr-dev curl -y
-    - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs -o /tmp/rustup.sh
-    - chmod +x /tmp/rustup.sh
-    - /tmp/rustup.sh -y
-    - source "$HOME/.cargo/env"
-    - rustup component add clippy
-    - rustc -Vv && cargo -Vv
-    - cp src/constants.rs.in src/constants.rs
-    - cargo clippy --version
-    - cargo clippy --all-targets --all-features
-
-cargo:test:
-  stage: check
-  script:
-    - apt-get update
-    - apt-get install libgtk-4-dev libadwaita-1-dev libssl-dev libjxl-dev libvte-2.91-gtk4-dev meson ninja-build git desktop-file-utils gettext file libusb-dev libusb-1.0-0-dev libopenxr-dev curl -y
-    - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs -o /tmp/rustup.sh
-    - chmod +x /tmp/rustup.sh
-    - /tmp/rustup.sh -y
-    - source "$HOME/.cargo/env"
-    - rustc --version && cargo --version  # Print version info for debugging
-    - meson setup build -Dprefix="$PWD/build/localprefix" -Dprofile=development
-    - ninja -C build
-    - cargo test --workspace --verbose
-  cache:
-    paths:
-      - /var/cache/apt
-
 appimage:
   stage: deploy
   script:
@@ -68,6 +22,7 @@ appimage:
     - chmod +x /tmp/rustup.sh
     - /tmp/rustup.sh -y
     - source "$HOME/.cargo/env"
+    - rustup component add clippy
     - bash ./dist/appimage/build_appimage.sh
   artifacts:
     paths:
