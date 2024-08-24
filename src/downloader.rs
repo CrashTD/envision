@@ -70,9 +70,24 @@ pub async fn download_file_async(url: &str, path: &Path) -> Result<(), reqwest::
     Ok(())
 }
 
-pub async fn cache_file(url: &str) -> Result<PathBuf, reqwest::Error> {
+/// Creates a unique hash for the url, checks if already present. If present
+/// will skip download and give you the dest file path, if absent it will
+/// download it and return the same destination path
+///
+/// # Arguments
+///
+/// * `url` - the url to the file that will be downloaded
+/// * `extension` - optional file extension that will be appended to the name, without the dot
+pub async fn cache_file(url: &str, extension: Option<&str>) -> Result<PathBuf, reqwest::Error> {
     let hash = sha256(url);
-    let dest = get_cache_dir().join(hash);
+    let dest = get_cache_dir().join(format!(
+        "{hash}{}",
+        if let Some(ext) = extension {
+            format!(".{ext}")
+        } else {
+            "".into()
+        }
+    ));
     if !dest.is_file() {
         download_file_async(url, &dest).await?;
     }
