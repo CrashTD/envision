@@ -17,6 +17,7 @@ use ui::{
     cmdline_opts::CmdLineOpts,
 };
 
+pub mod async_process;
 pub mod build_tools;
 pub mod builders;
 pub mod cmd_runner;
