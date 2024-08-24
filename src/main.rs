@@ -30,6 +30,7 @@ pub mod env_var_descriptions;
 pub mod file_builders;
 pub mod file_utils;
 pub mod gpu_profile;
+pub mod hash;
 pub mod is_appimage;
 pub mod linux_distro;
 pub mod log_level;
