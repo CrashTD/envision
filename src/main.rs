@@ -119,7 +119,7 @@ fn main() -> Result<()> {
         0
     });
     let app = RelmApp::from_app(main_app.clone()).with_broker(&BROKER);
-    app.run::<App>(AppInit {
+    app.run_async::<App>(AppInit {
         application: main_app,
     });
     Ok(())

@@ -1,4 +1,4 @@
-use crate::{cmd_runner::CmdRunner, profile::Profile, runner::Runner};
+use crate::{async_process::async_process, profile::Profile};
 use nix::{
     errno::Errno,
     sys::statvfs::{statvfs, FsFlags},
@@ -74,10 +74,11 @@ pub fn setcap_cap_sys_nice_eip_cmd(profile: &Profile) -> Vec<String> {
     ]
 }
 
-pub fn setcap_cap_sys_nice_eip(profile: &Profile) {
-    let mut runner = CmdRunner::new(None, "pkexec".into(), setcap_cap_sys_nice_eip_cmd(profile));
-    runner.start();
-    runner.join();
+pub async fn setcap_cap_sys_nice_eip(profile: &Profile) {
+    if let Err(e) = async_process("pkexec", Some(&setcap_cap_sys_nice_eip_cmd(profile)), None).await
+    {
+        eprintln!("Error: failed running setcap: {e}");
+    }
 }
 
 pub fn rm_rf(path: &Path) {

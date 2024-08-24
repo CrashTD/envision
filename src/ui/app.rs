@@ -55,7 +55,6 @@ use relm4::{
     actions::{AccelsPlus, ActionGroupName, RelmAction, RelmActionGroup},
     new_action_group, new_stateful_action, new_stateless_action,
     prelude::*,
-    {ComponentParts, ComponentSender, SimpleComponent},
 };
 use std::{collections::VecDeque, fs::remove_file, time::Duration};
 
@@ -150,7 +149,7 @@ impl App {
         }
     }
 
-    pub fn start_xrservice(&mut self, sender: ComponentSender<Self>, debug: bool) {
+    pub fn start_xrservice(&mut self, sender: AsyncComponentSender<Self>, debug: bool) {
         self.xrservice_ready = false;
         let prof = self.get_selected_profile();
         if let Err(e) = set_current_active_runtime_to_profile(&prof) {
@@ -215,7 +214,7 @@ impl App {
         }
     }
 
-    pub fn run_autostart(&mut self, sender: ComponentSender<Self>) {
+    pub fn run_autostart(&mut self, sender: AsyncComponentSender<Self>) {
         let prof = self.get_selected_profile();
         if let Some(autostart_cmd) = &prof.autostart_command {
             let mut jobs = VecDeque::new();
@@ -281,11 +280,12 @@ pub struct AppInit {
     pub application: adw::Application,
 }
 
-#[relm4::component(pub)]
-impl SimpleComponent for App {
+#[relm4::component(pub async)]
+impl AsyncComponent for App {
     type Init = AppInit;
     type Input = Msg;
     type Output = ();
+    type CommandOutput = ();
 
     view! {
         #[root]
@@ -321,7 +321,12 @@ impl SimpleComponent for App {
         self.restore_openxr_openvr_files();
     }
 
-    fn update(&mut self, message: Self::Input, sender: ComponentSender<Self>) {
+    async fn update(
+        &mut self,
+        message: Self::Input,
+        sender: AsyncComponentSender<Self>,
+        _root: &Self::Root,
+    ) {
         match message {
             Msg::NoOp => {}
             Msg::OnServiceLog(rows) => {
@@ -604,7 +609,7 @@ impl SimpleComponent for App {
                     println!("pkexec not found, skipping setcap");
                 } else {
                     let profile = self.get_selected_profile();
-                    setcap_cap_sys_nice_eip(&profile);
+                    setcap_cap_sys_nice_eip(&profile).await;
                 }
             }
             Msg::ProfileSelected(prof) => {
@@ -738,11 +743,11 @@ impl SimpleComponent for App {
         }
     }
 
-    fn init(
+    async fn init(
         init: Self::Init,
         root: Self::Root,
-        sender: ComponentSender<Self>,
-    ) -> ComponentParts<Self> {
+        sender: AsyncComponentSender<Self>,
+    ) -> AsyncComponentParts<Self> {
         let config = Config::get_config();
         let win_size = config.win_size;
         let profiles = config.profiles();
@@ -965,7 +970,7 @@ impl SimpleComponent for App {
 
         model.split_view = Some(widgets.split_view.clone());
 
-        ComponentParts { model, widgets }
+        AsyncComponentParts { model, widgets }
     }
 }
 

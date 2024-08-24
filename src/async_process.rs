@@ -1,3 +1,4 @@
+use std::ffi::OsStr;
 use std::process::Stdio;
 use std::{collections::HashMap, os::unix::process::ExitStatusExt};
 use tokio::process::Command;
@@ -8,9 +9,9 @@ pub struct AsyncProcessOut {
     pub stderr: String,
 }
 
-pub async fn async_process(
-    cmd: &str,
-    args: Option<&[&str]>,
+pub async fn async_process<S: AsRef<OsStr>, T: AsRef<OsStr>>(
+    cmd: S,
+    args: Option<&[T]>,
     env: Option<HashMap<String, String>>,
 ) -> anyhow::Result<AsyncProcessOut> {
     let cmd = Command::new(cmd)
