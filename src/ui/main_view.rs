@@ -42,7 +42,7 @@ pub struct MainView {
     #[tracker::do_not_track]
     profiles_dropdown: Option<gtk::DropDown>,
     #[tracker::do_not_track]
-    install_wivrn_box: Controller<InstallWivrnBox>,
+    install_wivrn_box: AsyncController<InstallWivrnBox>,
     #[tracker::do_not_track]
     steam_launch_options_box: Controller<SteamLaunchOptionsBox>,
     #[tracker::do_not_track]

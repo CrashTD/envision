@@ -52,11 +52,12 @@ pub struct InstallWivrnBoxInit {
     pub root_win: gtk::Window,
 }
 
-#[relm4::component(pub)]
-impl SimpleComponent for InstallWivrnBox {
+#[relm4::component(pub async)]
+impl AsyncComponent for InstallWivrnBox {
     type Init = InstallWivrnBoxInit;
     type Input = InstallWivrnBoxMsg;
     type Output = ();
+    type CommandOutput = ();
 
     view! {
         gtk::Box {
@@ -121,7 +122,12 @@ impl SimpleComponent for InstallWivrnBox {
         }
     }
 
-    fn update(&mut self, message: Self::Input, sender: ComponentSender<Self>) {
+    async fn update(
+        &mut self,
+        message: Self::Input,
+        sender: AsyncComponentSender<Self>,
+        _root: &Self::Root,
+    ) {
         self.reset();
 
         match message {
@@ -218,11 +224,11 @@ impl SimpleComponent for InstallWivrnBox {
         }
     }
 
-    fn init(
+    async fn init(
         init: Self::Init,
         root: Self::Root,
-        sender: ComponentSender<Self>,
-    ) -> ComponentParts<Self> {
+        sender: AsyncComponentSender<Self>,
+    ) -> AsyncComponentParts<Self> {
         let model = Self {
             selected_profile: init.selected_profile,
             install_wivrn_status: InstallWivrnStatus::Done(None),
@@ -234,7 +240,7 @@ impl SimpleComponent for InstallWivrnBox {
 
         let widgets = view_output!();
 
-        ComponentParts { model, widgets }
+        AsyncComponentParts { model, widgets }
     }
 }
 
