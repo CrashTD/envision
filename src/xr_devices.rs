@@ -237,7 +237,8 @@ impl From<DeviceRole> for XRDeviceRole {
 pub struct XRDevice {
     pub roles: Vec<XRDeviceRole>,
     pub name: String,
-    pub id: String,
+    pub id: u32,
+    pub index: u32,
     pub serial: Option<String>,
     pub battery: Option<BatteryStatus>,
 }
@@ -251,7 +252,8 @@ impl XRDevice {
                     (
                         dev.index,
                         Self {
-                            id: dev.id.to_string(),
+                            id: dev.id,
+                            index: dev.index,
                             serial: dev.serial().ok(),
                             battery: dev.battery_status().ok().and_then(|bs| {
                                 if bs.present {

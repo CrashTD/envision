@@ -45,7 +45,7 @@ pub struct DeviceRowModel {
     battery_status: Option<EnvisionBatteryStatus>,
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct DeviceRowModelInit {
     pub title: Option<String>,
     pub subtitle: Option<String>,
@@ -74,7 +74,9 @@ impl From<&XRDevice> for DeviceRowModelInit {
                 .iter()
                 .min()
                 .unwrap_or(&XRDeviceRole::GenericTracker)
-                .as_number(),
+                .as_number()
+                * 1000
+                + d.index,
             ..Default::default()
         }
     }
