@@ -36,12 +36,14 @@ impl Encoder {
     pub fn as_vec() -> Vec<Self> {
         vec![Self::X264, Self::Nvenc, Self::Vaapi]
     }
+}
 
-    pub fn as_number(&self) -> u32 {
-        match self {
-            Self::X264 => 0,
-            Self::Nvenc => 1,
-            Self::Vaapi => 2,
+impl From<&Encoder> for u32 {
+    fn from(value: &Encoder) -> Self {
+        match value {
+            Encoder::X264 => 0,
+            Encoder::Nvenc => 1,
+            Encoder::Vaapi => 2,
         }
     }
 }
@@ -70,11 +72,13 @@ impl Codec {
     pub fn as_vec() -> Vec<Self> {
         vec![Self::H264, Self::H265]
     }
+}
 
-    pub fn as_number(&self) -> u32 {
-        match self {
-            Self::H264 => 0,
-            Self::H265 => 1,
+impl From<&Codec> for u32 {
+    fn from(value: &Codec) -> Self {
+        match value {
+            Codec::H264 => 0,
+            Codec::H265 => 1,
         }
     }
 }

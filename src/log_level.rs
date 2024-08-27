@@ -82,16 +82,6 @@ impl LogLevel {
         .iter()
     }
 
-    pub fn as_number(&self) -> u32 {
-        match self {
-            Self::Trace => 0,
-            Self::Debug => 1,
-            Self::Info => 2,
-            Self::Warning => 3,
-            Self::Error => 99,
-        }
-    }
-
     pub fn colored(&self) -> String {
         match self {
             Self::Trace => TermColor::Gray,
@@ -104,9 +94,21 @@ impl LogLevel {
     }
 }
 
+impl From<&LogLevel> for u32 {
+    fn from(value: &LogLevel) -> Self {
+        match value {
+            LogLevel::Trace => 0,
+            LogLevel::Debug => 1,
+            LogLevel::Info => 2,
+            LogLevel::Warning => 3,
+            LogLevel::Error => 99,
+        }
+    }
+}
+
 impl PartialOrd for LogLevel {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(self.as_number().cmp(&other.as_number()))
+        Some(u32::from(self).cmp(&other.into()))
     }
 }
 
