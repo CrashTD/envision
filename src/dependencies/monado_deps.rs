@@ -2,8 +2,8 @@ use crate::{
     depcheck::{DepType, Dependency, DependencyCheckResult},
     dependencies::common::{
         dep_cmake, dep_eigen, dep_gcc, dep_git, dep_glslang_validator, dep_gpp, dep_libdrm,
-        dep_libglvnd, dep_libudev, dep_ninja, dep_openxr, dep_vulkan_headers,
-        dep_vulkan_icd_loader,
+        dep_libglvnd, dep_libudev, dep_libx11, dep_libxcb, dep_ninja, dep_openxr,
+        dep_vulkan_headers, dep_vulkan_icd_loader,
     },
     linux_distro::LinuxDistro,
 };
@@ -15,6 +15,8 @@ fn monado_deps() -> Vec<Dependency> {
         dep_openxr(),
         dep_vulkan_icd_loader(),
         dep_vulkan_headers(),
+        dep_libxcb(),
+        dep_libx11(),
         Dependency {
             name: "wayland".into(),
             dep_type: DepType::SharedObject,

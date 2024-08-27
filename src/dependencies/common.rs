@@ -224,3 +224,33 @@ pub fn dep_libglvnd() -> Dependency {
         ]),
     }
 }
+
+pub fn dep_libxcb() -> Dependency {
+    Dependency {
+        name: "libxcb".into(),
+        dep_type: DepType::Include,
+        filename: "xcb/randr.h".into(),
+        packages: HashMap::from([
+            (LinuxDistro::Arch, "libxcb".into()),
+            (LinuxDistro::Debian, "libxcb-randr0-dev".into()),
+            (LinuxDistro::Fedora, "libxcb-devel".into()),
+            (LinuxDistro::Gentoo, "x11-libs/libxcb".into()),
+            (LinuxDistro::Alpine, "libxcb-dev".into()),
+        ]),
+    }
+}
+
+pub fn dep_libx11() -> Dependency {
+    Dependency {
+        name: "libx11".into(),
+        dep_type: DepType::Include,
+        filename: "X11/Xlib-xcb.h".into(),
+        packages: HashMap::from([
+            (LinuxDistro::Arch, "libx11".into()),
+            (LinuxDistro::Debian, "libx11-dev".into()),
+            (LinuxDistro::Fedora, "libX11-devel".into()),
+            (LinuxDistro::Gentoo, "x11-libs/libX11".into()),
+            (LinuxDistro::Alpine, "libx11-dev".into()),
+        ]),
+    }
+}
