@@ -147,7 +147,7 @@ impl SimpleComponent for ProfileEditor {
                                 .collect::<Vec<String>>(),
                             clone!(#[strong] prof, move |row| {
                                 prof.borrow_mut().xrservice_type =
-                                    XRServiceType::from_number(row.selected());
+                                    XRServiceType::from(row.selected());
                             }),
                         ),
                         add: &entry_row(
@@ -171,7 +171,7 @@ impl SimpleComponent for ProfileEditor {
                                 .collect::<Vec<String>>(),
                             clone!(#[strong] prof, move |row| {
                                 prof.borrow_mut().lighthouse_driver =
-                                    LighthouseDriver::from_number(row.selected());
+                                    LighthouseDriver::from(row.selected());
                             })
                         ),
                         add: &path_row(

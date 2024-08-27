@@ -21,31 +21,8 @@ pub enum XRServiceType {
 }
 
 impl XRServiceType {
-    pub fn from_string(s: String) -> Self {
-        match s.trim().to_lowercase().as_str() {
-            "monado" => Self::Monado,
-            "wivrn" => Self::Wivrn,
-            _ => Self::Monado,
-        }
-    }
-
     pub fn iter() -> Iter<'static, Self> {
         [Self::Monado, Self::Wivrn].iter()
-    }
-
-    pub fn as_number(&self) -> u32 {
-        match self {
-            Self::Monado => 0,
-            Self::Wivrn => 1,
-        }
-    }
-
-    pub fn from_number(i: u32) -> Self {
-        match i {
-            0 => Self::Monado,
-            1 => Self::Wivrn,
-            _ => panic!("XRServiceType index out of bounds"),
-        }
     }
 
     /// relative path from the prefix lib dir of the libopenxr shared object
@@ -61,6 +38,35 @@ impl XRServiceType {
         match self {
             Self::Monado => "libmonado.so",
             Self::Wivrn => "wivrn/libmonado.so",
+        }
+    }
+}
+
+impl From<&str> for XRServiceType {
+    fn from(s: &str) -> Self {
+        match s.trim().to_lowercase().as_str() {
+            "monado" => Self::Monado,
+            "wivrn" => Self::Wivrn,
+            _ => Self::Monado,
+        }
+    }
+}
+
+impl From<u32> for XRServiceType {
+    fn from(i: u32) -> Self {
+        match i {
+            0 => Self::Monado,
+            1 => Self::Wivrn,
+            _ => panic!("XRServiceType index out of bounds"),
+        }
+    }
+}
+
+impl Into<u32> for XRServiceType {
+    fn into(self) -> u32 {
+        match self {
+            Self::Monado => 0,
+            Self::Wivrn => 1,
         }
     }
 }
@@ -182,8 +188,8 @@ impl Default for LighthouseDriver {
     }
 }
 
-impl LighthouseDriver {
-    pub fn from_string(s: String) -> Self {
+impl From<&str> for LighthouseDriver {
+    fn from(s: &str) -> Self {
         match s.trim().to_lowercase().as_str() {
             "vive" => Self::Vive,
             "survive" => Self::Survive,
@@ -193,26 +199,32 @@ impl LighthouseDriver {
             _ => Self::Vive,
         }
     }
+}
 
-    pub fn iter() -> Iter<'static, Self> {
-        [Self::Vive, Self::Survive, Self::SteamVR].iter()
-    }
-
-    pub fn as_number(&self) -> u32 {
-        match self {
-            Self::Vive => 0,
-            Self::Survive => 1,
-            Self::SteamVR => 2,
-        }
-    }
-
-    pub fn from_number(i: u32) -> Self {
+impl From<u32> for LighthouseDriver {
+    fn from(i: u32) -> Self {
         match i {
             0 => Self::Vive,
             1 => Self::Survive,
             2 => Self::SteamVR,
             _ => panic!("LighthouseDriver index out of bounds"),
         }
+    }
+}
+
+impl Into<u32> for LighthouseDriver {
+    fn into(self) -> u32 {
+        match self {
+            Self::Vive => 0,
+            Self::Survive => 1,
+            Self::SteamVR => 2,
+        }
+    }
+}
+
+impl LighthouseDriver {
+    pub fn iter() -> Iter<'static, Self> {
+        [Self::Vive, Self::Survive, Self::SteamVR].iter()
     }
 }
 
