@@ -88,16 +88,19 @@ pub enum ProfileFeatureType {
 }
 
 impl ProfileFeatureType {
-    pub fn from_string(s: String) -> Self {
+    pub fn iter() -> Iter<'static, ProfileFeatureType> {
+        [Self::Libsurvive, Self::Basalt].iter()
+    }
+}
+
+impl From<&str> for ProfileFeatureType {
+    fn from(s: &str) -> Self {
         match s.trim().to_lowercase().as_str() {
             "libsurvive" => Self::Libsurvive,
             "basalt" => Self::Basalt,
+            "openhmd" => Self::OpenHmd,
             _ => panic!("Unknown profile feature type"),
         }
-    }
-
-    pub fn iter() -> Iter<'static, ProfileFeatureType> {
-        [Self::Libsurvive, Self::Basalt].iter()
     }
 }
 
