@@ -62,11 +62,11 @@ impl From<u32> for XRServiceType {
     }
 }
 
-impl Into<u32> for XRServiceType {
-    fn into(self) -> u32 {
-        match self {
-            Self::Monado => 0,
-            Self::Wivrn => 1,
+impl From<&XRServiceType> for u32 {
+    fn from(value: &XRServiceType) -> Self {
+        match value {
+            XRServiceType::Monado => 0,
+            XRServiceType::Wivrn => 1,
         }
     }
 }
@@ -215,12 +215,12 @@ impl From<u32> for LighthouseDriver {
     }
 }
 
-impl Into<u32> for LighthouseDriver {
-    fn into(self) -> u32 {
-        match self {
-            Self::Vive => 0,
-            Self::Survive => 1,
-            Self::SteamVR => 2,
+impl From<&LighthouseDriver> for u32 {
+    fn from(value: &LighthouseDriver) -> Self {
+        match value {
+            LighthouseDriver::Vive => 0,
+            LighthouseDriver::Survive => 1,
+            LighthouseDriver::SteamVR => 2,
         }
     }
 }

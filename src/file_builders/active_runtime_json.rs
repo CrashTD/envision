@@ -139,6 +139,7 @@ pub fn set_current_active_runtime_to_profile(profile: &Profile) -> anyhow::Resul
     let dest = get_active_runtime_json_path();
     set_file_readonly(&dest, false)?;
     backup_steam_active_runtime();
+    // TODO: need to escape path spaces here?
     let pfx = profile.clone().prefix;
     let mut ar = build_profile_active_runtime(profile)?;
     // hack: relativize libopenxr_monado.so path for system installs
