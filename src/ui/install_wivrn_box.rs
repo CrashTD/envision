@@ -201,7 +201,7 @@ impl AsyncComponent for InstallWivrnBox {
                     }
                     Ok(WivrnApkRef::Commit(commit)) => {
                         sender.input(Self::Input::DoInstall(
-                            format!("https://github.com/WiVRn/WiVRn-APK/releases/download/apk-${commit}/org.meumeu.wivrn-standard-release.apk")
+                            format!("https://github.com/WiVRn/WiVRn-APK/releases/download/apk-{commit}/org.meumeu.wivrn-standard-release.apk")
                         ));
                     }
                 };
