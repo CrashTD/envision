@@ -69,13 +69,12 @@ impl From<&XRDevice> for DeviceRowModelInit {
             }),
             subtitle: Some(d.name.clone()),
             battery_status: d.battery.map(EnvisionBatteryStatus::from),
-            sort_index: d
-                .roles
-                .iter()
-                .min()
-                .unwrap_or(&XRDeviceRole::GenericTracker)
-                .as_number()
-                * 1000
+            sort_index: u32::from(
+                d.roles
+                    .iter()
+                    .min()
+                    .unwrap_or(&XRDeviceRole::GenericTracker),
+            ) * 1000
                 + d.index,
             ..Default::default()
         }

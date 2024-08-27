@@ -65,18 +65,6 @@ impl Display for XRDeviceRole {
     }
 }
 
-impl PartialOrd for XRDeviceRole {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(self.as_number().cmp(&other.as_number()))
-    }
-}
-
-impl Ord for XRDeviceRole {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.partial_cmp(other).unwrap()
-    }
-}
-
 impl XRDeviceRole {
     pub fn iter() -> Iter<'static, Self> {
         [
@@ -134,35 +122,6 @@ impl XRDeviceRole {
         }
     }
 
-    pub fn as_number(&self) -> u32 {
-        match self {
-            Self::Head => 0,
-            Self::Eyes => 1,
-            Self::Left => 2,
-            Self::Right => 3,
-            Self::Gamepad => 4,
-            Self::HandTrackingLeft => 5,
-            Self::HandTrackingRight => 6,
-
-            // the following are not in libmonado
-            Self::HandheldObject => 7,
-            Self::LeftFoot => 8,
-            Self::RightFoot => 9,
-            Self::LeftShoulder => 10,
-            Self::RightShoulder => 11,
-            Self::LeftElbow => 12,
-            Self::RightElbow => 13,
-            Self::LeftKnee => 14,
-            Self::RightKnee => 15,
-            Self::Waist => 16,
-            Self::Chest => 17,
-            Self::Camera => 18,
-            Self::Keyboard => 19,
-
-            Self::GenericTracker => 20,
-        }
-    }
-
     pub fn from_monado_str(s: &str) -> Option<Self> {
         match s {
             "head" => Some(Self::Head),
@@ -216,6 +175,49 @@ impl XRDeviceRole {
             "Generic tracker" => Self::GenericTracker,
             _ => Self::GenericTracker,
         }
+    }
+}
+
+impl From<&XRDeviceRole> for u32 {
+    fn from(value: &XRDeviceRole) -> Self {
+        match value {
+            XRDeviceRole::Head => 0,
+            XRDeviceRole::Eyes => 1,
+            XRDeviceRole::Left => 2,
+            XRDeviceRole::Right => 3,
+            XRDeviceRole::Gamepad => 4,
+            XRDeviceRole::HandTrackingLeft => 5,
+            XRDeviceRole::HandTrackingRight => 6,
+
+            // the following are not in libmonado
+            XRDeviceRole::HandheldObject => 7,
+            XRDeviceRole::LeftFoot => 8,
+            XRDeviceRole::RightFoot => 9,
+            XRDeviceRole::LeftShoulder => 10,
+            XRDeviceRole::RightShoulder => 11,
+            XRDeviceRole::LeftElbow => 12,
+            XRDeviceRole::RightElbow => 13,
+            XRDeviceRole::LeftKnee => 14,
+            XRDeviceRole::RightKnee => 15,
+            XRDeviceRole::Waist => 16,
+            XRDeviceRole::Chest => 17,
+            XRDeviceRole::Camera => 18,
+            XRDeviceRole::Keyboard => 19,
+
+            XRDeviceRole::GenericTracker => 20,
+        }
+    }
+}
+
+impl PartialOrd for XRDeviceRole {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(u32::from(self).cmp(&other.into()))
+    }
+}
+
+impl Ord for XRDeviceRole {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.partial_cmp(other).unwrap()
     }
 }
 
