@@ -22,11 +22,7 @@ impl Cmake {
                 if k.contains(' ') {
                     panic!("Cmake vars cannot contain spaces!");
                 }
-                if v.contains(' ') {
-                    args.push(format!("-D{k}=\"{v}\"", k = k, v = v));
-                } else {
-                    args.push(format!("-D{k}={v}", k = k, v = v));
-                }
+                args.push(format!("-D{k}={v}", k = k, v = v));
             }
         }
         args.push(self.source_dir.to_string_lossy().to_string());
