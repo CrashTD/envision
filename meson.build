@@ -38,7 +38,8 @@ iconsdir = datadir / 'icons'
 podir = meson.project_source_root() / 'po'
 gettext_package = meson.project_name()
 
-if get_option('profile') == 'development'
+# are we building a tagged version?
+if run_command('git', 'describe', '--tags', '--exact-match').returncode() != 0
   profile = 'Devel'
   vcs_tag = run_command('git', 'rev-parse', '--short', 'HEAD', check: false).stdout().strip()
   if vcs_tag == ''

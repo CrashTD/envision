@@ -7,7 +7,7 @@ if [[ ! -f Cargo.toml ]]; then
     exit 1
 fi
 
-meson setup appimage_build -Dprefix=/usr -Dprofile=development
+meson setup appimage_build -Dprefix=/usr -Dprofile=default
 DESTDIR="$PWD/AppDir" ninja -C appimage_build install
 curl -SsLO https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
 chmod +x linuxdeploy-x86_64.AppImage
