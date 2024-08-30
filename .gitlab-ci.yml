@@ -63,3 +63,4 @@ appimage:
   artifacts:
     paths:
       - Envision-*.AppImage
+    expire_in: 1 month
