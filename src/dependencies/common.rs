@@ -247,7 +247,7 @@ pub fn dep_libx11() -> Dependency {
         filename: "X11/Xlib-xcb.h".into(),
         packages: HashMap::from([
             (LinuxDistro::Arch, "libx11".into()),
-            (LinuxDistro::Debian, "libx11-dev".into()),
+            (LinuxDistro::Debian, "libx11-xcb-dev".into()),
             (LinuxDistro::Fedora, "libX11-devel".into()),
             (LinuxDistro::Gentoo, "x11-libs/libX11".into()),
             (LinuxDistro::Alpine, "libx11-dev".into()),
