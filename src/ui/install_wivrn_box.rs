@@ -1,7 +1,7 @@
 use super::alert::alert;
 use crate::{
     async_process::async_process,
-    dependencies::adb_dep::adb_dep,
+    depcheck::common::dep_adb,
     downloader::{cache_file, cache_file_path},
     profile::{Profile, XRServiceType},
 };
@@ -166,7 +166,7 @@ impl AsyncComponent for InstallWivrnBox {
 
         match message {
             Self::Input::InstallWivrnApk => {
-                if !adb_dep().check() {
+                if !dep_adb().check() {
                     alert("ADB is not installed", Some("Please install ADB on your computer to install WiVRn on your Android headset"), Some(&self.root_win));
                     return;
                 }

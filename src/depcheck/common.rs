@@ -254,3 +254,18 @@ pub fn dep_libx11() -> Dependency {
         ]),
     }
 }
+
+pub fn dep_adb() -> Dependency {
+    Dependency {
+        name: "adb".into(),
+        dep_type: DepType::Executable,
+        filename: "adb".into(),
+        packages: HashMap::from([
+            (LinuxDistro::Arch, "android-tools".into()),
+            (LinuxDistro::Debian, "adb".into()),
+            (LinuxDistro::Fedora, "android-tools".into()),
+            (LinuxDistro::Alpine, "android-tools".into()),
+            (LinuxDistro::Gentoo, "dev-util/android-tools".into()),
+        ]),
+    }
+}

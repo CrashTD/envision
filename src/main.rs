@@ -24,7 +24,6 @@ pub mod cmd_runner;
 pub mod config;
 pub mod constants;
 pub mod depcheck;
-pub mod dependencies;
 pub mod device_prober;
 pub mod downloader;
 pub mod env_var_descriptions;

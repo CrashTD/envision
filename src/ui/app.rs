@@ -23,7 +23,7 @@ use crate::{
     },
     config::Config,
     constants::APP_NAME,
-    dependencies::{
+    depcheck::{
         basalt_deps::get_missing_basalt_deps, common::dep_pkexec,
         libsurvive_deps::get_missing_libsurvive_deps, mercury_deps::get_missing_mercury_deps,
         monado_deps::get_missing_monado_deps, openhmd_deps::get_missing_openhmd_deps,

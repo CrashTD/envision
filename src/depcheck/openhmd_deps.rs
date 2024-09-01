@@ -1,6 +1,6 @@
-use crate::{
-    depcheck::{Dependency, DependencyCheckResult},
-    dependencies::common::{dep_cmake, dep_gcc, dep_git, dep_gpp, dep_ninja},
+use super::{
+    common::{dep_cmake, dep_gcc, dep_git, dep_gpp, dep_ninja},
+    Dependency, DependencyCheckResult,
 };
 
 fn openhmd_deps() -> Vec<Dependency> {

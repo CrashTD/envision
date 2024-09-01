@@ -1,8 +1,8 @@
-use crate::{
-    depcheck::{DepType, Dependency, DependencyCheckResult},
-    dependencies::common::{dep_cmake, dep_eigen, dep_gpp, dep_libglvnd, dep_ninja, dep_opencv},
-    linux_distro::LinuxDistro,
+use super::{
+    common::{dep_cmake, dep_eigen, dep_gpp, dep_libglvnd, dep_ninja, dep_opencv},
+    DepType, Dependency, DependencyCheckResult,
 };
+use crate::linux_distro::LinuxDistro;
 use std::collections::HashMap;
 
 fn basalt_deps() -> Vec<Dependency> {

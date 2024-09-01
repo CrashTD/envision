@@ -13,7 +13,7 @@ use super::{
 };
 use crate::{
     config::Config,
-    dependencies::common::dep_pkexec,
+    depcheck::common::dep_pkexec,
     gpu_profile::{get_amd_gpu_power_profile, GpuPowerProfile},
     paths::{get_data_dir, get_home_dir},
     profile::{LighthouseDriver, Profile, XRServiceType},
