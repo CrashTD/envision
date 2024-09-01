@@ -1,7 +1,7 @@
 use crate::{
-    file_utils::{copy_file, get_writer},
     paths::{get_backup_dir, get_home_dir},
     profile::Profile,
+    util::file_utils::{copy_file, get_writer},
 };
 use anyhow::bail;
 use std::{

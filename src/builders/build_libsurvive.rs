@@ -1,9 +1,9 @@
 use crate::{
     build_tools::{cmake::Cmake, git::Git},
-    file_utils::rm_rf,
     profile::Profile,
     termcolor::TermColor,
     ui::job_worker::job::WorkerJob,
+    util::file_utils::rm_rf,
 };
 use std::{
     collections::{HashMap, VecDeque},

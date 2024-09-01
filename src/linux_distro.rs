@@ -1,4 +1,4 @@
-use crate::file_utils::get_reader;
+use crate::util::file_utils::get_reader;
 use std::{
     fmt::Display,
     io::{BufRead, Read},

@@ -1,7 +1,7 @@
 use crate::{
-    file_utils::{copy_file, deserialize_file, get_writer, set_file_readonly},
     paths::{get_backup_dir, SYSTEM_PREFIX},
     profile::Profile,
+    util::file_utils::{copy_file, deserialize_file, get_writer, set_file_readonly},
     xdg::XDG,
 };
 use serde::{ser::Error, Deserialize, Serialize};

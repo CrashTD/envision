@@ -1,6 +1,6 @@
 use crate::{
-    file_utils::get_writer,
     paths::{get_data_dir, BWRAP_SYSTEM_PREFIX, SYSTEM_PREFIX},
+    util::file_utils::get_writer,
     xdg::XDG,
 };
 use nix::NixPath;

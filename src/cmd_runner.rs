@@ -1,7 +1,7 @@
 use crate::{
-    file_utils::get_writer,
     profile::{Profile, XRServiceType},
     runner::{Runner, RunnerStatus},
+    util::file_utils::get_writer,
 };
 use nix::{
     sys::signal::{

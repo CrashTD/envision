@@ -1,13 +1,13 @@
 use crate::{
     constants::CMD_NAME,
     device_prober::PhysicalXRDevice,
-    file_utils::get_writer,
     paths::get_config_dir,
     profile::Profile,
     profiles::{
         lighthouse::lighthouse_profile, openhmd::openhmd_profile, simulated::simulated_profile,
         survive::survive_profile, wivrn::wivrn_profile, wmr::wmr_profile,
     },
+    util::file_utils::get_writer,
 };
 use serde::{de::Error, Deserialize, Serialize};
 use std::{

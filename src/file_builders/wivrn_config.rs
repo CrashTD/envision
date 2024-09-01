@@ -1,5 +1,5 @@
 use crate::{
-    file_utils::{deserialize_file, get_writer},
+    util::file_utils::{deserialize_file, get_writer},
     xdg::XDG,
 };
 use serde::{Deserialize, Serialize};

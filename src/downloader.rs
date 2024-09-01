@@ -1,4 +1,6 @@
-use crate::{constants::APP_ID, file_utils::get_writer, hash::sha256, paths::get_cache_dir};
+use crate::{
+    constants::APP_ID, paths::get_cache_dir, util::file_utils::get_writer, util::hash::sha256,
+};
 use reqwest::{
     header::{HeaderMap, USER_AGENT},
     Method,

@@ -14,12 +14,12 @@ use super::{
 use crate::{
     config::Config,
     dependencies::common::dep_pkexec,
-    file_utils::{get_writer, mount_has_nosuid},
     gpu_profile::{get_amd_gpu_power_profile, GpuPowerProfile},
     paths::{get_data_dir, get_home_dir},
     profile::{LighthouseDriver, Profile, XRServiceType},
     stateless_action,
     steamvr_utils::chaperone_info_exists,
+    util::file_utils::{get_writer, mount_has_nosuid},
     xr_devices::XRDevice,
 };
 use adw::{prelude::*, ResponseAppearance};

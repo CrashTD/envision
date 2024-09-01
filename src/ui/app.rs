@@ -37,7 +37,6 @@ use crate::{
             set_current_openvrpaths_to_profile, set_current_openvrpaths_to_steam,
         },
     },
-    file_utils::{setcap_cap_sys_nice_eip, setcap_cap_sys_nice_eip_cmd},
     is_appimage::IS_APPIMAGE,
     linux_distro::LinuxDistro,
     openxr_prober::is_openxr_ready,
@@ -47,6 +46,7 @@ use crate::{
     steam_linux_runtime_injector::{
         restore_runtime_entrypoint, set_runtime_entrypoint_launch_opts_from_profile,
     },
+    util::file_utils::{setcap_cap_sys_nice_eip, setcap_cap_sys_nice_eip_cmd},
     xr_devices::XRDevice,
 };
 use adw::{prelude::*, ResponseAppearance};
