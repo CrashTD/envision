@@ -1,6 +1,7 @@
 use crate::{
     file_utils::get_writer,
-    paths::{get_data_dir, get_ipc_file_path, BWRAP_SYSTEM_PREFIX, SYSTEM_PREFIX},
+    paths::{get_data_dir, BWRAP_SYSTEM_PREFIX, SYSTEM_PREFIX},
+    xdg::XDG,
 };
 use nix::NixPath;
 use serde::{Deserialize, Serialize};
@@ -39,6 +40,15 @@ impl XRServiceType {
             Self::Monado => "libmonado.so",
             Self::Wivrn => "wivrn/libmonado.so",
         }
+    }
+
+    pub fn ipc_file_path(&self) -> PathBuf {
+        XDG.get_runtime_directory()
+            .expect("XDG runtime directory is not available")
+            .join(match self {
+                XRServiceType::Monado => "monado_comp_ipc",
+                XRServiceType::Wivrn => "wivrn_comp_ipc",
+            })
     }
 }
 
@@ -354,7 +364,7 @@ impl Profile {
             self.xr_runtime_json_env_var(),
             format!(
                 "PRESSURE_VESSEL_FILESYSTEMS_RW=\"{path}\"",
-                path = get_ipc_file_path(&self.xrservice_type).to_string_lossy(),
+                path = self.xrservice_type.ipc_file_path().to_string_lossy(),
             ),
         ]
     }

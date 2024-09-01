@@ -1,4 +1,4 @@
-use crate::{constants::CMD_NAME, profile::XRServiceType, xdg::XDG};
+use crate::{constants::CMD_NAME, xdg::XDG};
 use std::{
     env,
     fs::create_dir_all,
@@ -81,15 +81,6 @@ pub fn get_exec_prefix() -> PathBuf {
         .parent()
         .unwrap()
         .into()
-}
-
-pub fn get_ipc_file_path(xrservice_type: &XRServiceType) -> PathBuf {
-    XDG.get_runtime_directory()
-        .expect("XDG runtime directory is not available")
-        .join(match xrservice_type {
-            XRServiceType::Monado => "monado_comp_ipc",
-            XRServiceType::Wivrn => "wivrn_comp_ipc",
-        })
 }
 
 pub fn get_steamvr_bin_dir_path() -> PathBuf {

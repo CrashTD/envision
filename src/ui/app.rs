@@ -41,7 +41,7 @@ use crate::{
     is_appimage::IS_APPIMAGE,
     linux_distro::LinuxDistro,
     openxr_prober::is_openxr_ready,
-    paths::{get_data_dir, get_ipc_file_path},
+    paths::get_data_dir,
     profile::{Profile, XRServiceType},
     stateless_action,
     steam_linux_runtime_injector::{
@@ -175,7 +175,7 @@ impl App {
         self.debug_view.sender().emit(DebugViewMsg::ClearLog);
         self.xr_devices = vec![];
         if prof.can_start() {
-            remove_file(get_ipc_file_path(&prof.xrservice_type))
+            remove_file(prof.xrservice_type.ipc_file_path())
                 .is_err()
                 .then(|| println!("Failed to remove xrservice IPC file"));
             let worker = JobWorker::xrservice_worker_wrap_from_profile(
