@@ -3,7 +3,10 @@ use super::{
     term_widget::TermWidget,
     util::copy_text,
 };
-use crate::{log_level::LogLevel, log_parser::MonadoLog, profile::Profile};
+use crate::{
+    log_parser::{LogLevel, MonadoLog},
+    profile::Profile,
+};
 use gtk::{glib::clone, prelude::*};
 use relm4::{prelude::*, ComponentSender, SimpleComponent};
 

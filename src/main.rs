@@ -31,7 +31,6 @@ pub mod file_builders;
 pub mod gpu_profile;
 pub mod is_appimage;
 pub mod linux_distro;
-pub mod log_level;
 pub mod log_parser;
 pub mod openxr_prober;
 pub mod paths;
