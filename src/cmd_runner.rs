@@ -1,6 +1,5 @@
 use crate::{
     profile::{Profile, XRServiceType},
-    runner::{Runner, RunnerStatus},
     util::file_utils::get_writer,
 };
 use nix::{
@@ -22,6 +21,12 @@ use std::{
     thread::{self, sleep, JoinHandle},
     time::Duration,
 };
+
+#[derive(PartialEq, Eq, Debug)]
+pub enum RunnerStatus {
+    Running,
+    Stopped(Option<i32>),
+}
 
 pub struct CmdRunner {
     pub environment: HashMap<String, String>,
@@ -182,24 +187,22 @@ impl CmdRunner {
     pub fn save_output(&mut self, path: &Path) -> Result<(), std::io::Error> {
         CmdRunner::save_log(path, &self.output)
     }
-}
 
-impl Runner for CmdRunner {
-    fn consume_output(&mut self) -> String {
+    pub fn consume_output(&mut self) -> String {
         self.receive_output();
         let res = self.output.concat();
         self.output.clear();
         res
     }
 
-    fn consume_rows(&mut self) -> Vec<String> {
+    pub fn consume_rows(&mut self) -> Vec<String> {
         self.receive_output();
         let res = self.output.clone();
         self.output.clear();
         res
     }
 
-    fn status(&mut self) -> RunnerStatus {
+    pub fn status(&mut self) -> RunnerStatus {
         match &mut self.process {
             None => RunnerStatus::Stopped(None),
             Some(proc) => match proc.try_wait() {
@@ -210,7 +213,7 @@ impl Runner for CmdRunner {
         }
     }
 
-    fn start(&mut self) {
+    pub fn start(&mut self) {
         self.try_start().expect("Failed to execute runner");
     }
 }
@@ -219,7 +222,6 @@ impl Runner for CmdRunner {
 mod tests {
     use super::{CmdRunner, RunnerStatus};
     use crate::profile::Profile;
-    use crate::runner::Runner;
     use core::time;
     use std::{path::Path, thread::sleep};
 

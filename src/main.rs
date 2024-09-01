@@ -37,7 +37,6 @@ pub mod openxr_prober;
 pub mod paths;
 pub mod profile;
 pub mod profiles;
-pub mod runner;
 pub mod steam_linux_runtime_injector;
 pub mod steamvr_utils;
 pub mod termcolor;
