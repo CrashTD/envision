@@ -114,10 +114,8 @@ pub fn mount_has_nosuid(path: &Path) -> Result<bool, Errno> {
 
 #[cfg(test)]
 mod tests {
-
-    use std::path::Path;
-
     use crate::file_utils::mount_has_nosuid;
+    use std::path::Path;
 
     #[test]
     fn can_get_nosuid() {
