@@ -38,7 +38,6 @@ pub mod paths;
 pub mod profile;
 pub mod profiles;
 pub mod steam_linux_runtime_injector;
-pub mod steamvr_utils;
 pub mod termcolor;
 pub mod ui;
 pub mod util;

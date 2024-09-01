@@ -18,8 +18,8 @@ use crate::{
     paths::{get_data_dir, get_home_dir},
     profile::{LighthouseDriver, Profile, XRServiceType},
     stateless_action,
-    steamvr_utils::chaperone_info_exists,
     util::file_utils::{get_writer, mount_has_nosuid},
+    util::steamvr_utils::chaperone_info_exists,
     xr_devices::XRDevice,
 };
 use adw::{prelude::*, ResponseAppearance};
