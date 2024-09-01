@@ -29,7 +29,7 @@ pub fn get_reader(path: &Path) -> Option<BufReader<File>> {
     }
     match File::open(path) {
         Err(e) => {
-            println!("Error opening {}: {}", path.to_string_lossy(), e);
+            eprintln!("Error opening {}: {}", path.to_string_lossy(), e);
             None
         }
         Ok(fd) => Some(BufReader::new(fd)),
@@ -41,7 +41,7 @@ pub fn deserialize_file<T: serde::de::DeserializeOwned>(path: &Path) -> Option<T
         None => None,
         Some(reader) => match serde_json::from_reader(reader) {
             Err(e) => {
-                println!("Failed to deserialize {}: {}", path.to_string_lossy(), e);
+                eprintln!("Failed to deserialize {}: {}", path.to_string_lossy(), e);
                 None
             }
             Ok(res) => Some(res),
@@ -51,7 +51,7 @@ pub fn deserialize_file<T: serde::de::DeserializeOwned>(path: &Path) -> Option<T
 
 pub fn set_file_readonly(path: &Path, readonly: bool) -> Result<(), std::io::Error> {
     if !path.is_file() {
-        println!("WARN: trying to set readonly on a file that does not exist");
+        eprintln!("WARN: trying to set readonly on a file that does not exist");
         return Ok(());
     }
     let mut perms = fs::metadata(path)
@@ -83,7 +83,7 @@ pub async fn setcap_cap_sys_nice_eip(profile: &Profile) {
 
 pub fn rm_rf(path: &Path) {
     if remove_dir_all(path).is_err() {
-        println!("Failed to remove path {}", path.to_string_lossy());
+        eprintln!("Failed to remove path {}", path.to_string_lossy());
     }
 }
 
