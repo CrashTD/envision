@@ -152,29 +152,29 @@ impl App {
     pub fn start_xrservice(&mut self, sender: AsyncComponentSender<Self>, debug: bool) {
         self.xrservice_ready = false;
         let prof = self.get_selected_profile();
-        if let Err(e) = set_current_active_runtime_to_profile(&prof) {
-            alert(
-                "Failed to start XR Service",
-                Some(&format!(
-                    "Error setting current active runtime to profile: {e}"
-                )),
-                Some(&self.app_win.clone().upcast::<gtk::Window>()),
-            );
-            return;
-        }
-        if let Err(e) = set_current_openvrpaths_to_profile(&prof) {
-            alert(
-                "Failed to start XR Service",
-                Some(&format!(
-                    "Error setting current openvrpaths file to profile: {e}"
-                )),
-                Some(&self.app_win.clone().upcast::<gtk::Window>()),
-            );
-            return;
-        };
-        self.debug_view.sender().emit(DebugViewMsg::ClearLog);
-        self.xr_devices = vec![];
         if prof.can_start() {
+            if let Err(e) = set_current_active_runtime_to_profile(&prof) {
+                alert(
+                    "Failed to start XR Service",
+                    Some(&format!(
+                        "Error setting current active runtime to profile: {e}"
+                    )),
+                    Some(&self.app_win.clone().upcast::<gtk::Window>()),
+                );
+                return;
+            }
+            if let Err(e) = set_current_openvrpaths_to_profile(&prof) {
+                alert(
+                    "Failed to start XR Service",
+                    Some(&format!(
+                        "Error setting current openvrpaths file to profile: {e}"
+                    )),
+                    Some(&self.app_win.clone().upcast::<gtk::Window>()),
+                );
+                return;
+            };
+            self.debug_view.sender().emit(DebugViewMsg::ClearLog);
+            self.xr_devices = vec![];
             remove_file(prof.xrservice_type.ipc_file_path())
                 .is_err()
                 .then(|| println!("Failed to remove xrservice IPC file"));
