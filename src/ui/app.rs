@@ -552,6 +552,9 @@ impl AsyncComponent for App {
                         self.build_window
                             .sender()
                             .emit(BuildWindowMsg::UpdateCanClose(true));
+                        self.main_view
+                            .sender()
+                            .emit(MainViewMsg::UpdateSelectedProfile(profile));
                     }
                     errcode => {
                         self.build_window

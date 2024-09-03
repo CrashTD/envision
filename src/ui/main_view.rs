@@ -179,6 +179,15 @@ impl SimpleComponent for MainView {
                         set_spacing: 12,
                         set_margin_all: 12,
                         set_orientation: gtk::Orientation::Vertical,
+                        gtk::Button {
+                            #[track = "model.changed(Self::selected_profile())"]
+                            set_visible: !model.selected_profile.can_start(),
+                            add_css_class: "pill",
+                            add_css_class: "suggested-action",
+                            set_hexpand: true,
+                            set_label: "Build Profile",
+                            set_action_name: Some("win.buildprofileclean"),
+                        },
                         gtk::Box {
                             set_hexpand: true,
                             set_orientation: gtk::Orientation::Horizontal,
@@ -187,6 +196,8 @@ impl SimpleComponent for MainView {
                                 add_css_class: "suggested-action",
                                 add_css_class: "destructive-action",
                                 set_hexpand: true,
+                                #[track = "model.changed(Self::selected_profile())"]
+                                set_visible: model.selected_profile.can_start(),
                                 #[track = "model.changed(Self::xrservice_active())"]
                                 set_class_active: ("suggested-action", !model.xrservice_active),
                                 #[track = "model.changed(Self::xrservice_active())"]
