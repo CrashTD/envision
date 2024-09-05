@@ -65,16 +65,10 @@ impl Config {
     }
 
     fn from_path(path: &Path) -> Self {
-        match File::open(path) {
-            Ok(file) => {
-                let reader = BufReader::new(file);
-                match serde_json::from_reader(reader) {
-                    Ok(config) => config,
-                    Err(_) => Self::default(),
-                }
-            }
-            Err(_) => Self::default(),
-        }
+        File::open(path)
+            .ok()
+            .and_then(|file| serde_json::from_reader(BufReader::new(file)).ok())
+            .unwrap_or_default()
     }
 
     fn save_to_path(&self, path: &Path) -> Result<(), serde_json::Error> {
