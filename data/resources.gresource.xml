@@ -4,16 +4,16 @@
     <file compressed="true">style.css</file>
   </gresource>
 
-  <gresource prefix="/org/gabmus/envision/icons/scalable/apps">
+  <gresource prefix="/org/gabmus/envision/icons/scalable/apps/">
     <file compressed="true" preprocess="xml-stripblanks" alias="org.gabmus.envision.svg">icons/org.gabmus.envision.svg</file>
     <file compressed="true" preprocess="xml-stripblanks" alias="org.gabmus.envision.Devel.svg">icons/org.gabmus.envision.Devel.svg</file>
   </gresource>
 
-  <gresource prefix="/org/gabmus/envision/icons/16x16/apps">
+  <gresource prefix="/org/gabmus/envision/icons/16x16/apps/">
     <file compressed="true" preprocess="xml-stripblanks" alias="org.gabmus.envision-symbolic.svg">icons/org.gabmus.envision-symbolic.svg</file>
   </gresource>
 
-  <gresource prefix="/org/gabmus/envision/icons/16x16/actions">
+  <gresource prefix="/org/gabmus/envision/icons/scalable/actions/">
     <file compressed="true" preprocess="xml-stripblanks" alias="run-debug-symbolic.svg">icons/run-debug-symbolic.svg</file>
   </gresource>
 </gresources>

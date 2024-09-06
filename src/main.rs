@@ -93,6 +93,9 @@ fn main() -> Result<()> {
             &provider,
             gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
         );
+
+        let icon_theme = gtk::IconTheme::for_display(&display);
+        icon_theme.add_resource_path(&format!("{RESOURCES_BASE_PATH}/icons/"));
     }
     gtk::Window::set_default_icon_name(APP_ID);
 
