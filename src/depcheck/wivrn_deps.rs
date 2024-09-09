@@ -6,7 +6,7 @@ use super::{
     },
     DepType, Dependency, DependencyCheckResult,
 };
-use crate::linux_distro::LinuxDistro;
+use crate::{depcheck::common::dep_libxrandr, linux_distro::LinuxDistro};
 use std::collections::HashMap;
 
 fn wivrn_deps() -> Vec<Dependency> {
@@ -22,6 +22,7 @@ fn wivrn_deps() -> Vec<Dependency> {
         dep_vulkan_headers(),
         dep_libxcb(),
         dep_libx11(),
+        dep_libxrandr(),
         Dependency {
             name: "patch".into(),
             dep_type: DepType::Executable,

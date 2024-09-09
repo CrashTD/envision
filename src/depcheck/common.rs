@@ -255,6 +255,20 @@ pub fn dep_libx11() -> Dependency {
     }
 }
 
+pub fn dep_libxrandr() -> Dependency {
+    Dependency {
+        name: "libxrandr".into(),
+        dep_type: DepType::Include,
+        filename: "X11/extensions/Xrandr.h".into(),
+        packages: HashMap::from([
+            (LinuxDistro::Arch, "libxrandr".into()),
+            (LinuxDistro::Debian, "libxrandr-dev".into()),
+            (LinuxDistro::Fedora, "libXrandr-devel".into()),
+            (LinuxDistro::Alpine, "libxrandr-dev".into()),
+        ]),
+    }
+}
+
 pub fn dep_adb() -> Dependency {
     Dependency {
         name: "adb".into(),
