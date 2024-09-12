@@ -5,17 +5,12 @@ use crate::{
 use adw::prelude::*;
 use relm4::{factory::AsyncFactoryComponent, prelude::*, AsyncFactorySender};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DeviceRowState {
+    #[default]
     Ok,
     Error,
     Warning,
-}
-
-impl Default for DeviceRowState {
-    fn default() -> Self {
-        Self::Ok
-    }
 }
 
 impl DeviceRowState {

@@ -1,7 +1,7 @@
 use libmonado_rs::{self, BatteryStatus, DeviceRole};
 use std::{collections::HashMap, fmt::Display, slice::Iter};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum XRDeviceRole {
     Head,
     Eyes,
@@ -25,13 +25,8 @@ pub enum XRDeviceRole {
     Camera,
     Keyboard,
 
+    #[default]
     GenericTracker,
-}
-
-impl Default for XRDeviceRole {
-    fn default() -> Self {
-        Self::GenericTracker
-    }
 }
 
 impl Display for XRDeviceRole {

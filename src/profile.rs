@@ -188,17 +188,12 @@ impl Default for ProfileFeatures {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum LighthouseDriver {
+    #[default]
     Vive,
     Survive,
     SteamVR,
-}
-
-impl Default for LighthouseDriver {
-    fn default() -> Self {
-        Self::Vive
-    }
 }
 
 impl From<&str> for LighthouseDriver {
