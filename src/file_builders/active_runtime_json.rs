@@ -4,7 +4,7 @@ use crate::{
     util::file_utils::{copy_file, deserialize_file, get_writer, set_file_readonly},
     xdg::XDG,
 };
-use serde::{ser::Error, Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -62,17 +62,13 @@ pub fn get_current_active_runtime() -> Option<ActiveRuntime> {
     get_active_runtime_from_path(&get_active_runtime_json_path())
 }
 
-fn dump_active_runtime_to_path(
-    active_runtime: &ActiveRuntime,
-    path: &Path,
-) -> Result<(), serde_json::Error> {
-    let writer = get_writer(path).map_err(serde_json::Error::custom)?;
-    serde_json::to_writer_pretty(writer, active_runtime)
+fn dump_active_runtime_to_path(active_runtime: &ActiveRuntime, path: &Path) -> anyhow::Result<()> {
+    let writer = get_writer(path)?;
+    serde_json::to_writer_pretty(writer, active_runtime)?;
+    Ok(())
 }
 
-pub fn dump_current_active_runtime(
-    active_runtime: &ActiveRuntime,
-) -> Result<(), serde_json::Error> {
+pub fn dump_current_active_runtime(active_runtime: &ActiveRuntime) -> anyhow::Result<()> {
     dump_active_runtime_to_path(active_runtime, &get_active_runtime_json_path())
 }
 
@@ -139,7 +135,6 @@ pub fn set_current_active_runtime_to_profile(profile: &Profile) -> anyhow::Resul
     let dest = get_active_runtime_json_path();
     set_file_readonly(&dest, false)?;
     backup_steam_active_runtime();
-    // TODO: need to escape path spaces here?
     let pfx = profile.clone().prefix;
     let mut ar = build_profile_active_runtime(profile)?;
     // hack: relativize libopenxr_monado.so path for system installs
