@@ -201,6 +201,8 @@ impl SimpleComponent for MainView {
                                 #[track = "model.changed(Self::xrservice_active())"]
                                 set_class_active: ("suggested-action", !model.xrservice_active),
                                 #[track = "model.changed(Self::xrservice_active())"]
+                                set_class_active: ("destructive-action", model.xrservice_active),
+                                #[track = "model.changed(Self::xrservice_active())"]
                                 set_label: match model.xrservice_active {
                                     true => "Stop",
                                     false => "Start",
