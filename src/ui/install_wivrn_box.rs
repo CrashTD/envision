@@ -218,7 +218,7 @@ impl AsyncComponent for InstallWivrnBox {
                     Ok(apk_path) => {
                         self.set_install_wivrn_status(match async_process(
                             "adb",
-                            Some(&["install", apk_path.to_string_lossy().to_string().as_str()]),
+                            Some(&["install", "-r", "-g", apk_path.to_string_lossy().to_string().as_str()]),
                             None,
                         )
                         .await

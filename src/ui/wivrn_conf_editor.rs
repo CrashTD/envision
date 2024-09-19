@@ -98,7 +98,11 @@ impl SimpleComponent for WivrnConfEditor {
                     set_description: "<b>Warning</b>: you likely don't need to change the default configuration, this is for advanced users only. Proceed at your own risk!\n\n<a href=\"https://github.com/Meumeu/WiVRn/blob/master/docs/configuration.md\">WiVRn Configuration Documentation</a>",
                     add: scalegrp = &adw::PreferencesGroup {
                         set_title: "Scale",
-                        set_description: Some("Render resolution scale. 1.0 is 100%."),
+                        set_description: Some(concat!("Foveation scale, 1.0 means no foveation. ",
+                            "A value too high may overload your headset's decoder.\n",
+                            "<b>This does not affect game render resolution. ",
+                            "Render resolution is set from within the Android app.</b>",
+                        )),
                         add: scalex_row = &spin_row(
                             "Scale X",
                             None,
