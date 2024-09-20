@@ -149,9 +149,41 @@ impl LinuxDistro {
             Self::Arch => format!("sudo pacman -Syu {}", packages.join(" ")),
             Self::Alpine => format!("sudo apk add {}", packages.join(" ")),
             Self::Debian => format!("sudo apt install {}", packages.join(" ")),
-            Self::Fedora => format!("sudo dnf install {}", packages.join(" ")),
             Self::Gentoo => format!("sudo emerge -av {}", packages.join(" ")),
             Self::Suse => format!("sudo zypper install {}", packages.join(" ")),
+            Self::Fedora => {
+                let mut install_rpmfusion_cmd: Option<String> = None;
+                let mut swap_ffmpeg_cmd: Option<String> = None;
+
+                if packages
+                    .iter()
+                    .any(|package| ["ffmpeg-devel", "x264-devel"].contains(&package.as_str()))
+                {
+                    let rpmfusion_free_path = Path::new("/etc/yum.repos.d/rpmfusion-free.repo");
+                    if !rpmfusion_free_path.is_file() {
+                        install_rpmfusion_cmd = Some(String::from(
+                                "sudo dnf install https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm"
+                                ));
+                    }
+
+                    let ffmpeg_free_path = Path::new("/usr/share/doc/ffmpeg-free");
+                    if ffmpeg_free_path.is_dir() {
+                        swap_ffmpeg_cmd = Some(String::from(
+                            "sudo dnf swap ffmpeg-free ffmpeg --allowerasing",
+                        ));
+                    }
+                }
+
+                [
+                    install_rpmfusion_cmd,
+                    swap_ffmpeg_cmd,
+                    Some(format!("sudo dnf install {}", packages.join(" "))),
+                ]
+                .iter()
+                .filter_map(|s| s.clone())
+                .collect::<Vec<String>>()
+                .join(" && ")
+            }
         }
     }
 }
