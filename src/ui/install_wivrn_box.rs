@@ -1,4 +1,4 @@
-use super::alert::alert;
+use super::{alert::alert, ADB_ERR_NO_DEV};
 use crate::{
     async_process::async_process,
     depcheck::common::dep_adb,
@@ -8,8 +8,6 @@ use crate::{
 use gtk::prelude::*;
 use relm4::{new_action_group, new_stateless_action, prelude::*};
 use std::fs::remove_file;
-
-const ADB_ERR_NO_DEV: &str = "no devices/emulators found";
 
 const WIVRN_LATEST_RELEASE_APK_URL: &str =
     "https://github.com/WiVRn/WiVRn/releases/latest/download/WiVRn-standard-release.apk";

@@ -10,6 +10,7 @@ use super::{
     steam_launch_options_box::{SteamLaunchOptionsBox, SteamLaunchOptionsBoxMsg},
     steamvr_calibration_box::{SteamVrCalibrationBox, SteamVrCalibrationBoxMsg},
     util::{limit_dropdown_width, warning_heading},
+    wivrn_wired_start_box::{WivrnWiredStartBox, WivrnWiredStartBoxInit, WivrnWiredStartBoxMsg},
 };
 use crate::{
     config::Config,
@@ -43,6 +44,8 @@ pub struct MainView {
     profiles_dropdown: Option<gtk::DropDown>,
     #[tracker::do_not_track]
     install_wivrn_box: AsyncController<InstallWivrnBox>,
+    #[tracker::do_not_track]
+    wivrn_wired_start_box: AsyncController<WivrnWiredStartBox>,
     #[tracker::do_not_track]
     steam_launch_options_box: Controller<SteamLaunchOptionsBox>,
     #[tracker::do_not_track]
@@ -364,6 +367,7 @@ impl SimpleComponent for MainView {
                         },
 
                         model.steam_launch_options_box.widget(),
+                        model.wivrn_wired_start_box.widget(),
                         model.install_wivrn_box.widget(),
                         model.steamvr_calibration_box.widget(),
 
@@ -494,6 +498,9 @@ impl SimpleComponent for MainView {
                 self.install_wivrn_box
                     .sender()
                     .emit(InstallWivrnBoxMsg::UpdateSelectedProfile(prof.clone()));
+                self.wivrn_wired_start_box
+                    .sender()
+                    .emit(WivrnWiredStartBoxMsg::UpdateSelectedProfile(prof.clone()));
             }
             Self::Input::UpdateProfiles(profiles, config) => {
                 self.set_profiles(profiles);
@@ -785,6 +792,12 @@ impl SimpleComponent for MainView {
             steam_launch_options_box: SteamLaunchOptionsBox::builder().launch(()).detach(),
             install_wivrn_box: InstallWivrnBox::builder()
                 .launch(InstallWivrnBoxInit {
+                    selected_profile: init.selected_profile.clone(),
+                    root_win: init.root_win.clone(),
+                })
+                .detach(),
+            wivrn_wired_start_box: WivrnWiredStartBox::builder()
+                .launch(WivrnWiredStartBoxInit {
                     selected_profile: init.selected_profile.clone(),
                     root_win: init.root_win.clone(),
                 })

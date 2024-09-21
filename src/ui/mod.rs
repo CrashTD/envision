@@ -19,7 +19,9 @@ mod steamvr_calibration_box;
 mod term_widget;
 mod util;
 mod wivrn_conf_editor;
-pub mod wivrn_encoder_presets_win;
+mod wivrn_encoder_presets_win;
+mod wivrn_wired_start_box;
 
 pub const SENDER_IO_ERR_MSG: &str = "relm4 sender i/o failed";
 pub const ADW_DIALOG_WIDTH: i32 = 600;
+pub const ADB_ERR_NO_DEV: &str = "no devices/emulators found";
