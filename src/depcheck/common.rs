@@ -102,7 +102,7 @@ pub fn dep_gpp() -> Dependency {
         packages: HashMap::from([
             (LinuxDistro::Arch, "gcc".into()),
             (LinuxDistro::Debian, "g++".into()),
-            (LinuxDistro::Fedora, "g++".into()),
+            (LinuxDistro::Fedora, "gcc-c++".into()),
             (LinuxDistro::Alpine, "g++".into()),
             (LinuxDistro::Gentoo, "sys-devel/gcc".into()),
         ]),
