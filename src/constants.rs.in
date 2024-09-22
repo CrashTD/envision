@@ -20,6 +20,10 @@ pub fn get_developers() -> Vec<String> {
     vec!["Gabriele Musco <gabmus@disroot.org>".into()]
 }
 
+pub fn get_artists() -> Vec<String> {
+    vec!["App Icon: Yannick (@Yandr)".into()]
+}
+
 pub fn pkg_data_dir() -> PathBuf {
     get_exec_prefix().join("share").join(CMD_NAME)
 }

@@ -1,7 +1,7 @@
 use crate::{
     constants::{
-        get_developers, APP_ID, APP_NAME, BUILD_DATETIME, ISSUES_URL, REPO_URL, SINGLE_DEVELOPER,
-        VERSION,
+        get_artists, get_developers, APP_ID, APP_NAME, BUILD_DATETIME, ISSUES_URL, REPO_URL,
+        SINGLE_DEVELOPER, VERSION,
     },
     device_prober::PhysicalXRDevice,
     linux_distro::LinuxDistro,
@@ -21,6 +21,7 @@ pub fn create_about_dialog() -> adw::AboutDialog {
         .issue_url(ISSUES_URL)
         .developer_name(SINGLE_DEVELOPER)
         .developers(get_developers())
+        .artists(get_artists())
         .build()
 }
 
