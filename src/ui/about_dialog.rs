@@ -5,7 +5,7 @@ use crate::{
     },
     device_prober::PhysicalXRDevice,
     linux_distro::LinuxDistro,
-    vulkaninfo::gpu_names,
+    vulkaninfo::VulkanInfo,
     xdg::XDG,
 };
 use relm4::prelude::*;
@@ -25,7 +25,7 @@ pub fn create_about_dialog() -> adw::AboutDialog {
         .build()
 }
 
-pub fn populate_debug_info(dialog: &adw::AboutDialog) {
+pub fn populate_debug_info(dialog: &adw::AboutDialog, vkinfo: Option<&VulkanInfo>) {
     if dialog.debug_info().len() > 0 {
         return;
     }
@@ -58,9 +58,14 @@ pub fn populate_debug_info(dialog: &adw::AboutDialog) {
             ),
             format!(
                 "GPUs: {}",
-                unsafe { gpu_names() }
-                    .ok()
-                    .map(|names| names.join(", "))
+                vkinfo
+                    .map(|i| i.gpu_names.join(", "))
+                    .unwrap_or("unknown".into())
+            ),
+            format!(
+                "Monado Vulkan Layers: {}",
+                vkinfo
+                    .map(|i| i.has_monado_vulkan_layers.to_string())
                     .unwrap_or("unknown".into())
             ),
             format!("Detected XR Devices: {}", {

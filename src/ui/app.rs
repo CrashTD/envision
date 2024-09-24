@@ -47,6 +47,7 @@ use crate::{
         restore_runtime_entrypoint, set_runtime_entrypoint_launch_opts_from_profile,
     },
     util::file_utils::{setcap_cap_sys_nice_eip, setcap_cap_sys_nice_eip_cmd},
+    vulkaninfo::VulkanInfo,
     xr_devices::XRDevice,
 };
 use adw::{prelude::*, ResponseAppearance};
@@ -86,6 +87,7 @@ pub struct App {
     configure_wivrn_action: gtk::gio::SimpleAction,
     openxr_prober_worker: Option<JobWorker>,
     xrservice_ready: bool,
+    vkinfo: Option<VulkanInfo>,
 }
 
 #[derive(Debug)]
@@ -861,6 +863,16 @@ impl AsyncComponent for App {
         };
         let selected_profile = config.get_selected_profile(&profiles);
 
+        let vkinfo = {
+            match VulkanInfo::get() {
+                Ok(info) => Some(info),
+                Err(e) => {
+                    eprintln!("Failed to get Vulkan info: {e:#?}");
+                    None
+                }
+            }
+        };
+
         let mut model = App {
             application: init.application,
             app_win: root.clone(),
@@ -870,6 +882,7 @@ impl AsyncComponent for App {
                     config: config.clone(),
                     selected_profile: selected_profile.clone(),
                     root_win: root.clone().into(),
+                    vkinfo: vkinfo.clone(),
                 })
                 .forward(sender.input_sender(), |message| match message {
                     MainViewOutMsg::DoStartStopXRService => Msg::DoStartStopXRService,
@@ -879,6 +892,7 @@ impl AsyncComponent for App {
                     MainViewOutMsg::SaveProfile(p) => Msg::SaveProfile(p),
                     MainViewOutMsg::OpenLibsurviveSetup => Msg::OpenLibsurviveSetup,
                 }),
+            vkinfo,
             debug_view: DebugView::builder()
                 .launch(DebugViewInit {
                     profile: selected_profile,
@@ -926,8 +940,10 @@ impl AsyncComponent for App {
                 model.about_dialog,
                 #[strong(rename_to = app_win)]
                 model.app_win,
+                #[strong(rename_to = vkinfo)]
+                model.vkinfo,
                 move |_| {
-                    populate_debug_info(&about_dialog);
+                    populate_debug_info(&about_dialog, vkinfo.as_ref());
                     about_dialog.present(Some(&app_win));
                 }
             )

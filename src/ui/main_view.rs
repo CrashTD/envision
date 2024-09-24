@@ -19,8 +19,11 @@ use crate::{
     paths::{get_data_dir, get_home_dir},
     profile::{LighthouseDriver, Profile, XRServiceType},
     stateless_action,
-    util::file_utils::{get_writer, mount_has_nosuid},
-    util::steamvr_utils::chaperone_info_exists,
+    util::{
+        file_utils::{get_writer, mount_has_nosuid},
+        steamvr_utils::chaperone_info_exists,
+    },
+    vulkaninfo::VulkanInfo,
     xr_devices::XRDevice,
 };
 use adw::{prelude::*, ResponseAppearance};
@@ -65,6 +68,8 @@ pub struct MainView {
     #[tracker::do_not_track]
     profile_export_action: gtk::gio::SimpleAction,
     xrservice_ready: bool,
+    #[tracker::do_not_track]
+    vkinfo: Option<VulkanInfo>,
 }
 
 #[derive(Debug)]
@@ -104,6 +109,7 @@ pub struct MainViewInit {
     pub config: Config,
     pub selected_profile: Profile,
     pub root_win: gtk::Window,
+    pub vkinfo: Option<VulkanInfo>,
 }
 
 impl MainView {
@@ -321,6 +327,34 @@ impl SimpleComponent for MainView {
                                     "SteamVR room configuration not found.\n",
                                     "To use the SteamVR lighthouse driver, you ",
                                     "will need to run SteamVR and perform the room setup.",
+                                ),
+                                add_css_class: "warning",
+                                set_xalign: 0.0,
+                                set_wrap: true,
+                                set_wrap_mode: gtk::pango::WrapMode::Word,
+                            }
+                        },
+                        gtk::Box {
+                            set_orientation: gtk::Orientation::Vertical,
+                            set_hexpand: true,
+                            set_vexpand: false,
+                            set_spacing: 12,
+                            add_css_class: "card",
+                            add_css_class: "padded",
+                            set_visible: model
+                                .vkinfo
+                                .as_ref()
+                                .is_some_and(
+                                    |i| i.has_nvidia_gpu && !i.has_monado_vulkan_layers
+                                ),
+                            warning_heading(),
+                            gtk::Label {
+                                set_label: concat!(
+                                    "An Nvidia GPU has been detected, but it ",
+                                    "seems you don't have the Monado Vulkan Layers ",
+                                    "installed on your system.\n\nInstall the ",
+                                    "Monado Vulkan Layers or your XR session will ",
+                                    "crash."
                                 ),
                                 add_css_class: "warning",
                                 set_xalign: 0.0,
@@ -812,6 +846,7 @@ impl SimpleComponent for MainView {
             xrservice_ready: false,
             profile_delete_action,
             profile_export_action,
+            vkinfo: init.vkinfo,
             tracker: 0,
         };
         let widgets = view_output!();
