@@ -60,7 +60,7 @@ build() {
 
 
 package() {
-    meson install -C build --destdir "${pkgdir}"
+    meson install -C build --no-rebuild --destdir "${pkgdir}"
 
     # We will check for optional packages here:
     # Check for NVIDIA GPU and if monado-vulkan-layers-git is not already installed
