@@ -1,4 +1,5 @@
 pub mod basalt_deps;
+pub mod boost_deps;
 pub mod common;
 pub mod libsurvive_deps;
 pub mod mercury_deps;
@@ -128,6 +129,15 @@ fn include_paths() -> Vec<String> {
         "/usr/include/ffmpeg".into(),
         "/usr/include/x86_64-linux-gnu".into(),
         "/usr/include/aarch64-linux-gnu".into(),
+        "/usr/include/opencv4".into(),
+        "/usr/local/include/opencv4".into(),
+        "/usr/include/ffmpeg/libavcodec".into(),
+        "/usr/include/ffmpeg/libavfilter".into(),
+        "/usr/include/ffmpeg/libavformat".into(),
+        "/usr/include/ffmpeg/libavutil".into(),
+        "/usr/include/ffmpeg/libpostproc".into(),
+        "/usr/include/ffmpeg/libswresample".into(),
+        "/usr/include/ffmpeg/libswscale".into(),
     ]
 }
 

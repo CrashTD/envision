@@ -15,6 +15,7 @@ pub fn dep_eigen() -> Dependency {
             (LinuxDistro::Fedora, "eigen3-devel".into()),
             (LinuxDistro::Alpine, "eigen-dev".into()),
             (LinuxDistro::Gentoo, "dev-cpp/eigen".into()),
+            (LinuxDistro::Suse, "eigen3-devel".into()),
         ]),
     }
 }
@@ -30,6 +31,7 @@ pub fn dep_cmake() -> Dependency {
             (LinuxDistro::Fedora, "cmake".into()),
             (LinuxDistro::Alpine, "cmake".into()),
             (LinuxDistro::Gentoo, "dev-build/cmake".into()),
+            (LinuxDistro::Suse, "cmake".into()),
         ]),
     }
 }
@@ -45,6 +47,7 @@ pub fn dep_git() -> Dependency {
             (LinuxDistro::Fedora, "git".into()),
             (LinuxDistro::Alpine, "git".into()),
             (LinuxDistro::Gentoo, "dev-vcs/git".into()),
+            (LinuxDistro::Suse, "git".into()),
         ]),
     }
 }
@@ -60,6 +63,7 @@ pub fn dep_ninja() -> Dependency {
             (LinuxDistro::Fedora, "ninja-build".into()),
             (LinuxDistro::Alpine, "ninja".into()),
             (LinuxDistro::Gentoo, "dev-build/ninja".into()),
+            (LinuxDistro::Suse, "ninja".into()),
         ]),
     }
 }
@@ -75,6 +79,7 @@ pub fn dep_glslang_validator() -> Dependency {
             (LinuxDistro::Fedora, "glslang-devel".into()),
             (LinuxDistro::Alpine, "glslang".into()),
             (LinuxDistro::Gentoo, "dev-util/glslang".into()),
+            (LinuxDistro::Suse, "glslang-devel".into()),
         ]),
     }
 }
@@ -90,6 +95,7 @@ pub fn dep_gcc() -> Dependency {
             (LinuxDistro::Fedora, "gcc".into()),
             (LinuxDistro::Alpine, "gcc".into()),
             (LinuxDistro::Gentoo, "sys-devel/gcc".into()),
+            (LinuxDistro::Suse, "gcc".into()),
         ]),
     }
 }
@@ -105,6 +111,7 @@ pub fn dep_gpp() -> Dependency {
             (LinuxDistro::Fedora, "gcc-c++".into()),
             (LinuxDistro::Alpine, "g++".into()),
             (LinuxDistro::Gentoo, "sys-devel/gcc".into()),
+            (LinuxDistro::Suse, "gcc-c++".into()),
         ]),
     }
 }
@@ -120,6 +127,7 @@ pub fn dep_libdrm() -> Dependency {
             (LinuxDistro::Fedora, "libdrm-devel".into()),
             (LinuxDistro::Alpine, "libdrm-dev".into()),
             (LinuxDistro::Gentoo, "x11-libs/libdrm".into()),
+            (LinuxDistro::Suse, "libdrm-devel".into()),
         ]),
     }
 }
@@ -135,6 +143,7 @@ pub fn dep_openxr() -> Dependency {
             (LinuxDistro::Fedora, "openxr-devel".into()),
             (LinuxDistro::Alpine, "openxr-dev".into()),
             (LinuxDistro::Gentoo, "media-libs/openxr".into()),
+            (LinuxDistro::Suse, "OpenXR-SDK-devel".into()),
         ]),
     }
 }
@@ -149,6 +158,7 @@ pub fn dep_vulkan_icd_loader() -> Dependency {
             (LinuxDistro::Debian, "libvulkan-dev".into()),
             (LinuxDistro::Fedora, "vulkan-loader-devel".into()),
             (LinuxDistro::Gentoo, "media-libs/vulkan-loader".into()),
+            (LinuxDistro::Suse, "vulkan-devel".into()), // unsure about this one
         ]),
     }
 }
@@ -162,6 +172,7 @@ pub fn dep_vulkan_headers() -> Dependency {
             (LinuxDistro::Arch, "vulkan-headers".into()),
             (LinuxDistro::Debian, "libvulkan-dev".into()),
             (LinuxDistro::Fedora, "vulkan-devel".into()),
+            (LinuxDistro::Suse, "vulkan-headers".into()),
         ]),
     }
 }
@@ -177,6 +188,7 @@ pub fn dep_pkexec() -> Dependency {
             (LinuxDistro::Fedora, "polkit".into()),
             (LinuxDistro::Alpine, "polkit".into()),
             (LinuxDistro::Gentoo, "sys-auth/polkit".into()),
+            (LinuxDistro::Suse, "polkit".into()),
         ]),
     }
 }
@@ -185,12 +197,13 @@ pub fn dep_opencv() -> Dependency {
     Dependency {
         name: "opencv".into(),
         dep_type: DepType::Include,
-        filename: "opencv4/opencv2/core/hal/hal.hpp".into(),
+        filename: "opencv2/core/hal/hal.hpp".into(),
         packages: HashMap::from([
             (LinuxDistro::Arch, "opencv".into()),
             (LinuxDistro::Debian, "libopencv-dev".into()),
             (LinuxDistro::Fedora, "opencv-devel".into()),
             (LinuxDistro::Gentoo, "media-libs/opencv".into()),
+            (LinuxDistro::Suse, "opencv-devel".into()),
         ]),
     }
 }
@@ -205,6 +218,7 @@ pub fn dep_libudev() -> Dependency {
             (LinuxDistro::Debian, "libudev-dev".into()),
             (LinuxDistro::Fedora, "systemd-devel".into()),
             (LinuxDistro::Gentoo, "virtual/libudev".into()),
+            (LinuxDistro::Suse, "libudev1".into()),
         ]),
     }
 }
@@ -221,6 +235,7 @@ pub fn dep_libglvnd() -> Dependency {
             // WARN: can't find anything exact for alpine, mesa-dev offers
             //       GL/gl.h hopefully that's the only one needed
             (LinuxDistro::Alpine, "mesa-dev".into()),
+            (LinuxDistro::Suse, "libglvnd-devel".into()),
         ]),
     }
 }
@@ -236,6 +251,7 @@ pub fn dep_libxcb() -> Dependency {
             (LinuxDistro::Fedora, "libxcb-devel".into()),
             (LinuxDistro::Gentoo, "x11-libs/libxcb".into()),
             (LinuxDistro::Alpine, "libxcb-dev".into()),
+            (LinuxDistro::Suse, "libxcb-devel".into()),
         ]),
     }
 }
@@ -251,6 +267,7 @@ pub fn dep_libx11() -> Dependency {
             (LinuxDistro::Fedora, "libX11-devel".into()),
             (LinuxDistro::Gentoo, "x11-libs/libX11".into()),
             (LinuxDistro::Alpine, "libx11-dev".into()),
+            (LinuxDistro::Suse, "libX11-devel".into()),
         ]),
     }
 }
@@ -265,6 +282,7 @@ pub fn dep_libxrandr() -> Dependency {
             (LinuxDistro::Debian, "libxrandr-dev".into()),
             (LinuxDistro::Fedora, "libXrandr-devel".into()),
             (LinuxDistro::Alpine, "libxrandr-dev".into()),
+            (LinuxDistro::Suse, "libXrandr-devel".into()),
         ]),
     }
 }
@@ -280,6 +298,7 @@ pub fn dep_adb() -> Dependency {
             (LinuxDistro::Fedora, "android-tools".into()),
             (LinuxDistro::Alpine, "android-tools".into()),
             (LinuxDistro::Gentoo, "dev-util/android-tools".into()),
+            (LinuxDistro::Suse, "android-tools".into()),
         ]),
     }
 }

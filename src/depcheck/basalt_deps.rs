@@ -1,4 +1,5 @@
 use super::{
+    boost_deps::boost_deps,
     common::{dep_cmake, dep_eigen, dep_gpp, dep_libglvnd, dep_ninja, dep_opencv},
     DepType, Dependency, DependencyCheckResult,
 };
@@ -6,7 +7,7 @@ use crate::linux_distro::LinuxDistro;
 use std::collections::HashMap;
 
 fn basalt_deps() -> Vec<Dependency> {
-    vec![
+    let mut deps = vec![
         dep_gpp(),
         dep_cmake(),
         dep_ninja(),
@@ -20,6 +21,7 @@ fn basalt_deps() -> Vec<Dependency> {
                 (LinuxDistro::Debian, "liblz4-dev".into()),
                 (LinuxDistro::Fedora, "lz4-devel".into()),
                 (LinuxDistro::Alpine, "lz4-dev".into()),
+                (LinuxDistro::Suse, "liblz4-devel".into()),
             ]),
         },
         Dependency {
@@ -31,31 +33,7 @@ fn basalt_deps() -> Vec<Dependency> {
                 (LinuxDistro::Debian, "libepoxy-dev".into()),
                 (LinuxDistro::Fedora, "libepoxy-devel".into()),
                 (LinuxDistro::Alpine, "libepoxy-dev".into()),
-            ]),
-        },
-        Dependency {
-            name: "boost".into(),
-            dep_type: DepType::SharedObject,
-            // just one of the many shared objects boost provides
-            filename: "libboost_system.so".into(),
-            packages: HashMap::from([
-                (LinuxDistro::Arch, "boost".into()),
-                (LinuxDistro::Debian, "libboost-all-dev".into()),
-                (LinuxDistro::Fedora, "boost".into()),
-                (LinuxDistro::Alpine, "boost".into()),
-                (LinuxDistro::Gentoo, "dev-libs/boost".into()),
-            ]),
-        },
-        Dependency {
-            name: "boost-dev".into(),
-            dep_type: DepType::Include,
-            // just one of the many headers boost provides
-            filename: "boost/filesystem.hpp".into(),
-            packages: HashMap::from([
-                (LinuxDistro::Arch, "boost".into()),
-                (LinuxDistro::Debian, "libboost-all-dev".into()),
-                (LinuxDistro::Fedora, "boost-devel".into()),
-                (LinuxDistro::Alpine, "boost-dev".into()),
+                (LinuxDistro::Suse, "libepoxy-devel".into()),
             ]),
         },
         Dependency {
@@ -68,6 +46,7 @@ fn basalt_deps() -> Vec<Dependency> {
                 (LinuxDistro::Fedora, "bzip2-devel".into()),
                 (LinuxDistro::Alpine, "bzip2".into()),
                 (LinuxDistro::Gentoo, "app-arch/bzip2".into()),
+                (LinuxDistro::Suse, "bzip2".into()),
             ]),
         },
         Dependency {
@@ -80,6 +59,7 @@ fn basalt_deps() -> Vec<Dependency> {
                 (LinuxDistro::Fedora, "bzip2-devel".into()),
                 (LinuxDistro::Alpine, "bzip2-dev".into()),
                 (LinuxDistro::Gentoo, "app-arch/bzip2".into()),
+                (LinuxDistro::Suse, "libbz2-devel".into()),
             ]),
         },
         // Dependency {
@@ -102,6 +82,7 @@ fn basalt_deps() -> Vec<Dependency> {
                 (LinuxDistro::Fedora, "fmt-devel".into()),
                 (LinuxDistro::Alpine, "fmt".into()),
                 (LinuxDistro::Gentoo, "dev-libs/libfmt".into()),
+                (LinuxDistro::Suse, "fmt-devel".into()),
             ]),
         },
         Dependency {
@@ -113,6 +94,7 @@ fn basalt_deps() -> Vec<Dependency> {
                 (LinuxDistro::Debian, "libfmt-dev".into()),
                 (LinuxDistro::Fedora, "fmt-devel".into()),
                 (LinuxDistro::Alpine, "fmt-dev".into()),
+                (LinuxDistro::Suse, "fmt-devel".into()),
             ]),
         },
         Dependency {
@@ -124,6 +106,7 @@ fn basalt_deps() -> Vec<Dependency> {
                 (LinuxDistro::Debian, "libglew-dev".into()),
                 (LinuxDistro::Fedora, "glew-devel".into()),
                 (LinuxDistro::Gentoo, "media-libs/glew".into()),
+                (LinuxDistro::Suse, "glew".into()),
             ]),
         },
         Dependency {
@@ -134,6 +117,7 @@ fn basalt_deps() -> Vec<Dependency> {
                 (LinuxDistro::Arch, "glew".into()),
                 (LinuxDistro::Debian, "libglew-dev".into()),
                 (LinuxDistro::Fedora, "glew-devel".into()),
+                (LinuxDistro::Suse, "glew-devel".into()),
             ]),
         },
         Dependency {
@@ -145,6 +129,7 @@ fn basalt_deps() -> Vec<Dependency> {
                 (LinuxDistro::Debian, "libgtest-dev".into()),
                 (LinuxDistro::Fedora, "gtest-devel".into()),
                 (LinuxDistro::Gentoo, "dev-cpp/gtest".into()),
+                (LinuxDistro::Suse, "gtest".into()),
             ]),
         },
         Dependency {
@@ -156,6 +141,7 @@ fn basalt_deps() -> Vec<Dependency> {
                 (LinuxDistro::Debian, "libtbb-dev".into()),
                 (LinuxDistro::Fedora, "tbb-devel".into()),
                 (LinuxDistro::Gentoo, "dev-cpp/tbb".into()),
+                (LinuxDistro::Suse, "tbb-devel".into()),
             ]),
         },
         dep_opencv(),
@@ -169,6 +155,7 @@ fn basalt_deps() -> Vec<Dependency> {
                 (LinuxDistro::Fedora, "python3".into()),
                 (LinuxDistro::Alpine, "python3".into()),
                 (LinuxDistro::Gentoo, "dev-lang/python".into()),
+                (LinuxDistro::Suse, "python311".into()),
             ]),
         },
         Dependency {
@@ -181,9 +168,12 @@ fn basalt_deps() -> Vec<Dependency> {
                 (LinuxDistro::Fedora, "bc".into()),
                 (LinuxDistro::Alpine, "bc".into()),
                 (LinuxDistro::Gentoo, "sys-devel/bc".into()),
+                (LinuxDistro::Suse, "bc".into()),
             ]),
         },
-    ]
+    ];
+    deps.extend(boost_deps());
+    deps
 }
 
 pub fn check_basalt_deps() -> Vec<DependencyCheckResult> {
