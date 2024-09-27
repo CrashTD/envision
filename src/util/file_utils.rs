@@ -4,7 +4,7 @@ use nix::{
     sys::statvfs::{statvfs, FsFlags},
 };
 use std::{
-    fs::{self, copy, create_dir_all, remove_dir_all, File, OpenOptions},
+    fs::{self, copy, create_dir_all, remove_dir_all, remove_file, File, OpenOptions},
     io::{BufReader, BufWriter},
     path::Path,
 };
@@ -15,6 +15,9 @@ pub fn get_writer(path: &Path) -> anyhow::Result<BufWriter<std::fs::File>> {
             create_dir_all(parent)?;
         }
     };
+    if path.is_file() || path.is_symlink() {
+        remove_file(path)?;
+    }
     let file = OpenOptions::new()
         .write(true)
         .create(true)
