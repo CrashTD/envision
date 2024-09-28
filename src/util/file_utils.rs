@@ -1,10 +1,11 @@
 use crate::{async_process::async_process, profile::Profile};
+use anyhow::bail;
 use nix::{
     errno::Errno,
     sys::statvfs::{statvfs, FsFlags},
 };
 use std::{
-    fs::{self, copy, create_dir_all, remove_dir_all, remove_file, File, OpenOptions},
+    fs::{self, copy, create_dir_all, remove_dir_all, File, OpenOptions},
     io::{BufReader, BufWriter},
     path::Path,
 };
@@ -15,8 +16,11 @@ pub fn get_writer(path: &Path) -> anyhow::Result<BufWriter<std::fs::File>> {
             create_dir_all(parent)?;
         }
     };
-    if path.is_file() || path.is_symlink() {
-        remove_file(path)?;
+    if path.is_symlink() {
+        bail!(
+            "Provided path '{}' exists already, but it is a symlink and not a file",
+            path.to_string_lossy()
+        );
     }
     let file = OpenOptions::new()
         .write(true)
