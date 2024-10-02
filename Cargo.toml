@@ -24,9 +24,7 @@ tracker = "0.2.2"
 uuid = { version = "1.10.0", features = ["v4", "fast-rng"] }
 vte4 = { version = "0.8.0", features = ["v0_72"] }
 xdg = "2.5.2"
-openxr = { git = "https://github.com/galister/openxrs", rev = "af4a55d", features = [
-  "linked",
-] }
+openxr = { version = "0.19.0", features = ["linked"] }
 ash = "0.38.0"
 sha2 = "0.10.8"
 tokio = { version = "1.39.3", features = ["process"] }

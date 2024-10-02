@@ -21,6 +21,7 @@ pub fn is_openxr_ready() -> bool {
             application_version: 0,
             engine_name: CMD_NAME,
             engine_version: 0,
+            api_version: xr::Version::new(1, 0, 0),
         },
         &enabled_extensions,
         &layers,
