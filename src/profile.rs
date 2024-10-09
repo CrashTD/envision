@@ -367,7 +367,7 @@ impl Profile {
     pub fn get_env_vars(&self) -> Vec<String> {
         if self.can_be_built {
             return vec![
-                "PRESSURE_VESSEL_FILESYSTEMS_RW=\"$XDG_RUNTIME_DIR/wivrn/comp_ipc:$XDG_RUNTIME_DIR/monado_comp_ipc\"".into(),
+                "PRESSURE_VESSEL_FILESYSTEMS_RW=\"$XDG_RUNTIME_DIR/wivrn_comp_ipc:$XDG_RUNTIME_DIR/wivrn/comp_ipc:$XDG_RUNTIME_DIR/monado_comp_ipc\"".into(),
             ];
         }
         self.env_vars_full()
