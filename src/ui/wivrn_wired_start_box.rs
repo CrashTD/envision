@@ -123,11 +123,17 @@ impl AsyncComponent for WivrnWiredStartBox {
                     Some(&[
                         "-c",
                         concat!(
+                            "set -e;",
+                            // package from store is org.meumeu.wivrn
+                            // package from github is org.meumeu.wivrn.github
+                            // locally built one is org.meumeu.wivrn.local
+                            // select by preference "local", then "github" and last store one
+                            "PACKAGE=$(adb shell pm list packages org.meumeu.wivrn | sort | tail -1 | sed 's/package://');",
                             "adb reverse tcp:9757 tcp:9757 && ",
-                            "adb shell am force-stop org.meumeu.wivrn && ",
+                            "adb shell am force-stop $PACKAGE && ",
                             // wait for force-stop
                             "sleep 1 && ",
-                            "adb shell am start -a android.intent.action.VIEW -d \"wivrn+tcp://127.0.0.1\" org.meumeu.wivrn"
+                            "adb shell am start -a android.intent.action.VIEW -d \"wivrn+tcp://127.0.0.1\" $PACKAGE"
                         )
                     ]),
                     None
