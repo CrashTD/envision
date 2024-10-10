@@ -61,6 +61,19 @@ fn wivrn_deps() -> Vec<Dependency> {
             ]),
         },
         Dependency {
+            name: "avahi-glib-dev".into(),
+            dep_type: DepType::Include,
+            filename: "avahi-glib/glib-malloc.h".into(),
+            packages: HashMap::from([
+                (LinuxDistro::Arch, "avahi".into()),
+                (LinuxDistro::Debian, "libavahi-glib-dev".into()),
+                (LinuxDistro::Fedora, "avahi-glib-devel".into()),
+                // TODO
+                // (LinuxDistro::Gentoo, "".into()),
+                (LinuxDistro::Suse, "libavahi-glib-devel".into()),
+            ]),
+        },
+        Dependency {
             name: "libpulse-dev".into(),
             dep_type: DepType::Include,
             filename: "pulse/context.h".into(),
