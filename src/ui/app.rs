@@ -79,7 +79,7 @@ pub struct App {
     build_worker: Option<JobWorker>,
     profiles: Vec<Profile>,
     xr_devices: Vec<XRDevice>,
-    libmonado: Option<libmonado_rs::Monado>,
+    libmonado: Option<libmonado::Monado>,
 
     wivrn_conf_editor: Option<Controller<WivrnConfEditor>>,
     skip_depcheck: bool,
@@ -375,7 +375,7 @@ impl AsyncComponent for App {
                             .sender()
                             .emit(MainViewMsg::UpdateDevices(self.xr_devices.clone()));
                     } else if let Some(so) = self.get_selected_profile().libmonado_so() {
-                        self.libmonado = libmonado_rs::Monado::create(so).ok();
+                        self.libmonado = libmonado::Monado::create(so).ok();
                         if self.libmonado.is_some() {
                             sender.input(Msg::ClockTicking);
                         }

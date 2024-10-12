@@ -1,4 +1,4 @@
-use libmonado_rs::BatteryStatus;
+use libmonado::BatteryStatus;
 use std::fmt::Display;
 
 #[derive(Debug, Clone)]

@@ -324,7 +324,7 @@ dependencies = [
  "gtk4",
  "lazy_static",
  "libadwaita",
- "libmonado-rs",
+ "libmonado",
  "nix",
  "openxr",
  "relm4",
@@ -1155,9 +1155,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "libmonado-rs"
-version = "0.1.0"
-source = "git+https://github.com/technobaboo/libmonado-rs?rev=6edb1163627d87db9904c57d7ed9dd4dcc7228b7#6edb1163627d87db9904c57d7ed9dd4dcc7228b7"
+name = "libmonado"
+version = "1.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3978b97bed5d012afccb11af3bcc5ccff35f313ed978116d3dd6ec3eae4d810b"
 dependencies = [
  "bindgen",
  "cmake",

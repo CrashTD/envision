@@ -1,4 +1,4 @@
-use libmonado_rs::{self, BatteryStatus, DeviceRole};
+use libmonado::{self, BatteryStatus, DeviceRole};
 use std::{collections::HashMap, fmt::Display, slice::Iter};
 
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
@@ -241,7 +241,7 @@ pub struct XRDevice {
 }
 
 impl XRDevice {
-    pub fn from_libmonado(monado: &libmonado_rs::Monado) -> Vec<Self> {
+    pub fn from_libmonado(monado: &libmonado::Monado) -> Vec<Self> {
         if let Ok(monado_devs) = monado.devices() {
             let mut devs: HashMap<u32, XRDevice> = monado_devs
                 .into_iter()
@@ -249,7 +249,7 @@ impl XRDevice {
                     (
                         dev.index,
                         Self {
-                            id: dev.id,
+                            id: dev.name_id,
                             index: dev.index,
                             serial: dev.serial().ok(),
                             battery: dev.battery_status().ok().and_then(|bs| {
