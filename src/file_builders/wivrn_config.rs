@@ -53,6 +53,7 @@ impl From<&Encoder> for u32 {
 pub enum Codec {
     H264,
     H265,
+    AV1,
 }
 
 impl Display for Codec {
@@ -60,17 +61,18 @@ impl Display for Codec {
         f.write_str(match self {
             Self::H264 => "h264",
             Self::H265 => "h265",
+            Self::AV1 => "av1",
         })
     }
 }
 
 impl Codec {
     pub fn iter() -> Iter<'static, Self> {
-        [Self::H264, Self::H265].iter()
+        [Self::H264, Self::H265, Self::AV1].iter()
     }
 
     pub fn as_vec() -> Vec<Self> {
-        vec![Self::H264, Self::H265]
+        vec![Self::H264, Self::H265, Self::AV1]
     }
 }
 
@@ -79,6 +81,7 @@ impl From<&Codec> for u32 {
         match value {
             Codec::H264 => 0,
             Codec::H265 => 1,
+            Codec::AV1 => 2,
         }
     }
 }
