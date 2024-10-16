@@ -219,6 +219,18 @@ fn wivrn_deps() -> Vec<Dependency> {
                 (LinuxDistro::Suse, "glib2-devel".into()),
             ]),
         },
+        Dependency {
+            name: "gdbus-codegen".into(),
+            dep_type: DepType::Executable,
+            filename: "gdbus-codegen".into(),
+            packages: HashMap::from([
+                (LinuxDistro::Arch, "glib2-devel".into()),
+                (LinuxDistro::Alpine, "glib-dev".into()),
+                (LinuxDistro::Debian, "libglib2.0-dev".into()),
+                (LinuxDistro::Fedora, "glib2-devel".into()),
+                (LinuxDistro::Suse, "glib2-devel".into()),
+            ]),
+        },
     ]
 }
 
