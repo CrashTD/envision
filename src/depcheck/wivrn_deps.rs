@@ -207,6 +207,18 @@ fn wivrn_deps() -> Vec<Dependency> {
                 (LinuxDistro::Suse, "cli11-devel".into()),
             ]),
         },
+        Dependency {
+            name: "glib2-dev".into(),
+            dep_type: DepType::Include,
+            filename: "glib-2.0/glib.h".into(),
+            packages: HashMap::from([
+                (LinuxDistro::Arch, "glib2".into()),
+                (LinuxDistro::Alpine, "glib-dev".into()),
+                (LinuxDistro::Debian, "libglib2.0-dev".into()),
+                (LinuxDistro::Fedora, "glib2-devel".into()),
+                (LinuxDistro::Suse, "glib2-devel".into()),
+            ]),
+        },
     ]
 }
 
