@@ -50,7 +50,7 @@ pub fn get_build_openhmd_jobs(profile: &Profile, clean_build: bool) -> VecDeque<
                 format!("--prefix={}", profile.prefix.to_string_lossy()),
                 format!("--libdir={}", profile.prefix.join("lib").to_string_lossy()),
                 "--buildtype=debugoptimized".into(),
-                "-Ddrivers=deepoon,xgvr,vrtek,external".into(),
+                "-Ddrivers=rift,deepoon,xgvr,vrtek,external".into(),
                 "-Dtests=false".into(),
                 build_dir.to_string_lossy().to_string(),
                 profile
