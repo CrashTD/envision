@@ -17,7 +17,7 @@ pub fn get_build_openhmd_jobs(profile: &Profile, clean_build: bool) -> VecDeque<
             .openhmd
             .repo
             .as_ref()
-            .unwrap_or(&"https://github.com/OpenHMD/OpenHMD".into())
+            .unwrap_or(&"https://github.com/thaytan/OpenHMD".into())
             .clone(),
         dir: profile.features.openhmd.path.as_ref().unwrap().clone(),
         branch: profile
@@ -25,7 +25,7 @@ pub fn get_build_openhmd_jobs(profile: &Profile, clean_build: bool) -> VecDeque<
             .openhmd
             .branch
             .as_ref()
-            .unwrap_or(&"master".into())
+            .unwrap_or(&"rift-room-config".into())
             .clone(),
     };
 
