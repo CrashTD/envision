@@ -1,14 +1,8 @@
 use crate::{
-    build_tools::{cmake::Cmake, git::Git},
-    profile::Profile,
-    termcolor::TermColor,
-    ui::job_worker::job::WorkerJob,
+    build_tools::git::Git, profile::Profile, termcolor::TermColor, ui::job_worker::job::WorkerJob,
     util::file_utils::rm_rf,
 };
-use std::{
-    collections::{HashMap, VecDeque},
-    path::Path,
-};
+use std::{collections::VecDeque, path::Path};
 
 pub fn get_build_openhmd_jobs(profile: &Profile, clean_build: bool) -> VecDeque<WorkerJob> {
     let mut jobs = VecDeque::<WorkerJob>::new();
@@ -44,31 +38,48 @@ pub fn get_build_openhmd_jobs(profile: &Profile, clean_build: bool) -> VecDeque<
         .as_ref()
         .unwrap()
         .join("build");
-    let mut cmake_vars: HashMap<String, String> = HashMap::new();
-    cmake_vars.insert("CMAKE_EXPORT_COMPILE_COMMANDS".into(), "ON".into());
-    cmake_vars.insert("CMAKE_BUILD_TYPE".into(), "RelWithDebInfo".into());
-    cmake_vars.insert(
-        "CMAKE_INSTALL_PREFIX".into(),
-        profile.prefix.to_string_lossy().to_string(),
-    );
-    cmake_vars.insert(
-        "CMAKE_INSTALL_LIBDIR".into(),
-        profile.prefix.join("lib").to_string_lossy().to_string(),
-    );
-    cmake_vars.insert("OPENHMD_DRIVER_OCULUS_RIFT_S".into(), "OFF".into());
 
-    let cmake = Cmake {
-        env: None,
-        vars: Some(cmake_vars),
-        source_dir: profile.features.openhmd.path.as_ref().unwrap().clone(),
-        build_dir: build_dir.clone(),
-    };
     if !Path::new(&build_dir).is_dir() || clean_build {
         rm_rf(&build_dir);
-        jobs.push_back(cmake.get_prepare_job());
+        // prepare job
+        jobs.push_back(WorkerJob::new_cmd(
+            None,
+            "meson".into(),
+            Some(vec![
+                "setup".into(),
+                format!("--prefix={}", profile.prefix.to_string_lossy()),
+                format!("--libdir={}", profile.prefix.join("lib").to_string_lossy()),
+                "--buildtype=debugoptimized".into(),
+                "-Ddrivers=deepoon,xgvr,vrtek,external".into(),
+                "-Dtests=false".into(),
+                build_dir.to_string_lossy().to_string(),
+                profile
+                    .features
+                    .openhmd
+                    .path
+                    .as_ref()
+                    .unwrap()
+                    .to_string_lossy()
+                    .to_string(),
+            ]),
+        ));
     }
-    jobs.push_back(cmake.get_build_job());
-    jobs.push_back(cmake.get_install_job());
+    // build job
+    jobs.push_back(WorkerJob::new_cmd(
+        None,
+        "ninja".into(),
+        Some(vec!["-C".into(), build_dir.to_string_lossy().to_string()]),
+    ));
+    // install job
+    jobs.push_back(WorkerJob::new_cmd(
+        None,
+        "ninja".into(),
+        Some(vec![
+            "-C".into(),
+            build_dir.to_string_lossy().to_string(),
+            "install".into(),
+        ]),
+    ));
 
     jobs
 }
