@@ -37,7 +37,6 @@ use crate::{
             set_current_openvrpaths_to_profile, set_current_openvrpaths_to_steam,
         },
     },
-    is_appimage::IS_APPIMAGE,
     linux_distro::LinuxDistro,
     openxr_prober::is_openxr_ready,
     paths::get_data_dir,
@@ -83,7 +82,6 @@ pub struct App {
 
     wivrn_conf_editor: Option<Controller<WivrnConfEditor>>,
     skip_depcheck: bool,
-    wivrn_appimage_warn_shown: bool,
     configure_wivrn_action: gtk::gio::SimpleAction,
     openxr_prober_worker: Option<JobWorker>,
     xrservice_ready: bool,
@@ -618,17 +616,6 @@ impl AsyncComponent for App {
                 }
             }
             Msg::ProfileSelected(prof) => {
-                if *IS_APPIMAGE
-                    && !self.wivrn_appimage_warn_shown
-                    && prof.xrservice_type == XRServiceType::Wivrn
-                {
-                    alert(
-                        "Envision is running as an AppImage",
-                        Some("WiVRn does not support running inside an AppImage, and is likely to fail. You might want to install Envision using a different method."),
-                        Some(&self.app_win.clone().upcast()),
-                    );
-                    self.wivrn_appimage_warn_shown = true;
-                }
                 self.configure_wivrn_action
                     .set_enabled(prof.xrservice_type == XRServiceType::Wivrn);
                 if prof.uuid == self.config.selected_profile_uuid {
@@ -924,7 +911,6 @@ impl AsyncComponent for App {
             libmonado: None,
             wivrn_conf_editor: None,
             skip_depcheck: false,
-            wivrn_appimage_warn_shown: false,
             configure_wivrn_action,
             openxr_prober_worker: None,
             xrservice_ready: false,
