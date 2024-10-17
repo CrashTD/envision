@@ -6,6 +6,7 @@ use super::{
     },
     devices_box::{DevicesBox, DevicesBoxMsg},
     install_wivrn_box::{InstallWivrnBox, InstallWivrnBoxInit, InstallWivrnBoxMsg},
+    openhmd_calibration_box::{OpenHmdCalibrationBox, OpenHmdCalibrationBoxMsg},
     profile_editor::{ProfileEditor, ProfileEditorInit, ProfileEditorMsg, ProfileEditorOutMsg},
     steam_launch_options_box::{SteamLaunchOptionsBox, SteamLaunchOptionsBoxMsg},
     steamvr_calibration_box::{SteamVrCalibrationBox, SteamVrCalibrationBoxMsg},
@@ -61,6 +62,8 @@ pub struct MainView {
     profile_editor: Option<Controller<ProfileEditor>>,
     #[tracker::do_not_track]
     steamvr_calibration_box: Controller<SteamVrCalibrationBox>,
+    #[tracker::do_not_track]
+    openhmd_calibration_box: Controller<OpenHmdCalibrationBox>,
     #[tracker::do_not_track]
     root_win: gtk::Window,
     #[tracker::do_not_track]
@@ -404,6 +407,7 @@ impl SimpleComponent for MainView {
                         model.wivrn_wired_start_box.widget(),
                         model.install_wivrn_box.widget(),
                         model.steamvr_calibration_box.widget(),
+                        model.openhmd_calibration_box.widget(),
 
                         gtk::Box {
                             set_orientation: gtk::Orientation::Vertical,
@@ -505,6 +509,9 @@ impl SimpleComponent for MainView {
                 self.steamvr_calibration_box
                     .sender()
                     .emit(SteamVrCalibrationBoxMsg::XRServiceActiveChanged(active));
+                self.openhmd_calibration_box
+                    .sender()
+                    .emit(OpenHmdCalibrationBoxMsg::XRServiceActiveChanged(active));
                 if !active {
                     sender.input(Self::Input::UpdateDevices(vec![]));
                 }
@@ -528,6 +535,11 @@ impl SimpleComponent for MainView {
                     .sender()
                     .emit(SteamVrCalibrationBoxMsg::SetVisible(
                         prof.lighthouse_driver == LighthouseDriver::SteamVR,
+                    ));
+                self.openhmd_calibration_box
+                    .sender()
+                    .emit(OpenHmdCalibrationBoxMsg::SetVisible(
+                        prof.features.openhmd.enabled,
                     ));
                 self.install_wivrn_box
                     .sender()
@@ -788,6 +800,12 @@ impl SimpleComponent for MainView {
             .emit(SteamVrCalibrationBoxMsg::SetVisible(
                 init.selected_profile.lighthouse_driver == LighthouseDriver::SteamVR,
             ));
+        let openhmd_calibration_box = OpenHmdCalibrationBox::builder().launch(()).detach();
+        openhmd_calibration_box
+            .sender()
+            .emit(OpenHmdCalibrationBoxMsg::SetVisible(
+                init.selected_profile.features.openhmd.enabled,
+            ));
 
         let mut actions = RelmActionGroup::<ProfileActionGroup>::new();
 
@@ -842,6 +860,7 @@ impl SimpleComponent for MainView {
             profile_delete_confirm_dialog,
             root_win: init.root_win.clone(),
             steamvr_calibration_box,
+            openhmd_calibration_box,
             profile_editor: None,
             xrservice_ready: false,
             profile_delete_action,
