@@ -74,8 +74,7 @@ pub fn setcap_cap_sys_nice_eip_cmd(profile: &Profile) -> Vec<String> {
         "CAP_SYS_NICE=eip".into(),
         profile
             .prefix
-            // not needed for wivrn, that's why monado is hardcoded
-            .join("bin/monado-service")
+            .join(profile.xrservice_binary())
             .to_string_lossy()
             .to_string(),
     ]

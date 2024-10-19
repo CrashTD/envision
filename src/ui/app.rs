@@ -533,21 +533,19 @@ impl AsyncComponent for App {
                             .sender()
                             .emit(BuildWindowMsg::UpdateBuildStatus(BuildStatus::Done));
                         let profile = self.get_selected_profile();
-                        if profile.xrservice_type == XRServiceType::Monado {
-                            if dep_pkexec().check() {
-                                self.setcap_confirm_dialog.present(Some(&self.app_win));
-                            } else {
-                                alert_w_widget(
-                                    "pkexec not found",
-                                    Some(&format!(
-                                        "The build is complete, but we need to set certain capabilities (CAP_SYS_NICE=eip) on the OpenXR server executable.\n\n{APP_NAME} can do that using pkexec, but it doesn't seem to be installed on your system.\n\nYou can do this step on your own by running the following command:"
-                                    )),
-                                    Some(&copiable_code_snippet(
-                                        &format!("sudo {}", setcap_cap_sys_nice_eip_cmd(&profile).join(" "))
-                                    )),
-                                    Some(&self.app_win.clone().upcast())
-                                );
-                            }
+                        if dep_pkexec().check() {
+                            self.setcap_confirm_dialog.present(Some(&self.app_win));
+                        } else {
+                            alert_w_widget(
+                                "pkexec not found",
+                                Some(&format!(
+                                    "The build is complete, but we need to set certain capabilities (CAP_SYS_NICE=eip) on the OpenXR server executable.\n\n{APP_NAME} can do that using pkexec, but it doesn't seem to be installed on your system.\n\nYou can do this step on your own by running the following command:"
+                                )),
+                                Some(&copiable_code_snippet(
+                                    &format!("sudo {}", setcap_cap_sys_nice_eip_cmd(&profile).join(" "))
+                                )),
+                                Some(&self.app_win.clone().upcast())
+                            );
                         }
                         self.build_window
                             .sender()
