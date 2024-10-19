@@ -5,7 +5,10 @@ use crate::{
     xdg::XDG,
 };
 use serde::{Deserialize, Serialize};
-use std::path::{Path, PathBuf};
+use std::{
+    fs::remove_file,
+    path::{Path, PathBuf},
+};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ActiveRuntimeInnerRuntime {
@@ -63,6 +66,9 @@ pub fn get_current_active_runtime() -> Option<ActiveRuntime> {
 }
 
 fn dump_active_runtime_to_path(active_runtime: &ActiveRuntime, path: &Path) -> anyhow::Result<()> {
+    if path.is_symlink() {
+        remove_file(path)?;
+    }
     let writer = get_writer(path)?;
     serde_json::to_writer_pretty(writer, active_runtime)?;
     Ok(())
