@@ -13,7 +13,7 @@ pub fn boost_deps() -> Vec<Dependency> {
         // ("", "libboost_coroutine-devel"),
         ("libboost_date_time.so", "libboost_date_time-devel"),
         // ("", "libboost_fiber-devel"),
-        ("libboost_filesystem.so.1.86.0", "libboost_filesystem-devel"),
+        ("libboost_filesystem.so", "libboost_filesystem-devel"),
         // ("", "libboost_graph-devel"),
         // ("", "libboost_graph_parallel-devel"),
         // ("", "libboost_headers-devel"),
