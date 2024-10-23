@@ -218,7 +218,7 @@ pub fn dep_libudev() -> Dependency {
             (LinuxDistro::Debian, "libudev-dev".into()),
             (LinuxDistro::Fedora, "systemd-devel".into()),
             (LinuxDistro::Gentoo, "virtual/libudev".into()),
-            (LinuxDistro::Suse, "libudev1".into()),
+            (LinuxDistro::Suse, "systemd-devel".into()),
         ]),
     }
 }
