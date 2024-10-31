@@ -16,6 +16,7 @@ pub enum Encoder {
     X264,
     Nvenc,
     Vaapi,
+    Vulkan,
 }
 
 impl Display for Encoder {
@@ -24,17 +25,18 @@ impl Display for Encoder {
             Self::X264 => "x264",
             Self::Nvenc => "NVEnc",
             Self::Vaapi => "VAAPI",
+            Self::Vulkan => "Vulkan",
         })
     }
 }
 
 impl Encoder {
     pub fn iter() -> Iter<'static, Self> {
-        [Self::X264, Self::Nvenc, Self::Vaapi].iter()
+        [Self::X264, Self::Nvenc, Self::Vaapi, Self::Vulkan].iter()
     }
 
     pub fn as_vec() -> Vec<Self> {
-        vec![Self::X264, Self::Nvenc, Self::Vaapi]
+        vec![Self::X264, Self::Nvenc, Self::Vaapi, Self::Vulkan]
     }
 }
 
@@ -44,6 +46,7 @@ impl From<&Encoder> for u32 {
             Encoder::X264 => 0,
             Encoder::Nvenc => 1,
             Encoder::Vaapi => 2,
+            Encoder::Vulkan => 3,
         }
     }
 }
