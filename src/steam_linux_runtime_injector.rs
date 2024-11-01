@@ -63,7 +63,10 @@ fn get_runtime_entrypoint_path() -> Option<PathBuf> {
                         .apps
                         .contains_key(&PRESSURE_VESSEL_STEAM_APPID)
                 })
-                .map(|(_, libraryfolder)| PathBuf::from(&libraryfolder.path))
+                .map(|(_, libraryfolder)| {
+                    PathBuf::from(&libraryfolder.path)
+                        .join("steamapps/common/SteamLinuxRuntime_sniper/_v2-entry-point")
+                })
         }
         Err(e) => {
             eprintln!("Error getting steam root path: {e}");
