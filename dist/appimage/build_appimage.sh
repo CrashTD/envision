@@ -13,12 +13,18 @@ curl -SsLO https://github.com/linuxdeploy/linuxdeploy/releases/download/continuo
 chmod +x linuxdeploy-x86_64.AppImage
 cp dist/appimage/linuxdeploy-plugin-gtk.sh ./
 
+if [ -f "AppDir/usr/share/icons/hicolod/scalable/apps/org.gabmus.envision.Devel.svg" ]; then
+    APPID="org.gabmus.envision.Devel"
+else
+    APPID="org.gabmus.envision"
+fi
+
 ./linuxdeploy-x86_64.AppImage \
     --appimage-extract-and-run \
     --appdir AppDir \
     --plugin gtk \
     --output appimage \
-    --icon-file AppDir/usr/share/icons/hicolor/scalable/apps/org.gabmus.envision.Devel.svg \
-    --desktop-file AppDir/usr/share/applications/org.gabmus.envision.Devel.desktop
+    --icon-file AppDir/usr/share/icons/hicolor/scalable/apps/$APPID.svg \
+    --desktop-file AppDir/usr/share/applications/$APPID.desktop
 
 rm ./linuxdeploy-plugin-gtk.sh
