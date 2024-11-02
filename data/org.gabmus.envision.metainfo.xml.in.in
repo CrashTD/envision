@@ -18,7 +18,11 @@
   <url type="bugtracker">@REPO_URL@/issues</url>
   <content_rating type="oars-1.0" />
   <releases>
-    <release version="0.1.0" date="2032-06-18" />
+    <release version="0.0.1" date="2024-11-02">
+      <description>
+        <p>Initial release</p>
+      </description>
+    </release>
   </releases>
   <kudos>
      <!--

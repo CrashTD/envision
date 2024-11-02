@@ -1,0 +1,32 @@
+    <release version="{{version}}" date="{{date}}">
+      <description>
+        {% if breaking or features or fixes or other -%}
+        {% if breaking -%}
+        <p>Breaking changes</p>
+          <ul>{% for i in breaking %}
+            <li>{%if i.scope%}{{i.scope}}: {%endif%}{{i.description}}</li>{% endfor %}
+          </ul>
+        {% endif -%}
+        {% if features -%}
+        <p>What's new</p>
+          <ul>{% for i in features %}
+            <li>{%if i.scope%}{{i.scope}}: {%endif%}{{i.description}}</li>{% endfor %}
+          </ul>
+        {% endif -%}
+        {% if fixes -%}
+        <p>Fixes</p>
+          <ul>{% for i in fixes %}
+            <li>{%if i.scope%}{{i.scope}}: {%endif%}{{i.description}}</li>{% endfor %}
+          </ul>
+        {% endif -%}
+        {% if other -%}
+        <p>Other changes</p>
+          <ul>{% for i in other %}
+            <li>{%if i.scope%}{{i.scope}}: {%endif%}{{i.description}}</li>{% endfor %}
+          </ul>
+      {% endif -%}
+        {% else -%}
+        <p>Initial release</p>
+      {% endif -%}
+      </description>
+    </release>
