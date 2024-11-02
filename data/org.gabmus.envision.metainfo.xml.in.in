@@ -18,6 +18,14 @@
   <url type="bugtracker">@REPO_URL@/issues</url>
   <content_rating type="oars-1.0" />
   <releases>
+    <release version="0.0.2" date="2024-11-02">
+      <description>
+        <p>Fixes</p>
+          <ul>
+            <li>appimage: build for non-devel releases</li>
+          </ul>
+        </description>
+    </release>
     <release version="0.0.1" date="2024-11-02">
       <description>
         <p>Initial release</p>
