@@ -4,6 +4,15 @@ stages:
   - check
   - deploy
 
+commitcheck:
+  image: "python"
+  stage: check
+  variables:
+    GIT_STRATEGY: clone
+  script:
+    # only run for merge requests
+    - if [ -z "$CI_MERGE_REQUEST_TITLTE" ]; then true; else python ./dist/tagging/check_conventional_commit.py "$CI_MERGE_REQUEST_TARGET_BRANCH_NAME"; fi
+
 cargo:fmtcheck:
   image: "rust:slim"
   stage: check
