@@ -223,19 +223,20 @@ pub fn dep_libudev() -> Dependency {
     }
 }
 
-pub fn dep_libglvnd() -> Dependency {
+pub fn dep_libgl() -> Dependency {
     Dependency {
         name: "libglvnd-dev".into(),
         dep_type: DepType::Include,
         filename: "GL/gl.h".into(),
         packages: HashMap::from([
             (LinuxDistro::Arch, "libglvnd".into()),
-            (LinuxDistro::Debian, "libglvnd-dev".into()),
-            (LinuxDistro::Fedora, "libglvnd-devel".into()),
-            // WARN: can't find anything exact for alpine, mesa-dev offers
-            //       GL/gl.h hopefully that's the only one needed
+            // the right debian package would be libgl-dev but the mesa one
+            // has it as a dependency
+            (LinuxDistro::Debian, "libgl1-mesa-dev".into()),
+            // as above, the right package would be libglvnd-devel
+            (LinuxDistro::Fedora, "mesa-libGL-devel".into()),
             (LinuxDistro::Alpine, "mesa-dev".into()),
-            (LinuxDistro::Suse, "libglvnd-devel".into()),
+            (LinuxDistro::Suse, "Mesa-libGL-devel".into()),
         ]),
     }
 }

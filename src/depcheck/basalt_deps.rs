@@ -1,6 +1,6 @@
 use super::{
     boost_deps::boost_deps,
-    common::{dep_cmake, dep_eigen, dep_gpp, dep_libglvnd, dep_ninja, dep_opencv},
+    common::{dep_cmake, dep_eigen, dep_gpp, dep_libgl, dep_ninja, dep_opencv},
     DepType, Dependency, DependencyCheckResult,
 };
 use crate::linux_distro::LinuxDistro;
@@ -11,7 +11,7 @@ fn basalt_deps() -> Vec<Dependency> {
         dep_gpp(),
         dep_cmake(),
         dep_ninja(),
-        dep_libglvnd(),
+        dep_libgl(),
         Dependency {
             name: "lz4-dev".into(),
             dep_type: DepType::Include,
