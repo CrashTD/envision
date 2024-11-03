@@ -13,7 +13,7 @@ curl -SsLO https://github.com/linuxdeploy/linuxdeploy/releases/download/continuo
 chmod +x linuxdeploy-x86_64.AppImage
 cp dist/appimage/linuxdeploy-plugin-gtk.sh ./
 
-if [ -f "AppDir/usr/share/icons/hicolod/scalable/apps/org.gabmus.envision.Devel.svg" ]; then
+if [ -f "AppDir/usr/share/icons/hicolor/scalable/apps/org.gabmus.envision.Devel.svg" ]; then
     APPID="org.gabmus.envision.Devel"
 else
     APPID="org.gabmus.envision"
