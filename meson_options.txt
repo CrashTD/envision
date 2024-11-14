@@ -8,3 +8,10 @@ option(
   value: 'default',
   description: 'The build profile. One of "default" or "development".'
 )
+
+option(
+  'debugbuild',
+  type: 'boolean',
+  value: false,
+  description: 'Build in debug mode, false by default.'
+)

@@ -14,13 +14,13 @@ run_command(
 cargo_options = [ '--manifest-path', meson.project_source_root() / 'Cargo.toml' ]
 cargo_options += [ '--target-dir', meson.project_build_root() / 'src' ]
 
-if get_option('profile') == 'default'
+if get_option('debugbuild')
+  rust_target = 'debug'
+  message('Building in debug mode')
+else
   cargo_options += [ '--release' ]
   rust_target = 'release'
   message('Building in release mode')
-else
-  rust_target = 'debug'
-  message('Building in debug mode')
 endif
 
 cargo_env = [ 'CARGO_HOME=' + meson.project_build_root() / 'cargo-home' ]
