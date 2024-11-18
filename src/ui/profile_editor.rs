@@ -48,6 +48,21 @@ pub struct ProfileEditorInit {
     pub profile: Profile,
 }
 
+/// This parses a var (either env var or cmake var) and if it contains
+/// a '=' char, it assumes it's key and value, otherwise it's just going to
+/// be the key and the value is gonna be an empty string
+fn parse_var(input: &str) -> (String, String) {
+    if input.contains('=') {
+        let mut sp = input.split('=');
+        (
+            sp.next().unwrap().to_string(),
+            sp.next().unwrap().to_string(),
+        )
+    } else {
+        (input.to_string(), "".to_string())
+    }
+}
+
 #[relm4::component(pub)]
 impl SimpleComponent for ProfileEditor {
     type Init = ProfileEditorInit;
@@ -428,33 +443,23 @@ impl SimpleComponent for ProfileEditor {
             }
             Self::Input::AddEnvVar(var) => {
                 let mut prof = self.profile.borrow_mut();
-                if !prof.environment.contains_key(&var) {
-                    let (name, value) = if var.contains('=') {
-                        let mut sp = var.split('=');
-                        (
-                            sp.next().unwrap().to_string(),
-                            sp.next().unwrap().to_string(),
-                        )
-                    } else {
-                        (var, "".to_string())
-                    };
+                let (name, value) = parse_var(&var);
+                if !prof.environment.contains_key(&name) {
                     prof.environment.insert(name.clone(), value.clone());
                     self.env_rows
                         .guard()
                         .push_back(EnvVarModelInit { name, value });
                 }
             }
-            Self::Input::AddXrServiceCmakeFlag(name) => {
+            Self::Input::AddXrServiceCmakeFlag(var) => {
                 let mut prof = self.profile.borrow_mut();
+                let (name, value) = parse_var(&var);
                 if !prof.xrservice_cmake_flags.contains_key(&name) {
                     prof.xrservice_cmake_flags
-                        .insert(name.clone(), "".to_string());
+                        .insert(name.clone(), value.clone());
                     self.xrservice_cmake_flags_rows
                         .guard()
-                        .push_back(EnvVarModelInit {
-                            name,
-                            value: "".to_string(),
-                        });
+                        .push_back(EnvVarModelInit { name, value });
                 }
             }
         }
