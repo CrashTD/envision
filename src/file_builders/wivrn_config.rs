@@ -153,7 +153,7 @@ pub struct WivrnConfig {
 impl Default for WivrnConfig {
     fn default() -> Self {
         Self {
-            scale: Some([0.8, 0.8]),
+            scale: Some([0.5, 0.5]),
             bitrate: Some(50000000),
             encoders: vec![],
             application: None,
