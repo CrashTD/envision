@@ -175,7 +175,7 @@ impl InternalJobWorker {
                 }
             }
         }
-        let mut launch_opts = prof.xrservice_launch_options.trim();
+        let mut launch_opts = prof.xrservice_launch_options.trim().to_string();
         let debug_launch_opts = if debug {
             if launch_opts.contains(LAUNCH_OPTS_CMD_PLACEHOLDER) {
                 format!("{} {}", "gdbserver localhost:9000", launch_opts)
@@ -189,10 +189,13 @@ impl InternalJobWorker {
             String::default()
         };
         launch_opts = if debug {
-            debug_launch_opts.as_str()
+            debug_launch_opts
         } else {
             launch_opts
         };
+        if !launch_opts.contains(" --no-instructions") {
+            launch_opts.push_str(" --no-instructions");
+        }
         let (command, args) = match launch_opts.is_empty() {
             false => (
                 "sh".into(),
