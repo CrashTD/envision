@@ -1,4 +1,9 @@
 use crate::{
+    depcheck::{
+        basalt_deps::get_missing_basalt_deps, libsurvive_deps::get_missing_libsurvive_deps,
+        mercury_deps::get_missing_mercury_deps, monado_deps::get_missing_monado_deps,
+        openhmd_deps::get_missing_openhmd_deps, wivrn_deps::get_missing_wivrn_deps, Dependency,
+    },
     paths::{get_data_dir, BWRAP_SYSTEM_PREFIX, SYSTEM_PREFIX},
     util::file_utils::get_writer,
     xdg::XDG,
@@ -554,6 +559,32 @@ impl Profile {
     /// absolute path to the libopenxr shared object
     pub fn libopenxr_so(&self) -> Option<PathBuf> {
         self.find_so(self.xrservice_type.libopenxr_path())
+    }
+
+    pub fn missing_dependencies(&self) -> Vec<Dependency> {
+        let mut missing_deps = Vec::new();
+        if self.can_be_built {
+            missing_deps.extend(match self.xrservice_type {
+                XRServiceType::Monado => get_missing_monado_deps(),
+                XRServiceType::Wivrn => get_missing_wivrn_deps(),
+            });
+            if self.features.libsurvive.enabled {
+                missing_deps.extend(get_missing_libsurvive_deps());
+            }
+            if self.features.openhmd.enabled {
+                missing_deps.extend(get_missing_openhmd_deps());
+            }
+            if self.features.basalt.enabled {
+                missing_deps.extend(get_missing_basalt_deps());
+            }
+            if self.features.mercury_enabled {
+                missing_deps.extend(get_missing_mercury_deps());
+            }
+            // no listed deps for opencomp
+        }
+        missing_deps.sort_unstable();
+        missing_deps.dedup(); // dedup only works if sorted, hence the above
+        missing_deps
     }
 }
 

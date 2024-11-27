@@ -23,12 +23,7 @@ use crate::{
     },
     config::Config,
     constants::APP_NAME,
-    depcheck::{
-        basalt_deps::get_missing_basalt_deps, common::dep_pkexec,
-        libsurvive_deps::get_missing_libsurvive_deps, mercury_deps::get_missing_mercury_deps,
-        monado_deps::get_missing_monado_deps, openhmd_deps::get_missing_openhmd_deps,
-        wivrn_deps::get_missing_wivrn_deps,
-    },
+    depcheck::common::dep_pkexec,
     file_builders::{
         active_runtime_json::{
             set_current_active_runtime_to_profile, set_current_active_runtime_to_steam,
@@ -458,41 +453,30 @@ impl AsyncComponent for App {
             },
             Msg::BuildProfile(clean_build) => {
                 let profile = self.get_selected_profile();
-                let mut missing_deps = vec![];
                 let mut jobs = VecDeque::<WorkerJob>::new();
                 // profile per se can't be built, but we still need opencomp
                 if profile.can_be_built {
-                    missing_deps.extend(match profile.xrservice_type {
-                        XRServiceType::Monado => get_missing_monado_deps(),
-                        XRServiceType::Wivrn => get_missing_wivrn_deps(),
-                    });
                     if profile.features.libsurvive.enabled {
-                        missing_deps.extend(get_missing_libsurvive_deps());
                         jobs.extend(get_build_libsurvive_jobs(&profile, clean_build));
                     }
                     if profile.features.openhmd.enabled {
-                        missing_deps.extend(get_missing_openhmd_deps());
                         jobs.extend(get_build_openhmd_jobs(&profile, clean_build));
                     }
                     if profile.features.basalt.enabled {
-                        missing_deps.extend(get_missing_basalt_deps());
                         jobs.extend(get_build_basalt_jobs(&profile, clean_build));
                     }
                     if profile.features.mercury_enabled {
-                        missing_deps.extend(get_missing_mercury_deps());
                         jobs.extend(get_build_mercury_jobs(&profile));
                     }
                     jobs.extend(match profile.xrservice_type {
                         XRServiceType::Monado => get_build_monado_jobs(&profile, clean_build),
                         XRServiceType::Wivrn => get_build_wivrn_jobs(&profile, clean_build),
                     });
-                    // no listed deps for opencomp
                 }
                 jobs.extend(get_build_opencomposite_jobs(&profile, clean_build));
+                let missing_deps = profile.missing_dependencies();
                 if !(self.skip_depcheck || profile.skip_dependency_check || missing_deps.is_empty())
                 {
-                    missing_deps.sort_unstable();
-                    missing_deps.dedup(); // dedup only works if sorted, hence the above
                     let distro = LinuxDistro::get();
                     let (missing_package_list, install_missing_widget): (
                         String,
