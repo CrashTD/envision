@@ -110,12 +110,13 @@ fn main() -> Result<()> {
     CmdLineOpts::init(&main_app);
     let sender = BROKER.sender();
     main_app.connect_command_line(move |this, cmdline| {
-        if CmdLineOpts::handle_non_activating_opts(cmdline) {
+        let opts = CmdLineOpts::from_cmdline(cmdline);
+        if let Some(exit_code) = opts.handle_non_activating_opts() {
             this.quit();
-            return 0;
+            return exit_code;
         }
         this.activate();
-        sender.emit(Msg::HandleCommandLine(CmdLineOpts::from_cmdline(cmdline)));
+        sender.emit(Msg::HandleCommandLine(opts));
         0
     });
     let app = RelmApp::from_app(main_app.clone()).with_broker(&BROKER);

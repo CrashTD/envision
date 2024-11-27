@@ -10,8 +10,10 @@ use gtk::{
 #[derive(Debug, Clone)]
 pub struct CmdLineOpts {
     pub start: bool,
+    pub list_profiles: bool,
     pub profile_uuid: Option<String>,
     pub skip_depcheck: bool,
+    pub check_dependencies_for: Option<String>,
 }
 
 impl CmdLineOpts {
@@ -19,6 +21,7 @@ impl CmdLineOpts {
     const OPT_LIST_PROFILES: (&'static str, char) = ("list-profiles", 'l');
     const OPT_PROFILE: (&'static str, char) = ("profile", 'p');
     const OPT_SKIP_DEPCHECK: (&'static str, char) = ("skip-dependency-check", 'd');
+    const OPT_CHECK_DEPS_FOR: (&'static str, char) = ("check-deps-for", 'c');
 
     pub fn init(app: &impl IsA<Application>) {
         app.add_main_option(
@@ -53,31 +56,57 @@ impl CmdLineOpts {
             "Skip dependency checks when building profiles",
             None,
         );
+        app.add_main_option(
+            Self::OPT_CHECK_DEPS_FOR.0,
+            glib::Char::try_from(Self::OPT_CHECK_DEPS_FOR.1).unwrap(),
+            glib::OptionFlags::IN_MAIN,
+            glib::OptionArg::String,
+            "Prints missing dependencies for given profile id; returns nothing if all dependencies are satisfied",
+            None,
+        );
     }
 
-    /// returns true if the application should quit
-    pub fn handle_non_activating_opts(cmdline: &ApplicationCommandLine) -> bool {
-        if cmdline.options_dict().contains(Self::OPT_LIST_PROFILES.0) {
+    /// returns an exit code if the application should quit immediately
+    pub fn handle_non_activating_opts(&self) -> Option<i32> {
+        if self.list_profiles {
             println!("Available profiles\nUUID: \"name\"");
             let profiles = Config::get_config().profiles();
             profiles.iter().for_each(|p| {
                 println!("{}: \"{}\"", p.uuid, p.name);
             });
-            return true;
+            return Some(0);
         }
-        false
+        if let Some(prof_id) = self.check_dependencies_for.as_ref() {
+            let profiles = Config::get_config().profiles();
+            if let Some(prof) = profiles.iter().find(|p| &p.uuid == prof_id) {
+                let deps = prof.missing_dependencies();
+                if deps.is_empty() {
+                    return Some(0);
+                }
+                for dep in deps {
+                    println!("{}", dep.name);
+                }
+                return Some(1);
+            } else {
+                eprintln!("No profile found for uuid: `{prof_id}`");
+                return Some(404);
+            }
+        }
+        None
     }
 
     pub fn from_cmdline(cmdline: &ApplicationCommandLine) -> Self {
         let opts = cmdline.options_dict();
         Self {
             start: opts.contains(Self::OPT_START.0),
-            profile_uuid: match opts.lookup::<String>(Self::OPT_PROFILE.0) {
-                Err(_) => None,
-                Ok(None) => None,
-                Ok(Some(variant)) => Some(variant),
-            },
+            list_profiles: opts.contains(Self::OPT_LIST_PROFILES.0),
+            profile_uuid: opts
+                .lookup::<String>(Self::OPT_PROFILE.0)
+                .unwrap_or_default(),
             skip_depcheck: opts.contains(Self::OPT_SKIP_DEPCHECK.0),
+            check_dependencies_for: opts
+                .lookup::<String>(Self::OPT_CHECK_DEPS_FOR.0)
+                .unwrap_or_default(),
         }
     }
 }
