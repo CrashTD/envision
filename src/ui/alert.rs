@@ -1,4 +1,6 @@
+use crate::constants::APP_NAME;
 use gtk::prelude::GtkApplicationExt;
+use notify_rust::Notification;
 use relm4::{adw::prelude::*, prelude::*};
 
 fn alert_base(title: &str, msg: Option<&str>) -> adw::AlertDialog {
@@ -35,4 +37,13 @@ pub fn alert_w_widget(
         d.set_extra_child(Some(w));
     }
     present_alert(d, parent);
+}
+
+pub fn notification(title: &str, msg: &str) -> Notification {
+    Notification::new()
+        .summary(title)
+        .body(msg)
+        .icon("org.gabmus.envision-symbolic")
+        .appname(APP_NAME)
+        .finalize()
 }

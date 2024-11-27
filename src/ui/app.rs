@@ -1,6 +1,6 @@
 use super::{
     about_dialog::{create_about_dialog, populate_debug_info},
-    alert::{alert, alert_w_widget},
+    alert::{alert, alert_w_widget, notification},
     build_window::{BuildStatus, BuildWindow, BuildWindowInit, BuildWindowMsg, BuildWindowOutMsg},
     cmdline_opts::CmdLineOpts,
     debug_view::{DebugView, DebugViewInit, DebugViewMsg, DebugViewOutMsg},
@@ -51,6 +51,7 @@ use crate::{
 };
 use adw::{prelude::*, ResponseAppearance};
 use gtk::glib::{self, clone};
+use notify_rust::NotificationHandle;
 use relm4::{
     actions::{AccelsPlus, ActionGroupName, RelmAction, RelmActionGroup},
     new_action_group, new_stateful_action, new_stateless_action,
@@ -86,6 +87,8 @@ pub struct App {
     openxr_prober_worker: Option<JobWorker>,
     xrservice_ready: bool,
     vkinfo: Option<VulkanInfo>,
+
+    inhibit_fail_notif: Option<NotificationHandle>,
 }
 
 #[derive(Debug)]
@@ -135,11 +138,22 @@ impl App {
                 Some("XR session running"),
             );
             if inhibit_id == 0 {
-                alert(
-                    "Failed to inhibit desktop locking",
-                    Some(&format!("{APP_NAME} tries to inhibit desktop locking to avoid automatic suspension or screen locking kicking in while the XR session is active, but this process failed.\n\nThe session is still running but you might want to manually disable automatic suspension and screen locking.")),
-                    Some(&self.app_win.clone().upcast())
-                );
+                self.inhibit_fail_notif = match if let Some(notif) =
+                    self.inhibit_fail_notif.as_ref()
+                {
+                    notif.show()
+                } else {
+                    notification(
+                        "Failed to inhibit desktop locking",
+                        &format!("{APP_NAME} tries to inhibit desktop locking to avoid automatic suspension or screen locking kicking in while the XR session is active, but this process failed.\n\nThe session is still running but you might want to manually disable automatic suspension and screen locking."),
+                    ).show()
+                } {
+                    Ok(n) => Some(n),
+                    Err(e) => {
+                        eprintln!("Failed to send desktop notification: {e:?}");
+                        None
+                    }
+                }
             } else {
                 self.inhibit_id = Some(inhibit_id);
             }
@@ -912,6 +926,7 @@ impl AsyncComponent for App {
             configure_wivrn_action,
             openxr_prober_worker: None,
             xrservice_ready: false,
+            inhibit_fail_notif: None,
         };
 
         let widgets = view_output!();

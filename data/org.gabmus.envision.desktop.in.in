@@ -11,3 +11,4 @@ Keywords=vr;virtual;reality;monado;
 # Translators: Do NOT translate or transliterate this text (this is an icon file name)!
 Icon=@APP_ID@
 StartupNotify=true
+X-GNOME-UsesNotifications=true
