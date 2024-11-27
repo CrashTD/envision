@@ -47,6 +47,7 @@ use crate::{
     },
     util::file_utils::{setcap_cap_sys_nice_eip, setcap_cap_sys_nice_eip_cmd},
     vulkaninfo::VulkanInfo,
+    wivrn_dbus,
     xr_devices::XRDevice,
 };
 use adw::{prelude::*, ResponseAppearance};
@@ -64,7 +65,7 @@ pub struct App {
     app_win: adw::ApplicationWindow,
     inhibit_id: Option<u32>,
 
-    main_view: Controller<MainView>,
+    main_view: AsyncController<MainView>,
     debug_view: Controller<DebugView>,
     split_view: Option<adw::NavigationSplitView>,
     about_dialog: adw::AboutDialog,
@@ -119,6 +120,7 @@ pub enum Msg {
     HandleCommandLine(CmdLineOpts),
     StartProber,
     OnProberExit(bool),
+    WivrnCheckPairMode,
     NoOp,
 }
 
@@ -375,11 +377,11 @@ impl AsyncComponent for App {
             Msg::OnAutostartExit(_) => self.autostart_worker = None,
             Msg::ClockTicking => {
                 self.main_view.sender().emit(MainViewMsg::ClockTicking);
-                let should_poll_for_devices = self.xrservice_ready
-                    && self
-                        .xrservice_worker
-                        .as_ref()
-                        .is_some_and(JobWorker::is_alive);
+                let xrservice_worker_is_alive = self
+                    .xrservice_worker
+                    .as_ref()
+                    .is_some_and(JobWorker::is_alive);
+                let should_poll_for_devices = self.xrservice_ready && xrservice_worker_is_alive;
                 if should_poll_for_devices {
                     if let Some(monado) = self.libmonado.as_ref() {
                         self.xr_devices = XRDevice::from_libmonado(monado);
@@ -392,6 +394,32 @@ impl AsyncComponent for App {
                             sender.input(Msg::ClockTicking);
                         }
                     }
+                }
+                if xrservice_worker_is_alive
+                    && self.get_selected_profile().xrservice_type == XRServiceType::Wivrn
+                {
+                    // is in pairing mode?
+                    sender.input(Msg::WivrnCheckPairMode);
+                }
+            }
+            Msg::WivrnCheckPairMode => {
+                if self.get_selected_profile().xrservice_type == XRServiceType::Wivrn {
+                    match wivrn_dbus::is_pairing_mode().await {
+                        Ok(state) => {
+                            self.main_view
+                                .sender()
+                                .emit(MainViewMsg::SetWivrnPairingMode(state));
+                            self.main_view
+                                .sender()
+                                .emit(MainViewMsg::SetWivrnSupportsPairing(true));
+                        }
+                        Err(e) => {
+                            eprintln!("Error: failed to get wivrn pairing mode: {e:?}");
+                            self.main_view
+                                .sender()
+                                .emit(MainViewMsg::SetWivrnSupportsPairing(false));
+                        }
+                    };
                 }
             }
             Msg::EnableDebugViewChanged(val) => {

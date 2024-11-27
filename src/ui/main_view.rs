@@ -25,6 +25,7 @@ use crate::{
         steamvr_utils::chaperone_info_exists,
     },
     vulkaninfo::VulkanInfo,
+    wivrn_dbus,
     xr_devices::XRDevice,
 };
 use adw::{prelude::*, ResponseAppearance};
@@ -33,7 +34,6 @@ use relm4::{
     actions::{ActionGroupName, RelmAction, RelmActionGroup},
     new_action_group, new_stateless_action,
     prelude::*,
-    ComponentParts, ComponentSender, SimpleComponent,
 };
 use std::{fs::read_to_string, io::Write};
 
@@ -73,6 +73,9 @@ pub struct MainView {
     xrservice_ready: bool,
     #[tracker::do_not_track]
     vkinfo: Option<VulkanInfo>,
+    wivrn_pairing_mode: bool,
+    wivrn_pin: Option<String>,
+    wivrn_supports_pairing: bool,
 }
 
 #[derive(Debug)]
@@ -96,6 +99,10 @@ pub enum MainViewMsg {
     ExportProfile,
     ImportProfile,
     OpenProfileEditor(Profile),
+    SetWivrnSupportsPairing(bool),
+    SetWivrnPairingMode(bool),
+    StopWivrnPairingMode,
+    StartWivrnPairingMode,
 }
 
 #[derive(Debug)]
@@ -116,7 +123,7 @@ pub struct MainViewInit {
 }
 
 impl MainView {
-    fn create_profile_editor(&mut self, sender: ComponentSender<MainView>, prof: Profile) {
+    fn create_profile_editor(&mut self, sender: AsyncComponentSender<Self>, prof: Profile) {
         self.profile_editor = Some(
             ProfileEditor::builder()
                 .launch(ProfileEditorInit {
@@ -130,11 +137,12 @@ impl MainView {
     }
 }
 
-#[relm4::component(pub)]
-impl SimpleComponent for MainView {
+#[relm4::component(pub async)]
+impl AsyncComponent for MainView {
     type Init = MainViewInit;
     type Input = MainViewMsg;
     type Output = MainViewOutMsg;
+    type CommandOutput = ();
 
     menu! {
         app_menu: {
@@ -240,28 +248,136 @@ impl SimpleComponent for MainView {
                             set_visible: model.xrservice_active,
                             add_css_class: "card",
                             gtk::Label {
-                                #[track = "model.changed(Self::xrservice_active()) || model.changed(Self::xrservice_ready())"]
-                                set_label: if model.xrservice_ready {
-                                    "Service ready, you can launch XR apps"
-                                } else {
+                                #[track = "model.changed(Self::xrservice_active()) || model.changed(Self::xrservice_ready()) || model.changed(Self::wivrn_pairing_mode())"]
+                                set_label: {
                                     match model.selected_profile.xrservice_type {
                                         XRServiceType::Monado =>
-                                            "Starting…",
+                                            if model.xrservice_ready {
+                                                "Service ready, you can launch XR apps"
+                                            } else {
+                                                "Starting…"
+                                            }
                                         XRServiceType::Wivrn =>
-                                            "Starting, please connect your client device…",
+                                            if model.wivrn_pairing_mode {
+                                                "Pairing mode"
+                                            } else {
+                                                "Starting, connect your client device…"
+                                            }
                                     }
                                 },
                                 set_margin_all: 18,
                                 add_css_class: "heading",
                                 add_css_class: "success",
                                 add_css_class: "warning",
-                                #[track = "model.changed(Self::xrservice_active()) || model.changed(Self::xrservice_ready())"]
-                                set_class_active: ("warning", !model.xrservice_ready),
+                                #[track = "model.changed(Self::xrservice_active()) || model.changed(Self::xrservice_ready()) || model.changed(Self::wivrn_pairing_mode())"]
+                                set_class_active: (
+                                    "success",
+                                    model.xrservice_ready
+                                    && (
+                                        model.selected_profile.xrservice_type != XRServiceType::Wivrn
+                                        || !model.wivrn_pairing_mode
+                                    )
+                                ),
                                 set_wrap: true,
                                 set_justify: gtk::Justification::Center,
                             },
                         },
                         model.devices_box.widget(),
+                        gtk::Box {
+                            set_orientation: gtk::Orientation::Vertical,
+                            set_hexpand: true,
+                            set_vexpand: false,
+                            set_spacing: 12,
+                            add_css_class: "card",
+                            add_css_class: "padded",
+                            #[track = "model.changed(Self::wivrn_supports_pairing()) || model.changed(Self::xrservice_active()) || model.changed(Self::selected_profile()) || model.changed(Self::wivrn_pairing_mode()) || model.changed(Self::wivrn_pin())"]
+                            set_visible: model.wivrn_supports_pairing
+                                && model.xrservice_active
+                                && model.selected_profile.xrservice_type == XRServiceType::Wivrn
+                                && !model.wivrn_pairing_mode,
+                            gtk::Label {
+                                add_css_class: "heading",
+                                set_hexpand: true,
+                                set_xalign: 0.0,
+                                set_label: "Pairing mode",
+                                set_wrap: true,
+                                set_wrap_mode: gtk::pango::WrapMode::Word,
+                            },
+                            gtk::Label {
+                                add_css_class: "dim-label",
+                                set_hexpand: true,
+                                set_label: concat!(
+                                    "To connect a new device to WiVRn, you ",
+                                    "will need to pair it first.\n\n",
+                                    "You can do so by starting the pairing mode ",
+                                    "with the button below."
+                                ),
+                                set_xalign: 0.0,
+                                set_wrap: true,
+                                set_wrap_mode: gtk::pango::WrapMode::Word,
+                            },
+                            gtk::Button {
+                                add_css_class: "suggested-action",
+                                set_label: "Start pairing mode",
+                                set_halign: gtk::Align::Start,
+                                connect_clicked[sender] => move |_| {
+                                    sender.input(Self::Input::StartWivrnPairingMode);
+                                }
+                            },
+                        },
+                        gtk::Box {
+                            set_orientation: gtk::Orientation::Vertical,
+                            set_hexpand: true,
+                            set_vexpand: false,
+                            set_spacing: 12,
+                            add_css_class: "card",
+                            add_css_class: "padded",
+                            #[track = "model.changed(Self::wivrn_supports_pairing()) || model.changed(Self::xrservice_active()) || model.changed(Self::selected_profile()) || model.changed(Self::wivrn_pairing_mode()) || model.changed(Self::wivrn_pin())"]
+                            set_visible: model.wivrn_supports_pairing
+                                && model.xrservice_active
+                                && model.selected_profile.xrservice_type == XRServiceType::Wivrn
+                                && model.wivrn_pairing_mode && model.wivrn_pin.is_some(),
+                            gtk::Label {
+                                add_css_class: "heading",
+                                set_hexpand: true,
+                                set_xalign: 0.0,
+                                set_label: "Pairing mode",
+                                set_wrap: true,
+                                set_wrap_mode: gtk::pango::WrapMode::Word,
+                            },
+                            gtk::Label {
+                                add_css_class: "dim-label",
+                                set_hexpand: true,
+                                set_label: concat!(
+                                    "WiVRn is in pairing mode. Pair your client ",
+                                    "device with the following PIN:"
+                                ),
+                                set_xalign: 0.0,
+                                set_wrap: true,
+                                set_wrap_mode: gtk::pango::WrapMode::Word,
+                            },
+                            gtk::Label {
+                                add_css_class: "title-2",
+                                add_css_class: "monospace",
+                                set_hexpand: true,
+                                set_selectable: true,
+                                #[track = "model.changed(Self::wivrn_pin())"]
+                                set_label: model.wivrn_pin
+                                    .as_deref().unwrap_or(""),
+                                set_xalign: 0.5,
+                                set_justify: gtk::Justification::Center,
+                                set_wrap: true,
+                                set_wrap_mode: gtk::pango::WrapMode::Word,
+                            },
+                            gtk::Button {
+                                add_css_class: "destructive-action",
+                                set_label: "Stop pairing mode",
+                                set_halign: gtk::Align::Start,
+                                connect_clicked[sender] => move |_| {
+                                    sender.input(Self::Input::StopWivrnPairingMode);
+                                }
+                            },
+                        },
                         gtk::Box {
                             set_orientation: gtk::Orientation::Vertical,
                             set_hexpand: true,
@@ -486,11 +602,48 @@ impl SimpleComponent for MainView {
         }
     }
 
-    fn update(&mut self, message: Self::Input, sender: ComponentSender<Self>) {
+    async fn update(
+        &mut self,
+        message: Self::Input,
+        sender: AsyncComponentSender<Self>,
+        _root: &Self::Root,
+    ) {
         self.reset();
 
         match message {
             Self::Input::ClockTicking => {}
+            Self::Input::SetWivrnSupportsPairing(supported) => {
+                if self.wivrn_supports_pairing != supported {
+                    self.set_wivrn_supports_pairing(supported)
+                }
+            }
+            Self::Input::SetWivrnPairingMode(enabled) => {
+                if self.wivrn_pairing_mode != enabled {
+                    self.set_wivrn_pairing_mode(enabled);
+                    if enabled {
+                        match wivrn_dbus::pairing_pin().await {
+                            Ok(pin) => {
+                                self.set_wivrn_pin(Some(pin));
+                            }
+                            Err(e) => {
+                                eprintln!("Error: failed to get wivrn pairing pin: {e:?}");
+                            }
+                        };
+                    } else {
+                        self.set_wivrn_pin(None);
+                    }
+                }
+            }
+            Self::Input::StopWivrnPairingMode => {
+                if let Err(e) = wivrn_dbus::disable_pairing().await {
+                    eprintln!("Error: failed to stop wivrn pairing mode: {e:?}");
+                }
+            }
+            Self::Input::StartWivrnPairingMode => {
+                if let Err(e) = wivrn_dbus::enable_pairing().await {
+                    eprintln!("Error: failed to start wivrn pairing mode: {e:?}");
+                }
+            }
             Self::Input::StartStopClicked => {
                 sender
                     .output(Self::Output::DoStartStopXRService)
@@ -504,6 +657,7 @@ impl SimpleComponent for MainView {
             Self::Input::XRServiceActiveChanged(active, profile, show_launch_opts) => {
                 if !active {
                     self.set_xrservice_ready(false);
+                    sender.input(Self::Input::SetWivrnPairingMode(false));
                 }
                 self.set_xrservice_active(active);
                 self.steamvr_calibration_box
@@ -742,11 +896,11 @@ impl SimpleComponent for MainView {
         }
     }
 
-    fn init(
+    async fn init(
         init: Self::Init,
         root: Self::Root,
-        sender: ComponentSender<Self>,
-    ) -> ComponentParts<Self> {
+        sender: AsyncComponentSender<Self>,
+    ) -> AsyncComponentParts<Self> {
         let profile_not_editable_dialog = adw::AlertDialog::builder()
             .heading("This profile is not editable")
             .body(concat!(
@@ -866,6 +1020,9 @@ impl SimpleComponent for MainView {
             profile_delete_action,
             profile_export_action,
             vkinfo: init.vkinfo,
+            wivrn_pairing_mode: false,
+            wivrn_supports_pairing: false,
+            wivrn_pin: None,
             tracker: 0,
         };
         let widgets = view_output!();
@@ -919,7 +1076,7 @@ impl SimpleComponent for MainView {
 
         root.insert_action_group(ProfileActionGroup::NAME, Some(&actions.into_action_group()));
 
-        ComponentParts { model, widgets }
+        AsyncComponentParts { model, widgets }
     }
 }
 
