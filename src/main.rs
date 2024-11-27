@@ -111,6 +111,7 @@ fn main() -> Result<()> {
     let sender = BROKER.sender();
     main_app.connect_command_line(move |this, cmdline| {
         if CmdLineOpts::handle_non_activating_opts(cmdline) {
+            this.quit();
             return 0;
         }
         this.activate();
