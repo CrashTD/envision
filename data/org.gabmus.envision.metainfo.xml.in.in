@@ -18,6 +18,34 @@
   <url type="bugtracker">@REPO_URL@/issues</url>
   <content_rating type="oars-1.0" />
   <releases>
+    <release version="1.0.0" date="2024-11-27">
+      <description>
+        <p>Breaking changes</p>
+          <ul>
+            <li>wivrn pairing support</li>
+          </ul>
+        <p>What's new</p>
+          <ul>
+            <li>send desktop notification instead of showing alert when failing to inhibit screen lock</li>
+            <li>split cmake var into name and value when it contains =</li>
+          </ul>
+        <p>Fixes</p>
+          <ul>
+            <li>disable wivrn launch options instructions in debug view</li>
+            <li>lower wivrn default foveation to 0.5</li>
+            <li>separate debugbuild option to build in debug mode</li>
+            <li>openhmd: add meson as a dependency</li>
+            <li>dependencies: correct packages for GL&#x2F;gl.h</li>
+            <li>appimage: build for devel releases</li>
+            <li>monado dependencies: add libxrandr</li>
+          </ul>
+        <p>Other changes</p>
+          <ul>
+            <li>format</li>
+            <li>ci: conventional commit check</li>
+          </ul>
+      </description>
+    </release>
     <release version="0.0.2" date="2024-11-02">
       <description>
         <p>Fixes</p>
