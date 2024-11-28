@@ -991,45 +991,6 @@ impl AsyncComponent for MainView {
             ret
         };
 
-        let mut model = Self {
-            xrservice_active: false,
-            enable_debug_view: init.config.debug_view_enabled,
-            profiles_dropdown: None,
-            profiles: vec![],
-            steam_launch_options_box: SteamLaunchOptionsBox::builder().launch(()).detach(),
-            install_wivrn_box: InstallWivrnBox::builder()
-                .launch(InstallWivrnBoxInit {
-                    selected_profile: init.selected_profile.clone(),
-                    root_win: init.root_win.clone(),
-                })
-                .detach(),
-            wivrn_wired_start_box: WivrnWiredStartBox::builder()
-                .launch(WivrnWiredStartBoxInit {
-                    selected_profile: init.selected_profile.clone(),
-                    root_win: init.root_win.clone(),
-                })
-                .detach(),
-            devices_box: DevicesBox::builder().launch(()).detach(),
-            selected_profile: init.selected_profile.clone(),
-            profile_not_editable_dialog,
-            profile_delete_confirm_dialog,
-            root_win: init.root_win.clone(),
-            steamvr_calibration_box,
-            openhmd_calibration_box,
-            profile_editor: None,
-            xrservice_ready: false,
-            profile_delete_action,
-            profile_export_action,
-            vkinfo: init.vkinfo,
-            wivrn_pairing_mode: false,
-            wivrn_supports_pairing: false,
-            wivrn_pin: None,
-            tracker: 0,
-        };
-        let widgets = view_output!();
-
-        model.profiles_dropdown = Some(widgets.profiles_dropdown.clone());
-
         stateless_action!(
             actions,
             ProfileMenuNewAction,
@@ -1076,6 +1037,45 @@ impl AsyncComponent for MainView {
         );
 
         root.insert_action_group(ProfileActionGroup::NAME, Some(&actions.into_action_group()));
+
+        let mut model = Self {
+            xrservice_active: false,
+            enable_debug_view: init.config.debug_view_enabled,
+            profiles_dropdown: None,
+            profiles: vec![],
+            steam_launch_options_box: SteamLaunchOptionsBox::builder().launch(()).detach(),
+            install_wivrn_box: InstallWivrnBox::builder()
+                .launch(InstallWivrnBoxInit {
+                    selected_profile: init.selected_profile.clone(),
+                    root_win: init.root_win.clone(),
+                })
+                .detach(),
+            wivrn_wired_start_box: WivrnWiredStartBox::builder()
+                .launch(WivrnWiredStartBoxInit {
+                    selected_profile: init.selected_profile.clone(),
+                    root_win: init.root_win.clone(),
+                })
+                .detach(),
+            devices_box: DevicesBox::builder().launch(()).detach(),
+            selected_profile: init.selected_profile.clone(),
+            profile_not_editable_dialog,
+            profile_delete_confirm_dialog,
+            root_win: init.root_win.clone(),
+            steamvr_calibration_box,
+            openhmd_calibration_box,
+            profile_editor: None,
+            xrservice_ready: false,
+            profile_delete_action,
+            profile_export_action,
+            vkinfo: init.vkinfo,
+            wivrn_pairing_mode: false,
+            wivrn_supports_pairing: false,
+            wivrn_pin: None,
+            tracker: 0,
+        };
+        let widgets = view_output!();
+
+        model.profiles_dropdown = Some(widgets.profiles_dropdown.clone());
 
         AsyncComponentParts { model, widgets }
     }
