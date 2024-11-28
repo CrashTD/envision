@@ -18,6 +18,25 @@
   <url type="bugtracker">@REPO_URL@/issues</url>
   <content_rating type="oars-1.0" />
   <releases>
+    <release version="1.1.0" date="2024-11-28">
+      <description>
+        <p>What's new</p>
+          <ul>
+            <li>check missing deps command line option; handle non activating opts is a proper method and all opts are part of the struct</li>
+            <li>move dependency collection to profile method</li>
+          </ul>
+        <p>Fixes</p>
+          <ul>
+            <li>profile context menu binding</li>
+            <li>profile context menu should prefer opening towards the top</li>
+            <li>exit on listing profiles</li>
+          </ul>
+        <p>Other changes</p>
+          <ul>
+            <li>in tagging script add cargo lock as well</li>
+          </ul>
+      </description>
+    </release>
     <release version="1.0.0" date="2024-11-27">
       <description>
         <p>Breaking changes</p>
