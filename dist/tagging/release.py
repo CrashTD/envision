@@ -109,7 +109,7 @@ if __name__ == "__main__":
     print(f"Will commit with the following message: '{commitmsg}'")
     if not yes_no():
         sys.exit(0)
-    cmd(["git", "add", "meson.build", "Cargo.toml", METAINFO_PATH])
+    cmd(["git", "add", "meson.build", "Cargo.toml", "Cargo.lock", METAINFO_PATH])
     cmd(["git", "commit", "-m", commitmsg])
     print(f"Will add tag '{tag}'")
     if not yes_no():
