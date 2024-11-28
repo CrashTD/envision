@@ -596,6 +596,7 @@ impl AsyncComponent for MainView {
                         set_icon_name: "view-more-symbolic",
                         set_tooltip_text: Some("Menu"),
                         set_menu_model: Some(&profile_actions_menu),
+                        set_direction: gtk::ArrowType::Up,
                     },
                 },
             }
