@@ -11,9 +11,6 @@
 #[allow(non_snake_case)]
 mod internal;
 
-/// timeout for dbus methods in seconds
-const TIMEOUT: i32 = 10;
-
 async fn proxy<'a>() -> zbus::Result<internal::ServerProxy<'a>> {
     let connection = zbus::Connection::session().await?;
     let proxy = internal::ServerProxy::new(&connection).await?;
@@ -25,7 +22,7 @@ pub async fn is_pairing_mode() -> zbus::Result<bool> {
 }
 
 pub async fn enable_pairing() -> zbus::Result<String> {
-    proxy().await?.enable_pairing(TIMEOUT).await
+    proxy().await?.enable_pairing(0).await
 }
 
 pub async fn disable_pairing() -> zbus::Result<()> {
