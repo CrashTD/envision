@@ -163,57 +163,7 @@ impl App {
     pub fn start_xrservice(&mut self, sender: AsyncComponentSender<Self>, debug: bool) {
         self.xrservice_ready = false;
         let prof = self.get_selected_profile();
-        if prof.can_start() {
-            if let Err(e) = set_current_active_runtime_to_profile(&prof) {
-                alert(
-                    "Failed to start XR Service",
-                    Some(&format!(
-                        "Error setting current active runtime to profile: {e}"
-                    )),
-                    Some(&self.app_win.clone().upcast::<gtk::Window>()),
-                );
-                return;
-            }
-            if let Err(e) = set_current_openvrpaths_to_profile(&prof) {
-                alert(
-                    "Failed to start XR Service",
-                    Some(&format!(
-                        "Error setting current openvrpaths file to profile: {e}"
-                    )),
-                    Some(&self.app_win.clone().upcast::<gtk::Window>()),
-                );
-                return;
-            };
-            self.debug_view.sender().emit(DebugViewMsg::ClearLog);
-            self.xr_devices = vec![];
-            remove_file(prof.xrservice_type.ipc_file_path())
-                .is_err()
-                .then(|| println!("Failed to remove xrservice IPC file"));
-            let worker = JobWorker::xrservice_worker_wrap_from_profile(
-                &prof,
-                sender.input_sender(),
-                |msg| match msg {
-                    JobWorkerOut::Log(rows) => Msg::OnServiceLog(rows),
-                    JobWorkerOut::Exit(code) => Msg::OnServiceExit(code),
-                },
-                debug,
-            );
-            worker.start();
-            self.xrservice_worker = Some(worker);
-            self.main_view
-                .sender()
-                .emit(MainViewMsg::XRServiceActiveChanged(
-                    true,
-                    Some(self.get_selected_profile()),
-                    // show launch opts only if setting the runtime entrypoint fails
-                    set_runtime_entrypoint_launch_opts_from_profile(&prof).is_err(),
-                ));
-            self.debug_view
-                .sender()
-                .emit(DebugViewMsg::XRServiceActiveChanged(true));
-            self.set_inhibit_session(true);
-            sender.input(Msg::StartProber);
-        } else {
+        if !prof.can_start() {
             alert(
                 "Failed to start profile",
                 Some(concat!(
@@ -222,7 +172,57 @@ impl App {
                 )),
                 Some(&self.app_win.clone().upcast::<gtk::Window>()),
             );
+            return;
         }
+        if let Err(e) = set_current_active_runtime_to_profile(&prof) {
+            alert(
+                "Failed to start XR Service",
+                Some(&format!(
+                    "Error setting current active runtime to profile: {e}"
+                )),
+                Some(&self.app_win.clone().upcast::<gtk::Window>()),
+            );
+            return;
+        }
+        if let Err(e) = set_current_openvrpaths_to_profile(&prof) {
+            alert(
+                "Failed to start XR Service",
+                Some(&format!(
+                    "Error setting current openvrpaths file to profile: {e}"
+                )),
+                Some(&self.app_win.clone().upcast::<gtk::Window>()),
+            );
+            return;
+        };
+        self.debug_view.sender().emit(DebugViewMsg::ClearLog);
+        self.xr_devices = vec![];
+        remove_file(prof.xrservice_type.ipc_file_path())
+            .is_err()
+            .then(|| println!("Failed to remove xrservice IPC file"));
+        let worker = JobWorker::xrservice_worker_wrap_from_profile(
+            &prof,
+            sender.input_sender(),
+            |msg| match msg {
+                JobWorkerOut::Log(rows) => Msg::OnServiceLog(rows),
+                JobWorkerOut::Exit(code) => Msg::OnServiceExit(code),
+            },
+            debug,
+        );
+        worker.start();
+        self.xrservice_worker = Some(worker);
+        self.main_view
+            .sender()
+            .emit(MainViewMsg::XRServiceActiveChanged(
+                true,
+                Some(self.get_selected_profile()),
+                // show launch opts only if setting the runtime entrypoint fails
+                set_runtime_entrypoint_launch_opts_from_profile(&prof).is_err(),
+            ));
+        self.debug_view
+            .sender()
+            .emit(DebugViewMsg::XRServiceActiveChanged(true));
+        self.set_inhibit_session(true);
+        sender.input(Msg::StartProber);
     }
 
     pub fn run_autostart(&mut self, sender: AsyncComponentSender<Self>) {
