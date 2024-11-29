@@ -18,6 +18,14 @@
   <url type="bugtracker">@REPO_URL@/issues</url>
   <content_rating type="oars-1.0" />
   <releases>
+    <release version="1.1.1" date="2024-11-29">
+      <description>
+        <p>Fixes</p>
+          <ul>
+            <li>remove wivrn pairing mode timer</li>
+          </ul>
+        </description>
+    </release>
     <release version="1.1.0" date="2024-11-28">
       <description>
         <p>What's new</p>

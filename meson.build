@@ -1,7 +1,7 @@
 project(
   'envision',
   'rust',
-  version: '1.1.0', # version number row
+  version: '1.1.1', # version number row
   meson_version: '>= 0.59',
   license: 'AGPL-3.0',
 )
