@@ -235,6 +235,18 @@ fn wivrn_deps() -> Vec<Dependency> {
                 (LinuxDistro::Suse, "glib2-devel".into()),
             ]),
         },
+        Dependency {
+            name: "openssl-dev".into(),
+            dep_type: DepType::Executable,
+            filename: "openssl/ssl3.h".into(),
+            packages: HashMap::from([
+                (LinuxDistro::Arch, "openssl".into()),
+                (LinuxDistro::Alpine, "openssl-dev".into()),
+                (LinuxDistro::Debian, "libssl-dev".into()),
+                (LinuxDistro::Fedora, "openssl-devel".into()),
+                (LinuxDistro::Suse, "openssl-devel".into()),
+            ]),
+        },
     ]
 }
 
