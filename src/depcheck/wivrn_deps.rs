@@ -237,7 +237,7 @@ fn wivrn_deps() -> Vec<Dependency> {
         },
         Dependency {
             name: "openssl-dev".into(),
-            dep_type: DepType::Executable,
+            dep_type: DepType::Include,
             filename: "openssl/ssl3.h".into(),
             packages: HashMap::from([
                 (LinuxDistro::Arch, "openssl".into()),
