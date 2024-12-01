@@ -45,7 +45,7 @@ impl XRServiceType {
     pub fn libmonado_path(&self) -> &'static str {
         match self {
             Self::Monado => "libmonado.so",
-            Self::Wivrn => "wivrn/libmonado.so",
+            Self::Wivrn => "wivrn/libmonado_wivrn.so",
         }
     }
 
