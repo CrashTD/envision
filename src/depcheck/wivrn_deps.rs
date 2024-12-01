@@ -247,6 +247,18 @@ fn wivrn_deps() -> Vec<Dependency> {
                 (LinuxDistro::Suse, "openssl-devel".into()),
             ]),
         },
+        Dependency {
+            name: "libnotify-dev".into(),
+            dep_type: DepType::Include,
+            filename: "openssl/ssl3.h".into(),
+            packages: HashMap::from([
+                (LinuxDistro::Arch, "libnotify".into()),
+                (LinuxDistro::Alpine, "libnotify-dev".into()),
+                (LinuxDistro::Debian, "libnotify-dev".into()),
+                (LinuxDistro::Fedora, "libnotify-devel".into()),
+                (LinuxDistro::Suse, "libnotify-devel".into()),
+            ]),
+        },
     ]
 }
 
