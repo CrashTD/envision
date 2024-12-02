@@ -6,8 +6,8 @@ use crate::{
     profile::{Profile, XRServiceType},
 };
 use gtk::prelude::*;
-use tracing::error;
 use relm4::prelude::*;
+use tracing::error;
 
 #[derive(PartialEq, Eq, Debug, Clone)]
 pub enum StartClientStatus {

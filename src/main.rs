@@ -5,7 +5,6 @@ use file_builders::{
     openvrpaths_vrpath::{get_current_openvrpaths, set_current_openvrpaths_to_steam},
 };
 use gettextrs::LocaleCategory;
-use tracing::warn;
 use relm4::{
     adw,
     gtk::{self, gdk, gio, glib, prelude::*},
@@ -13,6 +12,7 @@ use relm4::{
 };
 use std::env;
 use steam_linux_runtime_injector::restore_runtime_entrypoint;
+use tracing::warn;
 use tracing_subscriber::{filter::LevelFilter, EnvFilter};
 use ui::{
     app::{App, AppInit, Msg},

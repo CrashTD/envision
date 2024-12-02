@@ -47,7 +47,6 @@ use crate::{
 };
 use adw::{prelude::*, ResponseAppearance};
 use gtk::glib::{self, clone};
-use tracing::error;
 use notify_rust::NotificationHandle;
 use relm4::{
     actions::{AccelsPlus, ActionGroupName, RelmAction, RelmActionGroup},
@@ -55,6 +54,7 @@ use relm4::{
     prelude::*,
 };
 use std::{collections::VecDeque, fs::remove_file, time::Duration};
+use tracing::error;
 
 pub struct App {
     application: adw::Application,

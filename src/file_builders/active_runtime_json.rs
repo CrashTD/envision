@@ -1,7 +1,10 @@
 use crate::{
     paths::{get_backup_dir, SYSTEM_PREFIX},
     profile::Profile,
-    util::file_utils::{copy_file, deserialize_file, get_writer, set_file_readonly},
+    util::{
+        file_utils::{copy_file, deserialize_file, get_writer, set_file_readonly},
+        steam_library_folder::SteamLibraryFolder,
+    },
     xdg::XDG,
 };
 use serde::{Deserialize, Serialize};
@@ -9,6 +12,7 @@ use std::{
     fs::remove_file,
     path::{Path, PathBuf},
 };
+use tracing::error;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ActiveRuntimeInnerRuntime {
@@ -36,6 +40,23 @@ fn get_active_runtime_json_path() -> PathBuf {
 
 pub fn is_steam(active_runtime: &ActiveRuntime) -> bool {
     matches!(active_runtime.runtime.valve_runtime_is_steamvr, Some(true))
+}
+
+pub const STEAMVR_STEAM_APPID: u32 = 250820;
+
+pub fn find_steam_openxr_json() -> Option<PathBuf> {
+    match SteamLibraryFolder::get_folders() {
+        Ok(libraryfolders) => libraryfolders
+            .iter()
+            .find(|(_, folder)| folder.apps.contains_key(&STEAMVR_STEAM_APPID))
+            .map(|(_, folder)| {
+                PathBuf::from(&folder.path).join("steamapps/common/SteamVR/steamxr_linux64.json")
+            }),
+        Err(e) => {
+            error!("unable to find steam openxr json: unable to load steam libraryfolders: {e}");
+            None
+        }
+    }
 }
 
 fn get_backup_steam_active_runtime_path() -> PathBuf {

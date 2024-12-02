@@ -1,6 +1,6 @@
 use libmonado::{self, BatteryStatus, DeviceRole};
-use tracing::error;
 use std::{collections::HashMap, fmt::Display, slice::Iter};
+use tracing::error;
 
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum XRDeviceRole {

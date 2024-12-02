@@ -30,13 +30,13 @@ use crate::{
 };
 use adw::{prelude::*, ResponseAppearance};
 use gtk::glib::clone;
-use tracing::{error, warn};
 use relm4::{
     actions::{ActionGroupName, RelmAction, RelmActionGroup},
     new_action_group, new_stateless_action,
     prelude::*,
 };
 use std::{fs::read_to_string, io::Write};
+use tracing::{error, warn};
 
 #[tracker::track]
 pub struct MainView {

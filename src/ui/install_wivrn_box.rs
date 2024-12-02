@@ -6,9 +6,9 @@ use crate::{
     profile::{Profile, XRServiceType},
 };
 use gtk::prelude::*;
-use tracing::error;
 use relm4::{new_action_group, new_stateless_action, prelude::*};
 use std::fs::remove_file;
+use tracing::error;
 
 const WIVRN_LATEST_RELEASE_APK_URL: &str =
     "https://github.com/WiVRn/WiVRn/releases/latest/download/WiVRn-standard-release.apk";
@@ -185,10 +185,7 @@ impl AsyncComponent for InstallWivrnBox {
                         let existing = cache_file_path(WIVRN_LATEST_RELEASE_APK_URL, Some("apk"));
                         if existing.is_file() {
                             if let Err(e) = remove_file(&existing) {
-                                error!(
-                                    "failed to remove file {}: {e}",
-                                    existing.to_string_lossy()
-                                );
+                                error!("failed to remove file {}: {e}", existing.to_string_lossy());
                             }
                         }
                         sender.input(Self::Input::DoInstall(WIVRN_LATEST_RELEASE_APK_URL.into()));

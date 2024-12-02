@@ -4,7 +4,6 @@ use self::{
     state::JobWorkerState,
 };
 use crate::profile::Profile;
-use tracing::{error, warn};
 use nix::sys::signal::{
     kill,
     Signal::{SIGKILL, SIGTERM},
@@ -16,6 +15,7 @@ use std::{
     thread::{self, sleep},
     time::Duration,
 };
+use tracing::{error, warn};
 
 pub mod internal_worker;
 pub mod job;

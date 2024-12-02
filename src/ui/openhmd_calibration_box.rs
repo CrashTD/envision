@@ -1,9 +1,9 @@
 use crate::{constants::APP_NAME, xdg::XDG};
-use tracing::{debug, error};
 use relm4::{
     gtk::{self, prelude::*},
     ComponentParts, ComponentSender, SimpleComponent,
 };
+use tracing::{debug, error};
 
 #[tracker::track]
 pub struct OpenHmdCalibrationBox {

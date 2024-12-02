@@ -1,76 +1,33 @@
 use crate::{
-    paths::{get_backup_dir, get_home_dir},
+    paths::get_backup_dir,
     profile::Profile,
-    util::file_utils::{copy_file, get_writer},
+    util::{
+        file_utils::{copy_file, get_writer},
+        steam_library_folder::SteamLibraryFolder,
+    },
 };
 use anyhow::bail;
 use lazy_static::lazy_static;
-use tracing::error;
-use serde::Deserialize;
 use std::{
-    collections::HashMap,
     fs::read_to_string,
     io::Write,
     path::{Path, PathBuf},
 };
-
-#[derive(Deserialize)]
-struct LibraryFolder {
-    pub path: String,
-    pub apps: HashMap<u32, usize>,
-}
+use tracing::error;
 
 pub const PRESSURE_VESSEL_STEAM_APPID: u32 = 1628350;
 
-fn get_steam_main_dir_path() -> anyhow::Result<PathBuf> {
-    let steam_root: PathBuf = get_home_dir().join(".steam/root");
-
-    if steam_root.is_symlink() {
-        Ok(steam_root.read_link()?)
-    } else if steam_root.is_dir() {
-        Ok(steam_root)
-    } else {
-        bail!(
-            "Canonical steam root '{}' is not a dir nor a symlink!",
-            steam_root.to_string_lossy()
-        )
-    }
-}
-
-fn parse_steam_libraryfolders_vdf(path: &Path) -> anyhow::Result<HashMap<u32, LibraryFolder>> {
-    Ok(keyvalues_serde::from_str(read_to_string(path)?.as_str())?)
-}
-
 fn get_runtime_entrypoint_path() -> Option<PathBuf> {
-    match get_steam_main_dir_path() {
-        Ok(steam_root) => {
-            let steam_libraryfolders_path = steam_root.join("steamapps/libraryfolders.vdf");
-
-            if !steam_libraryfolders_path.is_file() {
-                error!(
-                    "Steam libraryfolders.vdf does not exist in its canonical location {}",
-                    steam_libraryfolders_path.to_string_lossy()
-                );
-                return None;
-            }
-
-            let libraryfolders: HashMap<u32, LibraryFolder> =
-                parse_steam_libraryfolders_vdf(&steam_libraryfolders_path).ok()?;
-
-            libraryfolders
-                .iter()
-                .find(|(_, libraryfolder)| {
-                    libraryfolder
-                        .apps
-                        .contains_key(&PRESSURE_VESSEL_STEAM_APPID)
-                })
-                .map(|(_, libraryfolder)| {
-                    PathBuf::from(&libraryfolder.path)
-                        .join("steamapps/common/SteamLinuxRuntime_sniper/_v2-entry-point")
-                })
-        }
+    match SteamLibraryFolder::get_folders() {
+        Ok(libraryfolders) => libraryfolders
+            .iter()
+            .find(|(_, folder)| folder.apps.contains_key(&PRESSURE_VESSEL_STEAM_APPID))
+            .map(|(_, folder)| {
+                PathBuf::from(&folder.path)
+                    .join("steamapps/common/SteamLinuxRuntime_sniper/_v2-entry-point")
+            }),
         Err(e) => {
-            error!("Error getting steam root path: {e}");
+            error!("unable to get runtime entrypoint path: {e}");
             None
         }
     }
@@ -125,23 +82,4 @@ pub fn set_runtime_entrypoint_launch_opts_from_profile(profile: &Profile) -> any
         return Ok(());
     }
     bail!("Could not find valid runtime entrypoint");
-}
-
-#[cfg(test)]
-mod tests {
-    use std::path::Path;
-
-    use super::parse_steam_libraryfolders_vdf;
-
-    #[test]
-    fn deserialize_steam_libraryfolders_vdf() {
-        let lf = parse_steam_libraryfolders_vdf(Path::new("./test/files/steam_libraryfolders.vdf"))
-            .unwrap();
-        assert_eq!(lf.len(), 1);
-        let first = lf.get(&0).unwrap();
-        assert_eq!(first.path, "/home/gabmus/.local/share/Steam");
-        assert_eq!(first.apps.len(), 10);
-        assert_eq!(first.apps.get(&228980).unwrap(), &29212173);
-        assert_eq!(first.apps.get(&632360).unwrap(), &0);
-    }
 }

@@ -4,7 +4,6 @@ use super::job_worker::{
     JobWorker,
 };
 use crate::paths::get_steamvr_bin_dir_path;
-use tracing::error;
 use relm4::{
     gtk::{self, prelude::*},
     ComponentParts, ComponentSender, RelmWidgetExt, SimpleComponent,
@@ -15,6 +14,7 @@ use std::{
     thread::sleep,
     time::Duration,
 };
+use tracing::error;
 
 #[tracker::track]
 pub struct SteamVrCalibrationBox {

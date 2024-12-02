@@ -1,6 +1,5 @@
 use crate::{async_process::async_process, profile::Profile};
 use anyhow::bail;
-use tracing::{debug, error};
 use nix::{
     errno::Errno,
     sys::statvfs::{statvfs, FsFlags},
@@ -10,6 +9,7 @@ use std::{
     io::{BufReader, BufWriter},
     path::Path,
 };
+use tracing::{debug, error};
 
 pub fn get_writer(path: &Path) -> anyhow::Result<BufWriter<std::fs::File>> {
     if let Some(parent) = path.parent() {

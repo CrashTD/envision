@@ -20,8 +20,8 @@ use crate::{
 };
 use adw::prelude::*;
 use gtk::glib::clone;
-use tracing::error;
 use relm4::{factory::AsyncFactoryVecDeque, prelude::*};
+use tracing::error;
 
 #[tracker::track]
 pub struct WivrnConfEditor {
