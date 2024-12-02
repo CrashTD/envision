@@ -30,6 +30,7 @@ use crate::{
 };
 use adw::{prelude::*, ResponseAppearance};
 use gtk::glib::clone;
+use tracing::{error, warn};
 use relm4::{
     actions::{ActionGroupName, RelmAction, RelmActionGroup},
     new_action_group, new_stateless_action,
@@ -389,8 +390,8 @@ impl AsyncComponent for MainView {
                             set_visible: match mount_has_nosuid(&model.selected_profile.prefix) {
                                 Ok(b) => b,
                                 Err(_) => {
-                                    eprintln!(
-                                        "Warning (nosuid detection): could not get stat on path {}",
+                                    warn!(
+                                        "nosuid detection: could not get stat on path {}",
                                         model.selected_profile.prefix.to_string_lossy());
                                     false
                                 },
@@ -627,7 +628,7 @@ impl AsyncComponent for MainView {
                                 self.set_wivrn_pin(Some(pin));
                             }
                             Err(e) => {
-                                eprintln!("Error: failed to get wivrn pairing pin: {e:?}");
+                                error!("failed to get wivrn pairing pin: {e}");
                             }
                         };
                     } else {
@@ -637,12 +638,12 @@ impl AsyncComponent for MainView {
             }
             Self::Input::StopWivrnPairingMode => {
                 if let Err(e) = wivrn_dbus::disable_pairing().await {
-                    eprintln!("Error: failed to stop wivrn pairing mode: {e:?}");
+                    error!("failed to stop wivrn pairing mode: {e}");
                 }
             }
             Self::Input::StartWivrnPairingMode => {
                 if let Err(e) = wivrn_dbus::enable_pairing().await {
-                    eprintln!("Error: failed to start wivrn pairing mode: {e:?}");
+                    error!("failed to start wivrn pairing mode: {e}");
                 }
             }
             Self::Input::StartStopClicked => {

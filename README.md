@@ -60,6 +60,10 @@ cd envision
 
 </details>
 
+# Debugging
+
+To view all the logs you need to run envision with the env var `RUST_LOG=trace`.
+
 # Common issues
 
 ## NOSUID with systemd-homed

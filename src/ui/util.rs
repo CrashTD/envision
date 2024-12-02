@@ -1,4 +1,5 @@
 use gtk::{gdk, gio, glib::clone, prelude::*};
+use tracing::{error, warn};
 
 pub fn limit_dropdown_width(dd: &gtk::DropDown) {
     let mut dd_child = dd
@@ -46,14 +47,14 @@ pub fn warning_heading() -> gtk::Box {
 
 pub fn open_with_default_handler(uri: &str) {
     if let Err(e) = gio::AppInfo::launch_default_for_uri(uri, gio::AppLaunchContext::NONE) {
-        eprintln!("Error opening uri {}: {}", uri, e)
+        error!("opening uri {uri}: {e}")
     };
 }
 
 pub fn copy_text(txt: &str) {
     match gdk::Display::default() {
         None => {
-            eprintln!("Warning: could not get default gdk display")
+            warn!("could not get default gdk display")
         }
         Some(d) => {
             d.clipboard().set_text(txt);

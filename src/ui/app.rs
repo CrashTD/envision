@@ -47,6 +47,7 @@ use crate::{
 };
 use adw::{prelude::*, ResponseAppearance};
 use gtk::glib::{self, clone};
+use tracing::error;
 use notify_rust::NotificationHandle;
 use relm4::{
     actions::{AccelsPlus, ActionGroupName, RelmAction, RelmActionGroup},
@@ -147,7 +148,7 @@ impl App {
                 } {
                     Ok(n) => Some(n),
                     Err(e) => {
-                        eprintln!("Failed to send desktop notification: {e:?}");
+                        error!("failed to send desktop notification: {e:?}");
                         None
                     }
                 }
@@ -196,9 +197,13 @@ impl App {
         };
         self.debug_view.sender().emit(DebugViewMsg::ClearLog);
         self.xr_devices = vec![];
-        remove_file(prof.xrservice_type.ipc_file_path())
-            .is_err()
-            .then(|| println!("Failed to remove xrservice IPC file"));
+        {
+            let ipc_file = prof.xrservice_type.ipc_file_path();
+            if ipc_file.is_file() {
+                remove_file(ipc_file)
+                    .unwrap_or_else(|e| error!("failed to remove xrservice IPC file: {e}"));
+            };
+        }
         let worker = JobWorker::xrservice_worker_wrap_from_profile(
             &prof,
             sender.input_sender(),
@@ -409,7 +414,7 @@ impl AsyncComponent for App {
                                 .emit(MainViewMsg::SetWivrnSupportsPairing(true));
                         }
                         Err(e) => {
-                            eprintln!("Error: failed to get wivrn pairing mode: {e:?}");
+                            error!("failed to get wivrn pairing mode: {e:?}");
                             self.main_view
                                 .sender()
                                 .emit(MainViewMsg::SetWivrnSupportsPairing(false));
@@ -633,7 +638,7 @@ impl AsyncComponent for App {
             }
             Msg::RunSetCap => {
                 if !dep_pkexec().check() {
-                    println!("pkexec not found, skipping setcap");
+                    error!("pkexec not found, skipping setcap");
                 } else {
                     let profile = self.get_selected_profile();
                     setcap_cap_sys_nice_eip(&profile).await;
@@ -878,7 +883,7 @@ impl AsyncComponent for App {
             match VulkanInfo::get() {
                 Ok(info) => Some(info),
                 Err(e) => {
-                    eprintln!("Failed to get Vulkan info: {e:#?}");
+                    error!("failed to get Vulkan info: {e:#?}");
                     None
                 }
             }

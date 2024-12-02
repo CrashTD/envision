@@ -4,6 +4,7 @@ use super::job_worker::{
     JobWorker,
 };
 use crate::paths::get_steamvr_bin_dir_path;
+use tracing::error;
 use relm4::{
     gtk::{self, prelude::*},
     ComponentParts, ComponentSender, RelmWidgetExt, SimpleComponent,
@@ -192,7 +193,7 @@ impl SimpleComponent for SteamVrCalibrationBox {
             }
             Self::Input::OnServerWorkerExit(code) => {
                 if code != 0 {
-                    eprintln!("Calibration exited with code {code}");
+                    error!("calibration exited with code {code}");
                 }
                 self.calibration_running = false;
             }

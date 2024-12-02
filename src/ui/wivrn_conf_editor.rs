@@ -20,6 +20,7 @@ use crate::{
 };
 use adw::prelude::*;
 use gtk::glib::clone;
+use tracing::error;
 use relm4::{factory::AsyncFactoryVecDeque, prelude::*};
 
 #[tracker::track]
@@ -255,7 +256,7 @@ impl SimpleComponent for WivrnConfEditor {
                 if let Some(idx) = idx_opt {
                     self.encoder_models.as_mut().unwrap().guard().remove(idx);
                 } else {
-                    eprintln!("Couldn't find encoder model with id {id}");
+                    error!("couldn't find encoder model with id {id}");
                 }
             }
         }

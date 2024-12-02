@@ -6,6 +6,7 @@ use crate::{
     profile::{Profile, XRServiceType},
 };
 use gtk::prelude::*;
+use tracing::error;
 use relm4::{new_action_group, new_stateless_action, prelude::*};
 use std::fs::remove_file;
 
@@ -172,7 +173,7 @@ impl AsyncComponent for InstallWivrnBox {
 
                 match get_wivrn_apk_ref(&self.selected_profile) {
                     Err(GetWivrnApkRefErr::NotWivrn) => {
-                        eprintln!("This is not a WiVRn profile, how did you get here?");
+                        error!("this is not a WiVRn profile, how did you get here?");
                     }
                     Err(GetWivrnApkRefErr::RepoDirNotFound) => {
                         self.set_install_wivrn_status(InstallWivrnStatus::Done(Some(
@@ -180,12 +181,12 @@ impl AsyncComponent for InstallWivrnBox {
                         )));
                     }
                     Err(GetWivrnApkRefErr::RepoManipulationFailed(giterr)) => {
-                        eprintln!("Error: failed to manipulate WiVRn repo: {giterr}, falling back to latest release APK");
+                        error!("failed to manipulate WiVRn repo: {giterr}, falling back to latest release APK");
                         let existing = cache_file_path(WIVRN_LATEST_RELEASE_APK_URL, Some("apk"));
                         if existing.is_file() {
                             if let Err(e) = remove_file(&existing) {
-                                eprintln!(
-                                    "Failed to remove file {}: {e}",
+                                error!(
+                                    "failed to remove file {}: {e}",
                                     existing.to_string_lossy()
                                 );
                             }
@@ -208,7 +209,7 @@ impl AsyncComponent for InstallWivrnBox {
                 // TODO: we gonna cache or just download async every time?
                 match cache_file(&url, Some("apk")).await {
                     Err(e) => {
-                        eprintln!("Failed to download apk: {e}");
+                        error!("failed to download apk: {e}");
                         self.set_install_wivrn_status(InstallWivrnStatus::Done(Some(
                             "Error downloading WiVRn client APK".into(),
                         )));
@@ -236,14 +237,14 @@ impl AsyncComponent for InstallWivrnBox {
                                         .into(),
                                     ))
                                 } else {
-                                    eprintln!("Error: ADB failed with code {}.\nstdout:\n{}\n======\nstderr:\n{}", out.exit_code, out.stdout, out.stderr);
+                                    error!("ADB failed with code {}.\nstdout:\n{}\n======\nstderr:\n{}", out.exit_code, out.stdout, out.stderr);
                                     InstallWivrnStatus::Done(Some(
                                         format!("ADB exited with code \"{}\"", out.exit_code)
                                     ))
                                 }
                             }
                             Err(e) => {
-                                eprintln!("Error: failed to run ADB: {e}");
+                                error!("failed to run ADB: {e}");
                                 InstallWivrnStatus::Done(Some(
                                     "Failed to run ADB".into()
                                 ))

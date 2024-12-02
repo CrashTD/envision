@@ -4,6 +4,7 @@ use self::{
     state::JobWorkerState,
 };
 use crate::profile::Profile;
+use tracing::{error, warn};
 use nix::sys::signal::{
     kill,
     Signal::{SIGKILL, SIGTERM},
@@ -97,7 +98,7 @@ impl JobWorker {
             self.state.lock().unwrap().stop_requested = true;
             if let Some(pid) = self.state.lock().unwrap().current_pid {
                 if let Err(e) = kill(pid, SIGTERM) {
-                    eprintln!("Failed to send SIGTERM: {e:#?}");
+                    error!("Failed to send SIGTERM: {e}");
                 }
                 let state = self.state.clone();
                 thread::spawn(move || {
@@ -105,9 +106,9 @@ impl JobWorker {
                     if let Ok(s) = state.lock() {
                         if !s.exited {
                             // process is still alive
-                            eprintln!("Process is still alive 2 seconds after SIGTERM, proceeding to send SIGKILL...");
+                            warn!("process is still alive 2 seconds after SIGTERM, proceeding to send SIGKILL...");
                             if let Err(e) = kill(pid, SIGKILL) {
-                                eprintln!("Failed to send SIGKILL: {e:#?}");
+                                error!("failed to send SIGKILL: {e}");
                             };
                         }
                     }

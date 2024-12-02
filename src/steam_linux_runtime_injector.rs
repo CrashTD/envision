@@ -5,6 +5,7 @@ use crate::{
 };
 use anyhow::bail;
 use lazy_static::lazy_static;
+use tracing::error;
 use serde::Deserialize;
 use std::{
     collections::HashMap,
@@ -46,7 +47,7 @@ fn get_runtime_entrypoint_path() -> Option<PathBuf> {
             let steam_libraryfolders_path = steam_root.join("steamapps/libraryfolders.vdf");
 
             if !steam_libraryfolders_path.is_file() {
-                eprintln!(
+                error!(
                     "Steam libraryfolders.vdf does not exist in its canonical location {}",
                     steam_libraryfolders_path.to_string_lossy()
                 );
@@ -69,7 +70,7 @@ fn get_runtime_entrypoint_path() -> Option<PathBuf> {
                 })
         }
         Err(e) => {
-            eprintln!("Error getting steam root path: {e}");
+            error!("Error getting steam root path: {e}");
             None
         }
     }

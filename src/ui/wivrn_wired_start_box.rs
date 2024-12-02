@@ -6,6 +6,7 @@ use crate::{
     profile::{Profile, XRServiceType},
 };
 use gtk::prelude::*;
+use tracing::error;
 use relm4::prelude::*;
 
 #[derive(PartialEq, Eq, Debug, Clone)]
@@ -153,14 +154,14 @@ impl AsyncComponent for WivrnWiredStartBox {
                                 .into(),
                             ))
                         } else {
-                            eprintln!("Error: ADB failed with code {}.\nstdout:\n{}\n======\nstderr:\n{}", out.exit_code, out.stdout, out.stderr);
+                            error!("ADB failed with code {}.\nstdout:\n{}\n======\nstderr:\n{}", out.exit_code, out.stdout, out.stderr);
                             StartClientStatus::Done(Some(
                                 format!("ADB exited with code \"{}\"", out.exit_code)
                             ))
                         }
                     },
                     Err(e) => {
-                        eprintln!("Error: failed to run ADB: {e}");
+                        error!("failed to run ADB: {e}");
                         StartClientStatus::Done(Some(
                             "Failed to run ADB".into()
                         ))

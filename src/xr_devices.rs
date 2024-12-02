@@ -1,4 +1,5 @@
 use libmonado::{self, BatteryStatus, DeviceRole};
+use tracing::error;
 use std::{collections::HashMap, fmt::Display, slice::Iter};
 
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
@@ -280,8 +281,8 @@ impl XRDevice {
                     if let Some(target) = devs.get_mut(&index) {
                         target.roles.push(role.into());
                     } else {
-                        eprintln!(
-                            "Could not find device index {index} for role {}",
+                        error!(
+                            "could not find device index {index} for role {}",
                             XRDeviceRole::from(role)
                         )
                     }

@@ -1,5 +1,6 @@
 use crate::{async_process::async_process, profile::Profile};
 use anyhow::bail;
+use tracing::{debug, error};
 use nix::{
     errno::Errno,
     sys::statvfs::{statvfs, FsFlags},
@@ -36,7 +37,7 @@ pub fn get_reader(path: &Path) -> Option<BufReader<File>> {
     }
     match File::open(path) {
         Err(e) => {
-            eprintln!("Error opening {}: {}", path.to_string_lossy(), e);
+            error!("Error opening {}: {}", path.to_string_lossy(), e);
             None
         }
         Ok(fd) => Some(BufReader::new(fd)),
@@ -48,7 +49,7 @@ pub fn deserialize_file<T: serde::de::DeserializeOwned>(path: &Path) -> Option<T
         None => None,
         Some(reader) => match serde_json::from_reader(reader) {
             Err(e) => {
-                eprintln!("Failed to deserialize {}: {}", path.to_string_lossy(), e);
+                error!("Failed to deserialize {}: {}", path.to_string_lossy(), e);
                 None
             }
             Ok(res) => Some(res),
@@ -58,7 +59,10 @@ pub fn deserialize_file<T: serde::de::DeserializeOwned>(path: &Path) -> Option<T
 
 pub fn set_file_readonly(path: &Path, readonly: bool) -> Result<(), std::io::Error> {
     if !path.is_file() {
-        eprintln!("WARN: trying to set readonly on a file that does not exist");
+        debug!(
+            "trying to set readonly on a file that does not exist: {}",
+            path.to_string_lossy()
+        );
         return Ok(());
     }
     let mut perms = fs::metadata(path)
@@ -83,13 +87,13 @@ pub fn setcap_cap_sys_nice_eip_cmd(profile: &Profile) -> Vec<String> {
 pub async fn setcap_cap_sys_nice_eip(profile: &Profile) {
     if let Err(e) = async_process("pkexec", Some(&setcap_cap_sys_nice_eip_cmd(profile)), None).await
     {
-        eprintln!("Error: failed running setcap: {e}");
+        error!("failed running setcap: {e}");
     }
 }
 
 pub fn rm_rf(path: &Path) {
     if remove_dir_all(path).is_err() {
-        eprintln!("Failed to remove path {}", path.to_string_lossy());
+        error!("failed to remove path {}", path.to_string_lossy());
     }
 }
 
@@ -102,9 +106,9 @@ pub fn copy_file(source: &Path, dest: &Path) {
     }
     set_file_readonly(dest, false)
         .unwrap_or_else(|_| panic!("Failed to set file {} as rw", dest.to_string_lossy()));
-    copy(source, dest).unwrap_or_else(|_| {
+    copy(source, dest).unwrap_or_else(|e| {
         panic!(
-            "Failed to copy {} to {}",
+            "Failed to copy {} to {}: {e}",
             source.to_string_lossy(),
             dest.to_string_lossy()
         )

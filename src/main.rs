@@ -5,6 +5,7 @@ use file_builders::{
     openvrpaths_vrpath::{get_current_openvrpaths, set_current_openvrpaths_to_steam},
 };
 use gettextrs::LocaleCategory;
+use tracing::warn;
 use relm4::{
     adw,
     gtk::{self, gdk, gio, glib, prelude::*},
@@ -12,6 +13,7 @@ use relm4::{
 };
 use std::env;
 use steam_linux_runtime_injector::restore_runtime_entrypoint;
+use tracing_subscriber::{filter::LevelFilter, EnvFilter};
 use ui::{
     app::{App, AppInit, Msg},
     cmdline_opts::CmdLineOpts,
@@ -51,14 +53,14 @@ fn restore_steam_xr_files() {
     if let Some(ar) = active_runtime {
         if !file_builders::active_runtime_json::is_steam(&ar) {
             if let Err(e) = set_current_active_runtime_to_steam() {
-                eprintln!("Warning: failed to restore active runtime to steam: {e}");
+                warn!("failed to restore active runtime to steam: {e}");
             }
         }
     }
     if let Some(ovrp) = openvrpaths {
         if !file_builders::openvrpaths_vrpath::is_steam(&ovrp) {
             if let Err(e) = set_current_openvrpaths_to_steam() {
-                eprintln!("Warning: failed to restore openvrpaths to steam: {e}");
+                warn!("failed to restore openvrpaths to steam: {e}");
             }
         }
     }
@@ -70,6 +72,15 @@ fn main() -> Result<()> {
         panic!("{APP_NAME} cannot run as root");
     }
     restore_steam_xr_files();
+
+    tracing_subscriber::fmt()
+        .with_env_filter(
+            EnvFilter::builder()
+                .with_default_directive(LevelFilter::INFO.into())
+                .from_env_lossy(),
+        )
+        .pretty()
+        .init();
 
     // Prepare i18n
     gettextrs::setlocale(LocaleCategory::LcAll, "");

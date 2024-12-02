@@ -6,6 +6,7 @@ use gtk::{
     },
     glib::{self, prelude::IsA},
 };
+use tracing::error;
 
 #[derive(Debug, Clone)]
 pub struct CmdLineOpts {
@@ -88,7 +89,7 @@ impl CmdLineOpts {
                 }
                 return Some(1);
             } else {
-                eprintln!("No profile found for uuid: `{prof_id}`");
+                error!("No profile found for uuid: `{prof_id}`");
                 return Some(404);
             }
         }
