@@ -3,7 +3,7 @@ use crate::{
     paths::{data_monado_path, data_opencomposite_path, data_openhmd_path, get_data_dir},
     profile::{
         prepare_ld_library_path, LighthouseDriver, Profile, ProfileFeature, ProfileFeatureType,
-        ProfileFeatures, XRServiceType,
+        ProfileFeatures, ProfileOvrCompatibilityModule, XRServiceType,
     },
 };
 use std::collections::HashMap;
@@ -24,7 +24,10 @@ pub fn openhmd_profile() -> Profile {
         name: format!("OpenHMD - {name} Default", name = APP_NAME),
         xrservice_path: data_monado_path(),
         xrservice_type: XRServiceType::Monado,
-        opencomposite_path: data_opencomposite_path(),
+        ovr_comp: ProfileOvrCompatibilityModule {
+            path: data_opencomposite_path(),
+            ..Default::default()
+        },
         features: ProfileFeatures {
             openhmd: ProfileFeature {
                 feature_type: ProfileFeatureType::OpenHmd,

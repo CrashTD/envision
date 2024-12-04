@@ -3,7 +3,7 @@ use crate::{
     paths::{data_libsurvive_path, data_monado_path, data_opencomposite_path, get_data_dir},
     profile::{
         prepare_ld_library_path, LighthouseDriver, Profile, ProfileFeature, ProfileFeatureType,
-        ProfileFeatures, XRServiceType,
+        ProfileFeatures, ProfileOvrCompatibilityModule, XRServiceType,
     },
 };
 use std::collections::HashMap;
@@ -26,7 +26,10 @@ pub fn survive_profile() -> Profile {
         name: format!("Survive - {name} Default", name = APP_NAME),
         xrservice_path: data_monado_path(),
         xrservice_type: XRServiceType::Monado,
-        opencomposite_path: data_opencomposite_path(),
+        ovr_comp: ProfileOvrCompatibilityModule {
+            path: data_opencomposite_path(),
+            ..Default::default()
+        },
         features: ProfileFeatures {
             libsurvive: ProfileFeature {
                 feature_type: ProfileFeatureType::Libsurvive,

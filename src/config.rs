@@ -65,10 +65,42 @@ impl Config {
     }
 
     fn from_path(path: &Path) -> Self {
-        File::open(path)
+        let mut this: Self = File::open(path)
             .ok()
             .and_then(|file| serde_json::from_reader(BufReader::new(file)).ok())
-            .unwrap_or_default()
+            .unwrap_or_default();
+
+        let mut needs_save = false;
+
+        // remap legacy opencomposite data to new ovr_comp
+        #[allow(deprecated)]
+        for prof in this.user_profiles.iter_mut() {
+            if prof
+                .ovr_comp
+                .path
+                .file_name()
+                .unwrap_or_default()
+                .to_string_lossy()
+                == "__envision__fallbackovrcomp"
+            {
+                prof.ovr_comp.path = prof.opencomposite_path.clone();
+                needs_save = true;
+            }
+            if prof.opencomposite_repo.is_some() && prof.ovr_comp.repo.is_none() {
+                prof.ovr_comp.repo = prof.opencomposite_repo.take();
+                needs_save = true;
+            }
+            if prof.opencomposite_branch.is_some() && prof.ovr_comp.branch.is_none() {
+                prof.ovr_comp.branch = prof.opencomposite_branch.take();
+                needs_save = true;
+            }
+        }
+
+        if needs_save {
+            this.save_to_path(path).expect("Failed to save config");
+        }
+
+        this
     }
 
     fn save_to_path(&self, path: &Path) -> Result<(), serde_json::Error> {

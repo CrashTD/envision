@@ -5,9 +5,7 @@
     "xrservice_path": "/home/user/monado",
     "xrservice_repo": null,
     "xrservice_branch": null,
-    "opencomposite_path": "/home/user/opencomposite",
-    "opencomposite_repo": null,
-    "opencomposite_branch": null,
+    "ovr_comp": { "mod_type": "Opencomposite", "path": "/home/user/opencomposite", "repo": null, "branch": null },
     "features": {
         "libsurvive": {
             "feature_type": "Libsurvive",

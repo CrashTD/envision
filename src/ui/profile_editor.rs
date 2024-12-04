@@ -6,7 +6,7 @@ use super::{
 };
 use crate::{
     env_var_descriptions::ENV_VAR_DESCRIPTIONS_AS_PARAGRAPH,
-    profile::{LighthouseDriver, Profile, XRServiceType},
+    profile::{LighthouseDriver, OvrCompatibilityModuleType, Profile, XRServiceType},
 };
 use adw::prelude::*;
 use gtk::glib::{self, clone};
@@ -216,31 +216,43 @@ impl SimpleComponent for ProfileEditor {
                         ),
                     },
                     add: model.xrservice_cmake_flags_rows.widget(),
-                    add: opencompgrp = &adw::PreferencesGroup {
-                        set_title: "OpenComposite",
-                        set_description: Some("OpenVR driver built on top of OpenXR"),
+                    add: ovr_comp_grp = &adw::PreferencesGroup {
+                        set_title: "OpenVR Compatibility",
+                        set_description: Some("OpenVR compatibility module, translates between OpenXR and OpenVR to run legacy OpenVR apps"),
+                        add: &combo_row(
+                            "OpenVR Module Type",
+                            None,
+                            model.profile.borrow().ovr_comp.mod_type.to_string().as_str(),
+                            OvrCompatibilityModuleType::iter()
+                                .map(OvrCompatibilityModuleType::to_string)
+                                .collect::<Vec<String>>(),
+                            clone!(#[strong] prof, move |row| {
+                                prof.borrow_mut().ovr_comp.mod_type =
+                                    OvrCompatibilityModuleType::from(row.selected());
+                            }),
+                        ),
                         add: &path_row(
-                            "OpenComposite Path", None,
-                            Some(model.profile.borrow().opencomposite_path.clone().to_string_lossy().to_string()),
+                            "OpenVR Module Path", None,
+                            Some(model.profile.borrow().ovr_comp.path.clone().to_string_lossy().to_string()),
                             Some(init.root_win.clone()),
                             clone!(#[strong] prof, move |n_path| {
-                                prof.borrow_mut().opencomposite_path = n_path.unwrap_or_default().into();
+                                prof.borrow_mut().ovr_comp.path = n_path.unwrap_or_default().into();
                             })
                         ),
                         add: &entry_row(
-                            "OpenComposite Repo",
-                            model.profile.borrow().opencomposite_repo.clone().unwrap_or_default().as_str(),
+                            "OpenVR Compatibility Repo",
+                            model.profile.borrow().ovr_comp.repo.clone().unwrap_or_default().as_str(),
                             clone!(#[strong] prof, move |row| {
                                 let n_val = row.text().to_string();
-                                prof.borrow_mut().opencomposite_repo = (!n_val.is_empty()).then_some(n_val);
+                                prof.borrow_mut().ovr_comp.repo = (!n_val.is_empty()).then_some(n_val);
                             })
                         ),
                         add: &entry_row(
-                            "OpenComposite Branch",
-                            model.profile.borrow().opencomposite_branch.clone().unwrap_or_default().as_str(),
+                            "OpenVR Compatibility Branch",
+                            model.profile.borrow().ovr_comp.branch.clone().unwrap_or_default().as_str(),
                             clone!(#[strong] prof, move |row| {
                                 let n_val = row.text().to_string();
-                                prof.borrow_mut().opencomposite_branch = (!n_val.is_empty()).then_some(n_val);
+                                prof.borrow_mut().ovr_comp.branch = (!n_val.is_empty()).then_some(n_val);
                             })
                         ),
                     },

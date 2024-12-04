@@ -19,13 +19,15 @@ pub fn get_build_opencomposite_jobs(profile: &Profile, clean_build: bool) -> Vec
 
     let git = Git {
         repo: profile
-            .opencomposite_repo
+            .ovr_comp
+            .repo
             .as_ref()
             .unwrap_or(&"https://gitlab.com/znixian/OpenOVR.git".into())
             .clone(),
-        dir: profile.opencomposite_path.clone(),
+        dir: profile.ovr_comp.path.clone(),
         branch: profile
-            .opencomposite_branch
+            .ovr_comp
+            .branch
             .as_ref()
             .unwrap_or(&"openxr".into())
             .clone(),
@@ -33,14 +35,14 @@ pub fn get_build_opencomposite_jobs(profile: &Profile, clean_build: bool) -> Vec
 
     jobs.extend(git.get_pre_build_jobs(profile.pull_on_build));
 
-    let build_dir = profile.opencomposite_path.join("build");
+    let build_dir = profile.ovr_comp.path.join("build");
     let mut cmake_vars: HashMap<String, String> = HashMap::new();
     cmake_vars.insert("CMAKE_EXPORT_COMPILE_COMMANDS".into(), "ON".into());
     cmake_vars.insert("CMAKE_BUILD_TYPE".into(), "RelWithDebInfo".into());
     let cmake = Cmake {
         env: None,
         vars: Some(cmake_vars),
-        source_dir: profile.opencomposite_path.clone(),
+        source_dir: profile.ovr_comp.path.clone(),
         build_dir: build_dir.clone(),
     };
     if !Path::new(&build_dir).is_dir() || clean_build {

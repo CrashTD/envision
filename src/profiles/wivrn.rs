@@ -1,7 +1,10 @@
 use crate::{
     constants::APP_NAME,
     paths::{data_opencomposite_path, data_wivrn_path, get_data_dir},
-    profile::{prepare_ld_library_path, Profile, ProfileFeatures, XRServiceType},
+    profile::{
+        prepare_ld_library_path, Profile, ProfileFeatures, ProfileOvrCompatibilityModule,
+        XRServiceType,
+    },
 };
 use std::collections::HashMap;
 
@@ -18,7 +21,10 @@ pub fn wivrn_profile() -> Profile {
         name: format!("WiVRn - {name} Default", name = APP_NAME),
         xrservice_path: data_wivrn_path(),
         xrservice_type: XRServiceType::Wivrn,
-        opencomposite_path: data_opencomposite_path(),
+        ovr_comp: ProfileOvrCompatibilityModule {
+            path: data_opencomposite_path(),
+            ..Default::default()
+        },
         features: ProfileFeatures {
             ..Default::default()
         },

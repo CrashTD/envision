@@ -36,7 +36,7 @@ use crate::{
     linux_distro::LinuxDistro,
     openxr_prober::is_openxr_ready,
     paths::get_data_dir,
-    profile::{Profile, XRServiceType},
+    profile::{OvrCompatibilityModuleType, Profile, XRServiceType},
     stateless_action,
     steam_linux_runtime_injector::{
         restore_runtime_entrypoint, set_runtime_entrypoint_launch_opts_from_profile,
@@ -486,7 +486,11 @@ impl AsyncComponent for App {
                         XRServiceType::Wivrn => get_build_wivrn_jobs(&profile, clean_build),
                     });
                 }
-                jobs.extend(get_build_opencomposite_jobs(&profile, clean_build));
+                jobs.extend(match profile.ovr_comp.mod_type {
+                    OvrCompatibilityModuleType::Opencomposite => {
+                        get_build_opencomposite_jobs(&profile, clean_build)
+                    }
+                });
                 let missing_deps = profile.missing_dependencies();
                 if !(self.skip_depcheck || profile.skip_dependency_check || missing_deps.is_empty())
                 {

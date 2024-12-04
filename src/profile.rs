@@ -17,6 +17,7 @@ use std::{
     io::BufReader,
     path::{Path, PathBuf},
     slice::Iter,
+    str::FromStr,
 };
 use uuid::Uuid;
 
@@ -258,6 +259,78 @@ impl Display for LighthouseDriver {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+pub enum OvrCompatibilityModuleType {
+    #[default]
+    Opencomposite,
+}
+
+impl Display for OvrCompatibilityModuleType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
+            Self::Opencomposite => "OpenComposite",
+        })
+    }
+}
+
+impl OvrCompatibilityModuleType {
+    pub fn iter() -> Iter<'static, Self> {
+        [Self::Opencomposite].iter()
+    }
+}
+
+impl FromStr for OvrCompatibilityModuleType {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_lowercase().trim() {
+            "opencomposite" => Ok(Self::Opencomposite),
+            _ => Err(format!("no match for ovr compatibility module `{s}`")),
+        }
+    }
+}
+
+impl From<u32> for OvrCompatibilityModuleType {
+    fn from(value: u32) -> Self {
+        match value {
+            0 => Self::Opencomposite,
+            _ => panic!("OvrCompatibilityModuleType  index out of bounds"),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ProfileOvrCompatibilityModule {
+    pub mod_type: OvrCompatibilityModuleType,
+    pub repo: Option<String>,
+    pub branch: Option<String>,
+    pub path: PathBuf,
+}
+
+impl ProfileOvrCompatibilityModule {
+    fn default_for_uuid(uuid: &str) -> Self {
+        let mod_type = OvrCompatibilityModuleType::default();
+        Self {
+            mod_type,
+            repo: None,
+            branch: None,
+            path: get_data_dir().join(uuid).join(mod_type.to_string()),
+        }
+    }
+}
+
+impl Default for ProfileOvrCompatibilityModule {
+    fn default() -> Self {
+        let mod_type = OvrCompatibilityModuleType::default();
+        Self {
+            mod_type,
+            repo: None,
+            branch: None,
+            path: get_data_dir().join("__envision__fallbackovrcomp"),
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Profile {
     pub uuid: String,
@@ -268,9 +341,15 @@ pub struct Profile {
     pub xrservice_branch: Option<String>,
     #[serde(default = "HashMap::<String, String>::default")]
     pub xrservice_cmake_flags: HashMap<String, String>,
+    #[deprecated]
+    #[serde(default)]
     pub opencomposite_path: PathBuf,
+    #[deprecated]
     pub opencomposite_repo: Option<String>,
+    #[deprecated]
     pub opencomposite_branch: Option<String>,
+    #[serde(default)]
+    pub ovr_comp: ProfileOvrCompatibilityModule,
     pub features: ProfileFeatures,
     pub environment: HashMap<String, String>,
     /// Install prefix
@@ -295,6 +374,7 @@ impl Display for Profile {
 }
 
 impl Default for Profile {
+    #[allow(deprecated)]
     fn default() -> Self {
         let uuid = Self::new_uuid();
         let profile_dir = get_data_dir().join(&uuid);
@@ -330,12 +410,13 @@ impl Default for Profile {
                 mercury_enabled: false,
             },
             environment: HashMap::new(),
-            prefix: get_data_dir().join("prefixes").join(&uuid),
+            prefix: Self::default_prefix_path(&uuid),
             can_be_built: true,
             pull_on_build: true,
             opencomposite_path: profile_dir.join("opencomposite"),
             opencomposite_repo: None,
             opencomposite_branch: None,
+            ovr_comp: ProfileOvrCompatibilityModule::default_for_uuid(&uuid),
             editable: true,
             lighthouse_driver: LighthouseDriver::default(),
             xrservice_launch_options: String::default(),
@@ -347,6 +428,10 @@ impl Default for Profile {
 }
 
 impl Profile {
+    fn default_prefix_path(uuid: &str) -> PathBuf {
+        get_data_dir().join("prefixes").join(uuid)
+    }
+
     pub fn xr_runtime_json_env_var(&self) -> String {
         format!(
             "XR_RUNTIME_JSON=\"{prefix}/share/openxr/1/openxr_{runtime}.json\"",
@@ -424,8 +509,8 @@ impl Profile {
         }
         let uuid = Self::new_uuid();
         let profile_dir = get_data_dir().join(&uuid);
+        #[allow(deprecated)]
         let mut dup = Self {
-            uuid,
             name: format!("Duplicate of {}", self.name),
             xrservice_type: self.xrservice_type.clone(),
             xrservice_repo: self.xrservice_repo.clone(),
@@ -465,7 +550,16 @@ impl Profile {
             opencomposite_path: profile_dir.join("opencomposite"),
             skip_dependency_check: self.skip_dependency_check,
             xrservice_launch_options: self.xrservice_launch_options.clone(),
-            ..Default::default()
+            prefix: Self::default_prefix_path(&uuid),
+            ovr_comp: ProfileOvrCompatibilityModule {
+                mod_type: self.ovr_comp.mod_type,
+                repo: self.ovr_comp.repo.clone(),
+                branch: self.ovr_comp.branch.clone(),
+                path: profile_dir.join(self.ovr_comp.mod_type.to_string()),
+            },
+            can_be_built: self.can_be_built,
+            editable: true,
+            uuid,
         };
         if dup.environment.contains_key("LD_LIBRARY_PATH") {
             dup.environment.insert(
@@ -612,7 +706,10 @@ mod tests {
         path::{Path, PathBuf},
     };
 
-    use crate::profile::{ProfileFeature, ProfileFeatureType, ProfileFeatures, XRServiceType};
+    use crate::profile::{
+        OvrCompatibilityModuleType, ProfileFeature, ProfileFeatureType, ProfileFeatures,
+        ProfileOvrCompatibilityModule, XRServiceType,
+    };
 
     use super::Profile;
 
@@ -622,7 +719,7 @@ mod tests {
         assert_eq!(profile.name, "Demo profile");
         assert_eq!(profile.xrservice_path, PathBuf::from("/home/user/monado"));
         assert_eq!(
-            profile.opencomposite_path,
+            profile.ovr_comp.path,
             PathBuf::from("/home/user/opencomposite")
         );
         assert_eq!(profile.prefix, PathBuf::from("/home/user/envisionprefix"));
@@ -653,7 +750,12 @@ mod tests {
             name: "Demo profile".into(),
             xrservice_path: PathBuf::from("/home/user/monado"),
             xrservice_type: XRServiceType::Monado,
-            opencomposite_path: PathBuf::from("/home/user/opencomposite"),
+            ovr_comp: ProfileOvrCompatibilityModule {
+                path: PathBuf::from("/home/user/opencomposite"),
+                repo: None,
+                branch: None,
+                mod_type: OvrCompatibilityModuleType::default(),
+            },
             features: ProfileFeatures {
                 libsurvive: ProfileFeature {
                     feature_type: ProfileFeatureType::Libsurvive,
