@@ -26,7 +26,8 @@ use crate::{
     depcheck::common::dep_pkexec,
     file_builders::{
         active_runtime_json::{
-            set_current_active_runtime_to_profile, set_current_active_runtime_to_steam,
+            remove_current_active_runtime, restore_active_runtime_backup,
+            set_current_active_runtime_to_profile,
         },
         openvrpaths_vrpath::{
             set_current_openvrpaths_to_profile, set_current_openvrpaths_to_steam,
@@ -250,9 +251,16 @@ impl App {
 
     pub fn restore_openxr_openvr_files(&self) {
         restore_runtime_entrypoint();
-        if let Err(e) = set_current_active_runtime_to_steam() {
+        if let Err(e) = remove_current_active_runtime() {
             alert(
-                "Could not restore Steam active runtime",
+                "Could not remove profile active runtime",
+                Some(&format!("{e}")),
+                Some(&self.app_win.clone().upcast::<gtk::Window>()),
+            );
+        }
+        if let Err(e) = restore_active_runtime_backup() {
+            alert(
+                "Could not restore previous active runtime",
                 Some(&format!("{e}")),
                 Some(&self.app_win.clone().upcast::<gtk::Window>()),
             );

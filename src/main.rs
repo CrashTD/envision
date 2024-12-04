@@ -1,7 +1,7 @@
 use anyhow::Result;
 use constants::{resources, APP_ID, APP_NAME, GETTEXT_PACKAGE, LOCALE_DIR, RESOURCES_BASE_PATH};
 use file_builders::{
-    active_runtime_json::{get_current_active_runtime, set_current_active_runtime_to_steam},
+    active_runtime_json::restore_active_runtime_backup,
     openvrpaths_vrpath::{get_current_openvrpaths, set_current_openvrpaths_to_steam},
 };
 use gettextrs::LocaleCategory;
@@ -48,14 +48,9 @@ pub mod xdg;
 pub mod xr_devices;
 
 fn restore_steam_xr_files() {
-    let active_runtime = get_current_active_runtime();
     let openvrpaths = get_current_openvrpaths();
-    if let Some(ar) = active_runtime {
-        if !file_builders::active_runtime_json::is_steam(&ar) {
-            if let Err(e) = set_current_active_runtime_to_steam() {
-                warn!("failed to restore active runtime to steam: {e}");
-            }
-        }
+    if let Err(e) = restore_active_runtime_backup() {
+        warn!("failed to restore active runtime to steam: {e}");
     }
     if let Some(ovrp) = openvrpaths {
         if !file_builders::openvrpaths_vrpath::is_steam(&ovrp) {

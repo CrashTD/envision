@@ -1,18 +1,17 @@
 use crate::{
-    paths::{get_backup_dir, SYSTEM_PREFIX},
+    paths::SYSTEM_PREFIX,
     profile::Profile,
-    util::{
-        file_utils::{copy_file, deserialize_file, get_writer, set_file_readonly},
-        steam_library_folder::SteamLibraryFolder,
-    },
+    util::file_utils::{deserialize_file, get_writer, set_file_readonly},
     xdg::XDG,
 };
+use anyhow::bail;
 use serde::{Deserialize, Serialize};
 use std::{
-    fs::remove_file,
+    fs::{remove_file, rename},
+    os::unix::fs::symlink,
     path::{Path, PathBuf},
 };
-use tracing::error;
+use tracing::{info, warn};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ActiveRuntimeInnerRuntime {
@@ -38,46 +37,6 @@ fn get_active_runtime_json_path() -> PathBuf {
     get_openxr_conf_dir().join("1/active_runtime.json")
 }
 
-pub fn is_steam(active_runtime: &ActiveRuntime) -> bool {
-    matches!(active_runtime.runtime.valve_runtime_is_steamvr, Some(true))
-}
-
-pub const STEAMVR_STEAM_APPID: u32 = 250820;
-
-pub fn find_steam_openxr_json() -> Option<PathBuf> {
-    match SteamLibraryFolder::get_folders() {
-        Ok(libraryfolders) => libraryfolders
-            .iter()
-            .find(|(_, folder)| folder.apps.contains_key(&STEAMVR_STEAM_APPID))
-            .map(|(_, folder)| {
-                PathBuf::from(&folder.path).join("steamapps/common/SteamVR/steamxr_linux64.json")
-            }),
-        Err(e) => {
-            error!("unable to find steam openxr json: unable to load steam libraryfolders: {e}");
-            None
-        }
-    }
-}
-
-fn get_backup_steam_active_runtime_path() -> PathBuf {
-    get_backup_dir().join("active_runtime.json.steam.bak")
-}
-
-fn get_backed_up_steam_active_runtime() -> Option<ActiveRuntime> {
-    get_active_runtime_from_path(&get_backup_steam_active_runtime_path())
-}
-
-fn backup_steam_active_runtime() {
-    if let Some(ar) = get_current_active_runtime() {
-        if is_steam(&ar) {
-            copy_file(
-                &get_active_runtime_json_path(),
-                &get_backup_steam_active_runtime_path(),
-            );
-        }
-    }
-}
-
 fn get_active_runtime_from_path(path: &Path) -> Option<ActiveRuntime> {
     deserialize_file(path)
 }
@@ -97,29 +56,6 @@ fn dump_active_runtime_to_path(active_runtime: &ActiveRuntime, path: &Path) -> a
 
 pub fn dump_current_active_runtime(active_runtime: &ActiveRuntime) -> anyhow::Result<()> {
     dump_active_runtime_to_path(active_runtime, &get_active_runtime_json_path())
-}
-
-fn build_steam_active_runtime() -> ActiveRuntime {
-    if let Some(backup) = get_backed_up_steam_active_runtime() {
-        return backup;
-    }
-    ActiveRuntime {
-        file_format_version: "1.0.0".into(),
-        runtime: ActiveRuntimeInnerRuntime {
-            valve_runtime_is_steamvr: Some(true),
-            libmonado_path: None,
-            library_path: XDG
-                .get_data_home()
-                .join("Steam/steamapps/common/SteamVR/bin/linux64/vrclient.so"),
-            name: Some("SteamVR".into()),
-        },
-    }
-}
-
-pub fn set_current_active_runtime_to_steam() -> anyhow::Result<()> {
-    set_file_readonly(&get_active_runtime_json_path(), false)?;
-    dump_current_active_runtime(&build_steam_active_runtime())?;
-    Ok(())
 }
 
 pub fn build_profile_active_runtime(profile: &Profile) -> anyhow::Result<ActiveRuntime> {
@@ -158,18 +94,66 @@ fn relativize_active_runtime_lib_path(ar: &ActiveRuntime, path: &Path) -> Active
     res
 }
 
+const ACTIVE_RUNTIME_BAK: &str = "active_runtime.json.envision.bak";
+
 pub fn set_current_active_runtime_to_profile(profile: &Profile) -> anyhow::Result<()> {
     let dest = get_active_runtime_json_path();
-    set_file_readonly(&dest, false)?;
-    backup_steam_active_runtime();
-    let pfx = profile.clone().prefix;
-    let mut ar = build_profile_active_runtime(profile)?;
-    // hack: relativize libopenxr_monado.so path for system installs
-    if pfx == PathBuf::from(SYSTEM_PREFIX) {
-        ar = relativize_active_runtime_lib_path(&ar, &dest);
+    if dest.is_dir() {
+        bail!("{} is a directory", dest.to_string_lossy());
     }
-    dump_current_active_runtime(&ar)?;
-    set_file_readonly(&dest, true)?;
+    if !dest.is_symlink() {
+        set_file_readonly(&dest, false)?;
+    }
+    if dest.is_file() || dest.is_symlink() {
+        rename(&dest, dest.parent().unwrap().join(ACTIVE_RUNTIME_BAK))?;
+    } else {
+        info!("no active_runtime.json file to backup")
+    }
+
+    let profile_openxr_json = profile.openxr_json_path();
+    if profile_openxr_json.is_file() {
+        symlink(profile_openxr_json, &dest)?;
+    } else {
+        warn!("profile openxr json file doesn't exist");
+        // fallback: build the file from scratch
+        let pfx = profile.clone().prefix;
+        let mut ar = build_profile_active_runtime(profile)?;
+        // hack: relativize libopenxr_monado.so path for system installs
+        if pfx == PathBuf::from(SYSTEM_PREFIX) {
+            ar = relativize_active_runtime_lib_path(&ar, &dest);
+        }
+        dump_current_active_runtime(&ar)?;
+        set_file_readonly(&dest, true)?;
+    }
+    Ok(())
+}
+
+pub fn remove_current_active_runtime() -> anyhow::Result<()> {
+    let dest = get_active_runtime_json_path();
+    if dest.is_dir() {
+        bail!("{} is a directory", dest.to_string_lossy());
+    }
+    if !dest.exists() {
+        info!("no current active_runtime.json to remove")
+    }
+    Ok(remove_file(dest)?)
+}
+
+pub fn restore_active_runtime_backup() -> anyhow::Result<()> {
+    let dest = get_active_runtime_json_path();
+    let bak = dest.parent().unwrap().join(ACTIVE_RUNTIME_BAK);
+    if bak.is_file() || bak.is_symlink() {
+        if dest.is_dir() {
+            bail!("{} is a directory", dest.to_string_lossy());
+        }
+        if !dest.is_symlink() {
+            set_file_readonly(&dest, false)?;
+        }
+        rename(&bak, &dest)?;
+    } else {
+        info!("{ACTIVE_RUNTIME_BAK} does not exist, nothing to restore");
+    }
+
     Ok(())
 }
 

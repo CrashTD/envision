@@ -47,6 +47,13 @@ impl XRServiceType {
         }
     }
 
+    pub fn openxr_json_rel_path(&self) -> &'static str {
+        match self {
+            Self::Monado => "share/openxr/1/openxr_monado.json",
+            Self::Wivrn => "share/openxr/1/openxr_wivrn.json",
+        }
+    }
+
     pub fn ipc_file_path(&self) -> PathBuf {
         XDG.get_runtime_directory()
             .expect("XDG runtime directory is not available")
@@ -585,6 +592,12 @@ impl Profile {
         missing_deps.sort_unstable();
         missing_deps.dedup(); // dedup only works if sorted, hence the above
         missing_deps
+    }
+
+    /// the file that will become active_runtime.json, as installed in the
+    /// prefix
+    pub fn openxr_json_path(&self) -> PathBuf {
+        self.prefix.join(self.xrservice_type.openxr_json_rel_path())
     }
 }
 

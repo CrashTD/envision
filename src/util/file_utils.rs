@@ -57,7 +57,13 @@ pub fn deserialize_file<T: serde::de::DeserializeOwned>(path: &Path) -> Option<T
     }
 }
 
-pub fn set_file_readonly(path: &Path, readonly: bool) -> Result<(), std::io::Error> {
+pub fn set_file_readonly(path: &Path, readonly: bool) -> anyhow::Result<()> {
+    if path.is_symlink() {
+        bail!(
+            "path {} is a symlink, trying to change its write permission will only change the original file",
+            path.to_string_lossy()
+        );
+    }
     if !path.is_file() {
         debug!(
             "trying to set readonly on a file that does not exist: {}",
@@ -69,7 +75,7 @@ pub fn set_file_readonly(path: &Path, readonly: bool) -> Result<(), std::io::Err
         .expect("Could not get metadata for file")
         .permissions();
     perms.set_readonly(readonly);
-    fs::set_permissions(path, perms)
+    Ok(fs::set_permissions(path, perms)?)
 }
 
 pub fn setcap_cap_sys_nice_eip_cmd(profile: &Profile) -> Vec<String> {
@@ -104,8 +110,10 @@ pub fn copy_file(source: &Path, dest: &Path) {
                 .unwrap_or_else(|_| panic!("Failed to create dir {}", parent.to_str().unwrap()));
         }
     }
-    set_file_readonly(dest, false)
-        .unwrap_or_else(|_| panic!("Failed to set file {} as rw", dest.to_string_lossy()));
+    if !dest.is_symlink() {
+        set_file_readonly(dest, false)
+            .unwrap_or_else(|_| panic!("Failed to set file {} as rw", dest.to_string_lossy()));
+    }
     copy(source, dest).unwrap_or_else(|e| {
         panic!(
             "Failed to copy {} to {}: {e}",
