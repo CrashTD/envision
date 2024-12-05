@@ -7,7 +7,7 @@ use crate::{
 use anyhow::bail;
 use serde::{Deserialize, Serialize};
 use std::{
-    fs::{remove_file, rename},
+    fs::{create_dir_all, remove_file, rename},
     os::unix::fs::symlink,
     path::{Path, PathBuf},
 };
@@ -112,6 +112,7 @@ pub fn set_current_active_runtime_to_profile(profile: &Profile) -> anyhow::Resul
 
     let profile_openxr_json = profile.openxr_json_path();
     if profile_openxr_json.is_file() {
+        create_dir_all(dest.parent().unwrap())?;
         symlink(profile_openxr_json, &dest)?;
     } else {
         warn!("profile openxr json file doesn't exist");
