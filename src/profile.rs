@@ -4,8 +4,9 @@ use crate::{
         mercury_deps::get_missing_mercury_deps, monado_deps::get_missing_monado_deps,
         openhmd_deps::get_missing_openhmd_deps, wivrn_deps::get_missing_wivrn_deps, Dependency,
     },
+    file_builders::active_runtime_json::ActiveRuntime,
     paths::{get_data_dir, BWRAP_SYSTEM_PREFIX, SYSTEM_PREFIX},
-    util::file_utils::get_writer,
+    util::file_utils::{deserialize_file, get_writer},
     xdg::XDG,
 };
 use nix::NixPath;
@@ -645,21 +646,37 @@ impl Profile {
     }
 
     /// absolute path to a given shared object in the profile prefix
-    pub fn find_so(&self, rel_path: &str) -> Option<PathBuf> {
+    pub fn find_so<P: AsRef<Path>>(&self, rel_path: P) -> Option<PathBuf> {
         ["lib", "lib64"]
             .into_iter()
-            .map(|lib| self.prefix.join(lib).join(rel_path))
+            .map(|lib| self.prefix.join(lib).join(rel_path.as_ref()))
             .find(|path| path.is_file())
     }
 
     /// absolute path to the libmonado shared object
     pub fn libmonado_so(&self) -> Option<PathBuf> {
-        self.find_so(self.xrservice_type.libmonado_path())
+        // try by reading the openxr json file
+        self.openxr_config()
+            .and_then(|conf| conf.runtime.libmonado_path)
+            .and_then(|libmonado_path| self.find_so(&libmonado_path))
+            .or_else(||
+                // try with the hardcoded paths
+                self.find_so(self.xrservice_type.libmonado_path()))
+    }
+
+    fn openxr_config(&self) -> Option<ActiveRuntime> {
+        deserialize_file(&self.openxr_json_path())
     }
 
     /// absolute path to the libopenxr shared object
     pub fn libopenxr_so(&self) -> Option<PathBuf> {
-        self.find_so(self.xrservice_type.libopenxr_path())
+        // try by reading the openxr json file
+        self.openxr_config()
+            .map(|conf| conf.runtime.library_path)
+            .and_then(|libmonado_path| self.find_so(&libmonado_path))
+            .or_else(||
+                // try with the hardcoded paths
+                self.find_so(self.xrservice_type.libopenxr_path()))
     }
 
     pub fn missing_dependencies(&self) -> Vec<Dependency> {
