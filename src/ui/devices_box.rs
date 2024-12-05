@@ -61,9 +61,19 @@ impl SimpleComponent for DevicesBox {
                     }
                     if !has_left && dev.roles.contains(&XRDeviceRole::Left) {
                         has_left = true;
+                        if ["Qwerty Left Controller"].contains(&dev.name.as_str()) {
+                            row_model.state = Some(DeviceRowState::Warning);
+                            row_model.subtitle =
+                                Some(format!("No left controller detected ({})", dev.name));
+                        }
                     }
                     if !has_right && dev.roles.contains(&XRDeviceRole::Right) {
                         has_right = true;
+                        if ["Qwerty Right Controller"].contains(&dev.name.as_str()) {
+                            row_model.state = Some(DeviceRowState::Warning);
+                            row_model.subtitle =
+                                Some(format!("No right controller detected ({})", dev.name));
+                        }
                     }
                     models.push(row_model);
                 }
