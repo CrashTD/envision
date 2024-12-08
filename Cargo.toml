@@ -2,6 +2,15 @@
 name = "envision"
 version = "1.1.1"
 edition = "2021"
+authors = [
+    "Gabriele Musco <gabmus@disroot.org>",
+]
+description = "Orchestrator for the free XR stack"
+repository = "https://gitlab.com/gabmus/envision"
+documentation = "https://gitlab.com/gabmus/envision"
+license = "AGPL-3.0-or-later"
+keywords = ["desktop", "linux", "vr", "xr", "gtk"]
+readme = "README.md"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

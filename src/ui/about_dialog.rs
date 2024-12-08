@@ -1,6 +1,6 @@
 use crate::{
     constants::{
-        get_artists, get_developers, APP_ID, APP_NAME, BUILD_DATETIME, ISSUES_URL, REPO_URL,
+        get_artists, APP_ID, APP_NAME, BUILD_DATETIME, ISSUES_URL, REPO_URL,
         SINGLE_DEVELOPER, VERSION,
     },
     device_prober::PhysicalXRDevice,
@@ -20,7 +20,12 @@ pub fn create_about_dialog() -> adw::AboutDialog {
         .website(REPO_URL)
         .issue_url(ISSUES_URL)
         .developer_name(SINGLE_DEVELOPER)
-        .developers(get_developers())
+        .developers(
+            env!("CARGO_PKG_AUTHORS")
+                .split(':')
+                .map(|s| s.to_string())
+                .collect::<Vec<String>>(),
+        )
         .artists(get_artists())
         .build()
 }

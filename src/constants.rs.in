@@ -16,10 +16,6 @@ pub const LOCALE_DIR: &str = "@LOCALEDIR@";
 pub const BUILD_PROFILE: &str = "@PROFILE@";
 pub const BUILD_DATETIME: &str = "@BUILD_DATETIME@";
 
-pub fn get_developers() -> Vec<String> {
-    vec!["Gabriele Musco <gabmus@disroot.org>".into()]
-}
-
 pub fn get_artists() -> Vec<String> {
     vec!["App Icon: Yannick (@Yandr)".into()]
 }

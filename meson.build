@@ -3,7 +3,7 @@ project(
   'rust',
   version: '1.1.1', # version number row
   meson_version: '>= 0.59',
-  license: 'AGPL-3.0',
+  license: 'AGPL-3.0-or-later',
 )
 
 i18n = import('i18n')

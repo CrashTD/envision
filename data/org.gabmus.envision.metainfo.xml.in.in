@@ -2,7 +2,7 @@
 <component type="desktop-application">
   <id>@APP_ID@</id>
   <metadata_license>CC0</metadata_license>
-  <project_license>AGPL-3.0</project_license>
+  <project_license>AGPL-3.0-or-later</project_license>
   <name translatable="no">@PRETTY_NAME@</name>
   <summary>GUI for Monado</summary>
   <description>
