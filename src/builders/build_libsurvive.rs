@@ -44,24 +44,30 @@ pub fn get_build_libsurvive_jobs(profile: &Profile, clean_build: bool) -> VecDeq
         .as_ref()
         .unwrap()
         .join("build");
-    let mut cmake_vars: HashMap<String, String> = HashMap::new();
-    cmake_vars.insert("CMAKE_EXPORT_COMPILE_COMMANDS".into(), "ON".into());
-    cmake_vars.insert("CMAKE_BUILD_TYPE".into(), "RelWithDebInfo".into());
-    cmake_vars.insert("ENABLE_api_example".into(), "OFF".into());
-    cmake_vars.insert("USE_HIDAPI".into(), "ON".into());
-    cmake_vars.insert("CMAKE_SKIP_INSTALL_RPATH".into(), "YES".into());
-    cmake_vars.insert(
-        "CMAKE_INSTALL_PREFIX".into(),
-        profile.prefix.to_string_lossy().to_string(),
-    );
-    cmake_vars.insert(
-        "CMAKE_INSTALL_LIBDIR".into(),
-        profile.prefix.join("lib").to_string_lossy().to_string(),
-    );
 
     let cmake = Cmake {
         env: None,
-        vars: Some(cmake_vars),
+        vars: Some({
+            let mut cmake_vars: HashMap<String, String> = HashMap::new();
+            for (k, v) in [
+                ("CMAKE_EXPORT_COMPILE_COMMANDS", "ON"),
+                ("CMAKE_BUILD_TYPE", "RelWithDebInfo"),
+                ("ENABLE_api_example", "OFF"),
+                ("USE_HIDAPI", "ON"),
+                ("CMAKE_SKIP_INSTALL_RPATH", "YES"),
+            ] {
+                cmake_vars.insert(k.to_string(), v.to_string());
+            }
+            cmake_vars.insert(
+                "CMAKE_INSTALL_PREFIX".into(),
+                profile.prefix.to_string_lossy().to_string(),
+            );
+            cmake_vars.insert(
+                "CMAKE_INSTALL_LIBDIR".into(),
+                profile.prefix.join("lib").to_string_lossy().to_string(),
+            );
+            cmake_vars
+        }),
         source_dir: profile.features.libsurvive.path.as_ref().unwrap().clone(),
         build_dir: build_dir.clone(),
     };
