@@ -38,17 +38,30 @@ iconsdir = datadir / 'icons'
 podir = meson.project_source_root() / 'po'
 gettext_package = meson.project_name()
 
-# are we building a tagged version?
-if run_command('git', 'describe', '--tags', '--exact-match').returncode() != 0
-  profile = 'Devel'
-  vcs_tag = run_command('git', 'rev-parse', '--short', 'HEAD', check: false).stdout().strip()
-  if vcs_tag == ''
-    version_suffix = '-devel'
+opt_profile = get_option('profile')
+
+# if a profile isn't specified infer from git
+if opt_profile == 'default'
+  # are we building a tagged version?
+  if run_command('git', 'describe', '--tags', '--exact-match').returncode() != 0
+    profile = 'Devel'
+    vcs_tag = run_command('git', 'rev-parse', '--short', 'HEAD', check: false).stdout().strip()
+    if vcs_tag == ''
+      version_suffix = '-devel'
+    else
+      version_suffix = '-@0@'.format(vcs_tag)
+    endif
+    application_id = '@0@.@1@'.format(base_id, profile)
   else
-    version_suffix = '-@0@'.format(vcs_tag)
+    profile = ''
+    version_suffix = ''
+    application_id = base_id
   endif
+elif opt_profile == 'development'
+  profile = 'Devel'
+  version_suffix = '-devel'
   application_id = '@0@.@1@'.format(base_id, profile)
-else
+elif opt_profile == 'release'
   profile = ''
   version_suffix = ''
   application_id = base_id
