@@ -18,6 +18,40 @@
   <url type="bugtracker">@REPO_URL@/issues</url>
   <content_rating type="oars-1.0" />
   <releases>
+    <release version="2.0.0" date="2024-12-09">
+      <description>
+        <p>Breaking changes</p>
+          <ul>
+            <li>enable support for different openvr compatibility modules other than opencomposite</li>
+          </ul>
+        <p>What's new</p>
+          <ul>
+            <li>add metadata to Cargo.toml; get developers from Cargo.toml authors; rectify SPDX id for license as AGPL-3.0-or-later</li>
+            <li>refactor builders cmake vars and env to use inner blocks</li>
+            <li>disable wivrnctl; refactor cmake vars in wivrn builder</li>
+            <li>make left and right qwerty controllers appear as no controller detected</li>
+            <li>try to find libmonado and openxr shared objects by reading openxr config</li>
+            <li>prefer symlinks over generating files for openxr active runtime json file</li>
+            <li>move steam library folders parser to own module; function to find steam openxr json; format</li>
+            <li>proper logging framework</li>
+          </ul>
+        <p>Fixes</p>
+          <ul>
+            <li>build profile can be specified manually</li>
+            <li>update wivrn libmonado path to wirvn&#x2F;libmonado_wivrn.so</li>
+            <li>create openxr config dir when starting profile</li>
+            <li>add libnotify-dev dependency for wivrn</li>
+            <li>openssl dep is an include</li>
+            <li>add openssl-devel dep for wivrn</li>
+            <li>negative logic and early return in start xrservice func</li>
+            <li>use let err instead of match in restore xr files func</li>
+          </ul>
+        <p>Other changes</p>
+          <ul>
+            <li>format</li>
+          </ul>
+      </description>
+    </release>
     <release version="1.1.1" date="2024-11-29">
       <description>
         <p>Fixes</p>
