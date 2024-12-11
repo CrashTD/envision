@@ -30,6 +30,14 @@
   <url type="bugtracker">@REPO_URL@/issues</url>
   <content_rating type="oars-1.0" />
   <releases>
+    <release version="2.0.1" date="2024-12-11">
+      <description>
+        <p>Fixes</p>
+          <ul>
+            <li>add screenshots to appdata</li>
+          </ul>
+        </description>
+    </release>
     <release version="2.0.0" date="2024-12-09">
       <description>
         <p>Breaking changes</p>
