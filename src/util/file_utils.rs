@@ -90,11 +90,32 @@ pub fn setcap_cap_sys_nice_eip_cmd(profile: &Profile) -> Vec<String> {
     ]
 }
 
-pub async fn setcap_cap_sys_nice_eip(profile: &Profile) {
-    if let Err(e) = async_process("pkexec", Some(&setcap_cap_sys_nice_eip_cmd(profile)), None).await
-    {
-        error!("failed running setcap: {e}");
+pub async fn verify_cap_sys_nice_eip(profile: &Profile) -> bool {
+    let xrservice_binary = profile.xrservice_binary().to_string_lossy().to_string();
+    match async_process("getcap", Some(&[&xrservice_binary]), None).await {
+        Err(e) => {
+            error!("failed to run `getcap {xrservice_binary}`: {e:?}");
+            false
+        }
+        Ok(out) => {
+            debug!("getcap {xrservice_binary} stdout: {}", out.stdout);
+            debug!("getcap {xrservice_binary} stderr: {}", out.stderr);
+            if out.exit_code != 0 {
+                error!(
+                    "command `getcap {xrservice_binary}` failed with status code {}",
+                    out.exit_code
+                );
+                false
+            } else {
+                out.stdout.to_lowercase().contains("cap_sys_nice=eip")
+            }
+        }
     }
+}
+
+pub async fn setcap_cap_sys_nice_eip(profile: &Profile) -> anyhow::Result<()> {
+    async_process("pkexec", Some(&setcap_cap_sys_nice_eip_cmd(profile)), None).await?;
+    Ok(())
 }
 
 pub fn rm_rf(path: &Path) {

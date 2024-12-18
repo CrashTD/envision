@@ -41,7 +41,9 @@ use crate::{
     steam_linux_runtime_injector::{
         restore_runtime_entrypoint, set_runtime_entrypoint_launch_opts_from_profile,
     },
-    util::file_utils::{setcap_cap_sys_nice_eip, setcap_cap_sys_nice_eip_cmd},
+    util::file_utils::{
+        setcap_cap_sys_nice_eip, setcap_cap_sys_nice_eip_cmd, verify_cap_sys_nice_eip,
+    },
     vulkaninfo::VulkanInfo,
     wivrn_dbus,
     xr_devices::XRDevice,
@@ -653,7 +655,23 @@ impl AsyncComponent for App {
                     error!("pkexec not found, skipping setcap");
                 } else {
                     let profile = self.get_selected_profile();
-                    setcap_cap_sys_nice_eip(&profile).await;
+                    let setcap_failed_dialog = || {
+                        alert_w_widget(
+                            "Setcap failed to run",
+                            Some("Setting the capabilities automatically failed, you can still try manually using the command below."
+                            ),
+                            Some(&copiable_code_snippet(
+                                &format!("sudo {}", setcap_cap_sys_nice_eip_cmd(&profile).join(" "))
+                            )),
+                            Some(&self.app_win.clone().upcast())
+                        );
+                    };
+                    if let Err(e) = setcap_cap_sys_nice_eip(&profile).await {
+                        setcap_failed_dialog();
+                        error!("failed running setcap: {e}");
+                    } else if !verify_cap_sys_nice_eip(&profile).await {
+                        setcap_failed_dialog();
+                    }
                 }
             }
             Msg::ProfileSelected(prof) => {
