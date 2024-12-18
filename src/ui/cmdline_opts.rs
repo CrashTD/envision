@@ -1,4 +1,7 @@
-use crate::config::Config;
+use crate::{
+    config::Config,
+    constants::{APP_NAME, VERSION},
+};
 use gtk::{
     gio::{
         prelude::{ApplicationCommandLineExt, ApplicationExt},
@@ -10,6 +13,7 @@ use tracing::error;
 
 #[derive(Debug, Clone)]
 pub struct CmdLineOpts {
+    pub version: bool,
     pub start: bool,
     pub list_profiles: bool,
     pub profile_uuid: Option<String>,
@@ -18,6 +22,7 @@ pub struct CmdLineOpts {
 }
 
 impl CmdLineOpts {
+    const OPT_VERSION: (&'static str, char) = ("version", 'v');
     const OPT_START: (&'static str, char) = ("start", 'S');
     const OPT_LIST_PROFILES: (&'static str, char) = ("list-profiles", 'l');
     const OPT_PROFILE: (&'static str, char) = ("profile", 'p');
@@ -25,6 +30,14 @@ impl CmdLineOpts {
     const OPT_CHECK_DEPS_FOR: (&'static str, char) = ("check-deps-for", 'c');
 
     pub fn init(app: &impl IsA<Application>) {
+        app.add_main_option(
+            Self::OPT_VERSION.0,
+            glib::Char::try_from(Self::OPT_VERSION.1).unwrap(),
+            glib::OptionFlags::IN_MAIN,
+            glib::OptionArg::None,
+            "Print the version information",
+            None,
+        );
         app.add_main_option(
             Self::OPT_START.0,
             glib::Char::try_from(Self::OPT_START.1).unwrap(),
@@ -69,6 +82,10 @@ impl CmdLineOpts {
 
     /// returns an exit code if the application should quit immediately
     pub fn handle_non_activating_opts(&self) -> Option<i32> {
+        if self.version {
+            println!("{APP_NAME} {VERSION}");
+            return Some(0);
+        }
         if self.list_profiles {
             println!("Available profiles\nUUID: \"name\"");
             let profiles = Config::get_config().profiles();
@@ -99,6 +116,7 @@ impl CmdLineOpts {
     pub fn from_cmdline(cmdline: &ApplicationCommandLine) -> Self {
         let opts = cmdline.options_dict();
         Self {
+            version: opts.contains(Self::OPT_VERSION.0),
             start: opts.contains(Self::OPT_START.0),
             list_profiles: opts.contains(Self::OPT_LIST_PROFILES.0),
             profile_uuid: opts
