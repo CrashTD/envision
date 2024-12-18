@@ -11,7 +11,7 @@ use std::{
     os::unix::fs::symlink,
     path::{Path, PathBuf},
 };
-use tracing::{info, warn};
+use tracing::{debug, warn};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ActiveRuntimeInnerRuntime {
@@ -107,7 +107,7 @@ pub fn set_current_active_runtime_to_profile(profile: &Profile) -> anyhow::Resul
     if dest.is_file() || dest.is_symlink() {
         rename(&dest, dest.parent().unwrap().join(ACTIVE_RUNTIME_BAK))?;
     } else {
-        info!("no active_runtime.json file to backup")
+        debug!("no active_runtime.json file to backup")
     }
 
     let profile_openxr_json = profile.openxr_json_path();
@@ -135,7 +135,7 @@ pub fn remove_current_active_runtime() -> anyhow::Result<()> {
         bail!("{} is a directory", dest.to_string_lossy());
     }
     if !dest.exists() {
-        info!("no current active_runtime.json to remove")
+        debug!("no current active_runtime.json to remove")
     }
     Ok(remove_file(dest)?)
 }
@@ -152,7 +152,7 @@ pub fn restore_active_runtime_backup() -> anyhow::Result<()> {
         }
         rename(&bak, &dest)?;
     } else {
-        info!("{ACTIVE_RUNTIME_BAK} does not exist, nothing to restore");
+        debug!("{ACTIVE_RUNTIME_BAK} does not exist, nothing to restore");
     }
 
     Ok(())
