@@ -511,14 +511,14 @@ impl SimpleComponent for ProfileEditor {
                         .halign(gtk::Align::End)
                         .build();
 
-                    add_btn.connect_clicked(clone!(
+                    let on_add = clone!(
                         #[strong]
                         sender,
                         #[weak]
                         name_entry,
                         #[weak]
                         popover,
-                        move |_| {
+                        move || {
                             let key_gstr = name_entry.text();
                             let key = key_gstr.trim();
                             if !key.is_empty() {
@@ -527,7 +527,13 @@ impl SimpleComponent for ProfileEditor {
                                 sender.input($event(key.to_string()));
                             }
                         }
+                    );
+                    name_entry.connect_activate(clone!(
+                        #[strong]
+                        on_add,
+                        move |_| on_add()
                     ));
+                    add_btn.connect_clicked(move |_| on_add());
                     btn
                 }};
             }
