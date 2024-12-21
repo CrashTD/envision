@@ -12,6 +12,7 @@ use adw::prelude::*;
 use gtk::glib::{self, clone};
 use relm4::{factory::AsyncFactoryVecDeque, prelude::*};
 use std::{cell::RefCell, path::PathBuf, rc::Rc};
+use tracing::warn;
 
 #[tracker::track]
 pub struct ProfileEditor {
@@ -546,17 +547,30 @@ impl SimpleComponent for ProfileEditor {
         let profile = Rc::new(RefCell::new(init.profile));
         let prof = profile.clone();
 
+        let env_var_prefs_group = {
+            let pg = adw::PreferencesGroup::builder()
+                .title("Environment Variables")
+                .description(ENV_VAR_DESCRIPTIONS_AS_PARAGRAPH.as_str())
+                .header_suffix(&add_env_var_btn)
+                .build();
+            if let Some(desc) = pg
+                .first_child()
+                .and_then(|c| c.first_child())
+                .and_then(|c| c.first_child())
+                .and_then(|c| c.last_child())
+                .and_downcast::<gtk::Label>()
+            {
+                desc.set_selectable(true);
+            } else {
+                warn!("failed to make env var preference group description selectable, please open a bug report");
+            }
+            pg
+        };
         let mut model = Self {
             profile,
             win: None,
             env_rows: AsyncFactoryVecDeque::builder()
-                .launch(
-                    adw::PreferencesGroup::builder()
-                        .title("Environment Variables")
-                        .description(ENV_VAR_DESCRIPTIONS_AS_PARAGRAPH.as_str())
-                        .header_suffix(&add_env_var_btn)
-                        .build(),
-                )
+                .launch(env_var_prefs_group)
                 .forward(sender.input_sender(), |msg| match msg {
                     EnvVarModelOutMsg::Changed(name, value) => {
                         ProfileEditorMsg::EnvVarChanged(name, value)
