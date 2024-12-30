@@ -52,8 +52,8 @@ pub fn boost_deps() -> Vec<Dependency> {
         packages: HashMap::from([
             (LinuxDistro::Arch, "boost".into()),
             (LinuxDistro::Debian, "libboost-all-dev".into()),
-            (LinuxDistro::Fedora, "boost".into()),
-            (LinuxDistro::Alpine, "boost".into()),
+            (LinuxDistro::Fedora, "boost-devel".into()),
+            (LinuxDistro::Alpine, "boost-dev".into()),
             (LinuxDistro::Gentoo, "dev-libs/boost".into()),
             (LinuxDistro::Suse, package.into()),
         ]),
