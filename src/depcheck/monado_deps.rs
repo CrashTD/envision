@@ -32,7 +32,7 @@ fn monado_deps() -> Vec<Dependency> {
         },
         Dependency {
             name: "wayland-protocols".into(),
-            dep_type: DepType::SharedObject,
+            dep_type: DepType::Include,
             filename: "wayland-protocols/drm-lease-v1-enum.h".into(),
             packages: HashMap::from([
                 (LinuxDistro::Arch, "wayland-protocols".into()),
