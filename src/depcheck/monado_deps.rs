@@ -42,6 +42,18 @@ fn monado_deps() -> Vec<Dependency> {
                 (LinuxDistro::Suse, "wayland-protocols".into()),
             ]),
         },
+        Dependency {
+            name: "libbsd".into(),
+            dep_type: DepType::SharedObject,
+            filename: "libbsd.so".into(),
+            packages: HashMap::from([
+                (LinuxDistro::Arch, "libbsd".into()),
+                (LinuxDistro::Debian, "libbsd-dev".into()),
+                (LinuxDistro::Fedora, "libbsd-devel".into()),
+                (LinuxDistro::Gentoo, "dev-libs/libbsd".into()),
+                (LinuxDistro::Suse, "libbsd-devel".into()),
+            ]),
+        },
         dep_cmake(),
         dep_eigen(),
         dep_git(),
