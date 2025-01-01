@@ -30,6 +30,18 @@ fn monado_deps() -> Vec<Dependency> {
                 (LinuxDistro::Suse, "wayland-devel".into()),
             ]),
         },
+        Dependency {
+            name: "wayland-protocols".into(),
+            dep_type: DepType::SharedObject,
+            filename: "wayland-protocols/drm-lease-v1-enum.h".into(),
+            packages: HashMap::from([
+                (LinuxDistro::Arch, "wayland-protocols".into()),
+                (LinuxDistro::Debian, "wayland-protocols".into()),
+                (LinuxDistro::Fedora, "wayland-protocols".into()),
+                (LinuxDistro::Gentoo, "dev-libs/wayland-protocols".into()),
+                (LinuxDistro::Suse, "wayland-protocols".into()),
+            ]),
+        },
         dep_cmake(),
         dep_eigen(),
         dep_git(),
