@@ -363,7 +363,6 @@ pub struct Profile {
     pub lighthouse_driver: LighthouseDriver,
     #[serde(default = "String::default")]
     pub xrservice_launch_options: String,
-    pub autostart_command: Option<String>,
     #[serde(default)]
     pub skip_dependency_check: bool,
 }
@@ -422,7 +421,6 @@ impl Default for Profile {
             lighthouse_driver: LighthouseDriver::default(),
             xrservice_launch_options: String::default(),
             uuid,
-            autostart_command: None,
             skip_dependency_check: false,
         }
     }
@@ -543,7 +541,6 @@ impl Profile {
                 mercury_enabled: self.features.mercury_enabled,
             },
             environment: self.environment.clone(),
-            autostart_command: self.autostart_command.clone(),
             pull_on_build: self.pull_on_build,
             lighthouse_driver: self.lighthouse_driver,
             opencomposite_repo: self.opencomposite_repo.clone(),

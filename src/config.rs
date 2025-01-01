@@ -7,14 +7,37 @@ use crate::{
         lighthouse::lighthouse_profile, openhmd::openhmd_profile, simulated::simulated_profile,
         survive::survive_profile, wivrn::wivrn_profile, wmr::wmr_profile,
     },
+    ui::plugins::Plugin,
     util::file_utils::get_writer,
 };
 use serde::{de::Error, Deserialize, Serialize};
 use std::{
+    collections::HashMap,
     fs::File,
     io::BufReader,
     path::{Path, PathBuf},
 };
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PluginConfig {
+    pub plugin: Plugin,
+    pub enabled: bool,
+}
+
+impl From<&Plugin> for PluginConfig {
+    fn from(p: &Plugin) -> Self {
+        Self {
+            plugin: p.clone(),
+            enabled: true,
+        }
+    }
+}
+
+impl From<&PluginConfig> for Plugin {
+    fn from(cp: &PluginConfig) -> Self {
+        cp.plugin.clone()
+    }
+}
 
 const DEFAULT_WIN_SIZE: [i32; 2] = [360, 400];
 
@@ -29,6 +52,8 @@ pub struct Config {
     pub user_profiles: Vec<Profile>,
     #[serde(default = "default_win_size")]
     pub win_size: [i32; 2],
+    #[serde(default)]
+    pub plugins: HashMap<String, PluginConfig>,
 }
 
 impl Default for Config {
@@ -37,8 +62,9 @@ impl Default for Config {
             // TODO: using an empty string here is ugly
             selected_profile_uuid: "".to_string(),
             debug_view_enabled: false,
-            user_profiles: vec![],
+            user_profiles: Vec::default(),
             win_size: DEFAULT_WIN_SIZE,
+            plugins: HashMap::default(),
         }
     }
 }

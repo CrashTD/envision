@@ -11,6 +11,7 @@ use super::{
     },
     libsurvive_setup_window::{LibsurviveSetupMsg, LibsurviveSetupWindow},
     main_view::{MainView, MainViewInit, MainViewMsg, MainViewOutMsg},
+    plugins::store::{PluginStore, PluginStoreInit, PluginStoreMsg, PluginStoreOutMsg},
     util::{copiable_code_snippet, copy_text, open_with_default_handler},
     wivrn_conf_editor::{WivrnConfEditor, WivrnConfEditorInit, WivrnConfEditorMsg},
 };
@@ -21,7 +22,7 @@ use crate::{
         build_opencomposite::get_build_opencomposite_jobs, build_openhmd::get_build_openhmd_jobs,
         build_wivrn::get_build_wivrn_jobs,
     },
-    config::Config,
+    config::{Config, PluginConfig},
     constants::APP_NAME,
     depcheck::common::dep_pkexec,
     file_builders::{
@@ -56,7 +57,11 @@ use relm4::{
     new_action_group, new_stateful_action, new_stateless_action,
     prelude::*,
 };
-use std::{collections::VecDeque, fs::remove_file, time::Duration};
+use std::{
+    collections::{HashMap, VecDeque},
+    fs::remove_file,
+    time::Duration,
+};
 use tracing::error;
 
 pub struct App {
@@ -74,7 +79,7 @@ pub struct App {
 
     config: Config,
     xrservice_worker: Option<JobWorker>,
-    autostart_worker: Option<JobWorker>,
+    plugins_worker: Option<JobWorker>,
     restart_xrservice: bool,
     build_worker: Option<JobWorker>,
     profiles: Vec<Profile>,
@@ -89,13 +94,14 @@ pub struct App {
     vkinfo: Option<VulkanInfo>,
 
     inhibit_fail_notif: Option<NotificationHandle>,
+    pluginstore: Option<AsyncController<PluginStore>>,
 }
 
 #[derive(Debug)]
 pub enum Msg {
     OnServiceLog(Vec<String>),
     OnServiceExit(i32),
-    OnAutostartExit(i32),
+    OnPluginsExit(i32),
     OnBuildLog(Vec<String>),
     OnBuildExit(i32),
     ClockTicking,
@@ -120,6 +126,8 @@ pub enum Msg {
     StartProber,
     OnProberExit(bool),
     WivrnCheckPairMode,
+    OpenPluginStore,
+    UpdateConfigPlugins(HashMap<String, PluginConfig>),
     NoOp,
 }
 
@@ -235,19 +243,43 @@ impl App {
 
     pub fn run_autostart(&mut self, sender: AsyncComponentSender<Self>) {
         let prof = self.get_selected_profile();
-        if let Some(autostart_cmd) = &prof.autostart_command {
+        let plugins_cmd = self
+            .config
+            .plugins
+            .values()
+            .filter_map(|cp| {
+                if cp.enabled && cp.plugin.validate() {
+                    if let Err(e) = cp.plugin.mark_as_executable() {
+                        error!(
+                            "failed to mark plugin {} as executable: {e}",
+                            cp.plugin.appid
+                        );
+                        None
+                    } else {
+                        Some(format!(
+                            "'{}'",
+                            cp.plugin.executable().unwrap().to_string_lossy()
+                        ))
+                    }
+                } else {
+                    None
+                }
+            })
+            .collect::<Vec<String>>()
+            .join(" & ");
+        if !plugins_cmd.is_empty() {
             let mut jobs = VecDeque::new();
             jobs.push_back(WorkerJob::new_cmd(
                 Some(prof.environment.clone()),
                 "sh".into(),
-                Some(vec!["-c".into(), autostart_cmd.clone()]),
+                Some(vec!["-c".into(), plugins_cmd]),
             ));
-            let autostart_worker = JobWorker::new(jobs, sender.input_sender(), |msg| match msg {
+            let plugins_worker = JobWorker::new(jobs, sender.input_sender(), |msg| match msg {
                 JobWorkerOut::Log(rows) => Msg::OnServiceLog(rows),
-                JobWorkerOut::Exit(code) => Msg::OnAutostartExit(code),
+                JobWorkerOut::Exit(code) => Msg::OnPluginsExit(code),
             });
-            autostart_worker.start();
-            self.autostart_worker = Some(autostart_worker);
+            plugins_worker.start();
+            self.plugins_worker = Some(plugins_worker);
         }
     }
 
@@ -277,27 +309,17 @@ impl App {
     }
 
     pub fn shutdown_xrservice(&mut self) {
-        if let Some(worker) = self.autostart_worker.as_ref() {
-            worker.stop();
+        if let Some(w) = self.plugins_worker.as_ref() {
+            w.stop();
         }
-        self.xrservice_ready = false;
         if let Some(w) = self.openxr_prober_worker.as_ref() {
             w.stop();
             // this can cause threads to remain hanging...
             self.openxr_prober_worker = None;
         }
-        self.set_inhibit_session(false);
-        if let Some(worker) = self.xrservice_worker.as_ref() {
-            worker.stop();
+        if let Some(w) = self.xrservice_worker.as_ref() {
+            w.stop();
         }
-        self.libmonado = None;
-        self.main_view
-            .sender()
-            .emit(MainViewMsg::XRServiceActiveChanged(false, None, false));
-        self.debug_view
-            .sender()
-            .emit(DebugViewMsg::XRServiceActiveChanged(false));
-        self.xr_devices = vec![];
     }
 }
 
@@ -363,6 +385,8 @@ impl AsyncComponent for App {
                 }
             }
             Msg::OnServiceExit(code) => {
+                self.set_inhibit_session(false);
+                self.xrservice_ready = false;
                 self.restore_openxr_openvr_files();
                 self.main_view
                     .sender()
@@ -370,6 +394,8 @@ impl AsyncComponent for App {
                 self.debug_view
                     .sender()
                     .emit(DebugViewMsg::XRServiceActiveChanged(false));
+                self.libmonado = None;
+                self.xr_devices = vec![];
                 if code != 0 && code != 15 {
                     // 15 is SIGTERM
                     sender.input(Msg::OnServiceLog(vec![format!(
@@ -384,7 +410,7 @@ impl AsyncComponent for App {
                     self.start_xrservice(sender, false);
                 }
             }
-            Msg::OnAutostartExit(_) => self.autostart_worker = None,
+            Msg::OnPluginsExit(_) => self.plugins_worker = None,
             Msg::ClockTicking => {
                 self.main_view.sender().emit(MainViewMsg::ClockTicking);
                 let xrservice_worker_is_alive = self
@@ -791,6 +817,21 @@ impl AsyncComponent for App {
                     }
                 }
             }
+            Msg::OpenPluginStore => {
+                let pluginstore = PluginStore::builder()
+                    .launch(PluginStoreInit {
+                        config_plugins: self.config.plugins.clone(),
+                    })
+                    .forward(sender.input_sender(), move |msg| match msg {
+                        PluginStoreOutMsg::UpdateConfigPlugins(cp) => Msg::UpdateConfigPlugins(cp),
+                    });
+                pluginstore.sender().emit(PluginStoreMsg::Present);
+                self.pluginstore = Some(pluginstore);
+            }
+            Msg::UpdateConfigPlugins(cp) => {
+                self.config.plugins = cp;
+                self.config.save();
+            }
         }
     }
 
@@ -892,6 +933,17 @@ impl AsyncComponent for App {
                 }
             )
         );
+        stateless_action!(
+            actions,
+            PluginStoreAction,
+            clone!(
+                #[strong]
+                sender,
+                move |_| {
+                    sender.input(Msg::OpenPluginStore);
+                }
+            )
+        );
         // this bypasses the macro because I need the underlying gio action
         // to enable/disable it in update()
         let configure_wivrn_action = {
@@ -963,7 +1015,7 @@ impl AsyncComponent for App {
             config,
             profiles,
             xrservice_worker: None,
-            autostart_worker: None,
+            plugins_worker: None,
             build_worker: None,
             xr_devices: vec![],
             restart_xrservice: false,
@@ -974,6 +1026,7 @@ impl AsyncComponent for App {
             openxr_prober_worker: None,
             xrservice_ready: false,
             inhibit_fail_notif: None,
+            pluginstore: None,
         };
 
         let widgets = view_output!();
@@ -1046,6 +1099,7 @@ new_stateless_action!(pub BuildProfileCleanAction, AppActionGroup, "buildprofile
 new_stateless_action!(pub QuitAction, AppActionGroup, "quit");
 new_stateful_action!(pub DebugViewToggleAction, AppActionGroup, "debugviewtoggle", (), bool);
 new_stateless_action!(pub ConfigureWivrnAction, AppActionGroup, "configurewivrn");
+new_stateless_action!(pub PluginStoreAction, AppActionGroup, "store");
 
 new_stateless_action!(pub DebugOpenDataAction, AppActionGroup, "debugopendata");
 new_stateless_action!(pub DebugOpenPrefixAction, AppActionGroup, "debugopenprefix");

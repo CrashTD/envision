@@ -87,3 +87,7 @@ pub fn get_steamvr_bin_dir_path() -> PathBuf {
     XDG.get_data_home()
         .join("Steam/steamapps/common/SteamVR/bin/linux64")
 }
+
+pub fn get_plugins_dir() -> PathBuf {
+    get_data_dir().join("plugins")
+}

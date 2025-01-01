@@ -130,14 +130,6 @@ impl SimpleComponent for ProfileEditor {
                                 prof.borrow_mut().prefix = n_path.unwrap_or_default().into();
                             }),
                         ),
-                        add: &entry_row("Autostart Command",
-                            model.profile.borrow().autostart_command.as_ref().unwrap_or(&String::default()),
-                            clone!(#[strong] prof, move |row| {
-                                let txt = row.text().trim().to_string();
-                                prof.borrow_mut().autostart_command =
-                                    if txt.is_empty() {None} else {Some(txt)};
-                            })
-                        ),
                         add: &switch_row("Dependency Check",
                             Some("Warning: disabling dependency checks may result in build failures"),
                             !model.profile.borrow().skip_dependency_check,

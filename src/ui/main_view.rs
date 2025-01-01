@@ -2,7 +2,7 @@ use super::{
     alert::alert,
     app::{
         AboutAction, BuildProfileAction, BuildProfileCleanAction, ConfigureWivrnAction,
-        DebugViewToggleAction,
+        DebugViewToggleAction, PluginStoreAction,
     },
     devices_box::{DevicesBox, DevicesBoxMsg},
     install_wivrn_box::{InstallWivrnBox, InstallWivrnBoxInit, InstallWivrnBoxMsg},
@@ -148,6 +148,7 @@ impl AsyncComponent for MainView {
     menu! {
         app_menu: {
             section! {
+                "Plugin_s" => PluginStoreAction,
                 // value inside action is ignored
                 "_Debug View" => DebugViewToggleAction,
                 "_Build Profile" => BuildProfileAction,

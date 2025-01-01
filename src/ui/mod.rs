@@ -13,6 +13,7 @@ mod libsurvive_setup_window;
 mod macros;
 mod main_view;
 mod openhmd_calibration_box;
+pub mod plugins;
 mod preference_rows;
 mod profile_editor;
 mod steam_launch_options_box;

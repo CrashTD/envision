@@ -156,13 +156,12 @@ pub fn spin_row<F: Fn(&gtk::Adjustment) + 'static>(
     row
 }
 
-pub fn path_row<F: Fn(Option<String>) + 'static + Clone>(
+fn filedialog_row_base<F: Fn(Option<String>) + 'static + Clone>(
     title: &str,
     description: Option<&str>,
     value: Option<String>,
-    root_win: Option<gtk::Window>,
     cb: F,
-) -> adw::ActionRow {
+) -> (adw::ActionRow, gtk::Label) {
     let row = adw::ActionRow::builder()
         .title(title)
         .subtitle_lines(0)
@@ -174,14 +173,14 @@ pub fn path_row<F: Fn(Option<String>) + 'static + Clone>(
         row.set_subtitle(d);
     }
 
-    let path_label = &gtk::Label::builder()
+    let path_label = gtk::Label::builder()
         .label(match value.as_ref() {
             None => "(None)",
             Some(p) => p.as_str(),
         })
         .wrap(true)
         .build();
-    row.add_suffix(path_label);
+    row.add_suffix(&path_label);
 
     let clear_btn = gtk::Button::builder()
         .icon_name("edit-clear-symbolic")
@@ -200,6 +199,60 @@ pub fn path_row<F: Fn(Option<String>) + 'static + Clone>(
             cb(None)
         }
     ));
+    (row, path_label)
+}
+
+pub fn file_row<F: Fn(Option<String>) + 'static + Clone>(
+    title: &str,
+    description: Option<&str>,
+    value: Option<String>,
+    root_win: Option<gtk::Window>,
+    cb: F,
+) -> adw::ActionRow {
+    let (row, path_label) = filedialog_row_base(title, description, value, cb.clone());
+
+    let filedialog = gtk::FileDialog::builder()
+        .modal(true)
+        .title(format!("Select {}", title))
+        .build();
+
+    row.connect_activated(clone!(
+        #[weak]
+        path_label,
+        move |_| {
+            filedialog.open(
+                root_win.as_ref(),
+                gio::Cancellable::NONE,
+                clone!(
+                    #[weak]
+                    path_label,
+                    #[strong]
+                    cb,
+                    move |res| {
+                        if let Ok(file) = res {
+                            if let Some(path) = file.path() {
+                                let path_s = path.to_string_lossy().to_string();
+                                path_label.set_text(&path_s);
+                                cb(Some(path_s))
+                            }
+                        }
+                    }
+                ),
+            )
+        }
+    ));
+
+    row
+}
+
+pub fn path_row<F: Fn(Option<String>) + 'static + Clone>(
+    title: &str,
+    description: Option<&str>,
+    value: Option<String>,
+    root_win: Option<gtk::Window>,
+    cb: F,
+) -> adw::ActionRow {
+    let (row, path_label) = filedialog_row_base(title, description, value, cb.clone());
     let filedialog = gtk::FileDialog::builder()
         .modal(true)
         .title(format!("Select Path for {}", title))
@@ -220,8 +273,8 @@ pub fn path_row<F: Fn(Option<String>) + 'static + Clone>(
                     move |res| {
                         if let Ok(file) = res {
                             if let Some(path) = file.path() {
-                                let path_s = path.to_str().unwrap().to_string();
-                                path_label.set_text(path_s.as_str());
+                                let path_s = path.to_string_lossy().to_string();
+                                path_label.set_text(&path_s);
                                 cb(Some(path_s))
                             }
                         }

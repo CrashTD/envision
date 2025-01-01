@@ -7,6 +7,7 @@ use nix::{
 use std::{
     fs::{self, copy, create_dir_all, remove_dir_all, File, OpenOptions},
     io::{BufReader, BufWriter},
+    os::unix::fs::PermissionsExt,
     path::Path,
 };
 use tracing::{debug, error};
@@ -148,6 +149,17 @@ pub fn mount_has_nosuid(path: &Path) -> Result<bool, Errno> {
     match statvfs(path) {
         Ok(fstats) => Ok(fstats.flags().contains(FsFlags::ST_NOSUID)),
         Err(e) => Err(e),
+    }
+}
+
+pub fn mark_as_executable(path: &Path) -> anyhow::Result<()> {
+    if !path.is_file() {
+        bail!("Path '{}' is not a file", path.to_string_lossy())
+    } else {
+        let mut perms = fs::metadata(path)?.permissions();
+        perms.set_mode(perms.mode() | 0o111);
+        fs::set_permissions(path, perms)?;
+        Ok(())
     }
 }
 
