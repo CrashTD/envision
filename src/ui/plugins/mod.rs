@@ -3,7 +3,11 @@ pub mod store;
 mod store_detail;
 mod store_row_factory;
 
-use crate::{paths::get_plugins_dir, util::file_utils::mark_as_executable};
+use crate::{
+    downloader::{cache_file_path, download_file_async},
+    paths::get_plugins_dir,
+    util::file_utils::mark_as_executable,
+};
 use anyhow::bail;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
@@ -60,4 +64,30 @@ impl Plugin {
             && !self.name.is_empty()
             && self.executable().as_ref().is_some_and(|p| p.is_file())
     }
+}
+
+/// urls to manifest json files representing plugins.
+/// each manifest should be json and the link should always point to the latest version
+const MANIFESTS: [&str;2] = [
+    "https://gitlab.com/gabmus/envision-plugin-manifests/-/raw/main/com.github.galiser.wlx-overlay-s.json",
+    "https://gitlab.com/gabmus/envision-plugin-manifests/-/raw/main/org.stardustxr.telescope.json",
+];
+
+pub async fn refresh_plugins() -> anyhow::Result<Vec<anyhow::Result<Plugin>>> {
+    let mut results = Vec::new();
+    for jh in MANIFESTS
+        .iter()
+        .map(|url| -> tokio::task::JoinHandle<anyhow::Result<Plugin>> {
+            tokio::spawn(async move {
+                let path = cache_file_path(url, Some("json"));
+                download_file_async(url, &path).await?;
+                Ok(serde_json::from_str::<Plugin>(
+                    &tokio::fs::read_to_string(path).await?,
+                )?)
+            })
+        })
+    {
+        results.push(jh.await?);
+    }
+    Ok(results)
 }

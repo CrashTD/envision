@@ -2,6 +2,7 @@ use super::{
     add_custom_plugin_win::{
         AddCustomPluginWin, AddCustomPluginWinInit, AddCustomPluginWinMsg, AddCustomPluginWinOutMsg,
     },
+    refresh_plugins,
     store_detail::{StoreDetail, StoreDetailMsg, StoreDetailOutMsg},
     store_row_factory::{StoreRowModel, StoreRowModelInit, StoreRowModelMsg, StoreRowModelOutMsg},
     Plugin,
@@ -44,7 +45,10 @@ pub enum PluginStoreSignalSource {
 #[derive(Debug)]
 pub enum PluginStoreMsg {
     Present,
+    /// sets state and calls DoRefresh
     Refresh,
+    /// called by Refresh
+    DoRefresh,
     Install(Plugin, relm4::Sender<StoreRowModelMsg>),
     InstallFromDetails(Plugin),
     InstallDownload(Plugin, relm4::Sender<StoreRowModelMsg>),
@@ -158,6 +162,8 @@ impl AsyncComponent for PluginStore {
                             add_child = &gtk::Spinner {
                                 set_hexpand: true,
                                 set_vexpand: true,
+                                set_width_request: 32,
+                                set_height_request: 32,
                                 set_valign: gtk::Align::Center,
                                 set_halign: gtk::Align::Center,
                                 #[track = "model.changed(PluginStore::refreshing())"]
@@ -248,37 +254,25 @@ impl AsyncComponent for PluginStore {
             }
             Self::Input::Refresh => {
                 self.set_refreshing(true);
-                // TODO: populate from web
-                let mut plugins = vec![
-	                Plugin {
-	                    appid: "com.github.galiser.wlx-overlay-s".into(),
-	                    name: "WLX Overlay S".into(),
-	                    version: Some("0.6.0".into()),
-	                    hompage_url: Some("https://github.com/galister/wlx-overlay-s".into()),
-	                    icon_url: Some("https://github.com/galister/wlx-overlay-s/raw/main/wlx-overlay-s.svg".into()),
-	                    screenshots: vec![
-	                        "https://github.com/galister/wlx-overlay-s/raw/guide/wlx-s.png".into(),
-	                    ],
-	                    description: Some("A lightweight OpenXR/OpenVR overlay for Wayland and X11 desktops, inspired by XSOverlay.\n\nWlxOverlay-S allows you to access your desktop screens while in VR.\n\nIn comparison to similar overlays, WlxOverlay-S aims to run alongside VR games and experiences while having as little performance impact as possible. The UI appearance and rendering techniques are kept as simple and efficient as possible, while still allowing a high degree of customizability.".into()),
-	                    short_description: Some("Access your Wayland/X11 desktop".into()),
-	                    exec_url: Some("https://github.com/galister/wlx-overlay-s/releases/download/v0.6/WlxOverlay-S-v0.6-x86_64.AppImage".into()),
-	                    exec_path: None,
-	                },
-                    Plugin {
-	                    appid: "org.stardustxr.telescope".into(),
-	                    name: "Telescope (Stardust XR)".into(),
-	                    version: Some("0.45.0".into()),
-	                    hompage_url: Some("https://stardustxr.org/".into()),
-	                    icon_url: Some("https://stardustxr.org/img/icon.png".into()),
-	                    screenshots: vec![
-	                        "https://stardustxr.org/img/carousel/workflow.png".into(),
-	                    ],
-	                    description: Some("A more intuitive overlay designed for spatial computing from the ground up. Part of the Stardust XR project.\n\nTelescope lets you use your favorite apps directly with your controllers or hands at any time.".into()),
-	                    short_description: Some("Use your existing apps spatially and intuitively.".into()),
-	                    exec_url: Some("https://github.com/StardustXR/telescope/releases/download/0.45.0/Telescope-x86_64.AppImage".into()),
-	                    exec_path: None,
-	                },
-                ];
+                sender.input(Self::Input::DoRefresh);
+            }
+            Self::Input::DoRefresh => {
+                let mut plugins = match refresh_plugins().await {
+                    Err(e) => {
+                        error!("failed to refresh plugins: {e}");
+                        Vec::new()
+                    }
+                    Ok(results) => results
+                        .into_iter()
+                        .filter_map(|res| match res {
+                            Ok(plugin) => Some(plugin),
+                            Err(e) => {
+                                error!("failed to refresh single plugin manifest: {e}");
+                                None
+                            }
+                        })
+                        .collect(),
+                };
                 {
                     let appids_from_web = plugins
                         .iter()
