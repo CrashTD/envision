@@ -30,6 +30,8 @@ pub fn create_about_dialog() -> adw::AboutDialog {
         .build()
 }
 
+const UNKNOWN: &str = "UNKNOWN";
+
 pub fn populate_debug_info(dialog: &adw::AboutDialog, vkinfo: Option<&VulkanInfo>) {
     if dialog.debug_info().len() > 0 {
         return;
@@ -42,10 +44,10 @@ pub fn populate_debug_info(dialog: &adw::AboutDialog, vkinfo: Option<&VulkanInfo
             format!("Build time: {BUILD_DATETIME}"),
             format!(
                 "Operating system: {d} ({f})",
-                d = distro.unwrap_or("unknown".into()),
+                d = distro.unwrap_or(UNKNOWN.into()),
                 f = distro_family
                     .map(|f| f.to_string())
-                    .unwrap_or("unknown".into())
+                    .unwrap_or(UNKNOWN.into())
             ),
             format!(
                 "Kernel: {}",
@@ -55,23 +57,35 @@ pub fn populate_debug_info(dialog: &adw::AboutDialog, vkinfo: Option<&VulkanInfo
             ),
             format!(
                 "Session type: {}",
-                env::var("XDG_SESSION_TYPE").unwrap_or("unknown".into())
+                env::var("XDG_SESSION_TYPE").unwrap_or(UNKNOWN.into())
             ),
             format!(
                 "Desktop: {}",
-                env::var("XDG_CURRENT_DESKTOP").unwrap_or("unknown".into())
+                env::var("XDG_CURRENT_DESKTOP").unwrap_or(UNKNOWN.into())
+            ),
+            format!(
+                "CPU: {}",
+                read_to_string("/proc/cpuinfo")
+                    .ok()
+                    .and_then(|s| {
+                        s.split("\n")
+                            .find(|line| line.starts_with("model name"))
+                            .map(|line| line.split(':').last().map(|s| s.trim().to_string()))
+                    })
+                    .flatten()
+                    .unwrap_or(UNKNOWN.into())
             ),
             format!(
                 "GPUs: {}",
                 vkinfo
                     .map(|i| i.gpu_names.join(", "))
-                    .unwrap_or("unknown".into())
+                    .unwrap_or(UNKNOWN.into())
             ),
             format!(
                 "Monado Vulkan Layers: {}",
                 vkinfo
                     .map(|i| i.has_monado_vulkan_layers.to_string())
-                    .unwrap_or("unknown".into())
+                    .unwrap_or(UNKNOWN.into())
             ),
             format!("Detected XR Devices: {}", {
                 let devs = PhysicalXRDevice::from_usb();
