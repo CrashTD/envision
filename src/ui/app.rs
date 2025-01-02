@@ -675,6 +675,9 @@ impl AsyncComponent for App {
                 self.debug_view
                     .sender()
                     .emit(DebugViewMsg::UpdateSelectedProfile(prof.clone()));
+                self.main_view
+                    .sender()
+                    .emit(MainViewMsg::QueryProfileRebuild);
             }
             Msg::RunSetCap => {
                 if !dep_pkexec().check() {
@@ -989,6 +992,7 @@ impl AsyncComponent for App {
                     MainViewOutMsg::DeleteProfile => Msg::DeleteProfile,
                     MainViewOutMsg::SaveProfile(p) => Msg::SaveProfile(p),
                     MainViewOutMsg::OpenLibsurviveSetup => Msg::OpenLibsurviveSetup,
+                    MainViewOutMsg::BuildProfile(clean) => Msg::BuildProfile(clean),
                 }),
             vkinfo,
             debug_view: DebugView::builder()

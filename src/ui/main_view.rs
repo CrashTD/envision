@@ -12,6 +12,7 @@ use super::{
     steamvr_calibration_box::{SteamVrCalibrationBox, SteamVrCalibrationBoxMsg},
     util::{limit_dropdown_width, warning_heading},
     wivrn_wired_start_box::{WivrnWiredStartBox, WivrnWiredStartBoxInit, WivrnWiredStartBoxMsg},
+    SENDER_IO_ERR_MSG,
 };
 use crate::{
     config::Config,
@@ -60,6 +61,8 @@ pub struct MainView {
     #[tracker::do_not_track]
     profile_delete_confirm_dialog: adw::AlertDialog,
     #[tracker::do_not_track]
+    query_profile_rebuild_dialog: adw::AlertDialog,
+    #[tracker::do_not_track]
     profile_editor: Option<Controller<ProfileEditor>>,
     #[tracker::do_not_track]
     steamvr_calibration_box: Controller<SteamVrCalibrationBox>,
@@ -104,6 +107,7 @@ pub enum MainViewMsg {
     SetWivrnPairingMode(bool),
     StopWivrnPairingMode,
     StartWivrnPairingMode,
+    QueryProfileRebuild,
 }
 
 #[derive(Debug)]
@@ -114,6 +118,8 @@ pub enum MainViewOutMsg {
     DeleteProfile,
     SaveProfile(Profile),
     OpenLibsurviveSetup,
+    /// params: clean
+    BuildProfile(bool),
 }
 
 pub struct MainViewInit {
@@ -722,6 +728,10 @@ impl AsyncComponent for MainView {
                     }
                 }));
             }
+            Self::Input::QueryProfileRebuild => {
+                self.query_profile_rebuild_dialog
+                    .present(Some(&self.root_win));
+            }
             Self::Input::SetSelectedProfile(index) => {
                 self.profiles_dropdown
                     .as_ref()
@@ -759,7 +769,7 @@ impl AsyncComponent for MainView {
             Self::Input::SaveProfile(prof) => {
                 sender
                     .output(Self::Output::SaveProfile(prof))
-                    .expect("Sender output failed");
+                    .expect(SENDER_IO_ERR_MSG);
             }
             Self::Input::DuplicateProfile => {
                 if self.selected_profile.can_be_built {
@@ -928,6 +938,29 @@ impl AsyncComponent for MainView {
             ),
         );
 
+        let query_profile_rebuild_dialog = adw::AlertDialog::builder()
+            .heading("Do you want to build this profile now?")
+            .body("This will trigger a clean build")
+            .build();
+        query_profile_rebuild_dialog.add_response("no", "_No");
+        query_profile_rebuild_dialog.add_response("yes", "_Yes");
+        query_profile_rebuild_dialog.set_response_appearance("yes", ResponseAppearance::Suggested);
+
+        query_profile_rebuild_dialog.connect_response(
+            None,
+            clone!(
+                #[strong]
+                sender,
+                move |_, res| {
+                    if res == "yes" {
+                        sender
+                            .output(Self::Output::BuildProfile(true))
+                            .expect(SENDER_IO_ERR_MSG);
+                    }
+                }
+            ),
+        );
+
         let profile_delete_confirm_dialog = adw::AlertDialog::builder()
             .heading("Are you sure you want to delete this profile?")
             .build();
@@ -1062,6 +1095,7 @@ impl AsyncComponent for MainView {
             selected_profile: init.selected_profile.clone(),
             profile_not_editable_dialog,
             profile_delete_confirm_dialog,
+            query_profile_rebuild_dialog,
             root_win: init.root_win.clone(),
             steamvr_calibration_box,
             openhmd_calibration_box,
