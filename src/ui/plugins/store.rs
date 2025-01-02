@@ -250,20 +250,34 @@ impl AsyncComponent for PluginStore {
                 self.set_refreshing(true);
                 // TODO: populate from web
                 let mut plugins = vec![
+	                Plugin {
+	                    appid: "com.github.galiser.wlx-overlay-s".into(),
+	                    name: "WLX Overlay S".into(),
+	                    version: Some("0.6.0".into()),
+	                    hompage_url: Some("https://github.com/galister/wlx-overlay-s".into()),
+	                    icon_url: Some("https://github.com/galister/wlx-overlay-s/raw/main/wlx-overlay-s.svg".into()),
+	                    screenshots: vec![
+	                        "https://github.com/galister/wlx-overlay-s/raw/guide/wlx-s.png".into(),
+	                    ],
+	                    description: Some("A lightweight OpenXR/OpenVR overlay for Wayland and X11 desktops, inspired by XSOverlay.\n\nWlxOverlay-S allows you to access your desktop screens while in VR.\n\nIn comparison to similar overlays, WlxOverlay-S aims to run alongside VR games and experiences while having as little performance impact as possible. The UI appearance and rendering techniques are kept as simple and efficient as possible, while still allowing a high degree of customizability.".into()),
+	                    short_description: Some("Access your Wayland/X11 desktop".into()),
+	                    exec_url: Some("https://github.com/galister/wlx-overlay-s/releases/download/v0.6/WlxOverlay-S-v0.6-x86_64.AppImage".into()),
+	                    exec_path: None,
+	                },
                     Plugin {
-                        appid: "com.github.galiser.wlx-overlay-s".into(),
-                        name: "WLX Overlay S".into(),
-                        version: Some("0.6.0".into()),
-                        hompage_url: Some("https://github.com/galister/wlx-overlay-s".into()),
-                        icon_url: Some("https://github.com/galister/wlx-overlay-s/raw/main/wlx-overlay-s.svg".into()),
-                        screenshots: vec![
-                            "https://github.com/galister/wlx-overlay-s/raw/guide/wlx-s.png".into(),
-                        ],
-                        description: Some("A lightweight OpenXR/OpenVR overlay for Wayland and X11 desktops, inspired by XSOverlay.\n\nWlxOverlay-S allows you to access your desktop screens while in VR.\n\nIn comparison to similar overlays, WlxOverlay-S aims to run alongside VR games and experiences while having as little performance impact as possible. The UI appearance and rendering techniques are kept as simple and efficient as possible, while still allowing a high degree of customizability.".into()),
-                        short_description: Some("Access your Wayland/X11 desktop".into()),
-                        exec_url: Some("https://github.com/galister/wlx-overlay-s/releases/download/v0.6/WlxOverlay-S-v0.6-x86_64.AppImage".into()),
-                        exec_path: None,
-                    },
+	                    appid: "org.stardustxr.telescope".into(),
+	                    name: "Telescope (Stardust XR)".into(),
+	                    version: Some("0.45.0".into()),
+	                    hompage_url: Some("https://stardustxr.org/".into()),
+	                    icon_url: Some("https://stardustxr.org/img/icon.png".into()),
+	                    screenshots: vec![
+	                        "https://stardustxr.org/img/carousel/workflow.png".into(),
+	                    ],
+	                    description: Some("A more intuitive overlay designed for spatial computing from the ground up. Part of the Stardust XR project.\n\nTelescope lets you use your favorite apps directly with your controllers or hands at any time.".into()),
+	                    short_description: Some("Use your existing apps spatially and intuitively.".into()),
+	                    exec_url: Some("https://github.com/StardustXR/telescope/releases/download/0.45.0/Telescope-x86_64.AppImage".into()),
+	                    exec_path: None,
+	                },
                 ];
                 {
                     let appids_from_web = plugins
