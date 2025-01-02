@@ -453,7 +453,7 @@ impl AsyncComponent for MainView {
                                 set_label: concat!(
                                     "SteamVR room configuration not found.\n",
                                     "To use the SteamVR lighthouse driver, you ",
-                                    "will need to run SteamVR and perform the room setup.",
+                                    "will need to run SteamVR Quick Calibration.",
                                 ),
                                 add_css_class: "warning",
                                 set_xalign: 0.0,
