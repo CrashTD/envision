@@ -69,7 +69,7 @@ impl Plugin {
 /// urls to manifest json files representing plugins.
 /// each manifest should be json and the link should always point to the latest version
 const MANIFESTS: [&str;2] = [
-    "https://gitlab.com/gabmus/envision-plugin-manifests/-/raw/main/com.github.galiser.wlx-overlay-s.json",
+    "https://github.com/galister/wlx-overlay-s/raw/refs/heads/meta/com.github.galiser.wlx-overlay-s.json",
     "https://gitlab.com/gabmus/envision-plugin-manifests/-/raw/main/org.stardustxr.telescope.json",
 ];
 
