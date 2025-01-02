@@ -10,7 +10,6 @@ use relm4::{
 };
 use std::{
     collections::{HashMap, VecDeque},
-    path::Path,
     thread::sleep,
     time::Duration,
 };
@@ -145,51 +144,55 @@ impl SimpleComponent for SteamVrCalibrationBox {
             }
             Self::Input::RunCalibration => {
                 self.set_calibration_result(None);
-                let steamvr_bin_dir = get_steamvr_bin_dir_path().to_string_lossy().to_string();
-                if !Path::new(&steamvr_bin_dir).is_dir() {
-                    self.set_calibration_success(false);
-                    self.set_calibration_result(Some("SteamVR not found".into()));
-                    return;
-                }
-                let mut env: HashMap<String, String> = HashMap::new();
-                env.insert("LD_LIBRARY_PATH".into(), steamvr_bin_dir.clone());
-                let vrcmd = format!("{steamvr_bin_dir}/vrcmd");
-                let server_worker = {
-                    let mut jobs: VecDeque<WorkerJob> = VecDeque::new();
-                    jobs.push_back(WorkerJob::new_cmd(
-                        Some(env.clone()),
-                        vrcmd.clone(),
-                        Some(vec!["--pollposes".into()]),
-                    ));
-                    JobWorker::new(jobs, sender.input_sender(), |msg| match msg {
-                        JobWorkerOut::Log(_) => Self::Input::NoOp,
-                        JobWorkerOut::Exit(code) => Self::Input::OnServerWorkerExit(code),
-                    })
-                };
-                let cal_worker = {
-                    let mut jobs: VecDeque<WorkerJob> = VecDeque::new();
-                    jobs.push_back(WorkerJob::new_func(Box::new(move || {
-                        sleep(Duration::from_secs(2));
-                        FuncWorkerOut {
-                            success: true,
-                            out: vec![],
-                        }
-                    })));
-                    jobs.push_back(WorkerJob::new_cmd(
-                        Some(env),
-                        vrcmd,
-                        Some(vec!["--resetroomsetup".into()]),
-                    ));
-                    JobWorker::new(jobs, sender.input_sender(), |msg| match msg {
-                        JobWorkerOut::Log(_) => Self::Input::NoOp,
-                        JobWorkerOut::Exit(code) => Self::Input::OnCalWorkerExit(code),
-                    })
-                };
+                match get_steamvr_bin_dir_path() {
+                    Err(e) => {
+                        error!("could not get SteamVR bin dir: {e}");
+                        self.set_calibration_success(false);
+                        self.set_calibration_result(Some("SteamVR not found".into()));
+                    }
+                    Ok(bin_dir_p) => {
+                        let steamvr_bin_dir = bin_dir_p.to_string_lossy().to_string();
+                        let mut env: HashMap<String, String> = HashMap::new();
+                        env.insert("LD_LIBRARY_PATH".into(), steamvr_bin_dir.clone());
+                        let vrcmd = format!("{steamvr_bin_dir}/vrcmd");
+                        let server_worker = {
+                            let mut jobs: VecDeque<WorkerJob> = VecDeque::new();
+                            jobs.push_back(WorkerJob::new_cmd(
+                                Some(env.clone()),
+                                vrcmd.clone(),
+                                Some(vec!["--pollposes".into()]),
+                            ));
+                            JobWorker::new(jobs, sender.input_sender(), |msg| match msg {
+                                JobWorkerOut::Log(_) => Self::Input::NoOp,
+                                JobWorkerOut::Exit(code) => Self::Input::OnServerWorkerExit(code),
+                            })
+                        };
+                        let cal_worker = {
+                            let mut jobs: VecDeque<WorkerJob> = VecDeque::new();
+                            jobs.push_back(WorkerJob::new_func(Box::new(move || {
+                                sleep(Duration::from_secs(2));
+                                FuncWorkerOut {
+                                    success: true,
+                                    out: vec![],
+                                }
+                            })));
+                            jobs.push_back(WorkerJob::new_cmd(
+                                Some(env),
+                                vrcmd,
+                                Some(vec!["--resetroomsetup".into()]),
+                            ));
+                            JobWorker::new(jobs, sender.input_sender(), |msg| match msg {
+                                JobWorkerOut::Log(_) => Self::Input::NoOp,
+                                JobWorkerOut::Exit(code) => Self::Input::OnCalWorkerExit(code),
+                            })
+                        };
 
-                server_worker.start();
-                cal_worker.start();
-                self.server_worker = Some(server_worker);
-                self.calibration_worker = Some(cal_worker);
+                        server_worker.start();
+                        cal_worker.start();
+                        self.server_worker = Some(server_worker);
+                        self.calibration_worker = Some(cal_worker);
+                    }
+                };
             }
             Self::Input::OnServerWorkerExit(code) => {
                 if code != 0 {

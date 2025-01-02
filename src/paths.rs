@@ -1,4 +1,6 @@
-use crate::{constants::CMD_NAME, xdg::XDG};
+use anyhow::bail;
+
+use crate::{constants::CMD_NAME, util::steam_library_folder::SteamLibraryFolder, xdg::XDG};
 use std::{
     env,
     fs::create_dir_all,
@@ -83,9 +85,24 @@ pub fn get_exec_prefix() -> PathBuf {
         .into()
 }
 
-pub fn get_steamvr_bin_dir_path() -> PathBuf {
-    XDG.get_data_home()
-        .join("Steam/steamapps/common/SteamVR/bin/linux64")
+const STEAMVR_STEAM_APPID: u32 = 250820;
+
+fn get_steamvr_base_dir() -> anyhow::Result<PathBuf> {
+    SteamLibraryFolder::get_folders()?
+        .into_iter()
+        .find(|(_, lf)| lf.apps.contains_key(&STEAMVR_STEAM_APPID))
+        .map(|(_, lf)| PathBuf::from(lf.path))
+        .ok_or(anyhow::Error::msg(
+            "Could not find SteamVR in Steam libraryfolders.vdf",
+        ))
+}
+
+pub fn get_steamvr_bin_dir_path() -> anyhow::Result<PathBuf> {
+    let res = get_steamvr_base_dir()?.join("bin/linux64");
+    if !res.is_dir() {
+        bail!("SteamVR bin dir `{}` does not exist", res.to_string_lossy());
+    }
+    Ok(res)
 }
 
 pub fn get_plugins_dir() -> PathBuf {
