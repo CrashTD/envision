@@ -264,19 +264,21 @@ impl Display for LighthouseDriver {
 pub enum OvrCompatibilityModuleType {
     #[default]
     Opencomposite,
+    Xrizer,
 }
 
 impl Display for OvrCompatibilityModuleType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(match self {
             Self::Opencomposite => "OpenComposite",
+            Self::Xrizer => "xrizer",
         })
     }
 }
 
 impl OvrCompatibilityModuleType {
     pub fn iter() -> Iter<'static, Self> {
-        [Self::Opencomposite].iter()
+        [Self::Opencomposite, Self::Xrizer].iter()
     }
 }
 
@@ -286,6 +288,7 @@ impl FromStr for OvrCompatibilityModuleType {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_lowercase().trim() {
             "opencomposite" => Ok(Self::Opencomposite),
+            "xrizer" => Ok(Self::Xrizer),
             _ => Err(format!("no match for ovr compatibility module `{s}`")),
         }
     }
@@ -295,6 +298,7 @@ impl From<u32> for OvrCompatibilityModuleType {
     fn from(value: u32) -> Self {
         match value {
             0 => Self::Opencomposite,
+            1 => Self::Xrizer,
             _ => panic!("OvrCompatibilityModuleType  index out of bounds"),
         }
     }

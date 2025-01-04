@@ -5,3 +5,4 @@ pub mod build_monado;
 pub mod build_opencomposite;
 pub mod build_openhmd;
 pub mod build_wivrn;
+pub mod build_xrizer;

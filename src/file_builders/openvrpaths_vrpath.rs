@@ -2,7 +2,7 @@ use std::path::{Path, PathBuf};
 
 use crate::{
     paths::get_backup_dir,
-    profile::Profile,
+    profile::{OvrCompatibilityModuleType, Profile},
     util::file_utils::{copy_file, deserialize_file, get_writer, set_file_readonly},
     xdg::XDG,
 };
@@ -98,7 +98,12 @@ pub fn build_profile_openvrpaths(profile: &Profile) -> OpenVrPaths {
         external_drivers: None,
         jsonid: "vrpathreg".into(),
         log: vec![datadir.join("Steam/logs")],
-        runtime: vec![profile.ovr_comp.path.join("build")],
+        runtime: match profile.ovr_comp.mod_type {
+            OvrCompatibilityModuleType::Opencomposite => vec![profile.ovr_comp.path.join("build")],
+            OvrCompatibilityModuleType::Xrizer => {
+                vec![profile.ovr_comp.path.join("target/release")]
+            }
+        },
         version: 1,
     }
 }
