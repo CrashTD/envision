@@ -210,7 +210,7 @@ impl App {
         self.xr_devices = vec![];
         {
             let ipc_file = prof.xrservice_type.ipc_file_path();
-            if ipc_file.is_file() {
+            if ipc_file.exists() {
                 remove_file(ipc_file)
                     .unwrap_or_else(|e| error!("failed to remove xrservice IPC file: {e}"));
             };
