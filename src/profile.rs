@@ -313,13 +313,22 @@ pub struct ProfileOvrCompatibilityModule {
 }
 
 impl ProfileOvrCompatibilityModule {
-    fn default_for_uuid(uuid: &str) -> Self {
+    pub fn default_for_uuid(uuid: &str) -> Self {
         let mod_type = OvrCompatibilityModuleType::default();
         Self {
             mod_type,
             repo: None,
             branch: None,
             path: get_data_dir().join(uuid).join(mod_type.to_string()),
+        }
+    }
+
+    /// get the directory corresponding to the openvr runtime.
+    /// this should correspond to the build output directory
+    pub fn runtime_dir(&self) -> PathBuf {
+        match self.mod_type {
+            OvrCompatibilityModuleType::Opencomposite => self.path.join("build"),
+            OvrCompatibilityModuleType::Xrizer => self.path.join("target/release"),
         }
     }
 }
@@ -453,8 +462,8 @@ impl Profile {
     pub fn env_vars_full(&self) -> Vec<String> {
         vec![
             // format!(
-            //     "VR_OVERRIDE={opencomp}/build",
-            //     opencomp = self.opencomposite_path,
+            //     "VR_OVERRIDE={}",
+            //     self.ovr_comp.runtime_dir(),
             // ),
             self.xr_runtime_json_env_var(),
             format!(
