@@ -5,6 +5,7 @@ use file_builders::{
     openvrpaths_vrpath::{get_current_openvrpaths, set_current_openvrpaths_to_steam},
 };
 use gettextrs::LocaleCategory;
+use paths::get_logs_dir;
 use relm4::{
     adw,
     gtk::{self, gdk, gio, glib, prelude::*},
@@ -13,7 +14,9 @@ use relm4::{
 use std::env;
 use steam_linux_runtime_injector::restore_runtime_entrypoint;
 use tracing::warn;
-use tracing_subscriber::{filter::LevelFilter, EnvFilter};
+use tracing_subscriber::{
+    filter::LevelFilter, layer::SubscriberExt, util::SubscriberInitExt, EnvFilter, Layer,
+};
 use ui::{
     app::{App, AppInit, Msg},
     cmdline_opts::CmdLineOpts,
@@ -69,13 +72,22 @@ fn main() -> Result<()> {
     }
     restore_steam_xr_files();
 
-    tracing_subscriber::fmt()
-        .with_env_filter(
-            EnvFilter::builder()
-                .with_default_directive(LevelFilter::INFO.into())
-                .from_env_lossy(),
+    let rolling_log_writer = tracing_appender::rolling::daily(get_logs_dir(), "log");
+    let (non_blocking_appender, _appender_guard) =
+        tracing_appender::non_blocking(rolling_log_writer);
+    tracing_subscriber::registry()
+        .with(
+            tracing_subscriber::fmt::layer().pretty().with_filter(
+                EnvFilter::builder()
+                    .with_default_directive(LevelFilter::INFO.into())
+                    .from_env_lossy(),
+            ),
         )
-        .pretty()
+        .with(
+            tracing_subscriber::fmt::layer()
+                .json()
+                .with_writer(non_blocking_appender),
+        )
         .init();
 
     // Prepare i18n

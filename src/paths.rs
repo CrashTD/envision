@@ -56,6 +56,10 @@ pub fn get_cache_dir() -> PathBuf {
     XDG.get_cache_home().join(CMD_NAME)
 }
 
+pub fn get_logs_dir() -> PathBuf {
+    get_cache_dir().join("logs")
+}
+
 pub fn get_backup_dir() -> PathBuf {
     let p = get_data_dir().join("backups");
     if !p.is_dir() {
