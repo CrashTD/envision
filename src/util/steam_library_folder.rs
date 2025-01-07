@@ -14,11 +14,9 @@ pub struct SteamLibraryFolder {
 }
 
 fn get_steam_main_dir_path() -> anyhow::Result<PathBuf> {
-    let steam_root: PathBuf = get_home_dir().join(".steam/root");
+    let steam_root: PathBuf = get_home_dir().join(".steam/root").canonicalize()?;
 
-    if steam_root.is_symlink() {
-        Ok(steam_root.read_link()?)
-    } else if steam_root.is_dir() {
+    if steam_root.is_dir() {
         Ok(steam_root)
     } else {
         bail!(
@@ -30,7 +28,9 @@ fn get_steam_main_dir_path() -> anyhow::Result<PathBuf> {
 
 impl SteamLibraryFolder {
     pub fn get_folders() -> anyhow::Result<HashMap<u32, Self>> {
-        let libraryfolders_path = get_steam_main_dir_path()?.join("steamapps/libraryfolders.vdf");
+        let libraryfolders_path = get_steam_main_dir_path()?
+            .join("steamapps/libraryfolders.vdf")
+            .canonicalize()?;
         if !libraryfolders_path.is_file() {
             bail!(
                 "Steam libraryfolders.vdf does not exist in its canonical location {}",

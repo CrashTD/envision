@@ -98,7 +98,7 @@ fn get_steamvr_base_dir() -> anyhow::Result<PathBuf> {
 }
 
 pub fn get_steamvr_bin_dir_path() -> anyhow::Result<PathBuf> {
-    let res = get_steamvr_base_dir()?.join("bin/linux64");
+    let res = get_steamvr_base_dir()?.join("bin/linux64").canonicalize()?;
     if !res.is_dir() {
         bail!("SteamVR bin dir `{}` does not exist", res.to_string_lossy());
     }
