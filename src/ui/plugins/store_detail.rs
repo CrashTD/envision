@@ -2,7 +2,7 @@ use super::Plugin;
 use crate::{downloader::cache_file, ui::SENDER_IO_ERR_MSG};
 use adw::prelude::*;
 use relm4::prelude::*;
-use tracing::warn;
+use tracing::{error, warn};
 
 #[tracker::track]
 pub struct StoreDetail {
@@ -25,6 +25,7 @@ pub enum StoreDetailMsg {
     Install,
     Remove,
     SetEnabled(bool),
+    OpenHomepage,
 }
 
 #[derive(Debug)]
@@ -91,18 +92,42 @@ impl AsyncComponent for StoreDetail {
                                     set_margin_end: 12,
                                     set_pixel_size: 96,
                                 },
-                                gtk::Label {
-                                    add_css_class: "title-2",
+                                gtk::Box {
+                                    set_orientation: gtk::Orientation::Vertical,
                                     set_hexpand: true,
-                                    set_xalign: 0.0,
-                                    #[track = "model.changed(Self::plugin())"]
-                                    set_text: model
-                                        .plugin
-                                        .as_ref()
-                                        .map(|p| p.name.as_str())
-                                        .unwrap_or_default(),
-                                    set_ellipsize: gtk::pango::EllipsizeMode::None,
-                                    set_wrap: true,
+                                    set_valign: gtk::Align::Center,
+                                    set_spacing: 6,
+                                    gtk::Label {
+                                        add_css_class: "title-2",
+                                        set_xalign: 0.0,
+                                        #[track = "model.changed(Self::plugin())"]
+                                        set_text: model
+                                            .plugin
+                                            .as_ref()
+                                            .map(|p| p.name.as_str())
+                                            .unwrap_or_default(),
+                                            set_ellipsize: gtk::pango::EllipsizeMode::None,
+                                            set_wrap: true,
+                                    },
+                                    gtk::Label {
+                                        add_css_class: "dim-label",
+                                        set_xalign: 0.0,
+                                        #[track = "model.changed(Self::plugin())"]
+                                        set_visible: model
+                                            .plugin
+                                            .as_ref()
+                                            .is_some_and(|p| p.author.is_some()),
+                                        #[track = "model.changed(Self::plugin())"]
+                                        set_text: model
+                                            .plugin
+                                            .as_ref()
+                                            .and_then(
+                                                |p| p.author.as_deref()
+                                            )
+                                            .unwrap_or_default(),
+                                        set_ellipsize: gtk::pango::EllipsizeMode::None,
+                                        set_wrap: true,
+                                    },
                                 },
                                 gtk::Box {
                                     set_orientation: gtk::Orientation::Vertical,
@@ -161,6 +186,15 @@ impl AsyncComponent for StoreDetail {
                                             gtk::glib::Propagation::Proceed
                                         }
                                     },
+                                    gtk::Button {
+                                        #[track = "model.changed(Self::plugin())"]
+                                        set_visible: model.plugin.as_ref()
+                                            .is_some_and(|p| p.homepage_url.is_some()),
+                                        set_label: "Homepage",
+                                        connect_clicked[sender] => move |_| {
+                                            sender.input(Self::Input::OpenHomepage);
+                                        }
+                                    }
                                 }
                             }
                         },
@@ -211,6 +245,18 @@ impl AsyncComponent for StoreDetail {
         self.reset();
 
         match message {
+            Self::Input::OpenHomepage => {
+                if let Some(plugin) = self.plugin.as_ref() {
+                    if let Some(homepage) = plugin.homepage_url.as_ref() {
+                        if let Err(e) = gtk::gio::AppInfo::launch_default_for_uri(
+                            homepage,
+                            gtk::gio::AppLaunchContext::NONE,
+                        ) {
+                            error!("opening uri {homepage}: {e}");
+                        };
+                    }
+                }
+            }
             Self::Input::SetPlugin(p, enabled, needs_update) => {
                 self.set_plugin(Some(p));
                 self.set_enabled(enabled);

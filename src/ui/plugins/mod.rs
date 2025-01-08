@@ -16,6 +16,7 @@ use std::path::PathBuf;
 pub struct Plugin {
     pub appid: String,
     pub name: String,
+    pub author: Option<String>,
     pub icon_url: Option<String>,
     pub version: Option<String>,
     pub short_description: Option<String>,
