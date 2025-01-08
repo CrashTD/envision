@@ -95,7 +95,7 @@ fn get_steamvr_base_dir() -> anyhow::Result<PathBuf> {
     SteamLibraryFolder::get_folders()?
         .into_iter()
         .find(|(_, lf)| lf.apps.contains_key(&STEAMVR_STEAM_APPID))
-        .map(|(_, lf)| PathBuf::from(lf.path))
+        .map(|(_, lf)| PathBuf::from(lf.path).join("steamapps/common/SteamVR"))
         .ok_or(anyhow::Error::msg(
             "Could not find SteamVR in Steam libraryfolders.vdf",
         ))
