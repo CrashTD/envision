@@ -20,7 +20,7 @@ pub struct Plugin {
     pub version: Option<String>,
     pub short_description: Option<String>,
     pub description: Option<String>,
-    pub hompage_url: Option<String>,
+    pub homepage_url: Option<String>,
     pub screenshots: Vec<String>,
     /// either one of exec_url or exec_path must be provided
     pub exec_url: Option<String>,
