@@ -27,6 +27,8 @@ pub struct Plugin {
     pub exec_url: Option<String>,
     /// either one of exec_url or exec_path must be provided
     pub exec_path: Option<PathBuf>,
+    /// options and arguments that should be passed to the plugin executable
+    pub luanch_opts: Option<Vec<String>>,
 }
 
 impl Plugin {

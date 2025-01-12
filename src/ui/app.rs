@@ -256,10 +256,16 @@ impl App {
                         );
                         None
                     } else {
-                        Some(format!(
-                            "'{}'",
-                            cp.plugin.executable().unwrap().to_string_lossy()
-                        ))
+                        Some(format!("'{}'", {
+                            let mut cmd_parts = vec![cp
+                                .plugin
+                                .executable()
+                                .unwrap()
+                                .to_string_lossy()
+                                .to_string()];
+                            cmd_parts.extend(cp.plugin.luanch_opts.clone().unwrap_or_default());
+                            cmd_parts.join(" ")
+                        }))
                     }
                 } else {
                     None
