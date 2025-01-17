@@ -39,7 +39,7 @@ fn monado_deps() -> Vec<Dependency> {
                 (LinuxDistro::Debian, "wayland-protocols".into()),
                 (LinuxDistro::Fedora, "wayland-protocols".into()),
                 (LinuxDistro::Gentoo, "dev-libs/wayland-protocols".into()),
-                (LinuxDistro::Suse, "wayland-protocols".into()),
+                (LinuxDistro::Suse, "wayland-protocols-devel".into()),
             ]),
         },
         Dependency {
