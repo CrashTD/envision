@@ -51,7 +51,7 @@ pub enum PluginStoreMsg {
     DoRefresh,
     Install(Plugin, relm4::Sender<StoreRowModelMsg>),
     InstallFromDetails(Plugin),
-    InstallDownload(Plugin, relm4::Sender<StoreRowModelMsg>),
+    InstallDownload(Vec<Plugin>, relm4::Sender<StoreRowModelMsg>),
     Remove(Plugin),
     SetEnabled(PluginStoreSignalSource, Plugin, bool),
     ShowDetails(usize),
@@ -308,33 +308,70 @@ impl AsyncComponent for PluginStore {
             }
             Self::Input::Install(plugin, row_sender) => {
                 self.set_locked(true);
-                sender.input(Self::Input::InstallDownload(plugin, row_sender))
-            }
-            Self::Input::InstallDownload(plugin, row_sender) => {
-                let mut plugin = plugin.clone();
-                match plugin.exec_url.as_ref() {
-                    Some(url) => {
-                        let exec_path = plugin.canonical_exec_path();
-                        if let Err(e) = download_file_async(url, &exec_path).await {
-                            alert(
-                                "Download failed",
-                                Some(&format!(
-                                    "Downloading {} {} failed:\n\n{e}",
-                                    plugin.name,
-                                    plugin
-                                        .version
-                                        .as_ref()
-                                        .unwrap_or(&"(no version)".to_string())
-                                )),
-                                Some(&self.win.as_ref().unwrap().clone().upcast::<gtk::Window>()),
-                            );
-                        } else {
-                            plugin.exec_path = Some(exec_path);
-                            sender.input(Self::Input::AddPluginToConfig(plugin.clone()));
-                        }
-                    }
-                    None => {
+                let mut plugins = vec![plugin];
+                for dep in plugins[0].dependencies.clone().unwrap_or_default() {
+                    if let Some(dep_plugin) = self
+                        .plugins
+                        .iter()
+                        .find(|plugin| plugin.appid == dep)
+                        .cloned()
+                    {
+                        plugins.push(dep_plugin);
+                    } else {
+                        error!(
+                            "unable to find dependency for {}: {}",
+                            plugins[0].appid, dep
+                        );
                         alert(
+                            "Missing dependencies",
+                            Some(&format!(
+                                "{} depends on unknown plugin {}",
+                                plugins[0].name, dep
+                            )),
+                            Some(&self.win.clone().unwrap().upcast::<gtk::Window>()),
+                        );
+                        return;
+                    }
+                }
+                sender.input(Self::Input::InstallDownload(plugins, row_sender))
+            }
+            Self::Input::InstallDownload(plugins, row_sender) => {
+                for plugin in plugins {
+                    let mut plugin = plugin.clone();
+                    match plugin.exec_url.as_ref() {
+                        Some(url) => {
+                            let exec_path = plugin.canonical_exec_path();
+                            if let Err(e) = download_file_async(url, &exec_path).await {
+                                alert(
+                                    "Download failed",
+                                    Some(&format!(
+                                        "Downloading {} {} failed:\n\n{e}",
+                                        plugin.name,
+                                        plugin
+                                            .version
+                                            .as_ref()
+                                            .unwrap_or(&"(no version)".to_string())
+                                    )),
+                                    Some(
+                                        &self.win.as_ref().unwrap().clone().upcast::<gtk::Window>(),
+                                    ),
+                                );
+                            } else {
+                                plugin.exec_path = Some(exec_path);
+                                if let Err(e) = plugin.enable() {
+                                    error!("failed to enable plugin {}: {e}", plugin.appid);
+                                    alert(
+                                        "Failed to enable plugin",
+                                        Some(&e.to_string()),
+                                        Some(&self.win.clone().unwrap().upcast::<gtk::Window>()),
+                                    );
+                                    return;
+                                }
+                                sender.input(Self::Input::AddPluginToConfig(plugin.clone()));
+                            }
+                        }
+                        None => {
+                            alert(
                             "Download failed",
                             Some(&format!(
                                 "Downloading {} {} failed:\n\nNo executable url provided for this plugin, this is likely a bug!",
@@ -343,15 +380,25 @@ impl AsyncComponent for PluginStore {
                             ),
                             Some(&self.win.as_ref().unwrap().clone().upcast::<gtk::Window>())
                         );
-                    }
-                };
-                row_sender.emit(StoreRowModelMsg::Refresh(true, false));
-                self.details
-                    .emit(StoreDetailMsg::Refresh(plugin.appid, true, false));
+                        }
+                    };
+                    row_sender.emit(StoreRowModelMsg::Refresh(true, false));
+                    self.details
+                        .emit(StoreDetailMsg::Refresh(plugin.appid, true, false));
+                }
                 self.set_locked(false);
             }
             Self::Input::Remove(plugin) => {
                 self.set_locked(true);
+                if let Err(e) = plugin.disable() {
+                    error!("failed to disable plugin {}: {e}", plugin.appid);
+                    alert(
+                        "Failed to disable plugin",
+                        Some(&e.to_string()),
+                        Some(&self.win.clone().unwrap().upcast::<gtk::Window>()),
+                    );
+                    return;
+                }
                 if let Some(exec) = plugin.executable() {
                     // delete executable only if it's not a custom plugin
                     if exec.is_file() && plugin.exec_url.is_some() {
@@ -387,6 +434,22 @@ impl AsyncComponent for PluginStore {
             }
             Self::Input::SetEnabled(signal_sender, plugin, enabled) => {
                 if let Some(cp) = self.config_plugins.get_mut(&plugin.appid) {
+                    if let Err(e) = plugin.set_enabled(enabled) {
+                        error!(
+                            "failed to {} plugin {}: {e}",
+                            if enabled { "enable" } else { "disable" },
+                            plugin.appid
+                        );
+                        alert(
+                            &format!(
+                                "Failed to {} plugin",
+                                if enabled { "enable" } else { "disable" }
+                            ),
+                            Some(&e.to_string()),
+                            Some(&self.win.clone().unwrap().upcast::<gtk::Window>()),
+                        );
+                        return;
+                    }
                     cp.enabled = enabled;
                     if signal_sender == PluginStoreSignalSource::Detail {
                         if let Some(row) = self

@@ -248,7 +248,7 @@ impl App {
             .plugins
             .values()
             .filter_map(|cp| {
-                if cp.enabled && cp.plugin.validate() {
+                if cp.plugin.plugin_type.launches_directly() && cp.enabled && cp.plugin.validate() {
                     if let Err(e) = cp.plugin.mark_as_executable() {
                         error!(
                             "failed to mark plugin {} as executable: {e}",
@@ -263,7 +263,7 @@ impl App {
                                 .unwrap()
                                 .to_string_lossy()
                                 .to_string()];
-                            cmd_parts.extend(cp.plugin.luanch_opts.clone().unwrap_or_default());
+                            cmd_parts.extend(cp.plugin.args.clone().unwrap_or_default());
                             cmd_parts.join(" ")
                         }))
                     }

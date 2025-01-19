@@ -4,13 +4,36 @@ mod store_detail;
 mod store_row_factory;
 
 use crate::{
+    constants::APP_ID,
     downloader::{cache_file_path, download_file_async},
+    file_builders::wayvr_dashboard_config::{
+        WayVrDashboardConfigFragment, WayVrDashboardConfigFragmentInner,
+    },
     paths::get_plugins_dir,
-    util::file_utils::mark_as_executable,
+    util::file_utils::{get_writer, mark_as_executable},
+    xdg::XDG,
 };
 use anyhow::bail;
 use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
+use std::{
+    collections::HashMap,
+    fs::{create_dir_all, remove_file},
+    path::PathBuf,
+};
+
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq, Default)]
+pub enum PluginType {
+    #[default]
+    Executable,
+    WayVrApp,
+    WayVrDashboard,
+}
+
+impl PluginType {
+    pub fn launches_directly(&self) -> bool {
+        self == &Self::Executable
+    }
+}
 
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq, Default)]
 pub struct Plugin {
@@ -28,10 +51,79 @@ pub struct Plugin {
     /// either one of exec_url or exec_path must be provided
     pub exec_path: Option<PathBuf>,
     /// options and arguments that should be passed to the plugin executable
-    pub luanch_opts: Option<Vec<String>>,
+    pub args: Option<Vec<String>>,
+    pub env_vars: Option<HashMap<String, String>>,
+    /// defined as a list of appids of other plugins
+    pub dependencies: Option<Vec<String>>,
+    /// defined as a list of appids of other plugins
+    /// all plugins of type WayVrDashboard should conflict with each other by default
+    pub conflicts: Option<Vec<String>>,
+    #[serde(default = "PluginType::default")]
+    pub plugin_type: PluginType,
 }
 
 impl Plugin {
+    fn wayvr_config_fragment_filename(&self) -> String {
+        format!("99-{APP_ID}-plugin.{}.yaml", self.appid)
+    }
+
+    fn wayvr_conf_dir() -> PathBuf {
+        XDG.get_config_home().join("wlxoverlay/wayvr.conf.d")
+    }
+
+    pub fn enable(&self) -> anyhow::Result<()> {
+        match self.plugin_type {
+            PluginType::Executable => {}
+            PluginType::WayVrApp => todo!(),
+            PluginType::WayVrDashboard => {
+                let wayvr_conf_dir = Self::wayvr_conf_dir();
+                if !wayvr_conf_dir.exists() {
+                    create_dir_all(&wayvr_conf_dir)?;
+                } else if wayvr_conf_dir.is_file() {
+                    bail!("wayvr.conf.d is a file and not a directory")
+                }
+                let config_fragment = WayVrDashboardConfigFragment {
+                    dashboard: WayVrDashboardConfigFragmentInner {
+                        exec: self
+                            .executable()
+                            .ok_or(anyhow::Error::msg("executable missing"))?
+                            .to_string_lossy()
+                            .to_string(),
+                        args: self.args.as_ref().map(|args| args.join(" ")),
+                        env: self
+                            .env_vars
+                            .as_ref()
+                            .map(|vars| vars.iter().map(|(k, v)| format!("{k}={v}")).collect()),
+                    },
+                };
+                let writer =
+                    get_writer(&wayvr_conf_dir.join(self.wayvr_config_fragment_filename()))?;
+                serde_yml::to_writer(writer, &config_fragment)?;
+            }
+        }
+        Ok(())
+    }
+
+    pub fn disable(&self) -> anyhow::Result<()> {
+        match self.plugin_type {
+            PluginType::Executable => {}
+            PluginType::WayVrApp => todo!(),
+            PluginType::WayVrDashboard => {
+                let wayvr_conf_dir = Self::wayvr_conf_dir();
+                remove_file(wayvr_conf_dir.join(self.wayvr_config_fragment_filename()))?;
+            }
+        };
+        Ok(())
+    }
+
+    pub fn set_enabled(&self, enabled: bool) -> anyhow::Result<()> {
+        if enabled {
+            self.enable()
+        } else {
+            self.disable()
+        }
+    }
+
     pub fn executable(&self) -> Option<PathBuf> {
         if self.exec_path.is_some() {
             self.exec_path.clone()
@@ -72,7 +164,7 @@ impl Plugin {
 /// urls to manifest json files representing plugins.
 /// each manifest should be json and the link should always point to the latest version
 const MANIFESTS: [&str;2] = [
-    "https://github.com/galister/wlx-overlay-s/raw/refs/heads/meta/com.github.galiser.wlx-overlay-s.json",
+    "https://github.com/galister/wlx-overlay-s/raw/refs/heads/meta/com.github.galister.wlx-overlay-s.json",
     "https://gitlab.com/gabmus/envision-plugin-manifests/-/raw/main/org.stardustxr.telescope.json",
 ];
 
