@@ -49,9 +49,8 @@ pub enum PluginStoreMsg {
     Refresh,
     /// called by Refresh
     DoRefresh,
-    Install(Plugin, relm4::Sender<StoreRowModelMsg>),
-    InstallFromDetails(Plugin),
-    InstallDownload(Vec<Plugin>, relm4::Sender<StoreRowModelMsg>),
+    Install(Plugin),
+    InstallDownload(Vec<Plugin>),
     Remove(Plugin),
     SetEnabled(PluginStoreSignalSource, Plugin, bool),
     ShowDetails(usize),
@@ -291,22 +290,7 @@ impl AsyncComponent for PluginStore {
                 self.refresh_plugin_rows();
                 self.set_refreshing(false);
             }
-            Self::Input::InstallFromDetails(plugin) => {
-                if let Some(row) = self
-                    .plugin_rows
-                    .as_mut()
-                    .unwrap()
-                    .guard()
-                    .iter()
-                    .find(|row| row.is_some_and(|row| row.plugin.appid == plugin.appid))
-                    .flatten()
-                {
-                    sender.input(Self::Input::Install(plugin, row.input_sender.clone()))
-                } else {
-                    error!("could not find corresponding listbox row")
-                }
-            }
-            Self::Input::Install(plugin, row_sender) => {
+            Self::Input::Install(plugin) => {
                 self.set_locked(true);
                 let mut plugins = vec![plugin];
                 for dep in plugins[0].dependencies.clone().unwrap_or_default() {
@@ -333,9 +317,9 @@ impl AsyncComponent for PluginStore {
                         return;
                     }
                 }
-                sender.input(Self::Input::InstallDownload(plugins, row_sender))
+                sender.input(Self::Input::InstallDownload(plugins))
             }
-            Self::Input::InstallDownload(plugins, row_sender) => {
+            Self::Input::InstallDownload(plugins) => {
                 for plugin in plugins {
                     let mut plugin = plugin.clone();
                     match plugin.exec_url.as_ref() {
@@ -382,7 +366,7 @@ impl AsyncComponent for PluginStore {
                         );
                         }
                     };
-                    row_sender.emit(StoreRowModelMsg::Refresh(true, false));
+                    self.refresh_plugin_rows();
                     self.details
                         .emit(StoreDetailMsg::Refresh(plugin.appid, true, false));
                 }
@@ -534,7 +518,7 @@ impl AsyncComponent for PluginStore {
                 .launch(())
                 .forward(sender.input_sender(), move |msg| match msg {
                     StoreDetailOutMsg::GoBack => Self::Input::ShowPluginList,
-                    StoreDetailOutMsg::Install(plugin) => Self::Input::InstallFromDetails(plugin),
+                    StoreDetailOutMsg::Install(plugin) => Self::Input::Install(plugin),
                     StoreDetailOutMsg::Remove(plugin) => Self::Input::Remove(plugin),
                     StoreDetailOutMsg::SetEnabled(plugin, enabled) => {
                         Self::Input::SetEnabled(PluginStoreSignalSource::Detail, plugin, enabled)
@@ -554,9 +538,7 @@ impl AsyncComponent for PluginStore {
             AsyncFactoryVecDeque::builder()
                 .launch(widgets.listbox.clone())
                 .forward(sender.input_sender(), move |msg| match msg {
-                    StoreRowModelOutMsg::Install(appid, row_sender) => {
-                        Self::Input::Install(appid, row_sender)
-                    }
+                    StoreRowModelOutMsg::Install(appid) => Self::Input::Install(appid),
                     StoreRowModelOutMsg::Remove(appid) => Self::Input::Remove(appid),
                     StoreRowModelOutMsg::SetEnabled(plugin, enabled) => {
                         Self::Input::SetEnabled(PluginStoreSignalSource::Row, plugin, enabled)

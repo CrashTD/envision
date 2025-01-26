@@ -36,7 +36,7 @@ pub enum StoreRowModelMsg {
 
 #[derive(Debug)]
 pub enum StoreRowModelOutMsg {
-    Install(Plugin, relm4::Sender<StoreRowModelMsg>),
+    Install(Plugin),
     Remove(Plugin),
     SetEnabled(Plugin, bool),
 }
@@ -104,7 +104,6 @@ impl AsyncFactoryComponent for StoreRowModel {
                             sender
                                 .output(Self::Output::Install(
                                     plugin.clone(),
-                                    sender.input_sender().clone()
                                 ))
                                 .expect(SENDER_IO_ERR_MSG);
                         }
@@ -142,7 +141,6 @@ impl AsyncFactoryComponent for StoreRowModel {
                                 sender
                                     .output(Self::Output::Install(
                                         plugin.clone(),
-                                        sender.input_sender().clone()
                                     ))
                                     .expect(SENDER_IO_ERR_MSG);
                             }
