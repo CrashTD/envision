@@ -248,12 +248,14 @@ impl App {
             .plugins
             .values()
             .filter_map(|cp| {
-                if cp.plugin.plugin_type.launches_directly() && cp.enabled && cp.plugin.validate() {
+                if cp.enabled && cp.plugin.validate() {
                     if let Err(e) = cp.plugin.mark_as_executable() {
                         error!(
                             "failed to mark plugin {} as executable: {e}",
                             cp.plugin.appid
                         );
+                        None
+                    } else if !cp.plugin.plugin_type.launches_directly() {
                         None
                     } else {
                         Some({
