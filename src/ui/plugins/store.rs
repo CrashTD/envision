@@ -56,7 +56,6 @@ pub enum PluginStoreMsg {
     ShowDetails(usize),
     ShowPluginList,
     PresentAddCustomPluginWin,
-    AddPluginToConfig(Plugin),
     AddCustomPlugin(Plugin),
 }
 
@@ -87,6 +86,16 @@ impl PluginStore {
                     .is_some_and(|cp| cp.plugin.version != plugin.version),
             });
         });
+    }
+
+    fn add_plugin_to_config(&mut self, sender: &relm4::AsyncComponentSender<Self>, plugin: Plugin) {
+        self.config_plugins
+            .insert(plugin.appid.clone(), PluginConfig::from(&plugin));
+        sender
+            .output(PluginStoreOutMsg::UpdateConfigPlugins(
+                self.config_plugins.clone(),
+            ))
+            .expect(SENDER_IO_ERR_MSG);
     }
 }
 
@@ -226,17 +235,8 @@ impl AsyncComponent for PluginStore {
                     );
                     return;
                 }
-                sender.input(Self::Input::AddPluginToConfig(plugin));
+                self.add_plugin_to_config(&sender, plugin);
                 sender.input(Self::Input::Refresh);
-            }
-            Self::Input::AddPluginToConfig(plugin) => {
-                self.config_plugins
-                    .insert(plugin.appid.clone(), PluginConfig::from(&plugin));
-                sender
-                    .output(Self::Output::UpdateConfigPlugins(
-                        self.config_plugins.clone(),
-                    ))
-                    .expect(SENDER_IO_ERR_MSG);
             }
             Self::Input::PresentAddCustomPluginWin => {
                 let add_win = AddCustomPluginWin::builder()
@@ -351,19 +351,19 @@ impl AsyncComponent for PluginStore {
                                     );
                                     return;
                                 }
-                                sender.input(Self::Input::AddPluginToConfig(plugin.clone()));
+                                self.add_plugin_to_config(&sender, plugin.clone());
                             }
                         }
                         None => {
                             alert(
-                            "Download failed",
-                            Some(&format!(
-                                "Downloading {} {} failed:\n\nNo executable url provided for this plugin, this is likely a bug!",
-                                plugin.name,
-                                plugin.version.as_ref().unwrap_or(&"(no version)".to_string()))
-                            ),
-                            Some(&self.win.as_ref().unwrap().clone().upcast::<gtk::Window>())
-                        );
+                                "Download failed",
+                                Some(&format!(
+                                    "Downloading {} {} failed:\n\nNo executable url provided for this plugin, this is likely a bug!",
+                                    plugin.name,
+                                    plugin.version.as_ref().unwrap_or(&"(no version)".to_string()))
+                                ),
+                                Some(&self.win.as_ref().unwrap().clone().upcast::<gtk::Window>())
+                            );
                         }
                     };
                     self.refresh_plugin_rows();
