@@ -256,7 +256,7 @@ impl App {
                         );
                         None
                     } else {
-                        Some(format!("'{}'", {
+                        Some({
                             let mut cmd_parts = vec![cp
                                 .plugin
                                 .executable()
@@ -264,8 +264,12 @@ impl App {
                                 .to_string_lossy()
                                 .to_string()];
                             cmd_parts.extend(cp.plugin.args.clone().unwrap_or_default());
-                            cmd_parts.join(" ")
-                        }))
+                            cmd_parts
+                                .iter()
+                                .map(|part| format!("'{part}'"))
+                                .collect::<Vec<String>>()
+                                .join(" ")
+                        })
                     }
                 } else {
                     None
