@@ -155,7 +155,7 @@ impl Worker for InternalJobWorker {
     }
 }
 
-const LAUNCH_OPTS_CMD_PLACEHOLDER: &str = "%command%";
+pub const LAUNCH_OPTS_CMD_PLACEHOLDER: &str = "%command%";
 
 impl InternalJobWorker {
     pub fn xrservice_worker_from_profile(
@@ -193,9 +193,6 @@ impl InternalJobWorker {
         } else {
             launch_opts
         };
-        if !launch_opts.contains(" --no-instructions") {
-            launch_opts.push_str(" --no-instructions");
-        }
         let (command, args) = match launch_opts.is_empty() {
             false => (
                 "sh".into(),

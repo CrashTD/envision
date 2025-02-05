@@ -5,6 +5,7 @@ use crate::{
         prepare_ld_library_path, Profile, ProfileFeatures, ProfileOvrCompatibilityModule,
         XRServiceType,
     },
+    ui::job_worker::internal_worker::LAUNCH_OPTS_CMD_PLACEHOLDER,
 };
 use std::collections::HashMap;
 
@@ -28,6 +29,9 @@ pub fn wivrn_profile() -> Profile {
         features: ProfileFeatures {
             ..Default::default()
         },
+        xrservice_launch_options: format!(
+            "{LAUNCH_OPTS_CMD_PLACEHOLDER} --no-instructions --no-manage-active-runtime"
+        ),
         environment,
         prefix,
         can_be_built: true,
