@@ -3,7 +3,7 @@ use lazy_static::lazy_static;
 fn env_var_descriptions() -> Vec<(&'static str, &'static str)> {
     vec![
         (
-            "XRT_COMPOSITOR_SCALE_PECENTAGE",
+            "XRT_COMPOSITOR_SCALE_PERCENTAGE",
             "Render resolution percentage. A percentage higher than the native resolution (>100) will help with antialiasing and image clarity."
         ),
         (
