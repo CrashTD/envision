@@ -114,7 +114,7 @@ impl AsyncComponent for InstallWivrnBox {
                 add_css_class: "dim-label",
                 set_hexpand: true,
                 set_label: concat!(
-                    "Install the WiVRn APK on your standalong Android headset. ",
+                    "Install the WiVRn APK on your standalone Android headset. ",
                     "You will need to enable Developer Mode on your headset, ",
                     "then press the \"Install WiVRn\" button."
                 ),
