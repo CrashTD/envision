@@ -11,7 +11,22 @@ if [[ -z $PREFIX ]] || [[ -z $CACHE_DIR ]]; then
     exit 1
 fi
 
-ONNX_VER=$(curl -sSL "https://api.github.com/repos/microsoft/onnxruntime/releases/latest" | jq -r .tag_name | tr -d v)
+ONNX_RELEASES=$(curl -sSL "https://api.github.com/repos/microsoft/onnxruntime/releases")
+NUM_RELEASES=$(echo "$ONNX_RELEASES" | jq -r '[ select (.[]!=null) ] | length')
+
+for (( IDX=0; IDX<NUM_RELEASES; IDX++ )); do
+    ASSETS_LEN=$(echo "$ONNX_RELEASES" | jq -r ".[$IDX].assets_url" | xargs -n 1 curl -sSL | jq -r '[ select (.[]!=null) ] | length')
+    if [[ $ASSETS_LEN -gt 0 ]]; then
+        ONNX_VER=$(echo "$ONNX_RELEASES" | jq -r ".[$IDX].tag_name" | tr -d v)
+        break
+    fi
+done
+
+if [[ -z $ONNX_VER ]]; then
+    echo "Failed to find a suitable ONNX Runtime release."
+    exit 1
+fi
+
 SYS_ARCH=$(uname -m)
 
 if [[ $SYS_ARCH == x*64 ]]; then
