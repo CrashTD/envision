@@ -98,7 +98,7 @@ impl Plugin {
                 };
                 let writer =
                     get_writer(&wayvr_conf_dir.join(self.wayvr_config_fragment_filename()))?;
-                serde_yml::to_writer(writer, &config_fragment)?;
+                serde_yaml::to_writer(writer, &config_fragment)?;
             }
         }
         Ok(())

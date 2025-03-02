@@ -43,4 +43,4 @@ zbus = { version = "5.1.1", features = ["tokio"] }
 tracing-subscriber = { version = "0.3.19", features = ["env-filter", "json"] }
 tracing = "0.1.41"
 tracing-appender = "0.2.3"
-serde_yml = "0.0.12"
+serde_yaml = "0.9.34"
