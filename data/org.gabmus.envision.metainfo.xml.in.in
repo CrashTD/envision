@@ -30,6 +30,14 @@
   <url type="bugtracker">@REPO_URL@/issues</url>
   <content_rating type="oars-1.0" />
   <releases>
+    <release version="3.0.1" date="2025-03-02">
+      <description>
+        <p>Fixes</p>
+          <ul>
+            <li>libnotify headers path in wivrn depcheck</li>
+          </ul>
+        </description>
+    </release>
     <release version="3.0.0" date="2025-03-01">
       <description>
         <p>Breaking changes</p>

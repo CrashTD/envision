@@ -1,6 +1,6 @@
 [package]
 name = "envision"
-version = "3.0.0"
+version = "3.0.1"
 edition = "2021"
 authors = [
     "Gabriele Musco <gabmus@disroot.org>",
