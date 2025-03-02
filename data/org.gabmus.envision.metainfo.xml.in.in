@@ -30,6 +30,67 @@
   <url type="bugtracker">@REPO_URL@/issues</url>
   <content_rating type="oars-1.0" />
   <releases>
+    <release version="3.0.0" date="2025-03-01">
+      <description>
+        <p>Breaking changes</p>
+          <ul>
+            <li>plugin store</li>
+          </ul>
+        <p>What's new</p>
+          <ul>
+            <li>Add WayVR Dashboard to the plugin list</li>
+            <li>wivrn: replace pulse dependency with pipewire</li>
+            <li>set wivrn launch options in the default profile</li>
+            <li>support for plugin dependencies and wayvr dashboards (using unreleased api)</li>
+            <li>launch options for plugins</li>
+            <li>homepage and author in plugin details</li>
+            <li>write rolling logs to file</li>
+            <li>add xrizer as an option for openvr compatibility module</li>
+            <li>switch wlx manifest</li>
+            <li>fetch plugins manifests online</li>
+            <li>add telescope to plugin store</li>
+            <li>ask to build profile after editing it</li>
+            <li>add cpu to debug info</li>
+            <li>make env var description selectable</li>
+            <li>press enter on env var entry to add</li>
+            <li>clearer messaging around setcap failures; getcap after setcap</li>
+            <li>version command line option</li>
+            <li>single stage ci with tests, clippy and fmt check all in one</li>
+            <li>use ubuntu for the ci</li>
+          </ul>
+        <p>Fixes</p>
+          <ul>
+            <li>onnxruntime build error when latest release has no artifacts</li>
+            <li>typo in install wivrn box</li>
+            <li>typo in XRT_COMPOSITOR_SCALE_PERCENTAGE</li>
+            <li>add plugin to config via function instead of signal</li>
+            <li>refresh all rows on plugin install (fixes dependencies showing up as not installed)</li>
+            <li>always mark plugin executable as executable</li>
+            <li>wrap single plugin cmd parts in single quotes</li>
+            <li>use correct wayland-protocols package name for open suse</li>
+            <li>typo in plugin schema</li>
+            <li>remove canonicalize from get steamvr bin dir path function</li>
+            <li>actually return steamvr dir in get_steamvr_base_dir</li>
+            <li>canonicalize some steamvr related paths to hopefully resolve symlinks</li>
+            <li>get ovr compatibility module runtime dir from profile ovr compatibility module struct</li>
+            <li>use exists() to verify existance of socket file</li>
+            <li>correct wording of lighthouse calibration</li>
+            <li>get steamvr bin dir by parsing libraryfolders.vdf</li>
+            <li>switch to searching for the xml for deb based distros</li>
+            <li>Include not shared object wayland-protocols</li>
+            <li>add libbsd deps for monado</li>
+            <li>add wayland drm-lease protocols dep for monado</li>
+            <li>use boost dev packages</li>
+            <li>debian package name for gstreamer plugins base</li>
+            <li>print active runtime related informative logs as debug</li>
+          </ul>
+        <p>Other changes</p>
+          <ul>
+            <li>plugins: point to stardust hosted manifest</li>
+            <li>cargo: revert back to serde_yaml over unsound advisory</li>
+          </ul>
+      </description>
+    </release>
     <release version="2.0.1" date="2024-12-11">
       <description>
         <p>Fixes</p>
