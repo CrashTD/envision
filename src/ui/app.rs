@@ -998,7 +998,6 @@ impl AsyncComponent for App {
                     config: config.clone(),
                     selected_profile: selected_profile.clone(),
                     root_win: root.clone().into(),
-                    vkinfo: vkinfo.clone(),
                 })
                 .forward(sender.input_sender(), |message| match message {
                     MainViewOutMsg::DoStartStopXRService => Msg::DoStartStopXRService,

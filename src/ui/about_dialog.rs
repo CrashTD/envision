@@ -81,12 +81,6 @@ pub fn populate_debug_info(dialog: &adw::AboutDialog, vkinfo: Option<&VulkanInfo
                     .map(|i| i.gpu_names.join(", "))
                     .unwrap_or(UNKNOWN.into())
             ),
-            format!(
-                "Monado Vulkan Layers: {}",
-                vkinfo
-                    .map(|i| i.has_monado_vulkan_layers.to_string())
-                    .unwrap_or(UNKNOWN.into())
-            ),
             format!("Detected XR Devices: {}", {
                 let devs = PhysicalXRDevice::from_usb();
                 if devs.is_empty() {

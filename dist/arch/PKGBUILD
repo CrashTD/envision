@@ -33,7 +33,6 @@ makedepends=(
 )
 optdepends=(
     'libudev0-shim: steamvr_lh lighthouse driver support'
-    'monado-vulkan-layers-git: Vulkan layers for NVIDIA users'
 )
 provides=(envision)
 conflicts=(envision)
