@@ -20,7 +20,8 @@ use crate::{
         build_basalt::get_build_basalt_jobs, build_libsurvive::get_build_libsurvive_jobs,
         build_mercury::get_build_mercury_jobs, build_monado::get_build_monado_jobs,
         build_opencomposite::get_build_opencomposite_jobs, build_openhmd::get_build_openhmd_jobs,
-        build_wivrn::get_build_wivrn_jobs, build_xrizer::get_build_xrizer_jobs,
+        build_vapor::get_build_vapor_jobs, build_wivrn::get_build_wivrn_jobs,
+        build_xrizer::get_build_xrizer_jobs,
     },
     config::{Config, PluginConfig},
     constants::APP_NAME,
@@ -532,6 +533,9 @@ impl AsyncComponent for App {
                     }
                     OvrCompatibilityModuleType::Xrizer => {
                         get_build_xrizer_jobs(&profile, clean_build)
+                    }
+                    OvrCompatibilityModuleType::Vapor => {
+                        get_build_vapor_jobs(&profile, clean_build)
                     }
                 });
                 let missing_deps = profile.missing_dependencies();

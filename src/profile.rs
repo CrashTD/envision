@@ -265,6 +265,7 @@ pub enum OvrCompatibilityModuleType {
     #[default]
     Opencomposite,
     Xrizer,
+    Vapor,
 }
 
 impl Display for OvrCompatibilityModuleType {
@@ -272,13 +273,14 @@ impl Display for OvrCompatibilityModuleType {
         f.write_str(match self {
             Self::Opencomposite => "OpenComposite",
             Self::Xrizer => "xrizer",
+            Self::Vapor => "VapoR",
         })
     }
 }
 
 impl OvrCompatibilityModuleType {
     pub fn iter() -> Iter<'static, Self> {
-        [Self::Opencomposite, Self::Xrizer].iter()
+        [Self::Opencomposite, Self::Xrizer, Self::Vapor].iter()
     }
 }
 
@@ -289,6 +291,7 @@ impl FromStr for OvrCompatibilityModuleType {
         match s.to_lowercase().trim() {
             "opencomposite" => Ok(Self::Opencomposite),
             "xrizer" => Ok(Self::Xrizer),
+            "vapor" => Ok(Self::Vapor),
             _ => Err(format!("no match for ovr compatibility module `{s}`")),
         }
     }
@@ -299,7 +302,8 @@ impl From<u32> for OvrCompatibilityModuleType {
         match value {
             0 => Self::Opencomposite,
             1 => Self::Xrizer,
-            _ => panic!("OvrCompatibilityModuleType  index out of bounds"),
+            2 => Self::Vapor,
+            _ => panic!("OvrCompatibilityModuleType index out of bounds"),
         }
     }
 }
@@ -327,7 +331,9 @@ impl ProfileOvrCompatibilityModule {
     /// this should correspond to the build output directory
     pub fn runtime_dir(&self) -> PathBuf {
         match self.mod_type {
-            OvrCompatibilityModuleType::Opencomposite => self.path.join("build"),
+            OvrCompatibilityModuleType::Opencomposite | OvrCompatibilityModuleType::Vapor => {
+                self.path.join("build")
+            }
             OvrCompatibilityModuleType::Xrizer => self.path.join("target/release"),
         }
     }
