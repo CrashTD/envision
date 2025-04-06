@@ -33,7 +33,7 @@ pub fn create_about_dialog() -> adw::AboutDialog {
 const UNKNOWN: &str = "UNKNOWN";
 
 pub fn populate_debug_info(dialog: &adw::AboutDialog, vkinfo: Option<&VulkanInfo>) {
-    if dialog.debug_info().len() > 0 {
+    if !dialog.debug_info().is_empty() {
         return;
     }
     let distro_family = LinuxDistro::get();
@@ -70,7 +70,7 @@ pub fn populate_debug_info(dialog: &adw::AboutDialog, vkinfo: Option<&VulkanInfo
                     .and_then(|s| {
                         s.split("\n")
                             .find(|line| line.starts_with("model name"))
-                            .map(|line| line.split(':').last().map(|s| s.trim().to_string()))
+                            .map(|line| line.split(':').next_back().map(|s| s.trim().to_string()))
                     })
                     .flatten()
                     .unwrap_or(UNKNOWN.into())

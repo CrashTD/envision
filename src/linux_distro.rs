@@ -49,13 +49,13 @@ impl LinuxDistro {
                     Ok(_) if buf.starts_with("PRETTY_NAME=\"") => {
                         return buf
                             .split('=')
-                            .last()
+                            .next_back()
                             .map(|b| b.trim().trim_matches('"').trim().to_string());
                     }
                     Ok(_) if buf.starts_with("NAME=\"") => {
                         name = buf
                             .split('=')
-                            .last()
+                            .next_back()
                             .map(|b| b.trim().trim_matches('"').trim().to_string());
                     }
                     _ => {}
@@ -79,7 +79,7 @@ impl LinuxDistro {
                         {
                             let name = buf
                                 .split('=')
-                                .last()
+                                .next_back()
                                 .unwrap_or_default()
                                 .trim()
                                 .trim_matches('"')
