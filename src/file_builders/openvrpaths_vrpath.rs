@@ -85,6 +85,7 @@ fn build_steam_openvrpaths() -> OpenVrPaths {
 }
 
 pub fn set_current_openvrpaths_to_steam() -> anyhow::Result<()> {
+    // removing readonly flag just in case, remove this line in the future
     set_file_readonly(&get_openvrpaths_vrpath_path(), false)?;
     dump_current_openvrpaths(&build_steam_openvrpaths())?;
     Ok(())
@@ -104,18 +105,17 @@ pub fn build_profile_openvrpaths(profile: &Profile) -> OpenVrPaths {
 
 pub fn set_current_openvrpaths_to_profile(profile: &Profile) -> anyhow::Result<()> {
     let dest = get_openvrpaths_vrpath_path();
+    // removing readonly flag just in case, remove this line in the future
     set_file_readonly(&dest, false)?;
     backup_steam_openvrpaths();
     dump_current_openvrpaths(&build_profile_openvrpaths(profile))?;
-    set_file_readonly(&dest, true)?;
     Ok(())
 }
 
 #[cfg(test)]
 mod tests {
-    use std::path::Path;
-
     use super::{dump_openvrpaths_to_path, get_openvrpaths_from_path, OpenVrPaths};
+    use std::path::Path;
 
     #[test]
     fn can_read_openvrpaths_vrpath_steamvr() {
