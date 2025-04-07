@@ -88,43 +88,54 @@ impl SimpleComponent for BuildWindow {
                         gtk::Label {
                             #[track = "model.changed(BuildWindow::build_status())"]
                             set_markup: match &model.build_status {
-                                BuildStatus::Building => "Build in progress...".to_string(),
-                                BuildStatus::Done => "Build done, you can close this window".to_string(),
+                                BuildStatus::Building => String::default(),
+                                BuildStatus::Done => "Build done, you can close this window".into(),
                                 BuildStatus::Error(code) => {
                                     format!("Build failed: \"{c}\"", c = code)
                                 }
                             }.as_str(),
+                            #[track = "model.changed(BuildWindow::build_status())"]
+                            set_visible: match &model.build_status {
+                                BuildStatus::Building => false,
+                                BuildStatus::Done | BuildStatus::Error(_) => true,
+                            },
                             add_css_class: "title-2",
                             set_wrap: true,
                             set_wrap_mode: gtk::pango::WrapMode::Word,
                             set_justify: gtk::Justification::Center,
                         },
-                        gtk::Button {
-                            #[track = "model.changed(BuildWindow::build_status())"]
-                            set_visible: matches!(&model.build_status, BuildStatus::Building),
-                            add_css_class: "destructive-action",
-                            add_css_class: "circular",
-                            set_icon_name: "window-close-symbolic",
-                            set_tooltip_text: Some("Cancel build"),
-                            connect_clicked[sender] => move |_| {
-                                sender.output(Self::Output::CancelBuild).expect(SENDER_IO_ERR_MSG);
-                            }
-                        },
                     },
                     model.term.container.clone(),
                 },
-                add_bottom_bar: bottom_bar = &gtk::Button {
-                    add_css_class: "pill",
+                add_bottom_bar: bottom_bar = &gtk::Box {
+                    set_orientation: gtk::Orientation::Horizontal,
                     set_halign: gtk::Align::Center,
-                    set_label: "Close",
-                    set_margin_all: 12,
-                    #[track = "model.changed(BuildWindow::can_close())"]
-                    set_sensitive: model.can_close,
-                    connect_clicked[win] => move |_| {
-
-                        win.close();
+                    set_hexpand: true,
+                    set_margin_bottom: 24,
+                    set_spacing: 12,
+                    gtk::Button {
+                        add_css_class: "pill",
+                        set_halign: gtk::Align::Center,
+                        set_label: "Close",
+                        #[track = "model.changed(BuildWindow::can_close())"]
+                        set_visible: model.can_close,
+                        connect_clicked[win] => move |_| {
+                            win.close();
+                        },
                     },
-                }
+                    // this
+                    gtk::Button {
+                        #[track = "model.changed(BuildWindow::build_status())"]
+                        set_visible: matches!(&model.build_status, BuildStatus::Building),
+                        add_css_class: "destructive-action",
+                        add_css_class: "pill",
+                        set_label: "Cancel build",
+                        connect_clicked[sender] => move |_| {
+                            sender.output(Self::Output::CancelBuild).expect(SENDER_IO_ERR_MSG);
+                        }
+                    },
+                    // ^^^
+                },
             }
         }
     }
