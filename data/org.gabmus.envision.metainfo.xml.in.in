@@ -30,6 +30,26 @@
   <url type="bugtracker">@REPO_URL@/issues</url>
   <content_rating type="oars-1.0" />
   <releases>
+    <release version="3.1.0" date="2025-04-08">
+      <description>
+        <p>What's new</p>
+          <ul>
+            <li>don&#x27;t set openvrpaths as read only during profile startup</li>
+            <li>small design changes to build window ui</li>
+            <li>add support for vapor openvr compatibility module</li>
+            <li>remove monado vulkan layers check for nvidia</li>
+          </ul>
+        <p>Fixes</p>
+          <ul>
+            <li>disable and blacklist wayvr dashboard plugin</li>
+            <li>monado dependencies: use wayland-protocols-devel on Fedora</li>
+          </ul>
+        <p>Other changes</p>
+          <ul>
+            <li>clippy</li>
+          </ul>
+      </description>
+    </release>
     <release version="3.0.1" date="2025-03-02">
       <description>
         <p>Fixes</p>
