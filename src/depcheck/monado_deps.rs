@@ -88,6 +88,30 @@ fn monado_deps() -> Vec<Dependency> {
         },
         dep_libudev(),
         Dependency {
+            name: "libusb".into(),
+            dep_type: DepType::SharedObject,
+            filename: "libusb-1.0.so".into(),
+            packages: HashMap::from([
+                (LinuxDistro::Arch, "libusb".into()),
+                (LinuxDistro::Debian, "libusb-1.0-0".into()),
+                (LinuxDistro::Fedora, "libusb1".into()),
+                (LinuxDistro::Gentoo, "dev-libs/libusb".into()),
+                (LinuxDistro::Suse, "libusb-1_0".into()),
+            ]),
+        },
+        Dependency {
+            name: "libusb-dev".into(),
+            dep_type: DepType::Include,
+            filename: "libusb-1.0/libusb.h".into(),
+            packages: HashMap::from([
+                (LinuxDistro::Arch, "libusb".into()),
+                (LinuxDistro::Debian, "libusb-1.0-0-dev".into()),
+                (LinuxDistro::Fedora, "libusb1-devel".into()),
+                (LinuxDistro::Gentoo, "dev-libs/libusb".into()),
+                (LinuxDistro::Suse, "libusb-1_0-devel".into()),
+            ]),
+        },
+        Dependency {
             name: "mesa-common-dev".into(),
             dep_type: DepType::Include,
             filename: "GL/internal/dri_interface.h".into(),
