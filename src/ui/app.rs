@@ -249,10 +249,6 @@ impl App {
             .plugins
             .values()
             .filter_map(|cp| {
-                // disable potentially unsafe wayvr_dashboard
-                if cp.plugin.appid.contains("wayvr_dashboard") {
-                    return None;
-                }
                 if cp.enabled && cp.plugin.validate() {
                     if let Err(e) = cp.plugin.mark_as_executable() {
                         error!(

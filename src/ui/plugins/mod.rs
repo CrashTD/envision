@@ -163,10 +163,10 @@ impl Plugin {
 
 /// urls to manifest json files representing plugins.
 /// each manifest should be json and the link should always point to the latest version
-const MANIFESTS: [&str;2] = [
+const MANIFESTS: [&str;3] = [
     "https://github.com/galister/wlx-overlay-s/raw/refs/heads/meta/com.github.galister.wlx-overlay-s.json",
     "https://github.com/StardustXR/telescope/raw/refs/heads/main/envision/org.stardustxr.telescope.json",
-    // wayvr dashboard potentially unsafe
+    "https://github.com/olekolek1000/wayvr-dashboard/raw/refs/heads/meta/dev.oo8.wayvr_dashboard.json",
 ];
 
 pub async fn refresh_plugins() -> anyhow::Result<Vec<anyhow::Result<Plugin>>> {
