@@ -40,7 +40,6 @@ pub fn get_build_basalt_jobs(profile: &Profile, clean_build: bool) -> VecDeque<W
         env: Some({
             let mut cmake_env: HashMap<String, String> = HashMap::new();
             for (k, v) in [
-                ("CMAKE_BUILD_PARALLEL_LEVEL", "2"),
                 ("CMAKE_BUILD_TYPE", "RelWithDebInfo"),
                 ("BUILD_TESTS", "off"),
             ] {
