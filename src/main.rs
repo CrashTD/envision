@@ -11,9 +11,14 @@ use relm4::{
     gtk::{self, gdk, gio, glib, prelude::*},
     MessageBroker, RelmApp,
 };
-use std::env;
+use std::{
+    env,
+    fs::{read_dir, remove_file},
+    os::unix::fs::MetadataExt,
+    path::{Path, PathBuf},
+};
 use steam_linux_runtime_injector::restore_runtime_entrypoint;
-use tracing::warn;
+use tracing::{error, warn};
 use tracing_subscriber::{
     filter::LevelFilter, layer::SubscriberExt, util::SubscriberInitExt, EnvFilter, Layer,
 };
@@ -66,11 +71,55 @@ fn restore_steam_xr_files() {
     restore_runtime_entrypoint();
 }
 
+const LOGS_MAX_SIZE_BYTES: u64 = 1000000000; // 1GB
+
+fn remove_old_logs(dir: &Path, log_files: Option<Vec<PathBuf>>) -> anyhow::Result<()> {
+    let log_files: Vec<PathBuf> = log_files
+        .map::<anyhow::Result<Vec<PathBuf>>, _>(Ok)
+        .unwrap_or_else(|| {
+            let mut files: Vec<PathBuf> = read_dir(dir)?
+                .filter_map(|de| {
+                    let p = de.ok()?.path();
+                    if p.is_file() && !p.is_symlink() {
+                        Some(p)
+                    } else {
+                        None
+                    }
+                })
+                .collect();
+            files.sort_unstable();
+            Ok(files)
+        })?;
+    let total_size = log_files
+        .iter()
+        .filter_map(|p| Some(p.metadata().ok()?.size()))
+        .reduce(u64::saturating_add)
+        .unwrap_or(0);
+    // if size is under threshold, finish
+    if total_size < LOGS_MAX_SIZE_BYTES {
+        return Ok(());
+    }
+    // keep a minimum of 3 logs
+    if log_files.len() <= 3 {
+        return Ok(());
+    }
+
+    remove_file(log_files.first().ok_or_else(||
+        anyhow::Error::msg(
+            "Could not get first item in log files list, but they should be more than 3! This is a bug!"
+        )
+    )?)?;
+
+    remove_old_logs(dir, Some(log_files))
+}
+
 fn main() -> Result<()> {
     if env::var("USER").unwrap_or_else(|_| env::var("USERNAME").unwrap_or_default()) == "root" {
         panic!("{APP_NAME} cannot run as root");
     }
     restore_steam_xr_files();
+    // deferring error logging for this since tracing isn't initialized yet
+    let old_logs_removal_res = remove_old_logs(&get_logs_dir(), None);
 
     let rolling_log_writer = tracing_appender::rolling::daily(get_logs_dir(), "log");
     let (non_blocking_appender, _appender_guard) =
@@ -89,6 +138,10 @@ fn main() -> Result<()> {
                 .with_writer(non_blocking_appender),
         )
         .init();
+
+    if let Err(e) = old_logs_removal_res {
+        error!("Failed to remove old log files: {e}");
+    }
 
     // Prepare i18n
     gettextrs::setlocale(LocaleCategory::LcAll, "");
