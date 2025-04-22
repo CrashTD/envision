@@ -30,6 +30,15 @@
   <url type="bugtracker">@REPO_URL@/issues</url>
   <content_rating type="oars-1.0" />
   <releases>
+    <release version="3.1.1" date="2025-04-22">
+      <description>
+        <p>Fixes</p>
+          <ul>
+            <li>add libusb and libusb-dev deps</li>
+            <li>Revert &quot;disable and blacklist wayvr dashboard plugin&quot;</li>
+          </ul>
+        </description>
+    </release>
     <release version="3.1.0" date="2025-04-08">
       <description>
         <p>What's new</p>
