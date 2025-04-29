@@ -113,7 +113,8 @@ pub enum Msg {
     StartWithDebug,
     RestartXRService,
     ProfileSelected(Profile),
-    DeleteProfile,
+    /// bool param: delete files
+    DeleteProfile(bool),
     SaveProfile(Profile),
     RunSetCap,
     OpenLibsurviveSetup,
@@ -658,9 +659,16 @@ impl AsyncComponent for App {
                     w.stop();
                 }
             }
-            Msg::DeleteProfile => {
+            Msg::DeleteProfile(delete_files) => {
                 let todel = self.get_selected_profile();
                 if todel.editable {
+                    if delete_files {
+                        for res in todel.delete_files() {
+                            if let Err(e) = res {
+                                error!("Error deleting profile directory: {e}");
+                            }
+                        }
+                    }
                     self.config.user_profiles.retain(|p| p.uuid != todel.uuid);
                     self.config.save();
                     self.profiles = self.config.profiles();
@@ -1007,7 +1015,7 @@ impl AsyncComponent for App {
                     MainViewOutMsg::DoStartStopXRService => Msg::DoStartStopXRService,
                     MainViewOutMsg::RestartXRService => Msg::RestartXRService,
                     MainViewOutMsg::ProfileSelected(uuid) => Msg::ProfileSelected(uuid),
-                    MainViewOutMsg::DeleteProfile => Msg::DeleteProfile,
+                    MainViewOutMsg::DeleteProfile(delete_files) => Msg::DeleteProfile(delete_files),
                     MainViewOutMsg::SaveProfile(p) => Msg::SaveProfile(p),
                     MainViewOutMsg::OpenLibsurviveSetup => Msg::OpenLibsurviveSetup,
                     MainViewOutMsg::BuildProfile(clean) => Msg::BuildProfile(clean),

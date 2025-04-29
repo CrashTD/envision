@@ -14,7 +14,7 @@ use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
     fmt::Display,
-    fs::File,
+    fs::{remove_dir_all, File},
     io::BufReader,
     path::{Path, PathBuf},
     slice::Iter,
@@ -448,6 +448,29 @@ impl Default for Profile {
 impl Profile {
     fn default_prefix_path(uuid: &str) -> PathBuf {
         get_data_dir().join("prefixes").join(uuid)
+    }
+
+    /// deletes files and folders associated to this profile (mostly repo clones)
+    pub fn delete_files(&self) -> Vec<std::io::Result<()>> {
+        [
+            Some(&self.xrservice_path),
+            Some(&self.ovr_comp.path),
+            self.features.libsurvive.path.as_ref(),
+            self.features.basalt.path.as_ref(),
+            self.features.openhmd.path.as_ref(),
+        ]
+        .iter()
+        .map(|dir| match dir {
+            Some(dir) => {
+                if dir.try_exists().unwrap_or_default() {
+                    remove_dir_all(dir)
+                } else {
+                    Ok(())
+                }
+            }
+            None => Ok(()),
+        })
+        .collect()
     }
 
     pub fn xr_runtime_json_env_var(&self) -> String {

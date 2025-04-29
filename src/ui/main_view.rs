@@ -112,7 +112,8 @@ pub enum MainViewOutMsg {
     DoStartStopXRService,
     RestartXRService,
     ProfileSelected(Profile),
-    DeleteProfile,
+    /// bool param: delete files
+    DeleteProfile(bool),
     SaveProfile(Profile),
     OpenLibsurviveSetup,
     /// params: clean
@@ -931,6 +932,13 @@ impl AsyncComponent for MainView {
 
         let profile_delete_confirm_dialog = adw::AlertDialog::builder()
             .heading("Are you sure you want to delete this profile?")
+            .extra_child(
+                &gtk::CheckButton::builder()
+                    .label("Delete all files and folders associated with profile")
+                    .halign(gtk::Align::Center)
+                    .hexpand(true)
+                    .build(),
+            )
             .build();
         profile_delete_confirm_dialog.add_response("no", "_No");
         profile_delete_confirm_dialog.add_response("yes", "_Yes");
@@ -942,10 +950,19 @@ impl AsyncComponent for MainView {
             clone!(
                 #[strong]
                 sender,
-                move |_, res| {
+                move |dialog, res| {
+                    let delete_files_checkbox = dialog
+                        .extra_child()
+                        .and_then(|child| child.downcast::<gtk::CheckButton>().ok());
+                    let delete_files = delete_files_checkbox
+                        .as_ref()
+                        .is_some_and(|c| c.is_active());
+                    if let Some(check) = delete_files_checkbox {
+                        check.set_active(false);
+                    }
                     if res == "yes" {
                         sender
-                            .output(Self::Output::DeleteProfile)
+                            .output(Self::Output::DeleteProfile(delete_files))
                             .expect("Sender output failed");
                     }
                 }
