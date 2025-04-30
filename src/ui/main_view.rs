@@ -21,6 +21,7 @@ use crate::{
     paths::{get_data_dir, get_home_dir},
     profile::{LighthouseDriver, Profile, XRServiceType},
     stateless_action,
+    ui::app::ThemeManagerAction,
     util::{
         file_utils::{get_writer, mount_has_nosuid},
         steamvr_utils::chaperone_info_exists,
@@ -159,6 +160,7 @@ impl AsyncComponent for MainView {
                 "Configure _WiVRn" => ConfigureWivrnAction,
             },
             section! {
+                "Change _Theme" => ThemeManagerAction,
                 "_About" => AboutAction,
             },
         },

@@ -45,6 +45,10 @@ const fn default_win_size() -> [i32; 2] {
     DEFAULT_WIN_SIZE
 }
 
+fn default_theme_name() -> String {
+    "Follow system".into()
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Config {
     pub selected_profile_uuid: String,
@@ -54,6 +58,8 @@ pub struct Config {
     pub win_size: [i32; 2],
     #[serde(default)]
     pub plugins: HashMap<String, PluginConfig>,
+    #[serde(default = "default_theme_name")]
+    pub theme_name: String,
 }
 
 impl Default for Config {
@@ -65,6 +71,7 @@ impl Default for Config {
             user_profiles: Vec::default(),
             win_size: DEFAULT_WIN_SIZE,
             plugins: HashMap::default(),
+            theme_name: default_theme_name(),
         }
     }
 }

@@ -51,6 +51,7 @@ use crate::{
     xr_devices::XRDevice,
 };
 use adw::{prelude::*, ResponseAppearance};
+use delicious_adwaita::{theme::Theme, ThemeEngine};
 use gtk::glib::{self, clone};
 use notify_rust::NotificationHandle;
 use relm4::{
@@ -96,6 +97,8 @@ pub struct App {
 
     inhibit_fail_notif: Option<NotificationHandle>,
     pluginstore: Option<AsyncController<PluginStore>>,
+
+    theme_engine: ThemeEngine,
 }
 
 #[derive(Debug)]
@@ -130,6 +133,8 @@ pub enum Msg {
     WivrnCheckPairMode,
     OpenPluginStore,
     UpdateConfigPlugins(HashMap<String, PluginConfig>),
+    ShowThemeManager,
+    SaveThemeConfig,
     NoOp,
 }
 
@@ -367,7 +372,7 @@ impl AsyncComponent for App {
                     set_content: Some(&adw::NavigationPage::new(model.debug_view.widget(), "Debug View")),
                     set_show_content: false,
                     set_collapsed: !model.config.debug_view_enabled,
-                }
+                },
             },
             connect_close_request[sender] => move |win| {
                 sender.input(Msg::SaveWinSize(win.width(), win.height()));
@@ -391,6 +396,27 @@ impl AsyncComponent for App {
     ) {
         match message {
             Msg::NoOp => {}
+            Msg::ShowThemeManager => {
+                let dialog = self
+                    .theme_engine
+                    .theme_chooser_dialog(Theme::default_themes().as_ref());
+                dialog.set_content_height(2000);
+                dialog.present(Some(&self.app_win));
+                dialog.connect_closed(clone!(
+                    #[strong]
+                    sender,
+                    move |_| {
+                        sender.input(Msg::SaveThemeConfig);
+                    }
+                ));
+            }
+            Msg::SaveThemeConfig => {
+                let name = self.theme_engine.current_theme_name();
+                if self.config.theme_name != name {
+                    self.config.theme_name = name;
+                    self.config.save();
+                }
+            }
             Msg::OnServiceLog(rows) => {
                 if !rows.is_empty() {
                     self.debug_view
@@ -974,6 +1000,17 @@ impl AsyncComponent for App {
                 }
             )
         );
+        stateless_action!(
+            actions,
+            ThemeManagerAction,
+            clone!(
+                #[strong]
+                sender,
+                move |_| {
+                    sender.input(Msg::ShowThemeManager);
+                }
+            )
+        );
         // this bypasses the macro because I need the underlying gio action
         // to enable/disable it in update()
         let configure_wivrn_action = {
@@ -1042,6 +1079,17 @@ impl AsyncComponent for App {
                 .detach(),
             split_view: None,
             setcap_confirm_dialog,
+            theme_engine: ThemeEngine::new_with_theme(&{
+                if config.theme_name == "Follow system" {
+                    Theme::default()
+                } else {
+                    Theme::default_themes()
+                        .into_iter()
+                        .find(|t| t.name == config.theme_name)
+                        .unwrap_or_default()
+                }
+            })
+            .unwrap(),
             config,
             profiles,
             xrservice_worker: None,
@@ -1130,6 +1178,7 @@ new_stateless_action!(pub QuitAction, AppActionGroup, "quit");
 new_stateful_action!(pub DebugViewToggleAction, AppActionGroup, "debugviewtoggle", (), bool);
 new_stateless_action!(pub ConfigureWivrnAction, AppActionGroup, "configurewivrn");
 new_stateless_action!(pub PluginStoreAction, AppActionGroup, "store");
+new_stateless_action!(pub ThemeManagerAction, AppActionGroup, "thememanager");
 
 new_stateless_action!(pub DebugOpenDataAction, AppActionGroup, "debugopendata");
 new_stateless_action!(pub DebugOpenPrefixAction, AppActionGroup, "debugopenprefix");
