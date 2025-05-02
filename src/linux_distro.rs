@@ -150,7 +150,33 @@ impl LinuxDistro {
             Self::Alpine => format!("sudo apk add {}", packages.join(" ")),
             Self::Debian => format!("sudo apt install {}", packages.join(" ")),
             Self::Gentoo => format!("sudo emerge -av {}", packages.join(" ")),
-            Self::Suse => format!("sudo zypper install {}", packages.join(" ")),
+            Self::Suse => {
+                let mut opi_pkgs = Vec::new();
+                let mut zypper_pkgs = Vec::new();
+                for pkg in packages {
+                    if ["OpenXR-SDK-devel"].contains(&pkg.as_str()) {
+                        opi_pkgs.push(pkg.clone());
+                    } else {
+                        zypper_pkgs.push(pkg.clone());
+                    }
+                }
+                [
+                    if opi_pkgs.is_empty() {
+                        None
+                    } else {
+                        Some(format!("opi {}", opi_pkgs.join(" ")))
+                    },
+                    if zypper_pkgs.is_empty() {
+                        None
+                    } else {
+                        Some(format!("sudo zypper install {}", zypper_pkgs.join(" ")))
+                    },
+                ]
+                .iter()
+                .filter_map(|c| c.clone())
+                .collect::<Vec<String>>()
+                .join(" && ")
+            }
             Self::Fedora => {
                 let mut install_rpmfusion_cmd: Option<String> = None;
                 let mut swap_ffmpeg_cmd: Option<String> = None;
@@ -190,9 +216,9 @@ impl LinuxDistro {
 
 #[cfg(test)]
 mod tests {
-    use std::path::Path;
-
     use super::LinuxDistro;
+    use crate::depcheck::common::{dep_openxr, dep_pkexec, dep_vulkan_icd_loader};
+    use std::path::Path;
 
     #[test]
     fn can_detect_arch_linux_from_etc_os_release() {
@@ -201,6 +227,36 @@ mod tests {
                 "./test/files/archlinux-os-release"
             )),
             Some(LinuxDistro::Arch)
+        )
+    }
+
+    #[test]
+    fn can_account_for_opensuse_opi_packages() {
+        assert_eq!(
+            LinuxDistro::Suse
+                .install_command(
+                    &[dep_openxr(), dep_vulkan_icd_loader()]
+                        .iter()
+                        .map(|dep| dep.package_name_for_distro(Some(&LinuxDistro::Suse)))
+                        .collect::<Vec<String>>()
+                )
+                .as_str(),
+            "opi OpenXR-SDK-devel && sudo zypper install vulkan-devel"
+        )
+    }
+
+    #[test]
+    fn opensuse_opi_does_not_interfere_if_not_needed() {
+        assert_eq!(
+            LinuxDistro::Suse
+                .install_command(
+                    &[dep_pkexec(), dep_vulkan_icd_loader()]
+                        .iter()
+                        .map(|dep| dep.package_name_for_distro(Some(&LinuxDistro::Suse)))
+                        .collect::<Vec<String>>()
+                )
+                .as_str(),
+            "sudo zypper install polkit vulkan-devel"
         )
     }
 }
