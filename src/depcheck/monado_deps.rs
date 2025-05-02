@@ -96,7 +96,7 @@ fn monado_deps() -> Vec<Dependency> {
                 (LinuxDistro::Debian, "libusb-1.0-0".into()),
                 (LinuxDistro::Fedora, "libusb1".into()),
                 (LinuxDistro::Gentoo, "dev-libs/libusb".into()),
-                (LinuxDistro::Suse, "libusb-1_0".into()),
+                (LinuxDistro::Suse, "libusb-1_0-0".into()),
             ]),
         },
         Dependency {
