@@ -83,7 +83,7 @@ fn monado_deps() -> Vec<Dependency> {
                 (LinuxDistro::Debian, "libsdl2-dev".into()),
                 (LinuxDistro::Fedora, "SDL2-devel".into()),
                 (LinuxDistro::Gentoo, "media-libs/libsdl2".into()),
-                (LinuxDistro::Suse, "SDL2-devel".into()),
+                (LinuxDistro::Suse, "sdl2-compat-devel".into()),
             ]),
         },
         dep_libudev(),
