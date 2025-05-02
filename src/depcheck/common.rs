@@ -303,3 +303,19 @@ pub fn dep_adb() -> Dependency {
         ]),
     }
 }
+
+pub fn dep_getcap_setcap() -> Dependency {
+    Dependency {
+        name: "libcap".into(),
+        dep_type: DepType::Executable,
+        filename: "setcap".into(),
+        packages: HashMap::from([
+            (LinuxDistro::Arch, "libcap".into()),
+            (LinuxDistro::Debian, "libcap2-bin".into()),
+            (LinuxDistro::Fedora, "libcap".into()),
+            (LinuxDistro::Alpine, "libcap".into()),
+            (LinuxDistro::Gentoo, "sys-libs/libcap".into()),
+            (LinuxDistro::Suse, "libcap-progs".into()),
+        ]),
+    }
+}

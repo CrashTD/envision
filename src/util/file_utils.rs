@@ -1,4 +1,4 @@
-use crate::{async_process::async_process, profile::Profile};
+use crate::{async_process::async_process, depcheck::common::dep_getcap_setcap, profile::Profile};
 use anyhow::bail;
 use nix::{
     errno::Errno,
@@ -79,9 +79,29 @@ pub fn set_file_readonly(path: &Path, readonly: bool) -> anyhow::Result<()> {
     Ok(fs::set_permissions(path, perms)?)
 }
 
+pub fn setcap_executable() -> Option<String> {
+    if dep_getcap_setcap().check() {
+        Some("setcap".into())
+    } else if Path::new("/sbin/setcap").try_exists().unwrap_or_default() {
+        Some("/sbin/setcap".into())
+    } else {
+        None
+    }
+}
+
+pub fn getcap_executable() -> Option<String> {
+    if dep_getcap_setcap().check() {
+        Some("getcap".into())
+    } else if Path::new("/sbin/getcap").try_exists().unwrap_or_default() {
+        Some("/sbin/getcap".into())
+    } else {
+        None
+    }
+}
+
 pub fn setcap_cap_sys_nice_eip_cmd(profile: &Profile) -> Vec<String> {
     vec![
-        "setcap".into(),
+        setcap_executable().unwrap_or("setcap".into()),
         "CAP_SYS_NICE=eip".into(),
         profile
             .prefix
@@ -93,24 +113,29 @@ pub fn setcap_cap_sys_nice_eip_cmd(profile: &Profile) -> Vec<String> {
 
 pub async fn verify_cap_sys_nice_eip(profile: &Profile) -> bool {
     let xrservice_binary = profile.xrservice_binary().to_string_lossy().to_string();
-    match async_process("getcap", Some(&[&xrservice_binary]), None).await {
-        Err(e) => {
-            error!("failed to run `getcap {xrservice_binary}`: {e:?}");
-            false
-        }
-        Ok(out) => {
-            debug!("getcap {xrservice_binary} stdout: {}", out.stdout);
-            debug!("getcap {xrservice_binary} stderr: {}", out.stderr);
-            if out.exit_code != 0 {
-                error!(
-                    "command `getcap {xrservice_binary}` failed with status code {}",
-                    out.exit_code
-                );
+    if let Some(getcap_exec) = getcap_executable() {
+        match async_process(&getcap_exec, Some(&[&xrservice_binary]), None).await {
+            Err(e) => {
+                error!("failed to run `getcap {xrservice_binary}`: {e:?}");
                 false
-            } else {
-                out.stdout.to_lowercase().contains("cap_sys_nice=eip")
+            }
+            Ok(out) => {
+                debug!("getcap {xrservice_binary} stdout: {}", out.stdout);
+                debug!("getcap {xrservice_binary} stderr: {}", out.stderr);
+                if out.exit_code != 0 {
+                    error!(
+                        "command `getcap {xrservice_binary}` failed with status code {}",
+                        out.exit_code
+                    );
+                    false
+                } else {
+                    out.stdout.to_lowercase().contains("cap_sys_nice=eip")
+                }
             }
         }
+    } else {
+        error!("getcap executable does not exist");
+        false
     }
 }
 
