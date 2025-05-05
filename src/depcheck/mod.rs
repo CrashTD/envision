@@ -6,6 +6,7 @@ pub mod mercury_deps;
 pub mod monado_deps;
 pub mod openhmd_deps;
 pub mod wivrn_deps;
+pub mod xrizer_deps;
 
 use crate::linux_distro::LinuxDistro;
 use std::{collections::HashMap, env, fmt::Display, path::Path};

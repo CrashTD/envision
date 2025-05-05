@@ -2,7 +2,8 @@ use crate::{
     depcheck::{
         basalt_deps::get_missing_basalt_deps, libsurvive_deps::get_missing_libsurvive_deps,
         mercury_deps::get_missing_mercury_deps, monado_deps::get_missing_monado_deps,
-        openhmd_deps::get_missing_openhmd_deps, wivrn_deps::get_missing_wivrn_deps, Dependency,
+        openhmd_deps::get_missing_openhmd_deps, wivrn_deps::get_missing_wivrn_deps,
+        xrizer_deps::get_missing_xrizer_deps, Dependency,
     },
     file_builders::active_runtime_json::ActiveRuntime,
     paths::{get_data_dir, BWRAP_SYSTEM_PREFIX, SYSTEM_PREFIX},
@@ -281,6 +282,15 @@ impl Display for OvrCompatibilityModuleType {
 impl OvrCompatibilityModuleType {
     pub fn iter() -> Iter<'static, Self> {
         [Self::Opencomposite, Self::Xrizer, Self::Vapor].iter()
+    }
+
+    pub fn get_missing_deps(&self) -> Vec<Dependency> {
+        match self {
+            OvrCompatibilityModuleType::Xrizer => get_missing_xrizer_deps(),
+            OvrCompatibilityModuleType::Opencomposite | OvrCompatibilityModuleType::Vapor => {
+                Vec::default()
+            }
+        }
     }
 }
 
@@ -737,7 +747,7 @@ impl Profile {
             if self.features.mercury_enabled {
                 missing_deps.extend(get_missing_mercury_deps());
             }
-            // no listed deps for opencomp
+            missing_deps.extend(self.ovr_comp.mod_type.get_missing_deps());
         }
         missing_deps.sort_unstable();
         missing_deps.dedup(); // dedup only works if sorted, hence the above
