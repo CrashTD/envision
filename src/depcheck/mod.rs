@@ -136,6 +136,13 @@ fn shared_obj_paths() -> Vec<String> {
         "/usr/local/lib64".into(),
         "/usr/lib/x86_64-linux-gnu".into(),
         "/usr/lib/aarch64-linux-gnu".into(),
+        // Gentoo puts libclang in /usr/lib/llvm/[llvm major version]/lib64.
+        "/usr/lib/llvm/15/lib64".into(),
+        "/usr/lib/llvm/16/lib64".into(),
+        "/usr/lib/llvm/17/lib64".into(),
+        "/usr/lib/llvm/18/lib64".into(),
+        "/usr/lib/llvm/19/lib64".into(),
+        "/usr/lib/llvm/20/lib64".into(),
         "/lib/x86_64-linux-gnu".into(),
         "/lib/aarch64-linux-gnu".into(),
         "/app/lib".into(),
