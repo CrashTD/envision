@@ -4,7 +4,7 @@ use super::{
         dep_libudev, dep_libx11, dep_libxcb, dep_ninja, dep_openxr, dep_vulkan_headers,
         dep_vulkan_icd_loader,
     },
-    DepType, Dependency, DependencyCheckResult,
+    DepType, DepcheckResultGetMissing, Dependency, DependencyCheckResult,
 };
 use crate::{
     depcheck::common::{dep_libgl, dep_libxrandr},
@@ -270,9 +270,5 @@ pub fn check_wivrn_deps() -> Vec<DependencyCheckResult> {
 }
 
 pub fn get_missing_wivrn_deps() -> Vec<Dependency> {
-    check_wivrn_deps()
-        .iter()
-        .filter(|res| !res.found)
-        .map(|res| res.dependency.clone())
-        .collect()
+    check_wivrn_deps().filter_missing_deps()
 }

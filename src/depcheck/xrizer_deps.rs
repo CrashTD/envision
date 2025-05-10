@@ -1,4 +1,4 @@
-use super::{DepType, Dependency, DependencyCheckResult};
+use super::{DepType, DepcheckResultGetMissing, Dependency, DependencyCheckResult};
 use crate::linux_distro::LinuxDistro;
 use std::collections::HashMap;
 
@@ -49,9 +49,5 @@ pub fn check_xrizer_deps() -> Vec<DependencyCheckResult> {
 }
 
 pub fn get_missing_xrizer_deps() -> Vec<Dependency> {
-    check_xrizer_deps()
-        .iter()
-        .filter(|res| !res.found)
-        .map(|res| res.dependency.clone())
-        .collect()
+    check_xrizer_deps().filter_missing_deps()
 }

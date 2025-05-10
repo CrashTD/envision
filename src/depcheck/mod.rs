@@ -109,6 +109,24 @@ impl Display for DependencyCheckResult {
     }
 }
 
+pub trait DepcheckResultGetMissing {
+    fn filter_missing_deps(self) -> Vec<Dependency>;
+}
+
+impl DepcheckResultGetMissing for Vec<DependencyCheckResult> {
+    fn filter_missing_deps(self) -> Vec<Dependency> {
+        self.into_iter()
+            .filter_map(|res| {
+                if !res.found {
+                    Some(res.dependency)
+                } else {
+                    None
+                }
+            })
+            .collect()
+    }
+}
+
 fn shared_obj_paths() -> Vec<String> {
     vec![
         "/lib".into(),

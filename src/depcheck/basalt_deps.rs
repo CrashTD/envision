@@ -1,7 +1,7 @@
 use super::{
     boost_deps::boost_deps,
     common::{dep_cmake, dep_eigen, dep_gpp, dep_libgl, dep_ninja, dep_opencv},
-    DepType, Dependency, DependencyCheckResult,
+    DepType, DepcheckResultGetMissing, Dependency, DependencyCheckResult,
 };
 use crate::linux_distro::LinuxDistro;
 use std::collections::HashMap;
@@ -181,9 +181,5 @@ pub fn check_basalt_deps() -> Vec<DependencyCheckResult> {
 }
 
 pub fn get_missing_basalt_deps() -> Vec<Dependency> {
-    check_basalt_deps()
-        .iter()
-        .filter(|res| !res.found)
-        .map(|res| res.dependency.clone())
-        .collect()
+    check_basalt_deps().filter_missing_deps()
 }

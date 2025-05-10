@@ -1,6 +1,6 @@
 use super::{
     common::{dep_cmake, dep_eigen, dep_gcc, dep_git, dep_gpp, dep_ninja},
-    Dependency, DependencyCheckResult,
+    DepcheckResultGetMissing, Dependency, DependencyCheckResult,
 };
 
 fn libsurvive_deps() -> Vec<Dependency> {
@@ -19,9 +19,5 @@ pub fn check_libsurvive_deps() -> Vec<DependencyCheckResult> {
 }
 
 pub fn get_missing_libsurvive_deps() -> Vec<Dependency> {
-    check_libsurvive_deps()
-        .iter()
-        .filter(|res| !res.found)
-        .map(|res| res.dependency.clone())
-        .collect()
+    check_libsurvive_deps().filter_missing_deps()
 }

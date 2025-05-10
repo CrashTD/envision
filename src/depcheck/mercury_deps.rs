@@ -1,4 +1,6 @@
-use super::{common::dep_opencv, DepType, Dependency, DependencyCheckResult};
+use super::{
+    common::dep_opencv, DepType, DepcheckResultGetMissing, Dependency, DependencyCheckResult,
+};
 use crate::linux_distro::LinuxDistro;
 use std::collections::HashMap;
 
@@ -39,9 +41,5 @@ pub fn check_mercury_deps() -> Vec<DependencyCheckResult> {
 }
 
 pub fn get_missing_mercury_deps() -> Vec<Dependency> {
-    check_mercury_deps()
-        .iter()
-        .filter(|res| !res.found)
-        .map(|res| res.dependency.clone())
-        .collect()
+    check_mercury_deps().filter_missing_deps()
 }

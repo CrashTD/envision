@@ -1,6 +1,6 @@
 use super::{
     common::{dep_gcc, dep_git, dep_gpp, dep_ninja},
-    Dependency, DependencyCheckResult,
+    DepcheckResultGetMissing, Dependency, DependencyCheckResult,
 };
 use crate::linux_distro::LinuxDistro;
 use std::collections::HashMap;
@@ -31,9 +31,5 @@ pub fn check_openhmd_deps() -> Vec<DependencyCheckResult> {
 }
 
 pub fn get_missing_openhmd_deps() -> Vec<Dependency> {
-    check_openhmd_deps()
-        .iter()
-        .filter(|res| !res.found)
-        .map(|res| res.dependency.clone())
-        .collect()
+    check_openhmd_deps().filter_missing_deps()
 }

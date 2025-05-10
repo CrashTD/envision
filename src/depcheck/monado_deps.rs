@@ -4,7 +4,7 @@ use super::{
         dep_libgl, dep_libudev, dep_libx11, dep_libxcb, dep_ninja, dep_openxr, dep_vulkan_headers,
         dep_vulkan_icd_loader,
     },
-    DepType, Dependency, DependencyCheckResult,
+    DepType, DepcheckResultGetMissing, Dependency, DependencyCheckResult,
 };
 use crate::{depcheck::common::dep_libxrandr, linux_distro::LinuxDistro};
 use std::collections::HashMap;
@@ -131,9 +131,5 @@ pub fn check_monado_deps() -> Vec<DependencyCheckResult> {
 }
 
 pub fn get_missing_monado_deps() -> Vec<Dependency> {
-    check_monado_deps()
-        .iter()
-        .filter(|res| !res.found)
-        .map(|res| res.dependency.clone())
-        .collect()
+    check_monado_deps().filter_missing_deps()
 }
