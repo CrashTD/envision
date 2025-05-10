@@ -1,22 +1,10 @@
 use super::{DepType, DepcheckResultGetMissing, Dependency, DependencyCheckResult};
-use crate::linux_distro::LinuxDistro;
+use crate::{depcheck::common::dep_glslc, linux_distro::LinuxDistro};
 use std::collections::HashMap;
 
 fn xrizer_deps() -> Vec<Dependency> {
     vec![
-        Dependency {
-            name: "glslc".into(),
-            dep_type: DepType::Executable,
-            filename: "glslc".into(),
-            packages: HashMap::from([
-                (LinuxDistro::Arch, "shaderc".into()),
-                (LinuxDistro::Debian, "glslc".into()),
-                (LinuxDistro::Fedora, "glslc".into()),
-                (LinuxDistro::Alpine, "glslc".into()),
-                (LinuxDistro::Gentoo, "dev-util/glslang".into()),
-                (LinuxDistro::Suse, "shaderc".into()),
-            ]),
-        },
+        dep_glslc(),
         Dependency {
             name: "libxcb-glx".into(),
             dep_type: DepType::Include,

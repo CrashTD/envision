@@ -6,7 +6,10 @@ use super::{
     },
     DepType, DepcheckResultGetMissing, Dependency, DependencyCheckResult,
 };
-use crate::{depcheck::common::dep_libxrandr, linux_distro::LinuxDistro};
+use crate::{
+    depcheck::common::{dep_glslc, dep_libxrandr},
+    linux_distro::LinuxDistro,
+};
 use std::collections::HashMap;
 
 fn monado_deps() -> Vec<Dependency> {
@@ -60,19 +63,7 @@ fn monado_deps() -> Vec<Dependency> {
         dep_ninja(),
         dep_gcc(),
         dep_gpp(),
-        Dependency {
-            name: "glslc".into(),
-            dep_type: DepType::Executable,
-            filename: "glslc".into(),
-            packages: HashMap::from([
-                (LinuxDistro::Arch, "shaderc".into()),
-                (LinuxDistro::Debian, "glslc".into()),
-                (LinuxDistro::Fedora, "glslc".into()),
-                (LinuxDistro::Alpine, "shaderc".into()),
-                (LinuxDistro::Gentoo, "media-libs/shaderc".into()),
-                (LinuxDistro::Suse, "shaderc".into()),
-            ]),
-        },
+        dep_glslc(),
         dep_glslang_validator(),
         Dependency {
             name: "sdl2".into(),

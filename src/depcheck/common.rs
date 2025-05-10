@@ -319,3 +319,19 @@ pub fn dep_getcap_setcap() -> Dependency {
         ]),
     }
 }
+
+pub fn dep_glslc() -> Dependency {
+    Dependency {
+        name: "glslc".into(),
+        dep_type: DepType::Executable,
+        filename: "glslc".into(),
+        packages: HashMap::from([
+            (LinuxDistro::Arch, "shaderc".into()),
+            (LinuxDistro::Debian, "glslc".into()),
+            (LinuxDistro::Fedora, "glslc".into()),
+            (LinuxDistro::Alpine, "shaderc".into()),
+            (LinuxDistro::Gentoo, "media-libs/shaderc".into()),
+            (LinuxDistro::Suse, "shaderc".into()),
+        ]),
+    }
+}
