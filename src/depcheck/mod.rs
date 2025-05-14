@@ -166,6 +166,8 @@ fn include_paths() -> Vec<String> {
         "/usr/include/ffmpeg/libpostproc".into(),
         "/usr/include/ffmpeg/libswresample".into(),
         "/usr/include/ffmpeg/libswscale".into(),
+        // opensuse puts wayland-client.h here
+        "/usr/include/wayland".into(),
     ]
 }
 

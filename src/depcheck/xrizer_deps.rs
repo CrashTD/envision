@@ -29,6 +29,18 @@ fn xrizer_deps() -> Vec<Dependency> {
                 (LinuxDistro::Suse, "clang19-devel".into()),
             ]),
         },
+        Dependency {
+            name: "wayland-dev".into(),
+            dep_type: DepType::Include,
+            filename: "wayland-client.h".into(),
+            packages: HashMap::from([
+                (LinuxDistro::Arch, "wayland".into()),
+                (LinuxDistro::Debian, "libwayland-dev".into()),
+                (LinuxDistro::Fedora, "wayland-devel".into()),
+                (LinuxDistro::Gentoo, "dev-libs/wayland".into()),
+                (LinuxDistro::Suse, "wayland-devel".into()),
+            ]),
+        },
     ]
 }
 
