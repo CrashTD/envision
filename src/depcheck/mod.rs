@@ -136,6 +136,17 @@ fn shared_obj_paths() -> Vec<String> {
         "/usr/local/lib64".into(),
         "/usr/lib/x86_64-linux-gnu".into(),
         "/usr/lib/aarch64-linux-gnu".into(),
+        // Debian puts libclang in /usr/lib/llvm-[llvm major version]/lib.
+        "/usr/lib/llvm-15/lib".into(),
+        "/usr/lib/llvm-16/lib".into(),
+        "/usr/lib/llvm-19/lib".into(),
+        // Fedora puts libclang in /usr/lib64/llvm[llvm major version]/lib as well as /usr/lib64.
+        "/usr/lib64/llvm15/lib".into(),
+        "/usr/lib64/llvm16/lib".into(),
+        "/usr/lib64/llvm17/lib".into(),
+        "/usr/lib64/llvm18/lib".into(),
+        "/usr/lib64/llvm19/lib".into(),
+        "/usr/lib64/llvm20/lib".into(),
         // Gentoo puts libclang in /usr/lib/llvm/[llvm major version]/lib64.
         "/usr/lib/llvm/15/lib64".into(),
         "/usr/lib/llvm/16/lib64".into(),
