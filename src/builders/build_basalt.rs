@@ -5,7 +5,10 @@ use crate::{
     ui::job_worker::job::WorkerJob,
     util::file_utils::rm_rf,
 };
-use std::collections::{HashMap, VecDeque};
+use std::{
+    collections::{HashMap, VecDeque},
+    num::NonZero,
+};
 
 pub fn get_build_basalt_jobs(profile: &Profile, clean_build: bool) -> VecDeque<WorkerJob> {
     let mut jobs = VecDeque::<WorkerJob>::new();
@@ -40,10 +43,23 @@ pub fn get_build_basalt_jobs(profile: &Profile, clean_build: bool) -> VecDeque<W
         env: Some({
             let mut cmake_env: HashMap<String, String> = HashMap::new();
             for (k, v) in [
-                ("CMAKE_BUILD_TYPE", "RelWithDebInfo"),
-                ("BUILD_TESTS", "off"),
+                // The basalt build uses a lot of RAM, so we have to limit the number of
+                // build processes to not starve the system of memory
+                // Limit to 6 build processes at most
+                (
+                    "CMAKE_BUILD_PARALLEL_LEVEL",
+                    std::cmp::min(
+                        6,
+                        std::thread::available_parallelism()
+                            .map(NonZero::get)
+                            .unwrap_or(2),
+                    )
+                    .to_string(),
+                ),
+                ("CMAKE_BUILD_TYPE", "RelWithDebInfo".into()),
+                ("BUILD_TESTS", "off".into()),
             ] {
-                cmake_env.insert(k.to_string(), v.to_string());
+                cmake_env.insert(k.to_string(), v);
             }
             cmake_env
         }),
