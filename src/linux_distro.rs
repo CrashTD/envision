@@ -115,6 +115,7 @@ impl LinuxDistro {
             || s.contains("steamos")
             || s.contains("steam os")
             || s.contains("endeavour")
+            || s.contains("cachyos")
             || s.contains("garuda")
         {
             return Some(Self::Arch);
