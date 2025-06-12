@@ -2,12 +2,11 @@ use crate::{
     build_tools::{cmake::Cmake, git::Git},
     profile::Profile,
     termcolor::TermColor,
-    ui::job_worker::job::{FuncWorkerData, FuncWorkerOut, WorkerJob},
-    util::file_utils::{copy_file, rm_rf},
+    ui::job_worker::job::WorkerJob,
+    util::file_utils::rm_rf,
 };
 use std::{
     collections::{HashMap, VecDeque},
-    fs::create_dir_all,
     path::Path,
 };
 
@@ -37,16 +36,22 @@ pub fn get_build_vapor_jobs(profile: &Profile, clean_build: bool) -> VecDeque<Wo
     jobs.extend(git.get_pre_build_jobs(profile.pull_on_build));
 
     let build_dir = profile.ovr_comp.path.join("build");
+    let install_dir = build_dir.join("install_pfx");
     let cmake = Cmake {
         env: None,
         vars: Some({
             let mut cmake_vars: HashMap<String, String> = HashMap::new();
             for (k, v) in [
-                ("VAPOR_LOG_SILENT=ON", "ON"),
+                ("VAPOR_LOG_SILENT", "ON"),
+                ("USE_SYSTEM_OPENXR", "OFF"),
                 ("CMAKE_BUILD_TYPE", "RelWithDebInfo"),
             ] {
                 cmake_vars.insert(k.to_string(), v.to_string());
             }
+            cmake_vars.insert(
+                "CMAKE_INSTALL_PREFIX".into(),
+                install_dir.to_string_lossy().to_string(),
+            );
             cmake_vars
         }),
         source_dir: profile.ovr_comp.path.clone(),
@@ -57,29 +62,7 @@ pub fn get_build_vapor_jobs(profile: &Profile, clean_build: bool) -> VecDeque<Wo
         jobs.push_back(cmake.get_prepare_job());
     }
     jobs.push_back(cmake.get_build_job());
-    jobs.push_back(WorkerJob::Func(FuncWorkerData {
-        func: Box::new(move || {
-            let dest_dir = build_dir.join("bin/linux64");
-            if let Err(e) = create_dir_all(&dest_dir) {
-                return FuncWorkerOut {
-                    success: false,
-                    out: vec![format!(
-                        "failed to create dir {}: {e}",
-                        dest_dir.to_string_lossy()
-                    )],
-                };
-            }
-            copy_file(
-                &build_dir.join("src/vrclient.so"),
-                &dest_dir.join("vrclient.so"),
-            );
-
-            FuncWorkerOut {
-                success: true,
-                out: Vec::default(),
-            }
-        }),
-    }));
+    jobs.push_back(cmake.get_install_job());
 
     jobs
 }

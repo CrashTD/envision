@@ -341,9 +341,8 @@ impl ProfileOvrCompatibilityModule {
     /// this should correspond to the build output directory
     pub fn runtime_dir(&self) -> PathBuf {
         match self.mod_type {
-            OvrCompatibilityModuleType::Opencomposite | OvrCompatibilityModuleType::Vapor => {
-                self.path.join("build")
-            }
+            OvrCompatibilityModuleType::Opencomposite => self.path.join("build"),
+            OvrCompatibilityModuleType::Vapor => self.path.join("build/install_pfx/lib/VapoR"),
             OvrCompatibilityModuleType::Xrizer => self.path.join("target/release"),
         }
     }
