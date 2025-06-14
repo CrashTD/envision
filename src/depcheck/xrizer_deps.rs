@@ -15,7 +15,7 @@ fn xrizer_deps() -> Vec<Dependency> {
                 (LinuxDistro::Fedora, "cargo".into()),
                 (LinuxDistro::Alpine, "cargo".into()),
                 (LinuxDistro::Suse, "cargo".into()),
-            ])
+            ]),
         },
         Dependency {
             name: "libxcb-glx".into(),
