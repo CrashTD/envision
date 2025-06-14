@@ -1,3 +1,5 @@
+use crate::termcolor::TermColor;
+
 use super::{term_widget::TermWidget, SENDER_IO_ERR_MSG};
 use adw::prelude::*;
 use relm4::prelude::*;
@@ -164,8 +166,18 @@ impl SimpleComponent for BuildWindow {
                 label.remove_css_class("success");
                 label.remove_css_class("error");
                 match status {
-                    BuildStatus::Done => label.add_css_class("success"),
-                    BuildStatus::Error(_) => label.add_css_class("error"),
+                    BuildStatus::Done => {
+                        label.add_css_class("success");
+                        sender.input(BuildWindowMsg::UpdateContent(vec![
+                            TermColor::Blue.colorize("Build completed!\n")
+                        ]));
+                    }
+                    BuildStatus::Error(_) => {
+                        label.add_css_class("error");
+                        sender.input(BuildWindowMsg::UpdateContent(vec![
+                            TermColor::Blue.colorize("Build failed!\n")
+                        ]));
+                    }
                     _ => {}
                 }
                 if status != BuildStatus::Building {

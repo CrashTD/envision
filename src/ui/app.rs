@@ -43,6 +43,7 @@ use crate::{
     steam_linux_runtime_injector::{
         restore_runtime_entrypoint, set_runtime_entrypoint_launch_opts_from_profile,
     },
+    termcolor::TermColor,
     util::file_utils::{
         setcap_cap_sys_nice_eip, setcap_cap_sys_nice_eip_cmd, verify_cap_sys_nice_eip,
     },
@@ -653,6 +654,10 @@ impl AsyncComponent for App {
                         if dep_pkexec().check() {
                             self.setcap_confirm_dialog.present(Some(&self.app_win));
                         } else {
+                            self.build_window
+                                .sender()
+                                .emit(BuildWindowMsg::UpdateContent(vec![TermColor::Red
+                                    .colorize("pkexec not found, cannot set capabilities\n")]));
                             alert_w_widget(
                                 "pkexec not found",
                                 Some(&format!(
@@ -734,6 +739,7 @@ impl AsyncComponent for App {
             }
             Msg::RunSetCap => {
                 if !dep_pkexec().check() {
+                    // there's a precheck ahead of this, this should likely never happen
                     error!("pkexec not found, skipping setcap");
                 } else {
                     let profile = self.get_selected_profile();
@@ -751,8 +757,26 @@ impl AsyncComponent for App {
                     if let Err(e) = setcap_cap_sys_nice_eip(&profile).await {
                         setcap_failed_dialog();
                         error!("failed running setcap: {e}");
+                        self.build_window
+                            .sender()
+                            .emit(BuildWindowMsg::UpdateContent(vec![
+                                TermColor::Red.colorize("Setting capabilities failed\n")
+                            ]));
                     } else if !verify_cap_sys_nice_eip(&profile).await {
                         setcap_failed_dialog();
+                        error!("setcap succeeded but capabilities were reset");
+                        self.build_window
+                            .sender()
+                            .emit(BuildWindowMsg::UpdateContent(vec![TermColor::Red
+                            .colorize(
+                            "Setting capabilities succeeded, but capabilities have been reset\n",
+                        )]));
+                    } else {
+                        self.build_window
+                            .sender()
+                            .emit(BuildWindowMsg::UpdateContent(vec![
+                                TermColor::Green.colorize("Capabilities set correctly\n")
+                            ]));
                     }
                 }
             }
