@@ -57,6 +57,7 @@ pub fn get_build_basalt_jobs(profile: &Profile, clean_build: bool) -> VecDeque<W
                     .to_string(),
                 ),
                 ("CMAKE_BUILD_TYPE", "RelWithDebInfo".into()),
+                ("CMAKE_POLICY_VERSION_MINIMUM", "3.5".into()),
                 ("BUILD_TESTS", "off".into()),
             ] {
                 cmake_env.insert(k.to_string(), v);
