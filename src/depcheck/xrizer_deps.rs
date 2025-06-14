@@ -6,6 +6,18 @@ fn xrizer_deps() -> Vec<Dependency> {
     vec![
         dep_glslc(),
         Dependency {
+            name: "cargo".into(),
+            dep_type: DepType::Executable,
+            filename: "cargo".into(),
+            packages: HashMap::from([
+                (LinuxDistro::Arch, "rust".into()),
+                (LinuxDistro::Debian, "cargo".into()),
+                (LinuxDistro::Fedora, "cargo".into()),
+                (LinuxDistro::Alpine, "cargo".into()),
+                (LinuxDistro::Suse, "cargo".into()),
+            ])
+        },
+        Dependency {
             name: "libxcb-glx".into(),
             dep_type: DepType::Include,
             filename: "xcb/glx.h".into(),
