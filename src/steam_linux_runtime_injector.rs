@@ -2,7 +2,7 @@ use crate::{
     paths::get_backup_dir,
     profile::Profile,
     util::{
-        file_utils::{copy_file, get_writer},
+        file_utils::{copy_file, get_writer, mark_as_executable},
         steam_library_folder::SteamLibraryFolder,
     },
 };
@@ -50,6 +50,7 @@ pub fn restore_runtime_entrypoint() {
         let backup = get_backup_runtime_entrypoint_location();
         if Path::new(&backup).is_file() {
             copy_file(&backup, path);
+            let _ = mark_as_executable(path);
         }
     }
 }
@@ -78,6 +79,7 @@ pub fn set_runtime_entrypoint_launch_opts_from_profile(profile: &Profile) -> any
                 .join("\n"),
             dest,
         )?;
+        mark_as_executable(dest)?;
 
         return Ok(());
     }
