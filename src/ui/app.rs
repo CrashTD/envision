@@ -548,7 +548,7 @@ impl AsyncComponent for App {
                         jobs.extend(get_build_basalt_jobs(&profile, clean_build));
                     }
                     if profile.features.mercury_enabled {
-                        jobs.extend(get_build_mercury_jobs(&profile));
+                        jobs.extend(get_build_mercury_jobs());
                     }
                     jobs.extend(match profile.xrservice_type {
                         XRServiceType::Monado => get_build_monado_jobs(&profile, clean_build),

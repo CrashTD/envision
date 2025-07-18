@@ -8,6 +8,21 @@ fn mercury_deps() -> Vec<Dependency> {
     vec![
         dep_opencv(),
         Dependency {
+            name: "onnxruntime-dev".into(),
+            dep_type: DepType::Include,
+            filename: "onnxruntime/onnxruntime_c_api.h".into(),
+            packages: HashMap::from([
+                (LinuxDistro::Arch, "onnxruntime".into()),
+                (LinuxDistro::Debian, "libonnxruntime-dev".into()),
+                (LinuxDistro::Fedora, "onnxruntime-devel".into()),
+                // alpine doesn't seem to have the package
+                // (LinuxDistro::Alpine, "".into()),
+                (LinuxDistro::Gentoo, "sci-ml/onnx".into()),
+                // opensuse doesn't seem to have the package
+                // (LinuxDistro::Suse, "".into()),
+            ]),
+        },
+        Dependency {
             name: "jq".into(),
             dep_type: DepType::Executable,
             filename: "jq".into(),
