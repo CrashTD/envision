@@ -157,7 +157,7 @@ fn main() -> Result<()> {
     }
 
     let provider = gtk::CssProvider::new();
-    provider.load_from_resource(&format!("{}/style.css", RESOURCES_BASE_PATH));
+    provider.load_from_resource(&format!("{RESOURCES_BASE_PATH}/style.css"));
     if let Some(display) = gdk::Display::default() {
         gtk::style_context_add_provider_for_display(
             &display,

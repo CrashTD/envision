@@ -13,7 +13,7 @@ const CHUNK_SIZE: usize = 1024;
 
 fn headers() -> HeaderMap {
     let mut headers = HeaderMap::new();
-    headers.insert(USER_AGENT, format!("{}/1.0", APP_ID).parse().unwrap());
+    headers.insert(USER_AGENT, format!("{APP_ID}/1.0").parse().unwrap());
     headers
 }
 

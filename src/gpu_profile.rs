@@ -116,7 +116,7 @@ fn list_gpus() -> Vec<GpuSysDrm> {
 
     for i in 0..5 {
         // arbitrary range, find a better way
-        let card_dir = PathBuf::from(format!("/sys/class/drm/card{}", i));
+        let card_dir = PathBuf::from(format!("/sys/class/drm/card{i}"));
         let vendor_file = card_dir.join("device/vendor");
         if let Some(mut reader) = get_reader(&vendor_file) {
             let mut buf = String::new();

@@ -65,7 +65,7 @@ fn env_var_descriptions() -> Vec<(&'static str, &'static str)> {
 fn env_var_descriptions_as_paragraph() -> String {
     ENV_VAR_DESCRIPTIONS
         .iter()
-        .map(|(k, v)| format!("<span size=\"large\" weight=\"bold\">{}</span>\n{}", k, v))
+        .map(|(k, v)| format!("<span size=\"large\" weight=\"bold\">{k}</span>\n{v}"))
         .collect::<Vec<String>>()
         .join("\n\n")
 }

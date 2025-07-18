@@ -93,7 +93,7 @@ impl SimpleComponent for BuildWindow {
                                 BuildStatus::Building => String::default(),
                                 BuildStatus::Done => "Build done, you can close this window".into(),
                                 BuildStatus::Error(code) => {
-                                    format!("Build failed: \"{c}\"", c = code)
+                                    format!("Build failed: \"{code}\"")
                                 }
                             }.as_str(),
                             #[track = "model.changed(BuildWindow::build_status())"]

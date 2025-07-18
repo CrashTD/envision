@@ -23,7 +23,7 @@ pub fn survive_profile() -> Profile {
     environment.insert("LD_LIBRARY_PATH".into(), prepare_ld_library_path(&prefix));
     Profile {
         uuid: "survive-default".into(),
-        name: format!("Survive - {name} Default", name = APP_NAME),
+        name: format!("Survive - {APP_NAME} Default"),
         xrservice_path: data_monado_path(),
         xrservice_type: XRServiceType::Monado,
         ovr_comp: ProfileOvrCompatibilityModule {

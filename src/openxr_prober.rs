@@ -17,7 +17,7 @@ pub fn is_openxr_ready() -> bool {
 
     let Ok(xr_instance) = entry.create_instance(
         &xr::ApplicationInfo {
-            application_name: &format!("{}-openxr-prober", CMD_NAME),
+            application_name: &format!("{CMD_NAME}-openxr-prober"),
             application_version: 0,
             engine_name: CMD_NAME,
             engine_version: 0,

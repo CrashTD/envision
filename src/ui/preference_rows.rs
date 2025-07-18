@@ -213,7 +213,7 @@ pub fn file_row<F: Fn(Option<String>) + 'static + Clone>(
 
     let filedialog = gtk::FileDialog::builder()
         .modal(true)
-        .title(format!("Select {}", title))
+        .title(format!("Select {title}"))
         .build();
 
     row.connect_activated(clone!(
@@ -255,7 +255,7 @@ pub fn path_row<F: Fn(Option<String>) + 'static + Clone>(
     let (row, path_label) = filedialog_row_base(title, description, value, cb.clone());
     let filedialog = gtk::FileDialog::builder()
         .modal(true)
-        .title(format!("Select Path for {}", title))
+        .title(format!("Select Path for {title}"))
         .build();
 
     row.connect_activated(clone!(

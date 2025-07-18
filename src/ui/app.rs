@@ -680,7 +680,7 @@ impl AsyncComponent for App {
                         self.build_window
                             .sender()
                             .emit(BuildWindowMsg::UpdateBuildStatus(BuildStatus::Error(
-                                format!("Exit status {}", errcode),
+                                format!("Exit status {errcode}"),
                             )));
                     }
                 };

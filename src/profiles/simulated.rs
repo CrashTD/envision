@@ -22,7 +22,7 @@ pub fn simulated_profile() -> Profile {
     );
     Profile {
         uuid: "simulated-default".into(),
-        name: format!("Simulated Driver - {name} Default", name = APP_NAME),
+        name: format!("Simulated Driver - {APP_NAME} Default"),
         xrservice_path: data_monado_path(),
         xrservice_type: XRServiceType::Monado,
         ovr_comp: ProfileOvrCompatibilityModule {

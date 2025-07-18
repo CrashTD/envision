@@ -45,8 +45,7 @@ impl SimpleComponent for SteamLaunchOptionsBox {
                 add_css_class: "dim-label",
                 set_hexpand: true,
                 set_label: format!(
-                    "Set this string in the launch options of Steam games, so that they can pick up the {app} runtime correctly",
-                    app = APP_NAME)
+                    "Set this string in the launch options of Steam games, so that they can pick up the {APP_NAME} runtime correctly")
                     .as_str(),
                 set_xalign: 0.0,
                 set_wrap: true,

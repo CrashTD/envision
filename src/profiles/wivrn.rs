@@ -19,7 +19,7 @@ pub fn wivrn_profile() -> Profile {
     environment.insert("U_PACING_APP_USE_MIN_FRAME_PERIOD".into(), "1".into());
     Profile {
         uuid: "wivrn-default".into(),
-        name: format!("WiVRn - {name} Default", name = APP_NAME),
+        name: format!("WiVRn - {APP_NAME} Default"),
         xrservice_path: data_wivrn_path(),
         xrservice_type: XRServiceType::Wivrn,
         ovr_comp: ProfileOvrCompatibilityModule {

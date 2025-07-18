@@ -112,7 +112,7 @@ impl AsyncComponent for WivrnWiredStartBox {
             Self::Input::UpdateSelectedProfile(p) => self.set_selected_profile(p),
             Self::Input::StartWivrnClient => {
                 if !dep_adb().check() {
-                    alert("ADB is not installed", Some(&format!("Please install ADB on your computer to start the WiVRn client from {}.", APP_NAME)), Some(&self.root_win));
+                    alert("ADB is not installed", Some(&format!("Please install ADB on your computer to start the WiVRn client from {APP_NAME}.")), Some(&self.root_win));
                     return;
                 }
                 self.set_start_client_status(StartClientStatus::InProgress);
