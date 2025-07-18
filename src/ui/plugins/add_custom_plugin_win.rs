@@ -31,6 +31,7 @@ pub enum AddCustomPluginWinMsg {
     Present,
     Close,
     OnNameChange(String),
+    OnArgsChange(String),
     OnExecPathChange(Option<String>),
     Add,
 }
@@ -95,7 +96,11 @@ impl SimpleComponent for AddCustomPluginWin {
                             "",
                             clone!(
                                 #[strong] sender,
-                                move |row| sender.input(Self::Input::OnNameChange(row.text().to_string()))
+                                move |row| sender.input(
+                                    Self::Input::OnNameChange(
+                                        row.text().to_string()
+                                    )
+                                )
                             )
                         ),
                         add: &file_row(
@@ -105,9 +110,23 @@ impl SimpleComponent for AddCustomPluginWin {
                             Some(model.parent.clone()),
                             clone!(
                                 #[strong] sender,
-                                move |path_s| sender.input(Self::Input::OnExecPathChange(path_s))
+                                move |path_s| sender.input(
+                                    Self::Input::OnExecPathChange(path_s)
+                                )
                             )
-                        )
+                        ),
+                        add: &entry_row(
+                            "Plugin Arguments",
+                            "",
+                            clone!(
+                                #[strong] sender,
+                                move |row| sender.input(
+                                    Self::Input::OnArgsChange(
+                                        row.text().to_string()
+                                    )
+                                )
+                            )
+                        ),
                     },
                 },
             },
@@ -138,6 +157,17 @@ impl SimpleComponent for AddCustomPluginWin {
                 };
                 self.plugin.name = name;
                 self.set_can_add(self.plugin.validate());
+            }
+            Self::Input::OnArgsChange(args) => {
+                let args = args.trim().to_string();
+                self.plugin.args = if args.is_empty() {
+                    None
+                } else {
+                    // it's fine to have them joined
+                    // since they will ultimately be
+                    // passed as a joined string
+                    Some(vec![args])
+                }
             }
             Self::Input::OnExecPathChange(ep) => {
                 self.plugin.exec_path = ep.map(PathBuf::from);
