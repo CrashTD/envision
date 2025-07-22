@@ -12,5 +12,5 @@
     }
   ],
   "application": ["foobar", "baz"],
-  "tcp_only": true
+  "tcp-only": true
 }
