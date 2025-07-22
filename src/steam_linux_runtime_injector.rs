@@ -15,39 +15,67 @@ use std::{
 };
 use tracing::error;
 
-pub const PRESSURE_VESSEL_STEAM_APPID: u32 = 1628350;
+pub const SNIPER_RUNTIME_STEAM_APPID: u32 = 1628350;
+pub const SOLDIER_RUNTIME_STEAM_APPID: u32 = 1391110;
 
-fn get_runtime_entrypoint_path() -> Option<PathBuf> {
+fn get_sniper_runtime_entrypoint_path() -> Option<PathBuf> {
     match SteamLibraryFolder::get_folders() {
         Ok(libraryfolders) => libraryfolders
             .iter()
-            .find(|(_, folder)| folder.apps.contains_key(&PRESSURE_VESSEL_STEAM_APPID))
+            .find(|(_, folder)| folder.apps.contains_key(&SNIPER_RUNTIME_STEAM_APPID))
             .map(|(_, folder)| {
                 PathBuf::from(&folder.path)
                     .join("steamapps/common/SteamLinuxRuntime_sniper/_v2-entry-point")
             }),
         Err(e) => {
-            error!("unable to get runtime entrypoint path: {e}");
+            error!("unable to get sniper runtime entrypoint path: {e}");
+            None
+        }
+    }
+}
+
+fn get_soldier_runtime_entrypoint_path() -> Option<PathBuf> {
+    match SteamLibraryFolder::get_folders() {
+        Ok(libraryfolders) => libraryfolders
+            .iter()
+            .find(|(_, folder)| folder.apps.contains_key(&SOLDIER_RUNTIME_STEAM_APPID))
+            .map(|(_, folder)| {
+                PathBuf::from(&folder.path)
+                    .join("steamapps/common/SteamLinuxRuntime_soldier/_v2-entry-point")
+            }),
+        Err(e) => {
+            error!("unable to get soldier runtime entrypoint path: {e}");
             None
         }
     }
 }
 
 lazy_static! {
-    static ref STEAM_RUNTIME_ENTRYPOINT_PATH: Option<PathBuf> = get_runtime_entrypoint_path();
+    static ref STEAM_SNIPER_RUNTIME_ENTRYPOINT_PATH: Option<PathBuf> =
+        get_sniper_runtime_entrypoint_path();
+    static ref STEAM_SOLDIER_RUNTIME_ENTRYPOINT_PATH: Option<PathBuf> =
+        get_soldier_runtime_entrypoint_path();
 }
 
-fn get_backup_runtime_entrypoint_location() -> PathBuf {
+fn get_backup_sniper_runtime_entrypoint_location() -> PathBuf {
     get_backup_dir().join("_v2-entry-point.bak")
 }
 
-fn backup_runtime_entrypoint(path: &Path) {
-    copy_file(path, &get_backup_runtime_entrypoint_location());
+fn get_backup_soldier_runtime_entrypoint_location() -> PathBuf {
+    get_backup_dir().join("_v2-entry-point.soldier.bak")
 }
 
-pub fn restore_runtime_entrypoint() {
-    if let Some(path) = STEAM_RUNTIME_ENTRYPOINT_PATH.as_ref() {
-        let backup = get_backup_runtime_entrypoint_location();
+fn backup_sniper_runtime_entrypoint(path: &Path) {
+    copy_file(path, &get_backup_sniper_runtime_entrypoint_location());
+}
+
+fn backup_soldier_runtime_entrypoint(path: &Path) {
+    copy_file(path, &get_backup_soldier_runtime_entrypoint_location());
+}
+
+pub fn restore_sniper_runtime_entrypoint() {
+    if let Some(path) = STEAM_SNIPER_RUNTIME_ENTRYPOINT_PATH.as_ref() {
+        let backup = get_backup_sniper_runtime_entrypoint_location();
         if Path::new(&backup).is_file() {
             copy_file(&backup, path);
             let _ = mark_as_executable(path);
@@ -55,6 +83,17 @@ pub fn restore_runtime_entrypoint() {
     }
 }
 
+pub fn restore_soldier_runtime_entrypoint() {
+    if let Some(path) = STEAM_SOLDIER_RUNTIME_ENTRYPOINT_PATH.as_ref() {
+        let backup = get_backup_soldier_runtime_entrypoint_location();
+        if Path::new(&backup).is_file() {
+            copy_file(&backup, path);
+            let _ = mark_as_executable(path);
+        }
+    }
+}
+
+/// this implementation is identical for both sniper and soldier runtimes
 fn append_to_runtime_entrypoint(data: &str, path: &Path) -> anyhow::Result<()> {
     let existing = read_to_string(path)?;
     let new = existing.replace(
@@ -66,10 +105,12 @@ fn append_to_runtime_entrypoint(data: &str, path: &Path) -> anyhow::Result<()> {
     Ok(())
 }
 
-pub fn set_runtime_entrypoint_launch_opts_from_profile(profile: &Profile) -> anyhow::Result<()> {
-    restore_runtime_entrypoint();
-    if let Some(dest) = STEAM_RUNTIME_ENTRYPOINT_PATH.as_ref() {
-        backup_runtime_entrypoint(dest);
+pub fn set_sniper_runtime_entrypoint_launch_opts_from_profile(
+    profile: &Profile,
+) -> anyhow::Result<()> {
+    restore_sniper_runtime_entrypoint();
+    if let Some(dest) = STEAM_SNIPER_RUNTIME_ENTRYPOINT_PATH.as_ref() {
+        backup_sniper_runtime_entrypoint(dest);
         append_to_runtime_entrypoint(
             &profile
                 .get_env_vars()
@@ -83,5 +124,27 @@ pub fn set_runtime_entrypoint_launch_opts_from_profile(profile: &Profile) -> any
 
         return Ok(());
     }
-    bail!("Could not find valid runtime entrypoint");
+    bail!("Could not find valid sniper runtime entrypoint");
+}
+
+pub fn set_soldier_runtime_entrypoint_launch_opts_from_profile(
+    profile: &Profile,
+) -> anyhow::Result<()> {
+    restore_soldier_runtime_entrypoint();
+    if let Some(dest) = STEAM_SOLDIER_RUNTIME_ENTRYPOINT_PATH.as_ref() {
+        backup_soldier_runtime_entrypoint(dest);
+        append_to_runtime_entrypoint(
+            &profile
+                .get_env_vars()
+                .iter()
+                .map(|ev| "export ".to_string() + ev)
+                .collect::<Vec<String>>()
+                .join("\n"),
+            dest,
+        )?;
+        mark_as_executable(dest)?;
+
+        return Ok(());
+    }
+    bail!("Could not find valid soldier runtime entrypoint");
 }

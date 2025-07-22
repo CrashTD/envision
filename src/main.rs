@@ -17,7 +17,9 @@ use std::{
     os::unix::fs::MetadataExt,
     path::{Path, PathBuf},
 };
-use steam_linux_runtime_injector::restore_runtime_entrypoint;
+use steam_linux_runtime_injector::{
+    restore_sniper_runtime_entrypoint, restore_soldier_runtime_entrypoint,
+};
 use tracing::{error, warn};
 use tracing_subscriber::{
     filter::LevelFilter, layer::SubscriberExt, util::SubscriberInitExt, EnvFilter, Layer,
@@ -68,7 +70,8 @@ fn restore_steam_xr_files() {
             }
         }
     }
-    restore_runtime_entrypoint();
+    restore_sniper_runtime_entrypoint();
+    restore_soldier_runtime_entrypoint();
 }
 
 const LOGS_MAX_SIZE_BYTES: u64 = 1000000000; // 1GB

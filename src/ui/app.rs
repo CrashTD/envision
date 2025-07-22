@@ -41,7 +41,9 @@ use crate::{
     profile::{OvrCompatibilityModuleType, Profile, XRServiceType},
     stateless_action,
     steam_linux_runtime_injector::{
-        restore_runtime_entrypoint, set_runtime_entrypoint_launch_opts_from_profile,
+        restore_sniper_runtime_entrypoint, restore_soldier_runtime_entrypoint,
+        set_sniper_runtime_entrypoint_launch_opts_from_profile,
+        set_soldier_runtime_entrypoint_launch_opts_from_profile,
     },
     termcolor::TermColor,
     util::file_utils::{
@@ -234,13 +236,17 @@ impl App {
         );
         worker.start();
         self.xrservice_worker = Some(worker);
+        let set_sniper_launch_opts_res =
+            set_sniper_runtime_entrypoint_launch_opts_from_profile(&prof);
+        let set_soldier_launch_opts_res =
+            set_soldier_runtime_entrypoint_launch_opts_from_profile(&prof);
         self.main_view
             .sender()
             .emit(MainViewMsg::XRServiceActiveChanged(
                 true,
                 Some(self.get_selected_profile()),
                 // show launch opts only if setting the runtime entrypoint fails
-                set_runtime_entrypoint_launch_opts_from_profile(&prof).is_err(),
+                set_sniper_launch_opts_res.is_err() || set_soldier_launch_opts_res.is_err(),
             ));
         self.debug_view
             .sender()
@@ -304,7 +310,8 @@ impl App {
     }
 
     pub fn restore_openxr_openvr_files(&self) {
-        restore_runtime_entrypoint();
+        restore_sniper_runtime_entrypoint();
+        restore_soldier_runtime_entrypoint();
         if let Err(e) = remove_current_active_runtime() {
             alert(
                 "Could not remove profile active runtime",
