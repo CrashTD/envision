@@ -143,7 +143,7 @@ pub struct WivrnConfig {
     pub encoders: Vec<WivrnConfEncoder>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub application: Option<WivrnConfigApplication>,
-    #[serde(default)]
+    #[serde(default, rename = "tcp-only")]
     pub tcp_only: bool,
     /// contains unknown fields
     #[serde(flatten)]
