@@ -16,7 +16,7 @@ pub enum DeviceRowState {
 impl DeviceRowState {
     pub fn icon(&self) -> &str {
         match &self {
-            Self::Ok => "emblem-ok-symbolic",
+            Self::Ok => "checkmark-symbolic",
             Self::Error => "dialog-question-symbolic",
             Self::Warning => "dialog-warning-symbolic",
         }
