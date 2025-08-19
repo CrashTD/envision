@@ -87,6 +87,7 @@ pub struct App {
     plugins_worker: Option<JobWorker>,
     restart_xrservice: bool,
     build_worker: Option<JobWorker>,
+    monado_gui_worker: Option<JobWorker>,
     profiles: Vec<Profile>,
     xr_devices: Vec<XRDevice>,
     libmonado: Option<libmonado::Monado>,
@@ -138,6 +139,8 @@ pub enum Msg {
     UpdateConfigPlugins(HashMap<String, PluginConfig>),
     ShowThemeManager,
     SaveThemeConfig,
+    LaunchMonadoGui,
+    OnMonadoGuiExit,
     NoOp,
 }
 
@@ -337,6 +340,9 @@ impl App {
 
     pub fn shutdown_xrservice(&mut self) {
         if let Some(w) = self.plugins_worker.as_ref() {
+            w.stop();
+        }
+        if let Some(w) = self.monado_gui_worker.as_ref() {
             w.stop();
         }
         if let Some(w) = self.openxr_prober_worker.as_ref() {
@@ -919,6 +925,29 @@ impl AsyncComponent for App {
                 self.config.plugins = cp;
                 self.config.save();
             }
+            Msg::LaunchMonadoGui => {
+                if self.monado_gui_worker.is_some() {
+                    return;
+                }
+                let profile = self.get_selected_profile();
+                if let Some(bin) = profile.monado_gui_binary() {
+                    let mut jobs = VecDeque::new();
+                    jobs.push_back(WorkerJob::new_cmd(
+                        Some(profile.environment.clone()),
+                        bin.to_string_lossy().to_string(),
+                        None,
+                    ));
+                    let worker = JobWorker::new(jobs, sender.input_sender(), |msg| match msg {
+                        JobWorkerOut::Log(rows) => Msg::OnServiceLog(rows),
+                        JobWorkerOut::Exit(_) => Msg::OnMonadoGuiExit,
+                    });
+                    worker.start();
+                    self.monado_gui_worker = Some(worker);
+                }
+            }
+            Msg::OnMonadoGuiExit => {
+                self.monado_gui_worker = None;
+            }
         }
     }
 
@@ -1087,6 +1116,7 @@ impl AsyncComponent for App {
                     MainViewOutMsg::SaveProfile(p) => Msg::SaveProfile(p),
                     MainViewOutMsg::OpenLibsurviveSetup => Msg::OpenLibsurviveSetup,
                     MainViewOutMsg::BuildProfile(clean) => Msg::BuildProfile(clean),
+                    MainViewOutMsg::LaunchMonadoGui => Msg::LaunchMonadoGui,
                 }),
             vkinfo,
             debug_view: DebugView::builder()
@@ -1126,6 +1156,7 @@ impl AsyncComponent for App {
             xrservice_worker: None,
             plugins_worker: None,
             build_worker: None,
+            monado_gui_worker: None,
             xr_devices: vec![],
             restart_xrservice: false,
             libmonado: None,

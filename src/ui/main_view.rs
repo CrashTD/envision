@@ -119,6 +119,7 @@ pub enum MainViewOutMsg {
     OpenLibsurviveSetup,
     /// params: clean
     BuildProfile(bool),
+    LaunchMonadoGui,
 }
 
 pub struct MainViewInit {
@@ -383,6 +384,19 @@ impl AsyncComponent for MainView {
                                 connect_clicked[sender] => move |_| {
                                     sender.input(Self::Input::StopWivrnPairingMode);
                                 }
+                            },
+                        },
+                        gtk::Button {
+                            #[track = "model.changed(Self::xrservice_active()) || model.changed(Self::xrservice_ready())"]
+                            set_visible: model.xrservice_active
+                                && model.xrservice_ready
+                                && model.selected_profile.xrservice_type == XRServiceType::Monado
+                                && model.selected_profile.monado_gui_binary().is_some(),
+                            set_label: "Launch Monado GUI",
+                            connect_clicked[sender] => move |_| {
+                                sender
+                                    .output(Self::Output::LaunchMonadoGui)
+                                    .expect(SENDER_IO_ERR_MSG);
                             },
                         },
                         gtk::Box {

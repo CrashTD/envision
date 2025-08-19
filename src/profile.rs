@@ -689,6 +689,19 @@ impl Profile {
         })
     }
 
+    pub fn monado_gui_binary(&self) -> Option<PathBuf> {
+        if self.xrservice_type != XRServiceType::Monado {
+            None
+        } else {
+            let p = self.prefix.join("bin").join("monado-gui");
+            if p.is_file() {
+                Some(p.canonicalize().ok()?)
+            } else {
+                None
+            }
+        }
+    }
+
     pub fn can_start(&self) -> bool {
         self.xrservice_binary().is_file()
     }
