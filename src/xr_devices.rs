@@ -207,13 +207,13 @@ impl From<&XRDeviceRole> for u32 {
 
 impl PartialOrd for XRDeviceRole {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(u32::from(self).cmp(&other.into()))
+        Some(self.cmp(other))
     }
 }
 
 impl Ord for XRDeviceRole {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.partial_cmp(other).unwrap()
+        u32::from(self).cmp(&other.into())
     }
 }
 
