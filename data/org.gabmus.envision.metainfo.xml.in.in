@@ -30,6 +30,50 @@
   <url type="bugtracker">@REPO_URL@/issues</url>
   <content_rating type="oars-1.0" />
   <releases>
+    <release version="3.2.0" date="2025-09-16">
+      <description>
+        <p>What's new</p>
+          <ul>
+            <li>button to launch monado-gui</li>
+            <li>inject env vars in soldier runtime</li>
+            <li>allow specifying arguments for custom plugins</li>
+            <li>add some messages related to setcap output to build window; add build completed message to build window</li>
+            <li>theme manager</li>
+            <li>account for getcap&#x2F;setcap being found in &#x2F;sbin and not in $PATH</li>
+            <li>checkbox to delete profile dirs along with profile</li>
+            <li>remove old logs on startup, keep a max of 1GB and 3 files</li>
+          </ul>
+        <p>Fixes</p>
+          <ul>
+            <li>missing checkmark icon</li>
+            <li>rename WivrnConfig tcp_only to tcp-only</li>
+            <li>rely on system packages for onnxruntime</li>
+            <li>ensure _v2-entry-point is marked as executable</li>
+            <li>specify cmake policy version in basalt build</li>
+            <li>add cargo as xrizer dependency</li>
+            <li>properly build and install vapor</li>
+            <li>builders&#x2F;basalt: limit to at most 6 build processes</li>
+            <li>detect cachyos as arch</li>
+            <li>add more libclang library paths</li>
+            <li>add wayland-dev to xrizer dependencies</li>
+            <li>add gentoo library paths for libclang to search paths</li>
+            <li>deduplicate glslc dependency</li>
+            <li>refactor and optimize missing dependency filtering</li>
+            <li>xrizer deps</li>
+            <li>opensuse dep libusb-1_0 is now libusb-1_0-0</li>
+            <li>opensuse dep SDL2-devel is now sdl2-compat-devel</li>
+            <li>account for opi packages for opensuse</li>
+            <li>remove 2 thread limit when building basalt</li>
+          </ul>
+        <p>Other changes</p>
+          <ul>
+            <li>clippy</li>
+            <li>fix unit test</li>
+            <li>fix clippy</li>
+            <li>format</li>
+          </ul>
+      </description>
+    </release>
     <release version="3.1.1" date="2025-04-22">
       <description>
         <p>Fixes</p>
