@@ -1,5 +1,5 @@
 use crate::{
-    paths::SYSTEM_PREFIX,
+    paths::SYSTEM_PREFIX_PATH,
     profile::Profile,
     util::file_utils::{deserialize_file, get_writer, set_file_readonly},
     xdg::XDG,
@@ -120,7 +120,7 @@ pub fn set_current_active_runtime_to_profile(profile: &Profile) -> anyhow::Resul
         let pfx = profile.clone().prefix;
         let mut ar = build_profile_active_runtime(profile)?;
         // hack: relativize libopenxr_monado.so path for system installs
-        if pfx == PathBuf::from(SYSTEM_PREFIX) {
+        if pfx == *SYSTEM_PREFIX_PATH {
             ar = relativize_active_runtime_lib_path(&ar, &dest);
         }
         dump_current_active_runtime(&ar)?;

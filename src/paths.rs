@@ -1,4 +1,5 @@
 use anyhow::bail;
+use lazy_static::lazy_static;
 
 use crate::{constants::CMD_NAME, util::steam_library_folder::SteamLibraryFolder, xdg::XDG};
 use std::{
@@ -36,6 +37,10 @@ pub fn wivrn_apk_download_path() -> PathBuf {
 }
 
 pub const SYSTEM_PREFIX: &str = "/usr";
+
+lazy_static! {
+    pub static ref SYSTEM_PREFIX_PATH: PathBuf = PathBuf::from(SYSTEM_PREFIX);
+}
 
 /// System prefix inside a bubblewrap environment (flatpak or pressure vessel)
 pub const BWRAP_SYSTEM_PREFIX: &str = "/run/host/usr";
