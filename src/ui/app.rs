@@ -46,8 +46,9 @@ use crate::{
         set_soldier_runtime_entrypoint_launch_opts_from_profile,
     },
     termcolor::TermColor,
+    ui::alert::{present_alert, yes_no_dialog},
     util::file_utils::{
-        setcap_cap_sys_nice_eip, setcap_cap_sys_nice_eip_cmd, verify_cap_sys_nice_eip,
+        rm_rf, setcap_cap_sys_nice_eip, setcap_cap_sys_nice_eip_cmd, verify_cap_sys_nice_eip,
     },
     vulkaninfo::VulkanInfo,
     wivrn_dbus,
@@ -103,6 +104,8 @@ pub struct App {
     pluginstore: Option<AsyncController<PluginStore>>,
 
     theme_engine: ThemeEngine,
+
+    build_alerts: VecDeque<adw::AlertDialog>,
 }
 
 #[derive(Debug)]
@@ -114,6 +117,8 @@ pub enum Msg {
     OnBuildExit(i32),
     ClockTicking,
     BuildProfile(bool),
+    BuildProfileDequeueAlerts(bool),
+    BuildProfilePostChecks(bool),
     CancelBuild,
     EnableDebugViewChanged(bool),
     DoStartStopXRService,
@@ -547,6 +552,146 @@ impl AsyncComponent for App {
                 }
             },
             Msg::BuildProfile(clean_build) => {
+                let profile = self.get_selected_profile();
+                match profile.xrservice_git().check_remote_diverges() {
+                    Err(e) => {
+                        error!(e);
+                    }
+                    Ok(false) => {}
+                    Ok(true) => {
+                        let sender = sender.clone();
+                        let path = profile.xrservice_path.clone();
+                        self.build_alerts.push_back(yes_no_dialog(
+                            &format!("{} remote repository diverged", profile.xrservice_type),
+                            Some(&format!(
+                                "It is recommended to delete your local repository so that it will be cloned from scratch. Do you want to delete your local repository in `{}`?",
+                                path.to_string_lossy()
+                            )),
+                            move || {
+                                rm_rf(&path);
+                            },
+                            move || {
+                                sender.input(Msg::BuildProfileDequeueAlerts(clean_build));
+                            }
+                        ));
+                    }
+                }
+                match profile.ovr_comp_git().check_remote_diverges() {
+                    Err(e) => {
+                        error!(e);
+                    }
+                    Ok(false) => {}
+                    Ok(true) => {
+                        let sender = sender.clone();
+                        let path = profile.ovr_comp.path.clone();
+                        self.build_alerts.push_back(yes_no_dialog(
+                            &format!("{} remote repository diverged", profile.ovr_comp.mod_type),
+                            Some(&format!(
+                                "It is recommended to delete your local repository so that it will be cloned from scratch. Do you want to delete your local repository in `{}`?",
+                                path.to_string_lossy()
+                            )),
+                            move || {
+                                rm_rf(&path);
+                            },
+                            move || {
+                                sender.input(Msg::BuildProfileDequeueAlerts(clean_build));
+                            }
+                        ));
+                    }
+                }
+                if let Some(basalt_git) = profile.basalt_git() {
+                    match basalt_git.check_remote_diverges() {
+                        Err(e) => {
+                            error!(e);
+                        }
+                        Ok(false) => {}
+                        Ok(true) => {
+                            let sender = sender.clone();
+                            // this unwrap is safe because the non_none-ness of path is
+                            // guaranteed by the ~_git() call returning Some(Git)
+                            let path = profile.features.basalt.path.as_ref().unwrap().clone();
+                            self.build_alerts.push_back(yes_no_dialog(
+                                "Basalt remote repository diverged",
+                                Some(&format!(
+                                    "It is recommended to delete your local repository so that it will be cloned from scratch. Do you want to delete your local repository in `{}`?",
+                                    path.to_string_lossy()
+                                )),
+                                move || {
+                                    rm_rf(&path);
+                                },
+                                move || {
+                                    sender.input(Msg::BuildProfileDequeueAlerts(clean_build));
+                                }
+                            ));
+                        }
+                    }
+                }
+                if let Some(libsurvive_git) = profile.libsurvive_git() {
+                    match libsurvive_git.check_remote_diverges() {
+                        Err(e) => {
+                            error!(e);
+                        }
+                        Ok(false) => {}
+                        Ok(true) => {
+                            let sender = sender.clone();
+                            // this unwrap is safe because the non_none-ness of path is
+                            // guaranteed by the ~_git() call returning Some(Git)
+                            let path = profile.features.libsurvive.path.as_ref().unwrap().clone();
+                            self.build_alerts.push_back(yes_no_dialog(
+                                "Libsurvive remote repository diverged",
+                                Some(&format!(
+                                    "It is recommended to delete your local repository so that it will be cloned from scratch. Do you want to delete your local repository in `{}`?",
+                                    path.to_string_lossy()
+                                )),
+                                move || {
+                                    rm_rf(&path);
+                                },
+                                move || {
+                                    sender.input(Msg::BuildProfileDequeueAlerts(clean_build));
+                                }
+                            ));
+                        }
+                    }
+                }
+                if let Some(openhmd_git) = profile.openhmd_git() {
+                    match openhmd_git.check_remote_diverges() {
+                        Err(e) => {
+                            error!(e);
+                        }
+                        Ok(false) => {}
+                        Ok(true) => {
+                            let sender = sender.clone();
+                            // this unwrap is safe because the non_none-ness of path is
+                            // guaranteed by the ~_git() call returning Some(Git)
+                            let path = profile.features.openhmd.path.as_ref().unwrap().clone();
+                            self.build_alerts.push_back(yes_no_dialog(
+                                "OpenHMD remote repository diverged",
+                                Some(&format!(
+                                    "It is recommended to delete your local repository so that it will be cloned from scratch. Do you want to delete your local repository in `{}`?",
+                                    path.to_string_lossy()
+                                )),
+                                move || {
+                                    rm_rf(&path);
+                                },
+                                move || {
+                                    sender.input(Msg::BuildProfileDequeueAlerts(clean_build));
+                                }
+                            ));
+                        }
+                    }
+                }
+
+                sender.input(Msg::BuildProfileDequeueAlerts(clean_build))
+            }
+            Msg::BuildProfileDequeueAlerts(clean_build) => {
+                if let Some(d) = self.build_alerts.pop_front() {
+                    let parent = Some(&self.app_win.clone().upcast::<gtk::Window>());
+                    present_alert(d, parent);
+                } else {
+                    sender.input(Msg::BuildProfilePostChecks(clean_build));
+                }
+            }
+            Msg::BuildProfilePostChecks(clean_build) => {
                 let profile = self.get_selected_profile();
                 let mut jobs = VecDeque::<WorkerJob>::new();
                 // profile per se can't be built, but we still need opencomp
@@ -1167,6 +1312,7 @@ impl AsyncComponent for App {
             xrservice_ready: false,
             inhibit_fail_notif: None,
             pluginstore: None,
+            build_alerts: VecDeque::new(),
         };
 
         let widgets = view_output!();

@@ -7,8 +7,8 @@ use std::{
     path::{Path, PathBuf},
 };
 
-pub fn data_opencomposite_path() -> PathBuf {
-    get_data_dir().join("opencomposite")
+pub fn data_ovr_comp_path() -> PathBuf {
+    get_data_dir().join("ovr_comp")
 }
 
 pub fn data_monado_path() -> PathBuf {

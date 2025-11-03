@@ -1,6 +1,6 @@
 use crate::{
     constants::APP_NAME,
-    paths::{data_opencomposite_path, data_wivrn_path, get_data_dir},
+    paths::{data_ovr_comp_path, data_wivrn_path, get_data_dir},
     profile::{
         prepare_ld_library_path, Profile, ProfileFeatures, ProfileOvrCompatibilityModule,
         XRServiceType,
@@ -23,7 +23,7 @@ pub fn wivrn_profile() -> Profile {
         xrservice_path: data_wivrn_path(),
         xrservice_type: XRServiceType::Wivrn,
         ovr_comp: ProfileOvrCompatibilityModule {
-            path: data_opencomposite_path(),
+            path: data_ovr_comp_path(),
             ..Default::default()
         },
         features: ProfileFeatures {

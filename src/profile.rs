@@ -1,4 +1,5 @@
 use crate::{
+    build_tools::git::Git,
     depcheck::{
         basalt_deps::get_missing_basalt_deps, libsurvive_deps::get_missing_libsurvive_deps,
         mercury_deps::get_missing_mercury_deps, monado_deps::get_missing_monado_deps,
@@ -7,7 +8,16 @@ use crate::{
     },
     file_builders::active_runtime_json::ActiveRuntime,
     paths::{get_data_dir, BWRAP_SYSTEM_PREFIX, SYSTEM_PREFIX},
-    util::file_utils::{deserialize_file, get_writer},
+    util::{
+        file_utils::{deserialize_file, get_writer},
+        git_repos::{
+            DEFAULT_BASALT_BRANCH, DEFAULT_BASALT_REPO, DEFAULT_LIBSURVIVE_BRANCH,
+            DEFAULT_LIBSURVIVE_REPO, DEFAULT_MONADO_BRANCH, DEFAULT_MONADO_REPO,
+            DEFAULT_OPENCOMPOSITE_BRANCH, DEFAULT_OPENCOMPOSITE_REPO, DEFAULT_OPENHMD_BRANCH,
+            DEFAULT_OPENHMD_REPO, DEFAULT_VAPOR_BRANCH, DEFAULT_VAPOR_REPO, DEFAULT_WIVRN_BRANCH,
+            DEFAULT_WIVRN_REPO, DEFAULT_XRIZER_BRANCH, DEFAULT_XRIZER_REPO,
+        },
+    },
     xdg::XDG,
 };
 use nix::NixPath;
@@ -263,8 +273,8 @@ impl Display for LighthouseDriver {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub enum OvrCompatibilityModuleType {
-    #[default]
     Opencomposite,
+    #[default]
     Xrizer,
     Vapor,
 }
@@ -770,6 +780,126 @@ impl Profile {
     /// prefix
     pub fn openxr_json_path(&self) -> PathBuf {
         self.prefix.join(self.xrservice_type.openxr_json_rel_path())
+    }
+
+    pub fn xrservice_git(&self) -> Git {
+        Git {
+            repo: self
+                .xrservice_repo
+                .as_deref()
+                .unwrap_or(match self.xrservice_type {
+                    XRServiceType::Monado => DEFAULT_MONADO_REPO,
+                    XRServiceType::Wivrn => DEFAULT_WIVRN_REPO,
+                })
+                .into(),
+            dir: self.xrservice_path.clone(),
+            branch: self
+                .xrservice_branch
+                .as_deref()
+                .unwrap_or(match self.xrservice_type {
+                    XRServiceType::Monado => DEFAULT_MONADO_BRANCH,
+                    XRServiceType::Wivrn => DEFAULT_WIVRN_BRANCH,
+                })
+                .into(),
+        }
+    }
+
+    pub fn ovr_comp_git(&self) -> Git {
+        Git {
+            repo: self
+                .ovr_comp
+                .repo
+                .as_deref()
+                .unwrap_or(match self.ovr_comp.mod_type {
+                    OvrCompatibilityModuleType::Opencomposite => DEFAULT_OPENCOMPOSITE_REPO,
+                    OvrCompatibilityModuleType::Xrizer => DEFAULT_XRIZER_REPO,
+                    OvrCompatibilityModuleType::Vapor => DEFAULT_VAPOR_REPO,
+                })
+                .into(),
+            dir: self.ovr_comp.path.clone(),
+            branch: self
+                .ovr_comp
+                .branch
+                .as_deref()
+                .unwrap_or(match self.ovr_comp.mod_type {
+                    OvrCompatibilityModuleType::Opencomposite => DEFAULT_OPENCOMPOSITE_BRANCH,
+                    OvrCompatibilityModuleType::Xrizer => DEFAULT_XRIZER_BRANCH,
+                    OvrCompatibilityModuleType::Vapor => DEFAULT_VAPOR_BRANCH,
+                })
+                .into(),
+        }
+    }
+
+    pub fn basalt_git(&self) -> Option<Git> {
+        if !self.features.basalt.enabled || self.features.basalt.path.is_none() {
+            None
+        } else {
+            Some(Git {
+                repo: self
+                    .features
+                    .basalt
+                    .repo
+                    .as_deref()
+                    .unwrap_or(DEFAULT_BASALT_REPO)
+                    .into(),
+                dir: self.features.basalt.path.as_ref().unwrap().clone(),
+                branch: self
+                    .features
+                    .basalt
+                    .branch
+                    .as_deref()
+                    .unwrap_or(DEFAULT_BASALT_BRANCH)
+                    .into(),
+            })
+        }
+    }
+
+    pub fn openhmd_git(&self) -> Option<Git> {
+        if !self.features.openhmd.enabled || self.features.openhmd.path.is_none() {
+            None
+        } else {
+            Some(Git {
+                repo: self
+                    .features
+                    .openhmd
+                    .repo
+                    .as_deref()
+                    .unwrap_or(DEFAULT_OPENHMD_REPO)
+                    .into(),
+                dir: self.features.openhmd.path.as_ref().unwrap().clone(),
+                branch: self
+                    .features
+                    .openhmd
+                    .branch
+                    .as_deref()
+                    .unwrap_or(DEFAULT_OPENHMD_BRANCH)
+                    .into(),
+            })
+        }
+    }
+
+    pub fn libsurvive_git(&self) -> Option<Git> {
+        if !self.features.libsurvive.enabled || self.features.libsurvive.path.is_none() {
+            None
+        } else {
+            Some(Git {
+                repo: self
+                    .features
+                    .libsurvive
+                    .repo
+                    .as_deref()
+                    .unwrap_or(DEFAULT_LIBSURVIVE_REPO)
+                    .into(),
+                dir: self.features.libsurvive.path.as_ref().unwrap().clone(),
+                branch: self
+                    .features
+                    .libsurvive
+                    .branch
+                    .as_deref()
+                    .unwrap_or(DEFAULT_LIBSURVIVE_BRANCH)
+                    .into(),
+            })
+        }
     }
 }
 

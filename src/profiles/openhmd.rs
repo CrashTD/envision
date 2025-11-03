@@ -1,6 +1,6 @@
 use crate::{
     constants::APP_NAME,
-    paths::{data_monado_path, data_opencomposite_path, data_openhmd_path, get_data_dir},
+    paths::{data_monado_path, data_openhmd_path, data_ovr_comp_path, get_data_dir},
     profile::{
         prepare_ld_library_path, LighthouseDriver, Profile, ProfileFeature, ProfileFeatureType,
         ProfileFeatures, ProfileOvrCompatibilityModule, XRServiceType,
@@ -25,7 +25,7 @@ pub fn openhmd_profile() -> Profile {
         xrservice_path: data_monado_path(),
         xrservice_type: XRServiceType::Monado,
         ovr_comp: ProfileOvrCompatibilityModule {
-            path: data_opencomposite_path(),
+            path: data_ovr_comp_path(),
             ..Default::default()
         },
         features: ProfileFeatures {
