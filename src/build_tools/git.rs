@@ -34,13 +34,29 @@ impl Git {
         self.cmd(vec!["reset".into(), "--hard".into()])
     }
 
+    pub fn check_remote_diverges(&self) -> Result<bool, String> {
+        if !self.clone_exists() {
+            return Ok(false);
+        }
+        let repo = Repository::open(&self.dir)
+            .map_err(|e| format!("Failed to open local git repo: {e:?}"))?;
+        let remote = repo
+            .find_remote("origin")
+            .map_err(|e| format!("Failed to find origin remote: {e:?}"))?;
+        if remote.url().unwrap_or_default() != self.get_repo() {
+            Ok(true)
+        } else {
+            Ok(false)
+        }
+    }
+
     pub fn get_override_remote_url_job(&self) -> WorkerJob {
         let dir = self.dir.clone();
         let n_remote_url = self.get_repo();
         WorkerJob::new_func(Box::new(move || {
             if let Ok(repo) = Repository::open(dir) {
                 if let Ok(remote) = repo.find_remote("origin") {
-                    if remote.url().unwrap_or("") != n_remote_url {
+                    if remote.url().unwrap_or_default() != n_remote_url {
                         if repo.remote_set_url("origin", &n_remote_url).is_ok() {
                             return FuncWorkerOut {
                                 success: true,
