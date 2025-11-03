@@ -3,7 +3,10 @@ use crate::{
     profile::Profile,
     termcolor::TermColor,
     ui::job_worker::job::WorkerJob,
-    util::file_utils::rm_rf,
+    util::{
+        file_utils::rm_rf,
+        git_repos::{DEFAULT_MONADO_BRANCH, DEFAULT_MONADO_REPO},
+    },
 };
 use std::{
     collections::{HashMap, VecDeque},
@@ -21,13 +24,13 @@ pub fn get_build_monado_jobs(profile: &Profile, clean_build: bool) -> VecDeque<W
         repo: profile
             .xrservice_repo
             .as_ref()
-            .unwrap_or(&"https://gitlab.freedesktop.org/monado/monado".into())
+            .unwrap_or(&DEFAULT_MONADO_REPO.into())
             .clone(),
         dir: profile.xrservice_path.clone(),
         branch: profile
             .xrservice_branch
             .as_ref()
-            .unwrap_or(&"main".into())
+            .unwrap_or(&DEFAULT_MONADO_BRANCH.into())
             .clone(),
     };
 

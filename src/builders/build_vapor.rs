@@ -3,7 +3,10 @@ use crate::{
     profile::Profile,
     termcolor::TermColor,
     ui::job_worker::job::WorkerJob,
-    util::file_utils::rm_rf,
+    util::{
+        file_utils::rm_rf,
+        git_repos::{DEFAULT_VAPOR_BRANCH, DEFAULT_VAPOR_REPO},
+    },
 };
 use std::{
     collections::{HashMap, VecDeque},
@@ -22,14 +25,14 @@ pub fn get_build_vapor_jobs(profile: &Profile, clean_build: bool) -> VecDeque<Wo
             .ovr_comp
             .repo
             .as_ref()
-            .unwrap_or(&"https://github.com/micheal65536/VapoR.git".into())
+            .unwrap_or(&DEFAULT_VAPOR_REPO.into())
             .clone(),
         dir: profile.ovr_comp.path.clone(),
         branch: profile
             .ovr_comp
             .branch
             .as_ref()
-            .unwrap_or(&"master".into())
+            .unwrap_or(&DEFAULT_VAPOR_BRANCH.into())
             .clone(),
     };
 

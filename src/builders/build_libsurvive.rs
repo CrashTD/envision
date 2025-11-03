@@ -3,7 +3,10 @@ use crate::{
     profile::Profile,
     termcolor::TermColor,
     ui::job_worker::job::WorkerJob,
-    util::file_utils::rm_rf,
+    util::{
+        file_utils::rm_rf,
+        git_repos::{DEFAULT_LIBSURVIVE_BRANCH, DEFAULT_LIBSURVIVE_REPO},
+    },
 };
 use std::{
     collections::{HashMap, VecDeque},
@@ -23,7 +26,7 @@ pub fn get_build_libsurvive_jobs(profile: &Profile, clean_build: bool) -> VecDeq
             .libsurvive
             .repo
             .as_ref()
-            .unwrap_or(&"https://github.com/cntools/libsurvive".into())
+            .unwrap_or(&DEFAULT_LIBSURVIVE_REPO.into())
             .clone(),
         dir: profile.features.libsurvive.path.as_ref().unwrap().clone(),
         branch: profile
@@ -31,7 +34,7 @@ pub fn get_build_libsurvive_jobs(profile: &Profile, clean_build: bool) -> VecDeq
             .libsurvive
             .branch
             .as_ref()
-            .unwrap_or(&"master".into())
+            .unwrap_or(&DEFAULT_LIBSURVIVE_BRANCH.into())
             .clone(),
     };
 

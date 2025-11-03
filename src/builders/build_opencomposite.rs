@@ -3,7 +3,10 @@ use crate::{
     profile::Profile,
     termcolor::TermColor,
     ui::job_worker::job::WorkerJob,
-    util::file_utils::rm_rf,
+    util::{
+        file_utils::rm_rf,
+        git_repos::{DEFAULT_OPENCOMPOSITE_BRANCH, DEFAULT_OPENCOMPOSITE_REPO},
+    },
 };
 use std::{
     collections::{HashMap, VecDeque},
@@ -22,14 +25,14 @@ pub fn get_build_opencomposite_jobs(profile: &Profile, clean_build: bool) -> Vec
             .ovr_comp
             .repo
             .as_ref()
-            .unwrap_or(&"https://gitlab.com/znixian/OpenOVR.git".into())
+            .unwrap_or(&DEFAULT_OPENCOMPOSITE_REPO.into())
             .clone(),
         dir: profile.ovr_comp.path.clone(),
         branch: profile
             .ovr_comp
             .branch
             .as_ref()
-            .unwrap_or(&"openxr".into())
+            .unwrap_or(&DEFAULT_OPENCOMPOSITE_BRANCH.into())
             .clone(),
     };
 

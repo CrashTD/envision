@@ -1,6 +1,12 @@
 use crate::{
-    build_tools::git::Git, profile::Profile, termcolor::TermColor, ui::job_worker::job::WorkerJob,
-    util::file_utils::rm_rf,
+    build_tools::git::Git,
+    profile::Profile,
+    termcolor::TermColor,
+    ui::job_worker::job::WorkerJob,
+    util::{
+        file_utils::rm_rf,
+        git_repos::{DEFAULT_XRIZER_BRANCH, DEFAULT_XRIZER_REPO},
+    },
 };
 use std::{collections::VecDeque, path::Path};
 
@@ -16,14 +22,14 @@ pub fn get_build_xrizer_jobs(profile: &Profile, clean_build: bool) -> VecDeque<W
             .ovr_comp
             .repo
             .as_ref()
-            .unwrap_or(&"https://github.com/Supreeeme/xrizer".into())
+            .unwrap_or(&DEFAULT_XRIZER_REPO.into())
             .clone(),
         dir: profile.ovr_comp.path.clone(),
         branch: profile
             .ovr_comp
             .branch
             .as_ref()
-            .unwrap_or(&"main".into())
+            .unwrap_or(&DEFAULT_XRIZER_BRANCH.into())
             .clone(),
     };
 

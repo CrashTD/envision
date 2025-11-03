@@ -1,6 +1,12 @@
 use crate::{
-    build_tools::git::Git, profile::Profile, termcolor::TermColor, ui::job_worker::job::WorkerJob,
-    util::file_utils::rm_rf,
+    build_tools::git::Git,
+    profile::Profile,
+    termcolor::TermColor,
+    ui::job_worker::job::WorkerJob,
+    util::{
+        file_utils::rm_rf,
+        git_repos::{DEFAULT_OPENHMD_BRANCH, DEFAULT_OPENHMD_REPO},
+    },
 };
 use std::{collections::VecDeque, path::Path};
 
@@ -17,7 +23,7 @@ pub fn get_build_openhmd_jobs(profile: &Profile, clean_build: bool) -> VecDeque<
             .openhmd
             .repo
             .as_ref()
-            .unwrap_or(&"https://github.com/thaytan/OpenHMD".into())
+            .unwrap_or(&DEFAULT_OPENHMD_REPO.into())
             .clone(),
         dir: profile.features.openhmd.path.as_ref().unwrap().clone(),
         branch: profile
@@ -25,7 +31,7 @@ pub fn get_build_openhmd_jobs(profile: &Profile, clean_build: bool) -> VecDeque<
             .openhmd
             .branch
             .as_ref()
-            .unwrap_or(&"rift-room-config".into())
+            .unwrap_or(&DEFAULT_OPENHMD_BRANCH.into())
             .clone(),
     };
 

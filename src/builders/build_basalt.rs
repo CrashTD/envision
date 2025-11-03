@@ -3,7 +3,10 @@ use crate::{
     profile::Profile,
     termcolor::TermColor,
     ui::job_worker::job::WorkerJob,
-    util::file_utils::rm_rf,
+    util::{
+        file_utils::rm_rf,
+        git_repos::{DEFAULT_BASALT_BRANCH, DEFAULT_BASALT_REPO},
+    },
 };
 use std::{
     collections::{HashMap, VecDeque},
@@ -23,7 +26,7 @@ pub fn get_build_basalt_jobs(profile: &Profile, clean_build: bool) -> VecDeque<W
             .basalt
             .repo
             .as_ref()
-            .unwrap_or(&"https://gitlab.freedesktop.org/mateosss/basalt.git".into())
+            .unwrap_or(&DEFAULT_BASALT_REPO.into())
             .clone(),
         dir: profile.features.basalt.path.as_ref().unwrap().clone(),
         branch: profile
@@ -31,7 +34,7 @@ pub fn get_build_basalt_jobs(profile: &Profile, clean_build: bool) -> VecDeque<W
             .basalt
             .branch
             .as_ref()
-            .unwrap_or(&"main".into())
+            .unwrap_or(&DEFAULT_BASALT_BRANCH.into())
             .clone(),
     };
 

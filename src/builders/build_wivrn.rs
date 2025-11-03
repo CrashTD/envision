@@ -3,7 +3,10 @@ use crate::{
     profile::Profile,
     termcolor::TermColor,
     ui::job_worker::job::WorkerJob,
-    util::file_utils::rm_rf,
+    util::{
+        file_utils::rm_rf,
+        git_repos::{DEFAULT_WIVRN_BRANCH, DEFAULT_WIVRN_REPO},
+    },
 };
 use std::{
     collections::{HashMap, VecDeque},
@@ -21,13 +24,13 @@ pub fn get_build_wivrn_jobs(profile: &Profile, clean_build: bool) -> VecDeque<Wo
         repo: profile
             .xrservice_repo
             .as_ref()
-            .unwrap_or(&"https://github.com/WiVRn/WiVRn".into())
+            .unwrap_or(&DEFAULT_WIVRN_REPO.into())
             .clone(),
         dir: profile.xrservice_path.clone(),
         branch: profile
             .xrservice_branch
             .as_ref()
-            .unwrap_or(&"release".into())
+            .unwrap_or(&DEFAULT_WIVRN_BRANCH.into())
             .clone(),
     };
 
