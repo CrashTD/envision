@@ -12,7 +12,7 @@ fn alert_base(title: &str, msg: Option<&str>) -> adw::AlertDialog {
     d
 }
 
-fn present_alert(d: adw::AlertDialog, parent: Option<&gtk::Window>) {
+pub fn present_alert(d: adw::AlertDialog, parent: Option<&gtk::Window>) {
     if parent.is_some() {
         d.present(parent);
     } else {
@@ -24,6 +24,27 @@ fn present_alert(d: adw::AlertDialog, parent: Option<&gtk::Window>) {
 pub fn alert(title: &str, msg: Option<&str>, parent: Option<&gtk::Window>) {
     let d = alert_base(title, msg);
     present_alert(d, parent);
+}
+
+pub fn yes_no_dialog<F: Fn() + 'static, G: Fn() + 'static>(
+    title: &str,
+    msg: Option<&str>,
+    on_yes: F,
+    finally: G,
+) -> adw::AlertDialog {
+    let d = adw::AlertDialog::builder().heading(title).build();
+    if let Some(m) = msg {
+        d.set_body(m);
+    }
+    d.add_response("no", "_No");
+    d.add_response("yes", "_Yes");
+    d.connect_response(None, move |_, res| {
+        if res == "yes" {
+            on_yes();
+        }
+        finally();
+    });
+    d
 }
 
 pub fn alert_w_widget(
