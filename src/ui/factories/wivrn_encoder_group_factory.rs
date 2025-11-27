@@ -57,7 +57,7 @@ impl AsyncFactoryComponent for WivrnEncoderModel {
             },
             add: encoder_combo = &combo_row(
                 "Encoder",
-                Some("x264: CPU based h264 encoding\nNVEnc: Nvidia GPU encoding\nVAAPI: Intel or AMD GPU encoding\nVulkan: Vulkan Video encoding (h264 only)"),
+                Some("x264: CPU based h264 encoding\nNVEnc: Nvidia GPU encoding\nVAAPI: Intel or AMD GPU encoding\nVulkan: Vulkan Video encoding (All GPUs, H264/H265 only)"),
                 &self.encoder_conf.encoder.to_string(),
                 Encoder::iter().map(Encoder::to_string).collect::<Vec<String>>(),
                 {
