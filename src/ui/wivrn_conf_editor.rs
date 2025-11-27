@@ -49,6 +49,7 @@ pub enum WivrnConfEditorMsg {
     AddEncoder,
     DeleteEncoder(String),
     TcpOnlyChanged(bool),
+    UseSteamVrLhChanged(bool),
     OpenEncoderPresetsWin,
     SetEncoderPreset(Vec<WivrnConfEncoder>),
 }
@@ -157,6 +158,22 @@ impl SimpleComponent for WivrnConfEditor {
                             }),
                         ),
                     },
+                    add: lhgrp = &adw::PreferencesGroup {
+                        set_title: "SteamVR",
+                        add: &switch_row(
+                            "SteamVR Lighthouse Tracking",
+                            Some(concat!(
+                                "Enables the steamvr_lh driver. ",
+                                "Only use if you have devices that use SteamVR Lighthouse tracking, ",
+                                "like Valve Index Knuckles, VIVE Wands, VIVE/Tundra trackers, etc."
+                            )),
+                            model.conf.use_steamvr_lh,
+                            clone!(#[strong] sender, move |_, val| {
+                                sender.input(Self::Input::UseSteamVrLhChanged(val));
+                                gtk::glib::Propagation::Proceed
+                            }),
+                        ),
+                    },
                     add: encodersrgp = &adw::PreferencesGroup {
                         set_title: "Encoders",
                         adw::ActionRow {
@@ -238,6 +255,9 @@ impl SimpleComponent for WivrnConfEditor {
             }
             Self::Input::TcpOnlyChanged(val) => {
                 self.conf.tcp_only = val;
+            }
+            Self::Input::UseSteamVrLhChanged(val) => {
+                self.conf.use_steamvr_lh = val;
             }
             Self::Input::AddEncoder => {
                 self.encoder_models

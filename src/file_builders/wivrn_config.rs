@@ -145,6 +145,8 @@ pub struct WivrnConfig {
     pub application: Option<WivrnConfigApplication>,
     #[serde(default, rename = "tcp-only")]
     pub tcp_only: bool,
+    #[serde(default, rename = "use-steamvr-lh")]
+    pub use_steamvr_lh: bool,
     /// contains unknown fields
     #[serde(flatten)]
     other: Map<String, Value>,
@@ -158,6 +160,7 @@ impl Default for WivrnConfig {
             encoders: vec![],
             application: None,
             tcp_only: false,
+            use_steamvr_lh: false,
             other: Map::default(),
         }
     }
