@@ -52,6 +52,7 @@ pub enum WivrnConfEditorMsg {
     UseSteamVrLhChanged(bool),
     OpenEncoderPresetsWin,
     SetEncoderPreset(Vec<WivrnConfEncoder>),
+    BitDepthChanged(bool),
 }
 
 pub struct WivrnConfEditorInit {
@@ -196,6 +197,15 @@ impl SimpleComponent for WivrnConfEditor {
                                 }
                             },
                         },
+                        add: &switch_row(
+                            "10-bit Encoding",
+                            Some("Enables 10-bit encoding."),
+                            model.conf.bit_depth == 10,
+                            clone!(#[strong] sender, move |_, val| {
+                                sender.input(Self::Input::BitDepthChanged(val));
+                                gtk::glib::Propagation::Proceed
+                            }),
+                        ),
                     },
                 }
             }
@@ -278,6 +288,9 @@ impl SimpleComponent for WivrnConfEditor {
                 } else {
                     error!("couldn't find encoder model with id {id}");
                 }
+            }
+            Self::Input::BitDepthChanged(val) => {
+                self.conf.bit_depth = if val { 10 } else { 8 };
             }
         }
     }

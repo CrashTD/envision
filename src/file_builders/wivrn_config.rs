@@ -138,9 +138,10 @@ pub struct WivrnConfig {
     pub scale: Option<[f32; 2]>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub bitrate: Option<u32>,
-    #[serde(default)]
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub encoders: Vec<WivrnConfEncoder>,
+    #[serde(default, rename = "bit-depth")]
+    pub bit_depth: u32,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub application: Option<WivrnConfigApplication>,
     #[serde(default, rename = "tcp-only")]
@@ -158,6 +159,7 @@ impl Default for WivrnConfig {
             scale: Some([0.5, 0.5]),
             bitrate: Some(50000000),
             encoders: vec![],
+            bit_depth: 8,
             application: None,
             tcp_only: false,
             use_steamvr_lh: false,
