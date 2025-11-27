@@ -109,7 +109,7 @@ impl SimpleComponent for WivrnConfEditor {
                             None,
                             match model.conf.scale {
                                 Some([x, _]) => x.into(),
-                                None => 1.0,
+                                None => 0.5,
                             },
                             0.0,
                             1.0,
@@ -121,7 +121,7 @@ impl SimpleComponent for WivrnConfEditor {
                             None,
                             match model.conf.scale {
                                 Some([_, y]) => y.into(),
-                                None => 1.0,
+                                None => 0.5,
                             },
                             0.0,
                             1.0,
