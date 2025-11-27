@@ -262,6 +262,30 @@ fn wivrn_deps() -> Vec<Dependency> {
                 (LinuxDistro::Suse, "libnotify-devel".into()),
             ]),
         },
+        Dependency {
+            name: "librsvg2-dev".into(),
+            dep_type: DepType::Include,
+            filename: "librsvg-2.0/librsvg/rsvg.h".into(),
+            packages: HashMap::from([
+                (LinuxDistro::Arch, "librsvg".into()),
+                (LinuxDistro::Alpine, "librsvg-dev".into()),
+                (LinuxDistro::Debian, "librsvg2-dev".into()),
+                (LinuxDistro::Fedora, "librsvg2-devel".into()),
+                (LinuxDistro::Suse, "librsvg-devel".into()),
+            ]),
+        },
+        Dependency {
+            name: "libarchive-dev".into(),
+            dep_type: DepType::Include,
+            filename: "archive.h".into(),
+            packages: HashMap::from([
+                (LinuxDistro::Arch, "libarchive".into()),
+                (LinuxDistro::Alpine, "libarchive-dev".into()),
+                (LinuxDistro::Debian, "libarchive-dev".into()),
+                (LinuxDistro::Fedora, "libarchive-devel".into()),
+                (LinuxDistro::Suse, "libarchive-devel".into()),
+            ]),
+        },
     ]
 }
 
