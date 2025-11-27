@@ -48,6 +48,7 @@ pub fn get_build_wivrn_jobs(profile: &Profile, clean_build: bool) -> VecDeque<Wo
                 ("XRT_HAVE_SYSTEM_CJSON", "NO"),
                 ("WIVRN_BUILD_CLIENT", "OFF"),
                 ("WIVRN_BUILD_WIVRNCTL", "OFF"),
+                ("WIVRN_USE_SYSTEM_BOOST", "OFF"),
             ] {
                 cmake_vars.insert(k.to_string(), v.to_string());
             }
