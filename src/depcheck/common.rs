@@ -335,3 +335,19 @@ pub fn dep_glslc() -> Dependency {
         ]),
     }
 }
+
+pub fn dep_libc() -> Dependency {
+    Dependency {
+        name: "libc".into(),
+        dep_type: DepType::Include,
+        filename: "wchar.h".into(),
+        packages: HashMap::from([
+            (LinuxDistro::Arch, "glibc".into()),
+            (LinuxDistro::Debian, "libc-dev".into()),
+            (LinuxDistro::Fedora, "glibc-devel".into()),
+            (LinuxDistro::Alpine, "musl-dev".into()),
+            (LinuxDistro::Gentoo, "sys-libs/glibc".into()),
+            (LinuxDistro::Suse, "glibc-devel".into()),
+        ]),
+    }
+}

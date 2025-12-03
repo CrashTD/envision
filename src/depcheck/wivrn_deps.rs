@@ -7,13 +7,14 @@ use super::{
     DepType, DepcheckResultGetMissing, Dependency, DependencyCheckResult,
 };
 use crate::{
-    depcheck::common::{dep_libgl, dep_libxrandr},
+    depcheck::common::{dep_libc, dep_libgl, dep_libxrandr},
     linux_distro::LinuxDistro,
 };
 use std::collections::HashMap;
 
 fn wivrn_deps() -> Vec<Dependency> {
     vec![
+        dep_libc(),
         dep_cmake(),
         dep_ninja(),
         dep_git(),

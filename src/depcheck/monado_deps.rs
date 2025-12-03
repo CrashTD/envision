@@ -7,13 +7,14 @@ use super::{
     DepType, DepcheckResultGetMissing, Dependency, DependencyCheckResult,
 };
 use crate::{
-    depcheck::common::{dep_glslc, dep_libxrandr},
+    depcheck::common::{dep_glslc, dep_libc, dep_libxrandr},
     linux_distro::LinuxDistro,
 };
 use std::collections::HashMap;
 
 fn monado_deps() -> Vec<Dependency> {
     vec![
+        dep_libc(),
         dep_libdrm(),
         dep_openxr(),
         dep_vulkan_icd_loader(),
