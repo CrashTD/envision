@@ -1,7 +1,7 @@
 use super::{
+    DepType, DepcheckResultGetMissing, Dependency, DependencyCheckResult,
     boost_deps::boost_deps,
     common::{dep_cmake, dep_eigen, dep_gpp, dep_libgl, dep_ninja, dep_opencv},
-    DepType, DepcheckResultGetMissing, Dependency, DependencyCheckResult,
 };
 use crate::linux_distro::LinuxDistro;
 use std::collections::HashMap;

@@ -8,7 +8,7 @@ use crate::{
     profile::Profile,
 };
 use gtk::{glib::clone, prelude::*};
-use relm4::{prelude::*, ComponentSender, SimpleComponent};
+use relm4::{ComponentSender, SimpleComponent, prelude::*};
 
 #[derive(Debug)]
 pub enum SearchDirection {

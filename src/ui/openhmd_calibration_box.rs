@@ -1,7 +1,7 @@
 use crate::{constants::APP_NAME, xdg::XDG};
 use relm4::{
-    gtk::{self, prelude::*},
     ComponentParts, ComponentSender, SimpleComponent,
+    gtk::{self, prelude::*},
 };
 use tracing::{debug, error};
 

@@ -215,9 +215,11 @@ mod tests {
             Some(WivrnConfigApplication::Str("foobar".into()))
         );
         assert!(!conf.tcp_only);
-        assert!(serde_json::to_string(&conf)
-            .unwrap()
-            .contains("\"extraneous\":\"field\",\"other\":{\"weird\":[\"stuff\"]}"));
+        assert!(
+            serde_json::to_string(&conf)
+                .unwrap()
+                .contains("\"extraneous\":\"field\",\"other\":{\"weird\":[\"stuff\"]}")
+        );
         let conf = get_wivrn_config_from_path(Path::new("./test/files/wivrn_config2.json"))
             .expect("Couln't find wivrn config 2");
         assert_eq!(

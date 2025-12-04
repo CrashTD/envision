@@ -10,7 +10,7 @@ use crate::{
     ui::plugins::Plugin,
     util::file_utils::get_writer,
 };
-use serde::{de::Error, Deserialize, Serialize};
+use serde::{Deserialize, Serialize, de::Error};
 use std::{
     collections::HashMap,
     fs::File,

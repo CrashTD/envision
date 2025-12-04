@@ -1,8 +1,8 @@
 use super::{
+    ADW_DIALOG_WIDTH,
     alert::alert_w_widget,
     factories::env_var_row_factory::{EnvVarModel, EnvVarModelInit, EnvVarModelOutMsg},
     preference_rows::{combo_row, entry_row, path_row, switch_row},
-    ADW_DIALOG_WIDTH,
 };
 use crate::{
     env_var_descriptions::ENV_VAR_DESCRIPTIONS_AS_PARAGRAPH,
@@ -554,7 +554,9 @@ impl SimpleComponent for ProfileEditor {
             {
                 desc.set_selectable(true);
             } else {
-                warn!("failed to make env var preference group description selectable, please open a bug report");
+                warn!(
+                    "failed to make env var preference group description selectable, please open a bug report"
+                );
             }
             pg
         };

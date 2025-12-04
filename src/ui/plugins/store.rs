@@ -1,16 +1,16 @@
 use super::{
+    Plugin,
     add_custom_plugin_win::{
         AddCustomPluginWin, AddCustomPluginWinInit, AddCustomPluginWinMsg, AddCustomPluginWinOutMsg,
     },
     refresh_plugins,
     store_detail::{StoreDetail, StoreDetailMsg, StoreDetailOutMsg},
     store_row_factory::{StoreRowModel, StoreRowModelInit, StoreRowModelMsg, StoreRowModelOutMsg},
-    Plugin,
 };
 use crate::{
     config::PluginConfig,
     downloader::download_file_async,
-    ui::{alert::alert, SENDER_IO_ERR_MSG},
+    ui::{SENDER_IO_ERR_MSG, alert::alert},
 };
 use adw::prelude::*;
 use relm4::{factory::AsyncFactoryVecDeque, prelude::*};
@@ -360,9 +360,12 @@ impl AsyncComponent for PluginStore {
                                 Some(&format!(
                                     "Downloading {} {} failed:\n\nNo executable url provided for this plugin, this is likely a bug!",
                                     plugin.name,
-                                    plugin.version.as_ref().unwrap_or(&"(no version)".to_string()))
-                                ),
-                                Some(&self.win.as_ref().unwrap().clone().upcast::<gtk::Window>())
+                                    plugin
+                                        .version
+                                        .as_ref()
+                                        .unwrap_or(&"(no version)".to_string())
+                                )),
+                                Some(&self.win.as_ref().unwrap().clone().upcast::<gtk::Window>()),
                             );
                         }
                     };

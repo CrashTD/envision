@@ -2,8 +2,8 @@ use crate::{
     constants::APP_ID, paths::get_cache_dir, util::file_utils::get_writer, util::hash::sha256,
 };
 use reqwest::{
-    header::{HeaderMap, USER_AGENT},
     Method,
+    header::{HeaderMap, USER_AGENT},
 };
 use std::{io::prelude::*, path::Path};
 use std::{path::PathBuf, time::Duration};

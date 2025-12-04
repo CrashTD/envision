@@ -5,10 +5,10 @@ use self::{
 };
 use crate::profile::Profile;
 use nix::sys::signal::{
-    kill,
     Signal::{SIGKILL, SIGTERM},
+    kill,
 };
-use relm4::{prelude::*, Sender, WorkerController};
+use relm4::{Sender, WorkerController, prelude::*};
 use std::{
     collections::VecDeque,
     sync::{Arc, Mutex},

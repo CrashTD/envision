@@ -1,5 +1,5 @@
 use crate::termcolor::TermColor;
-use serde::{de::Visitor, Deserialize, Serialize};
+use serde::{Deserialize, Serialize, de::Visitor};
 use std::{fmt::Display, slice::Iter, str::FromStr};
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Serialize)]

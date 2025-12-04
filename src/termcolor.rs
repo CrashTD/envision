@@ -44,6 +44,9 @@ impl TermColor {
     }
 
     pub fn colorize(&self, s: &str) -> String {
-        format!("{ANSI_ESCAPE_BEGIN}{code}{ANSI_ESCAPE_END}{s}{ANSI_ESCAPE_BEGIN}{ANSI_RESET}{ANSI_ESCAPE_END}", code = self.code())
+        format!(
+            "{ANSI_ESCAPE_BEGIN}{code}{ANSI_ESCAPE_END}{s}{ANSI_ESCAPE_BEGIN}{ANSI_RESET}{ANSI_ESCAPE_END}",
+            code = self.code()
+        )
     }
 }

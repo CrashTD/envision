@@ -189,8 +189,8 @@ impl LinuxDistro {
                     let rpmfusion_free_path = Path::new("/etc/yum.repos.d/rpmfusion-free.repo");
                     if !rpmfusion_free_path.is_file() {
                         install_rpmfusion_cmd = Some(String::from(
-                                "sudo dnf install https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm"
-                                ));
+                            "sudo dnf install https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm",
+                        ));
                     }
 
                     let ffmpeg_free_path = Path::new("/usr/share/doc/ffmpeg-free");

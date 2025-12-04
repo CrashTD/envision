@@ -1,6 +1,6 @@
 use super::{
-    common::{dep_cmake, dep_eigen, dep_gcc, dep_git, dep_gpp, dep_ninja},
     DepcheckResultGetMissing, Dependency, DependencyCheckResult,
+    common::{dep_cmake, dep_eigen, dep_gcc, dep_git, dep_gpp, dep_ninja},
 };
 
 fn libsurvive_deps() -> Vec<Dependency> {

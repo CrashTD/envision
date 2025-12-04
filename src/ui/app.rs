@@ -5,9 +5,9 @@ use super::{
     cmdline_opts::CmdLineOpts,
     debug_view::{DebugView, DebugViewInit, DebugViewMsg, DebugViewOutMsg},
     job_worker::{
+        JobWorker,
         internal_worker::JobWorkerOut,
         job::{FuncWorkerOut, WorkerJob},
-        JobWorker,
     },
     libsurvive_setup_window::{LibsurviveSetupMsg, LibsurviveSetupWindow},
     main_view::{MainView, MainViewInit, MainViewMsg, MainViewOutMsg},
@@ -54,8 +54,8 @@ use crate::{
     wivrn_dbus,
     xr_devices::XRDevice,
 };
-use adw::{prelude::*, ResponseAppearance};
-use delicious_adwaita::{theme::Theme, ThemeEngine};
+use adw::{ResponseAppearance, prelude::*};
+use delicious_adwaita::{ThemeEngine, theme::Theme};
 use gtk::glib::{self, clone};
 use notify_rust::NotificationHandle;
 use relm4::{
@@ -281,12 +281,13 @@ impl App {
                         None
                     } else {
                         Some({
-                            let mut cmd_parts = vec![cp
-                                .plugin
-                                .executable()
-                                .unwrap()
-                                .to_string_lossy()
-                                .to_string()];
+                            let mut cmd_parts = vec![
+                                cp.plugin
+                                    .executable()
+                                    .unwrap()
+                                    .to_string_lossy()
+                                    .to_string(),
+                            ];
                             cmd_parts.extend(cp.plugin.args.clone().unwrap_or_default());
                             cmd_parts
                                 .iter()
@@ -814,17 +815,20 @@ impl AsyncComponent for App {
                         } else {
                             self.build_window
                                 .sender()
-                                .emit(BuildWindowMsg::UpdateContent(vec![TermColor::Red
-                                    .colorize("pkexec not found, cannot set capabilities\n")]));
+                                .emit(BuildWindowMsg::UpdateContent(vec![
+                                    TermColor::Red
+                                        .colorize("pkexec not found, cannot set capabilities\n"),
+                                ]));
                             alert_w_widget(
                                 "pkexec not found",
                                 Some(&format!(
                                     "The build is complete, but we need to set certain capabilities (CAP_SYS_NICE=eip) on the OpenXR server executable.\n\n{APP_NAME} can do that using pkexec, but it doesn't seem to be installed on your system.\n\nYou can do this step on your own by running the following command:"
                                 )),
-                                Some(&copiable_code_snippet(
-                                    &format!("sudo {}", setcap_cap_sys_nice_eip_cmd(&profile).join(" "))
-                                )),
-                                Some(&self.app_win.clone().upcast())
+                                Some(&copiable_code_snippet(&format!(
+                                    "sudo {}",
+                                    setcap_cap_sys_nice_eip_cmd(&profile).join(" ")
+                                ))),
+                                Some(&self.app_win.clone().upcast()),
                             );
                         }
                         self.build_window
@@ -904,12 +908,14 @@ impl AsyncComponent for App {
                     let setcap_failed_dialog = || {
                         alert_w_widget(
                             "Setcap failed to run",
-                            Some("Setting the capabilities automatically failed, you can still try manually using the command below."
+                            Some(
+                                "Setting the capabilities automatically failed, you can still try manually using the command below.",
                             ),
-                            Some(&copiable_code_snippet(
-                                &format!("sudo {}", setcap_cap_sys_nice_eip_cmd(&profile).join(" "))
-                            )),
-                            Some(&self.app_win.clone().upcast())
+                            Some(&copiable_code_snippet(&format!(
+                                "sudo {}",
+                                setcap_cap_sys_nice_eip_cmd(&profile).join(" ")
+                            ))),
+                            Some(&self.app_win.clone().upcast()),
                         );
                     };
                     if let Err(e) = setcap_cap_sys_nice_eip(&profile).await {
@@ -918,7 +924,7 @@ impl AsyncComponent for App {
                         self.build_window
                             .sender()
                             .emit(BuildWindowMsg::UpdateContent(vec![
-                                TermColor::Red.colorize("Setting capabilities failed\n")
+                                TermColor::Red.colorize("Setting capabilities failed\n"),
                             ]));
                     } else if !verify_cap_sys_nice_eip(&profile).await {
                         setcap_failed_dialog();
@@ -933,7 +939,7 @@ impl AsyncComponent for App {
                         self.build_window
                             .sender()
                             .emit(BuildWindowMsg::UpdateContent(vec![
-                                TermColor::Green.colorize("Capabilities set correctly\n")
+                                TermColor::Green.colorize("Capabilities set correctly\n"),
                             ]));
                     }
                 }

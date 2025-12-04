@@ -7,7 +7,7 @@ use crate::{
     ui::SENDER_IO_ERR_MSG,
 };
 use nix::unistd::Pid;
-use relm4::{prelude::*, Worker};
+use relm4::{Worker, prelude::*};
 use std::{
     collections::VecDeque,
     io::{BufRead, BufReader},

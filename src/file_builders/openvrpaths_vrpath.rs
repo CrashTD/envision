@@ -4,7 +4,7 @@ use crate::{
     util::file_utils::{copy_file, deserialize_file, get_writer, set_file_readonly},
     xdg::XDG,
 };
-use serde::{ser::Error, Deserialize, Serialize};
+use serde::{Deserialize, Serialize, ser::Error};
 use std::path::{Path, PathBuf};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -114,7 +114,7 @@ pub fn set_current_openvrpaths_to_profile(profile: &Profile) -> anyhow::Result<(
 
 #[cfg(test)]
 mod tests {
-    use super::{dump_openvrpaths_to_path, get_openvrpaths_from_path, OpenVrPaths};
+    use super::{OpenVrPaths, dump_openvrpaths_to_path, get_openvrpaths_from_path};
     use std::path::Path;
 
     #[test]

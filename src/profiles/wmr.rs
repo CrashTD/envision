@@ -2,8 +2,8 @@ use crate::{
     constants::APP_NAME,
     paths::{data_basalt_path, data_monado_path, data_ovr_comp_path, get_data_dir},
     profile::{
-        prepare_ld_library_path, LighthouseDriver, Profile, ProfileFeature, ProfileFeatureType,
-        ProfileFeatures, ProfileOvrCompatibilityModule, XRServiceType,
+        LighthouseDriver, Profile, ProfileFeature, ProfileFeatureType, ProfileFeatures,
+        ProfileOvrCompatibilityModule, XRServiceType, prepare_ld_library_path,
     },
 };
 use std::collections::HashMap;

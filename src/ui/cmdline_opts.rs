@@ -4,8 +4,8 @@ use crate::{
 };
 use gtk::{
     gio::{
-        prelude::{ApplicationCommandLineExt, ApplicationExt},
         Application, ApplicationCommandLine,
+        prelude::{ApplicationCommandLineExt, ApplicationExt},
     },
     glib::{self, prelude::IsA},
 };

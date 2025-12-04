@@ -1,5 +1,5 @@
 use super::{
-    common::dep_opencv, DepType, DepcheckResultGetMissing, Dependency, DependencyCheckResult,
+    DepType, DepcheckResultGetMissing, Dependency, DependencyCheckResult, common::dep_opencv,
 };
 use crate::linux_distro::LinuxDistro;
 use std::collections::HashMap;

@@ -1,5 +1,5 @@
 use gtk::{gdk, glib::clone, prelude::*};
-use vte4::{prelude::*, Terminal};
+use vte4::{Terminal, prelude::*};
 
 use super::util::copy_text;
 

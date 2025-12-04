@@ -4,8 +4,8 @@ use crate::{
 };
 use nix::{
     sys::signal::{
-        kill,
         Signal::{SIGKILL, SIGTERM},
+        kill,
     },
     unistd::Pid,
 };
@@ -15,10 +15,10 @@ use std::{
     path::Path,
     process::{Child, Command, Stdio},
     sync::{
-        mpsc::{sync_channel, Receiver, SyncSender},
         Arc, Mutex,
+        mpsc::{Receiver, SyncSender, sync_channel},
     },
-    thread::{self, sleep, JoinHandle},
+    thread::{self, JoinHandle, sleep},
     time::Duration,
 };
 

@@ -253,13 +253,10 @@ impl XRDevice {
                             id: dev.name_id,
                             index: dev.index,
                             serial: dev.serial().ok(),
-                            battery: dev.battery_status().ok().and_then(|bs| {
-                                if bs.present {
-                                    Some(bs)
-                                } else {
-                                    None
-                                }
-                            }),
+                            battery: dev
+                                .battery_status()
+                                .ok()
+                                .and_then(|bs| if bs.present { Some(bs) } else { None }),
                             name: dev.name,
                             roles: Vec::default(),
                         },

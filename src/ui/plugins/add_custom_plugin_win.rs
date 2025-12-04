@@ -3,8 +3,8 @@ use std::path::PathBuf;
 use crate::{
     constants::APP_ID,
     ui::{
-        preference_rows::{entry_row, file_row},
         SENDER_IO_ERR_MSG,
+        preference_rows::{entry_row, file_row},
     },
 };
 

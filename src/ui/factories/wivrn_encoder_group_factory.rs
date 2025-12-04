@@ -1,11 +1,11 @@
 use crate::{
     file_builders::wivrn_config::{Codec, Encoder, WivrnConfEncoder},
     ui::{
-        preference_rows::{combo_row, spin_row},
         SENDER_IO_ERR_MSG,
+        preference_rows::{combo_row, spin_row},
     },
 };
-use relm4::{adw::prelude::*, factory::AsyncFactoryComponent, prelude::*, AsyncFactorySender};
+use relm4::{AsyncFactorySender, adw::prelude::*, factory::AsyncFactoryComponent, prelude::*};
 use uuid::Uuid;
 
 #[derive(Debug)]

@@ -1,5 +1,5 @@
 use anyhow::Result;
-use constants::{resources, APP_ID, APP_NAME, GETTEXT_PACKAGE, LOCALE_DIR, RESOURCES_BASE_PATH};
+use constants::{APP_ID, APP_NAME, GETTEXT_PACKAGE, LOCALE_DIR, RESOURCES_BASE_PATH, resources};
 use file_builders::{
     active_runtime_json::restore_active_runtime_backup,
     openvrpaths_vrpath::{get_current_openvrpaths, set_current_openvrpaths_to_steam},
@@ -7,9 +7,8 @@ use file_builders::{
 use gettextrs::LocaleCategory;
 use paths::get_logs_dir;
 use relm4::{
-    adw,
+    MessageBroker, RelmApp, adw,
     gtk::{self, gdk, gio, glib, prelude::*},
-    MessageBroker, RelmApp,
 };
 use std::{
     env,
@@ -22,7 +21,7 @@ use steam_linux_runtime_injector::{
 };
 use tracing::{error, warn};
 use tracing_subscriber::{
-    filter::LevelFilter, layer::SubscriberExt, util::SubscriberInitExt, EnvFilter, Layer,
+    EnvFilter, Layer, filter::LevelFilter, layer::SubscriberExt, util::SubscriberInitExt,
 };
 use ui::{
     app::{App, AppInit, Msg},

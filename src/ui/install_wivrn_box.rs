@@ -1,4 +1,4 @@
-use super::{alert::alert, ADB_ERR_NO_DEV};
+use super::{ADB_ERR_NO_DEV, alert::alert};
 use crate::{
     async_process::async_process,
     depcheck::common::dep_adb,
@@ -166,7 +166,13 @@ impl AsyncComponent for InstallWivrnBox {
         match message {
             Self::Input::InstallWivrnApk => {
                 if !dep_adb().check() {
-                    alert("ADB is not installed", Some("Please install ADB on your computer to install WiVRn on your Android headset"), Some(&self.root_win));
+                    alert(
+                        "ADB is not installed",
+                        Some(
+                            "Please install ADB on your computer to install WiVRn on your Android headset",
+                        ),
+                        Some(&self.root_win),
+                    );
                     return;
                 }
                 self.set_install_wivrn_status(InstallWivrnStatus::InProgress);
@@ -181,7 +187,9 @@ impl AsyncComponent for InstallWivrnBox {
                         )));
                     }
                     Err(GetWivrnApkRefErr::RepoManipulationFailed(giterr)) => {
-                        error!("failed to manipulate WiVRn repo: {giterr}, falling back to latest release APK");
+                        error!(
+                            "failed to manipulate WiVRn repo: {giterr}, falling back to latest release APK"
+                        );
                         let existing = cache_file_path(WIVRN_LATEST_RELEASE_APK_URL, Some("apk"));
                         if existing.is_file()
                             && let Err(e) = remove_file(&existing)

@@ -2,7 +2,7 @@ use super::Plugin;
 use crate::{downloader::cache_file, ui::SENDER_IO_ERR_MSG};
 use gtk::prelude::*;
 use relm4::{
-    factory::AsyncFactoryComponent, prelude::DynamicIndex, AsyncFactorySender, RelmWidgetExt,
+    AsyncFactorySender, RelmWidgetExt, factory::AsyncFactoryComponent, prelude::DynamicIndex,
 };
 use tracing::error;
 

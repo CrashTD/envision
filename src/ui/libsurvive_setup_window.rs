@@ -1,7 +1,7 @@
 use super::alert::alert;
 use crate::{
     cmd_runner::CmdRunner,
-    profile::{prepare_ld_library_path, Profile},
+    profile::{Profile, prepare_ld_library_path},
 };
 use adw::prelude::*;
 use gtk::glib;

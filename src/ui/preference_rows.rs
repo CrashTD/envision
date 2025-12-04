@@ -1,7 +1,7 @@
 use adw::prelude::*;
 use gtk::{
     gio,
-    glib::{self, clone, GString},
+    glib::{self, GString, clone},
 };
 use relm4::prelude::*;
 

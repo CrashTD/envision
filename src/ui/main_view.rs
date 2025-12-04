@@ -1,4 +1,5 @@
 use super::{
+    SENDER_IO_ERR_MSG,
     alert::alert,
     app::{
         AboutAction, BuildProfileAction, BuildProfileCleanAction, ConfigureWivrnAction,
@@ -12,12 +13,11 @@ use super::{
     steamvr_calibration_box::{SteamVrCalibrationBox, SteamVrCalibrationBoxMsg},
     util::{limit_dropdown_width, warning_heading},
     wivrn_wired_start_box::{WivrnWiredStartBox, WivrnWiredStartBoxInit, WivrnWiredStartBoxMsg},
-    SENDER_IO_ERR_MSG,
 };
 use crate::{
     config::Config,
     depcheck::common::dep_pkexec,
-    gpu_profile::{get_amd_gpu_power_profile, GpuPowerProfile},
+    gpu_profile::{GpuPowerProfile, get_amd_gpu_power_profile},
     paths::{get_data_dir, get_home_dir},
     profile::{LighthouseDriver, Profile, XRServiceType},
     stateless_action,
@@ -29,7 +29,7 @@ use crate::{
     wivrn_dbus,
     xr_devices::XRDevice,
 };
-use adw::{prelude::*, ResponseAppearance};
+use adw::{ResponseAppearance, prelude::*};
 use gtk::glib::clone;
 use relm4::{
     actions::{ActionGroupName, RelmAction, RelmActionGroup},

@@ -2,10 +2,10 @@ use crate::{async_process::async_process, depcheck::common::dep_getcap_setcap, p
 use anyhow::bail;
 use nix::{
     errno::Errno,
-    sys::statvfs::{statvfs, FsFlags},
+    sys::statvfs::{FsFlags, statvfs},
 };
 use std::{
-    fs::{self, copy, create_dir_all, remove_dir_all, File, OpenOptions},
+    fs::{self, File, OpenOptions, copy, create_dir_all, remove_dir_all},
     io::{BufReader, BufWriter},
     os::unix::fs::PermissionsExt,
     path::Path,

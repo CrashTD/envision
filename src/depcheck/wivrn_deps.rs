@@ -1,10 +1,10 @@
 use super::{
+    DepType, DepcheckResultGetMissing, Dependency, DependencyCheckResult,
     common::{
         dep_cmake, dep_eigen, dep_gcc, dep_git, dep_glslang_validator, dep_gpp, dep_libdrm,
         dep_libudev, dep_libx11, dep_libxcb, dep_ninja, dep_openxr, dep_vulkan_headers,
         dep_vulkan_icd_loader,
     },
-    DepType, DepcheckResultGetMissing, Dependency, DependencyCheckResult,
 };
 use crate::{
     depcheck::common::{dep_libc, dep_libgl, dep_libxrandr},

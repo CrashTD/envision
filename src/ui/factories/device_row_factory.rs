@@ -3,7 +3,7 @@ use crate::{
     xr_devices::{XRDevice, XRDeviceRole},
 };
 use adw::prelude::*;
-use relm4::{factory::AsyncFactoryComponent, prelude::*, AsyncFactorySender};
+use relm4::{AsyncFactorySender, factory::AsyncFactoryComponent, prelude::*};
 
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DeviceRowState {

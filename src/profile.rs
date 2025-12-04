@@ -1,13 +1,13 @@
 use crate::{
     build_tools::git::Git,
     depcheck::{
-        basalt_deps::get_missing_basalt_deps, libsurvive_deps::get_missing_libsurvive_deps,
-        mercury_deps::get_missing_mercury_deps, monado_deps::get_missing_monado_deps,
-        openhmd_deps::get_missing_openhmd_deps, wivrn_deps::get_missing_wivrn_deps,
-        xrizer_deps::get_missing_xrizer_deps, Dependency,
+        Dependency, basalt_deps::get_missing_basalt_deps,
+        libsurvive_deps::get_missing_libsurvive_deps, mercury_deps::get_missing_mercury_deps,
+        monado_deps::get_missing_monado_deps, openhmd_deps::get_missing_openhmd_deps,
+        wivrn_deps::get_missing_wivrn_deps, xrizer_deps::get_missing_xrizer_deps,
     },
     file_builders::active_runtime_json::ActiveRuntime,
-    paths::{get_data_dir, BWRAP_SYSTEM_PREFIX, SYSTEM_PREFIX},
+    paths::{BWRAP_SYSTEM_PREFIX, SYSTEM_PREFIX, get_data_dir},
     util::{
         file_utils::{deserialize_file, get_writer},
         git_repos::{
@@ -25,7 +25,7 @@ use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
     fmt::Display,
-    fs::{remove_dir_all, File},
+    fs::{File, remove_dir_all},
     io::BufReader,
     path::{Path, PathBuf},
     slice::Iter,
@@ -939,13 +939,17 @@ mod tests {
         assert!(profile.features.libsurvive.enabled);
         assert!(!profile.features.basalt.enabled);
         assert!(!profile.features.mercury_enabled);
-        assert!(profile
-            .environment
-            .contains_key("XRT_COMPOSITOR_SCALE_PERCENTAGE"));
+        assert!(
+            profile
+                .environment
+                .contains_key("XRT_COMPOSITOR_SCALE_PERCENTAGE")
+        );
         assert!(profile.environment.contains_key("XRT_COMPOSITOR_COMPUTE"));
-        assert!(profile
-            .environment
-            .contains_key("SURVIVE_GLOBALSCENESOLVER"));
+        assert!(
+            profile
+                .environment
+                .contains_key("SURVIVE_GLOBALSCENESOLVER")
+        );
     }
 
     #[test]

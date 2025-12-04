@@ -2,8 +2,8 @@ use crate::{
     constants::APP_NAME,
     paths::{data_ovr_comp_path, data_wivrn_path, get_data_dir},
     profile::{
-        prepare_ld_library_path, Profile, ProfileFeatures, ProfileOvrCompatibilityModule,
-        XRServiceType,
+        Profile, ProfileFeatures, ProfileOvrCompatibilityModule, XRServiceType,
+        prepare_ld_library_path,
     },
     ui::job_worker::internal_worker::LAUNCH_OPTS_CMD_PLACEHOLDER,
 };

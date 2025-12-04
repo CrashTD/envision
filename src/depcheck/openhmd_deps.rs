@@ -1,6 +1,6 @@
 use super::{
-    common::{dep_gcc, dep_git, dep_gpp, dep_ninja},
     DepcheckResultGetMissing, Dependency, DependencyCheckResult,
+    common::{dep_gcc, dep_git, dep_gpp, dep_ninja},
 };
 use crate::linux_distro::LinuxDistro;
 use std::collections::HashMap;

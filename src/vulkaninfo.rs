@@ -1,6 +1,6 @@
 use ash::{
-    vk::{ApplicationInfo, InstanceCreateInfo},
     Entry,
+    vk::{ApplicationInfo, InstanceCreateInfo},
 };
 
 #[derive(Debug, Clone)]

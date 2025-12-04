@@ -163,8 +163,8 @@ mod tests {
     use std::path::{Path, PathBuf};
 
     use super::{
-        dump_active_runtime_to_path, get_active_runtime_from_path,
-        relativize_active_runtime_lib_path, ActiveRuntime, ActiveRuntimeInnerRuntime,
+        ActiveRuntime, ActiveRuntimeInnerRuntime, dump_active_runtime_to_path,
+        get_active_runtime_from_path, relativize_active_runtime_lib_path,
     };
 
     #[test]

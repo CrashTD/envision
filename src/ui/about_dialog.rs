@@ -1,7 +1,7 @@
 use crate::{
     constants::{
-        get_artists, APP_ID, APP_NAME, BUILD_DATETIME, ISSUES_URL, REPO_URL, SINGLE_DEVELOPER,
-        VERSION,
+        APP_ID, APP_NAME, BUILD_DATETIME, ISSUES_URL, REPO_URL, SINGLE_DEVELOPER, VERSION,
+        get_artists,
     },
     device_prober::PhysicalXRDevice,
     linux_distro::LinuxDistro,

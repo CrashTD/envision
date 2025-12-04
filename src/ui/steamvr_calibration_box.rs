@@ -1,12 +1,12 @@
 use super::job_worker::{
+    JobWorker,
     internal_worker::JobWorkerOut,
     job::{FuncWorkerOut, WorkerJob},
-    JobWorker,
 };
 use crate::paths::get_steamvr_bin_dir_path;
 use relm4::{
-    gtk::{self, prelude::*},
     ComponentParts, ComponentSender, RelmWidgetExt, SimpleComponent,
+    gtk::{self, prelude::*},
 };
 use std::{
     collections::{HashMap, VecDeque},

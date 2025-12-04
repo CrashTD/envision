@@ -9,13 +9,13 @@ use super::{
 };
 use crate::{
     file_builders::wivrn_config::{
-        dump_wivrn_config, get_wivrn_config, WivrnConfEncoder, WivrnConfig,
+        WivrnConfEncoder, WivrnConfig, dump_wivrn_config, get_wivrn_config,
     },
     ui::{
+        ADW_DIALOG_WIDTH,
         preference_rows::{number_entry_row, spin_row, switch_row},
         util::bits_to_mbits,
         wivrn_encoder_presets_win::WivrnEncoderPresetsWinInit,
-        ADW_DIALOG_WIDTH,
     },
 };
 use adw::prelude::*;
