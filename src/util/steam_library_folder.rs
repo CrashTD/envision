@@ -1,4 +1,4 @@
-use crate::paths::get_home_dir;
+use crate::{paths::get_home_dir, xdg::XDG};
 use anyhow::bail;
 use serde::Deserialize;
 use std::{
@@ -13,16 +13,21 @@ pub struct SteamLibraryFolder {
     pub apps: HashMap<u32, usize>,
 }
 
-fn get_steam_main_dir_path() -> anyhow::Result<PathBuf> {
-    let steam_root: PathBuf = get_home_dir().join(".steam/root").canonicalize()?;
-
-    if steam_root.is_dir() {
+pub fn get_steam_main_dir_path() -> anyhow::Result<PathBuf> {
+    if let Ok(steam_root) = get_home_dir().join(".steam/root").canonicalize()
+        && steam_root.is_dir()
+    {
+        Ok(steam_root)
+    } else if let Ok(steam_root) = XDG.get_data_home().join("Steam").canonicalize()
+        && steam_root.is_dir()
+    {
+        Ok(steam_root)
+    } else if let Ok(steam_root) = XDG.get_data_home().join("steam").canonicalize()
+        && steam_root.is_dir()
+    {
         Ok(steam_root)
     } else {
-        bail!(
-            "Canonical steam root '{}' is not a dir nor a symlink!",
-            steam_root.to_string_lossy()
-        )
+        bail!("Could not find canonical steam root!",)
     }
 }
 
