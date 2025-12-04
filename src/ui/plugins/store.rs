@@ -385,17 +385,18 @@ impl AsyncComponent for PluginStore {
                 }
                 if let Some(exec) = plugin.executable() {
                     // delete executable only if it's not a custom plugin
-                    if exec.is_file() && plugin.exec_url.is_some() {
-                        if let Err(e) = remove_file(&exec) {
-                            alert(
-                                "Failed removing plugin",
-                                Some(&format!(
-                                    "Could not remove plugin executable {}:\n\n{e}",
-                                    exec.to_string_lossy()
-                                )),
-                                Some(&self.win.as_ref().unwrap().clone().upcast::<gtk::Window>()),
-                            );
-                        }
+                    if exec.is_file()
+                        && plugin.exec_url.is_some()
+                        && let Err(e) = remove_file(&exec)
+                    {
+                        alert(
+                            "Failed removing plugin",
+                            Some(&format!(
+                                "Could not remove plugin executable {}:\n\n{e}",
+                                exec.to_string_lossy()
+                            )),
+                            Some(&self.win.as_ref().unwrap().clone().upcast::<gtk::Window>()),
+                        );
                     }
                 }
                 self.config_plugins.remove(&plugin.appid);

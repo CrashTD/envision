@@ -229,12 +229,12 @@ pub fn file_row<F: Fn(Option<String>) + 'static + Clone>(
                     #[strong]
                     cb,
                     move |res| {
-                        if let Ok(file) = res {
-                            if let Some(path) = file.path() {
-                                let path_s = path.to_string_lossy().to_string();
-                                path_label.set_text(&path_s);
-                                cb(Some(path_s))
-                            }
+                        if let Ok(file) = res
+                            && let Some(path) = file.path()
+                        {
+                            let path_s = path.to_string_lossy().to_string();
+                            path_label.set_text(&path_s);
+                            cb(Some(path_s))
                         }
                     }
                 ),
@@ -271,12 +271,12 @@ pub fn path_row<F: Fn(Option<String>) + 'static + Clone>(
                     #[strong]
                     cb,
                     move |res| {
-                        if let Ok(file) = res {
-                            if let Some(path) = file.path() {
-                                let path_s = path.to_string_lossy().to_string();
-                                path_label.set_text(&path_s);
-                                cb(Some(path_s))
-                            }
+                        if let Ok(file) = res
+                            && let Some(path) = file.path()
+                        {
+                            let path_s = path.to_string_lossy().to_string();
+                            path_label.set_text(&path_s);
+                            cb(Some(path_s))
                         }
                     }
                 ),

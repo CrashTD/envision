@@ -72,15 +72,14 @@ impl Dependency {
     }
 
     pub fn package_name_for_distro(&self, distro: Option<&LinuxDistro>) -> String {
-        if let Some(distro) = distro {
-            if let Some(pname) = self
+        if let Some(distro) = distro
+            && let Some(pname) = self
                 .packages
                 .iter()
                 .find(|(k, _)| *k == distro)
                 .map(|(_, v)| v)
-            {
-                return pname.clone();
-            }
+        {
+            return pname.clone();
         }
         self.name.clone()
     }

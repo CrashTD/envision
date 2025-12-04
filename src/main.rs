@@ -63,12 +63,11 @@ fn restore_steam_xr_files() {
     if let Err(e) = restore_active_runtime_backup() {
         warn!("failed to restore active runtime to steam: {e}");
     }
-    if let Some(ovrp) = openvrpaths {
-        if !file_builders::openvrpaths_vrpath::is_steam(&ovrp) {
-            if let Err(e) = set_current_openvrpaths_to_steam() {
-                warn!("failed to restore openvrpaths to steam: {e}");
-            }
-        }
+    if let Some(ovrp) = openvrpaths
+        && !file_builders::openvrpaths_vrpath::is_steam(&ovrp)
+        && let Err(e) = set_current_openvrpaths_to_steam()
+    {
+        warn!("failed to restore openvrpaths to steam: {e}");
     }
     restore_sniper_runtime_entrypoint();
     restore_soldier_runtime_entrypoint();

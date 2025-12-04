@@ -420,12 +420,12 @@ impl SimpleComponent for LibsurviveSetupWindow {
                     Some(&self.win.as_ref().unwrap().clone()),
                     gtk::gio::Cancellable::NONE,
                     move |res| {
-                        if let Ok(file) = res {
-                            if let Some(path) = file.path() {
-                                fd_sender.input(LibsurviveSetupMsg::SetSteamLighthousePath(Some(
-                                    path.to_str().unwrap().to_string(),
-                                )))
-                            }
+                        if let Ok(file) = res
+                            && let Some(path) = file.path()
+                        {
+                            fd_sender.input(LibsurviveSetupMsg::SetSteamLighthousePath(Some(
+                                path.to_str().unwrap().to_string(),
+                            )))
                         }
                     },
                 );

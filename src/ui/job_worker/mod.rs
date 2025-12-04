@@ -103,14 +103,16 @@ impl JobWorker {
                 let state = self.state.clone();
                 thread::spawn(move || {
                     sleep(Duration::from_secs(2));
-                    if let Ok(s) = state.lock() {
-                        if !s.exited {
-                            // process is still alive
-                            warn!("process is still alive 2 seconds after SIGTERM, proceeding to send SIGKILL...");
-                            if let Err(e) = kill(pid, SIGKILL) {
-                                error!("failed to send SIGKILL: {e}");
-                            };
-                        }
+                    if let Ok(s) = state.lock()
+                        && !s.exited
+                    {
+                        // process is still alive
+                        warn!(
+                            "process is still alive 2 seconds after SIGTERM, proceeding to send SIGKILL..."
+                        );
+                        if let Err(e) = kill(pid, SIGKILL) {
+                            error!("failed to send SIGKILL: {e}");
+                        };
                     }
                 });
             }

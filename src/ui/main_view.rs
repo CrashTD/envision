@@ -786,24 +786,17 @@ impl AsyncComponent for MainView {
                     gtk::gio::Cancellable::NONE,
                     move |res| {
                         if let Ok(file) = res {
-                            if let Some(path) = file.path() {
-                                if let Ok(mut writer) = get_writer(&path) {
-                                    if let Ok(s) = serde_json::to_string_pretty(&prof) {
-                                        let prof_id = prof.uuid;
-                                        let s = s
-                                            .replace(
-                                                get_data_dir().to_string_lossy().as_ref(),
-                                                "@DATADIR@",
-                                            )
-                                            .replace(
-                                                get_home_dir().to_string_lossy().as_ref(),
-                                                "@HOMEDIR@",
-                                            )
-                                            .replace(&prof_id, "@UUID@");
-                                        if writer.write_all(s.as_bytes()).is_ok() {
-                                            return;
-                                        }
-                                    }
+                            if let Some(path) = file.path()
+                                && let Ok(mut writer) = get_writer(&path)
+                                && let Ok(s) = serde_json::to_string_pretty(&prof)
+                            {
+                                let prof_id = prof.uuid;
+                                let s = s
+                                    .replace(get_data_dir().to_string_lossy().as_ref(), "@DATADIR@")
+                                    .replace(get_home_dir().to_string_lossy().as_ref(), "@HOMEDIR@")
+                                    .replace(&prof_id, "@UUID@");
+                                if writer.write_all(s.as_bytes()).is_ok() {
+                                    return;
                                 }
                             }
                             alert("Failed to export profile", None, Some(&root_win));
@@ -850,22 +843,22 @@ impl AsyncComponent for MainView {
                         gtk::gio::Cancellable::NONE,
                         move |res| {
                             if let Ok(file) = res {
-                                if let Some(path) = file.path() {
-                                    if let Ok(s) = read_to_string(path) {
-                                        let s = s
-                                            .replace(
-                                                "@DATADIR@",
-                                                get_data_dir().to_string_lossy().as_ref(),
-                                            )
-                                            .replace(
-                                                "@HOMEDIR@",
-                                                get_home_dir().to_string_lossy().as_ref(),
-                                            )
-                                            .replace("@UUID@", &Profile::new_uuid());
-                                        if let Ok(nprof) = serde_json::from_str::<Profile>(&s) {
-                                            fd_sender.input(Self::Input::OpenProfileEditor(nprof));
-                                            return;
-                                        }
+                                if let Some(path) = file.path()
+                                    && let Ok(s) = read_to_string(path)
+                                {
+                                    let s = s
+                                        .replace(
+                                            "@DATADIR@",
+                                            get_data_dir().to_string_lossy().as_ref(),
+                                        )
+                                        .replace(
+                                            "@HOMEDIR@",
+                                            get_home_dir().to_string_lossy().as_ref(),
+                                        )
+                                        .replace("@UUID@", &Profile::new_uuid());
+                                    if let Ok(nprof) = serde_json::from_str::<Profile>(&s) {
+                                        fd_sender.input(Self::Input::OpenProfileEditor(nprof));
+                                        return;
                                     }
                                 }
                                 alert("Failed to import profile", None, Some(&root_win));

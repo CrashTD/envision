@@ -995,14 +995,14 @@ impl AsyncComponent for App {
                 self.wivrn_conf_editor = Some(editor);
             }
             Msg::HandleCommandLine(opts) => {
-                if let Some(prof_uuid) = opts.profile_uuid {
-                    if let Some(index) = self.profiles.iter().position(|p| p.uuid == prof_uuid) {
-                        let target = self.profiles.get(index).unwrap();
-                        sender.input(Msg::ProfileSelected(target.clone()));
-                        self.main_view
-                            .sender()
-                            .emit(MainViewMsg::SetSelectedProfile(index as u32));
-                    }
+                if let Some(prof_uuid) = opts.profile_uuid
+                    && let Some(index) = self.profiles.iter().position(|p| p.uuid == prof_uuid)
+                {
+                    let target = self.profiles.get(index).unwrap();
+                    sender.input(Msg::ProfileSelected(target.clone()));
+                    self.main_view
+                        .sender()
+                        .emit(MainViewMsg::SetSelectedProfile(index as u32));
                 }
                 if opts.start {
                     sender.input(Msg::DoStartStopXRService)

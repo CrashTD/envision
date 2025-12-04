@@ -141,14 +141,14 @@ pub fn get_first_amd_gpu() -> Option<GpuSysDrm> {
 
 pub fn get_amd_gpu_power_profile() -> Option<GpuPowerProfile> {
     let amd_gpu = get_first_amd_gpu();
-    if let Some(GpuSysDrm::Amd(card_dir)) = amd_gpu {
-        if let Some(mut reader) = get_reader(&power_profile_mode_file(&card_dir)) {
-            let mut txt = String::new();
-            reader.read_to_string(&mut txt).ok()?;
-            for line in txt.split('\n') {
-                if let Ok(pp) = GpuPowerProfile::from_str(line) {
-                    return Some(pp);
-                }
+    if let Some(GpuSysDrm::Amd(card_dir)) = amd_gpu
+        && let Some(mut reader) = get_reader(&power_profile_mode_file(&card_dir))
+    {
+        let mut txt = String::new();
+        reader.read_to_string(&mut txt).ok()?;
+        for line in txt.split('\n') {
+            if let Ok(pp) = GpuPowerProfile::from_str(line) {
+                return Some(pp);
             }
         }
     }

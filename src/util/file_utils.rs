@@ -13,10 +13,10 @@ use std::{
 use tracing::{debug, error};
 
 pub fn get_writer(path: &Path) -> anyhow::Result<BufWriter<std::fs::File>> {
-    if let Some(parent) = path.parent() {
-        if !parent.is_dir() {
-            create_dir_all(parent)?;
-        }
+    if let Some(parent) = path.parent()
+        && !parent.is_dir()
+    {
+        create_dir_all(parent)?;
     };
     if path.is_symlink() {
         bail!(
@@ -151,11 +151,11 @@ pub fn rm_rf(path: &Path) {
 }
 
 pub fn copy_file(source: &Path, dest: &Path) {
-    if let Some(parent) = dest.parent() {
-        if !parent.is_dir() {
-            create_dir_all(parent)
-                .unwrap_or_else(|_| panic!("Failed to create dir {}", parent.to_str().unwrap()));
-        }
+    if let Some(parent) = dest.parent()
+        && !parent.is_dir()
+    {
+        create_dir_all(parent)
+            .unwrap_or_else(|_| panic!("Failed to create dir {}", parent.to_str().unwrap()));
     }
     if !dest.is_symlink() {
         set_file_readonly(dest, false)

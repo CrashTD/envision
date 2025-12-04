@@ -246,15 +246,14 @@ impl AsyncComponent for StoreDetail {
 
         match message {
             Self::Input::OpenHomepage => {
-                if let Some(plugin) = self.plugin.as_ref() {
-                    if let Some(homepage) = plugin.homepage_url.as_ref() {
-                        if let Err(e) = gtk::gio::AppInfo::launch_default_for_uri(
-                            homepage,
-                            gtk::gio::AppLaunchContext::NONE,
-                        ) {
-                            error!("opening uri {homepage}: {e}");
-                        };
-                    }
+                if let Some(plugin) = self.plugin.as_ref()
+                    && let Some(homepage) = plugin.homepage_url.as_ref()
+                    && let Err(e) = gtk::gio::AppInfo::launch_default_for_uri(
+                        homepage,
+                        gtk::gio::AppLaunchContext::NONE,
+                    )
+                {
+                    error!("opening uri {homepage}: {e}");
                 }
             }
             Self::Input::SetPlugin(p, enabled, needs_update) => {

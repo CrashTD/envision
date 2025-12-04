@@ -42,13 +42,13 @@ fn get_backed_up_steam_openvrpaths() -> Option<OpenVrPaths> {
 }
 
 fn backup_steam_openvrpaths() {
-    if let Some(openvrpaths) = get_current_openvrpaths() {
-        if is_steam(&openvrpaths) {
-            copy_file(
-                &get_openvrpaths_vrpath_path(),
-                &get_backup_steam_openvrpaths_path(),
-            );
-        }
+    if let Some(openvrpaths) = get_current_openvrpaths()
+        && is_steam(&openvrpaths)
+    {
+        copy_file(
+            &get_openvrpaths_vrpath_path(),
+            &get_backup_steam_openvrpaths_path(),
+        );
     }
 }
 

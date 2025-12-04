@@ -183,10 +183,10 @@ impl AsyncComponent for InstallWivrnBox {
                     Err(GetWivrnApkRefErr::RepoManipulationFailed(giterr)) => {
                         error!("failed to manipulate WiVRn repo: {giterr}, falling back to latest release APK");
                         let existing = cache_file_path(WIVRN_LATEST_RELEASE_APK_URL, Some("apk"));
-                        if existing.is_file() {
-                            if let Err(e) = remove_file(&existing) {
-                                error!("failed to remove file {}: {e}", existing.to_string_lossy());
-                            }
+                        if existing.is_file()
+                            && let Err(e) = remove_file(&existing)
+                        {
+                            error!("failed to remove file {}: {e}", existing.to_string_lossy());
                         }
                         sender.input(Self::Input::DoInstall(WIVRN_LATEST_RELEASE_APK_URL.into()));
                     }
