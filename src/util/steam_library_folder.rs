@@ -13,36 +13,32 @@ pub struct SteamLibraryFolder {
     pub apps: HashMap<u32, usize>,
 }
 
-pub fn get_steam_main_dir_path() -> anyhow::Result<PathBuf> {
-    if let Ok(steam_root) = get_home_dir().join(".steam/root").canonicalize()
-        && steam_root.is_dir()
-    {
-        Ok(steam_root)
-    } else if let Ok(steam_root) = XDG.get_data_home().join("Steam").canonicalize()
-        && steam_root.is_dir()
-    {
-        Ok(steam_root)
-    } else if let Ok(steam_root) = XDG.get_data_home().join("steam").canonicalize()
-        && steam_root.is_dir()
-    {
-        Ok(steam_root)
-    } else {
-        bail!("Could not find canonical steam root!",)
-    }
+pub fn get_all_potential_steam_main_dir_paths() -> Vec<PathBuf> {
+    vec![
+        get_home_dir().join(".steam/root"),
+        XDG.get_data_home().join("Steam"),
+        XDG.get_data_home().join("steam"),
+    ]
+}
+
+pub fn chaperone_info_exists() -> bool {
+    get_all_potential_steam_main_dir_paths().iter().any(|p| {
+        p.canonicalize()
+            .is_ok_and(|p| p.join("config/chaperone_info.vrchap").is_file())
+    })
 }
 
 impl SteamLibraryFolder {
     pub fn get_folders() -> anyhow::Result<HashMap<u32, Self>> {
-        let libraryfolders_path = get_steam_main_dir_path()?
-            .join("steamapps/libraryfolders.vdf")
-            .canonicalize()?;
-        if !libraryfolders_path.is_file() {
-            bail!(
-                "Steam libraryfolders.vdf does not exist in its canonical location {}",
-                libraryfolders_path.to_string_lossy()
-            );
+        if let Some(libraryfolders_path) = get_all_potential_steam_main_dir_paths()
+            .into_iter()
+            .filter_map(|p| p.join("steamapps/libraryfolders.vdf").canonicalize().ok())
+            .find(|p| p.is_file())
+        {
+            Self::get_folders_from_path(&libraryfolders_path)
+        } else {
+            bail!("Steam libraryfolders.vdf does not exist in any of its canonical locations");
         }
-        Self::get_folders_from_path(&libraryfolders_path)
     }
 
     /// Do not use this: use get_folders() instead as it always uses Steam's

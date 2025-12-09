@@ -11,7 +11,7 @@ use super::{
     profile_editor::{ProfileEditor, ProfileEditorInit, ProfileEditorMsg, ProfileEditorOutMsg},
     steam_launch_options_box::{SteamLaunchOptionsBox, SteamLaunchOptionsBoxMsg},
     steamvr_calibration_box::{SteamVrCalibrationBox, SteamVrCalibrationBoxMsg},
-    util::{limit_dropdown_width, warning_heading},
+    util::limit_dropdown_width,
     wivrn_wired_start_box::{WivrnWiredStartBox, WivrnWiredStartBoxInit, WivrnWiredStartBoxMsg},
 };
 use crate::{
@@ -21,10 +21,10 @@ use crate::{
     paths::{get_data_dir, get_home_dir},
     profile::{LighthouseDriver, Profile, XRServiceType},
     stateless_action,
-    ui::app::ThemeManagerAction,
+    ui::{app::ThemeManagerAction, util::warn_card},
     util::{
         file_utils::{get_writer, mount_has_nosuid},
-        steamvr_utils::chaperone_info_exists,
+        steam_library_folder::chaperone_info_exists,
     },
     wivrn_dbus,
     xr_devices::XRDevice,
@@ -399,13 +399,13 @@ impl AsyncComponent for MainView {
                                     .expect(SENDER_IO_ERR_MSG);
                             },
                         },
-                        gtk::Box {
-                            set_orientation: gtk::Orientation::Vertical,
-                            set_hexpand: true,
-                            set_vexpand: false,
-                            set_spacing: 12,
-                            add_css_class: "card",
-                            add_css_class: "padded",
+                        warn_card(None, concat!(
+                            "Your current prefix is inside a partition ",
+                            "mounted with the nosuid option.\nThis will prevent ",
+                            "the XR runtime from acquiring certain privileges ",
+                            "and will cause noticeable stutter when running XR ",
+                            "applications."
+                        )) -> gtk::Box {
                             #[track = "model.changed(Self::selected_profile())"]
                             set_visible: match mount_has_nosuid(&model.selected_profile.prefix) {
                                 Ok(b) => b,
@@ -416,92 +416,34 @@ impl AsyncComponent for MainView {
                                     false
                                 },
                             },
-                            warning_heading(),
-                            gtk::Label {
-                                set_label: concat!(
-                                    "Your current prefix is inside a partition ",
-                                    "mounted with the nosuid option.\nThis will prevent ",
-                                    "the XR runtime from acquiring certain privileges ",
-                                    "and will cause noticeable stutter when running XR ",
-                                    "applications."
-                                ),
-                                add_css_class: "warning",
-                                set_xalign: 0.0,
-                                set_wrap: true,
-                                set_wrap_mode: gtk::pango::WrapMode::Word,
-                            }
                         },
-                        gtk::Box {
-                            set_orientation: gtk::Orientation::Vertical,
-                            set_hexpand: true,
-                            set_vexpand: false,
-                            set_spacing: 12,
-                            add_css_class: "card",
-                            add_css_class: "padded",
+                        warn_card(None, &format!(
+                            "Pkexec wasn't found on your system.\nThis will prevent the XR runtime from acquiring certain priviledges and will cause noticeable stutter when running XR applications.\nYou can fix this by installing the following package on your system: <tt>{}</tt>", dep_pkexec().package_name()
+                        )) -> gtk::Box {
                             #[track = "model.changed(Self::selected_profile())"]
                             set_visible: !dep_pkexec().check(),
-                            warning_heading(),
-                            gtk::Label {
-                                set_label: &format!(
-                                    "Pkexec wasn't found on your system.\nThis will prevent the XR runtime from acquiring certain priviledges and will cause noticeable stutter when running XR applications.\nYou can fix this by installing the following package on your system: <tt>{}</tt>", dep_pkexec().package_name()
-                                ),
-                                set_use_markup: true,
-                                add_css_class: "warning",
-                                set_xalign: 0.0,
-                                set_wrap: true,
-                                set_wrap_mode: gtk::pango::WrapMode::Word,
-                            }
                         },
-                        gtk::Box {
-                            set_orientation: gtk::Orientation::Vertical,
-                            set_hexpand: true,
-                            set_vexpand: false,
-                            set_spacing: 12,
-                            add_css_class: "card",
-                            add_css_class: "padded",
+                        warn_card(None, concat!(
+                            "SteamVR room configuration not found.\n",
+                            "To use the SteamVR lighthouse driver, you ",
+                            "will need to run SteamVR Quick Calibration.",
+                        )) -> gtk::Box {
                             #[track = "model.changed(Self::selected_profile())"]
                             set_visible: model.selected_profile.lighthouse_driver == LighthouseDriver::SteamVR && !chaperone_info_exists(),
-                            warning_heading(),
-                            gtk::Label {
-                                set_label: concat!(
-                                    "SteamVR room configuration not found.\n",
-                                    "To use the SteamVR lighthouse driver, you ",
-                                    "will need to run SteamVR Quick Calibration.",
-                                ),
-                                add_css_class: "warning",
-                                set_xalign: 0.0,
-                                set_wrap: true,
-                                set_wrap_mode: gtk::pango::WrapMode::Word,
-                            }
                         },
-                        gtk::Box {
-                            set_orientation: gtk::Orientation::Vertical,
-                            set_hexpand: true,
-                            set_vexpand: false,
-                            set_spacing: 12,
-                            add_css_class: "card",
-                            add_css_class: "padded",
+                        warn_card(None, concat!(
+                            "Your AMD GPU Power Profile is not set to VR. ",
+                            "This will cause noticeable stutter when running XR ",
+                            "applications.\n\n",
+                            "You can activate the VR Power Profile using ",
+                            "GPU overclocking utilities such as ",
+                            "<a href=\"https://gitlab.com/corectrl/corectrl\">CoreCtrl</a>."
+                        )) -> gtk::Box {
                             #[track = "model.changed(Self::selected_profile())"]
                             set_visible: match get_amd_gpu_power_profile() {
                                 None => false,
                                 Some(GpuPowerProfile::VR) => false,
                                 Some(_) => true,
-                            },
-                            warning_heading(),
-                            gtk::Label {
-                                set_use_markup: true,
-                                set_markup: concat!(
-                                    "Your AMD GPU Power Profile is not set to VR. ",
-                                    "This will cause noticeable stutter when running XR ",
-                                    "applications.\n\n",
-                                    "You can activate the VR Power Profile using ",
-                                    "GPU overclocking utilities such as ",
-                                    "<a href=\"https://gitlab.com/corectrl/corectrl\">CoreCtrl</a>."
-                                ),
-                                add_css_class: "warning",
-                                set_xalign: 0.0,
-                                set_wrap: true,
-                                set_wrap_mode: gtk::pango::WrapMode::Word,
                             },
                             gtk::Button {
                                 set_halign: gtk::Align::Start,
