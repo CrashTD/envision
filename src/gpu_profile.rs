@@ -111,36 +111,55 @@ pub enum GpuSysDrm {
     Other(PathBuf),
 }
 
-fn list_gpus() -> Vec<GpuSysDrm> {
-    let mut res = vec![];
+// usize field is total memory size
+fn list_gpus() -> Vec<(GpuSysDrm, usize)> {
+    let mut res = Vec::new();
 
     for i in 0..5 {
         // arbitrary range, find a better way
         let card_dir = PathBuf::from(format!("/sys/class/drm/card{i}"));
         let vendor_file = card_dir.join("device/vendor");
+        let vram_total_file = card_dir.join("device/mem_info_vram_total");
+        let mut vendor: Option<GpuSysDrm> = None;
         if let Some(mut reader) = get_reader(&vendor_file) {
             let mut buf = String::new();
             if reader.read_to_string(&mut buf).is_ok() {
-                res.push(match buf.to_lowercase().trim() {
+                vendor = Some(match buf.to_lowercase().trim() {
                     AMD_VENDOR_ID => GpuSysDrm::Amd(card_dir),
                     _ => GpuSysDrm::Other(card_dir),
                 });
             }
+        }
+        let mut vram_total: usize = 0;
+        if let Some(mut reader) = get_reader(&vram_total_file) {
+            let mut buf = String::new();
+            if reader.read_to_string(&mut buf).is_ok() {
+                vram_total = buf.trim().parse().unwrap_or_default();
+            }
+        }
+        if let Some(vendor) = vendor {
+            res.push((vendor, vram_total));
         }
     }
 
     res
 }
 
-pub fn get_first_amd_gpu() -> Option<GpuSysDrm> {
-    list_gpus()
+fn get_first_dedicated_amd_gpu() -> Option<GpuSysDrm> {
+    if let Some((g, _)) = list_gpus()
         .iter()
-        .find(|g| matches!(g, GpuSysDrm::Amd(_)))
-        .cloned()
+        .filter(|(g, _)| matches!(g, GpuSysDrm::Amd(_)))
+        // assume that the gpu with the most vram is the dedicated one
+        .max_by_key(|(_, vram)| vram)
+    {
+        Some(g.clone())
+    } else {
+        None
+    }
 }
 
 pub fn get_amd_gpu_power_profile() -> Option<GpuPowerProfile> {
-    let amd_gpu = get_first_amd_gpu();
+    let amd_gpu = get_first_dedicated_amd_gpu();
     if let Some(GpuSysDrm::Amd(card_dir)) = amd_gpu
         && let Some(mut reader) = get_reader(&power_profile_mode_file(&card_dir))
     {
