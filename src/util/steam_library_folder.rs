@@ -23,8 +23,9 @@ pub fn get_all_potential_steam_main_dir_paths() -> Vec<PathBuf> {
 
 pub fn chaperone_info_exists() -> bool {
     get_all_potential_steam_main_dir_paths().iter().any(|p| {
-        p.canonicalize()
-            .is_ok_and(|p| p.join("config/chaperone_info.vrchap").is_file())
+        p.join("config/chaperone_info.vrchap")
+            .canonicalize()
+            .is_ok_and(|p| p.is_file())
     })
 }
 
