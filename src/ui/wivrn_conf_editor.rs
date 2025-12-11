@@ -155,7 +155,6 @@ impl SimpleComponent for WivrnConfEditor {
                             model.conf.tcp_only,
                             clone!(#[strong] sender, move |_, val| {
                                 sender.input(Self::Input::TcpOnlyChanged(val));
-                                gtk::glib::Propagation::Proceed
                             }),
                         ),
                     },
@@ -171,7 +170,6 @@ impl SimpleComponent for WivrnConfEditor {
                             model.conf.use_steamvr_lh,
                             clone!(#[strong] sender, move |_, val| {
                                 sender.input(Self::Input::UseSteamVrLhChanged(val));
-                                gtk::glib::Propagation::Proceed
                             }),
                         ),
                     },
@@ -203,7 +201,6 @@ impl SimpleComponent for WivrnConfEditor {
                             model.conf.bit_depth == 10,
                             clone!(#[strong] sender, move |_, val| {
                                 sender.input(Self::Input::BitDepthChanged(val));
-                                gtk::glib::Propagation::Proceed
                             }),
                         ),
                     },

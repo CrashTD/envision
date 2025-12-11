@@ -158,6 +158,7 @@ impl AsyncComponent for MainView {
                 "_Debug View" => DebugViewToggleAction,
                 "_Build Profile" => BuildProfileAction,
                 "C_lean Build Profile" => BuildProfileCleanAction,
+                "_Preferences" => PreferencesAction,
                 "Configure _WiVRn" => ConfigureWivrnAction,
             },
             section! {

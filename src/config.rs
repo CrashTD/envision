@@ -2,7 +2,7 @@ use crate::{
     constants::CMD_NAME,
     device_prober::PhysicalXRDevice,
     paths::get_config_dir,
-    profile::Profile,
+    profile::{OvrCompatibilityModuleType, Profile, XRServiceType},
     profiles::{
         lighthouse::lighthouse_profile, openhmd::openhmd_profile, simulated::simulated_profile,
         survive::survive_profile, wivrn::wivrn_profile, wmr::wmr_profile,
@@ -50,6 +50,67 @@ fn default_theme_name() -> String {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct GlobalPreferences {
+    pub xrservice_type: XRServiceType,
+    pub ovr_comp: OvrCompatibilityModuleType,
+
+    /// XRT_COMPOSITOR_SCALE_PERCENTAGE
+    pub scale_percentage: u16,
+    /// XRT_COMPOSITOR_COMPUTE (1, 0)
+    pub use_compositor_gpu_compute: bool,
+    /// U_PACING_APP_USE_MIN_FRAME_PERIOD (1, 0)
+    pub use_min_frame_period: bool,
+    /// XRT_DEBUG_GUI (1, 0) + XRT_CURATED_GUI (1, 0)
+    pub monado_ui: bool,
+}
+
+impl Default for GlobalPreferences {
+    fn default() -> Self {
+        Self {
+            xrservice_type: XRServiceType::default(),
+            ovr_comp: OvrCompatibilityModuleType::default(),
+
+            scale_percentage: 140,
+            use_compositor_gpu_compute: true,
+            use_min_frame_period: false,
+            monado_ui: false,
+        }
+    }
+}
+
+impl GlobalPreferences {
+    pub fn get_env_vars(&self) -> HashMap<String, String> {
+        HashMap::from([
+            (
+                "XRT_COMPOSITOR_SCALE_PERCENTAGE".into(),
+                self.scale_percentage.to_string(),
+            ),
+            (
+                "XRT_COMPOSITOR_COMPUTE".into(),
+                (if self.use_compositor_gpu_compute {
+                    1
+                } else {
+                    0
+                })
+                .to_string(),
+            ),
+            (
+                "U_PACING_APP_USE_MIN_FRAME_PERIOD".into(),
+                (if self.use_min_frame_period { 1 } else { 0 }).to_string(),
+            ),
+            (
+                "XRT_DEBUG_GUI".into(),
+                (if self.monado_ui { 1 } else { 0 }).to_string(),
+            ),
+            (
+                "XRT_CURATED_GUI".into(),
+                (if self.monado_ui { 1 } else { 0 }).to_string(),
+            ),
+        ])
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Config {
     pub selected_profile_uuid: String,
     pub debug_view_enabled: bool,
@@ -60,11 +121,13 @@ pub struct Config {
     pub plugins: HashMap<String, PluginConfig>,
     #[serde(default = "default_theme_name")]
     pub theme_name: String,
+    #[serde(default)]
+    pub global_preferences: GlobalPreferences,
 }
 
 impl Default for Config {
     fn default() -> Self {
-        Config {
+        Self {
             // TODO: using an empty string here is ugly
             selected_profile_uuid: "".to_string(),
             debug_view_enabled: false,
@@ -72,6 +135,7 @@ impl Default for Config {
             win_size: DEFAULT_WIN_SIZE,
             plugins: HashMap::default(),
             theme_name: default_theme_name(),
+            global_preferences: GlobalPreferences::default(),
         }
     }
 }

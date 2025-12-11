@@ -46,7 +46,7 @@ use crate::{
         set_soldier_runtime_entrypoint_launch_opts_from_profile,
     },
     termcolor::TermColor,
-    ui::alert::{present_alert, yes_no_dialog},
+    ui::{alert::{present_alert, yes_no_dialog}, preferences_window::{PreferencesWindow, PreferencesWindowInit, PreferencesWindowMsg, PreferencesWindowOutMsg}},
     util::file_utils::{
         rm_rf, setcap_cap_sys_nice_eip, setcap_cap_sys_nice_eip_cmd, verify_cap_sys_nice_eip,
     },
@@ -103,6 +103,8 @@ pub struct App {
     inhibit_fail_notif: Option<NotificationHandle>,
     pluginstore: Option<AsyncController<PluginStore>>,
 
+    preferences_win: Option<AsyncController<PreferencesWindow>>,
+
     theme_engine: ThemeEngine,
 
     build_alerts: VecDeque<adw::AlertDialog>,
@@ -141,6 +143,8 @@ pub enum Msg {
     OnProberExit(bool),
     WivrnCheckPairMode,
     OpenPluginStore,
+    OpenPreferences,
+    OnPreferencesWindowClose(Config),
     UpdateConfigPlugins(HashMap<String, PluginConfig>),
     ShowThemeManager,
     SaveThemeConfig,
@@ -1072,6 +1076,21 @@ impl AsyncComponent for App {
                 pluginstore.sender().emit(PluginStoreMsg::Present);
                 self.pluginstore = Some(pluginstore);
             }
+            Msg::OpenPreferences => {
+                let preferences_win = PreferencesWindow::builder()
+                    .launch(PreferencesWindowInit {
+                        config: self.config.clone(),
+                        root_win: self.app_win.clone().upcast(),
+                    })
+                    .forward(sender.input_sender(), move |msg| match msg {
+                        PreferencesWindowOutMsg::OnClosed(config) => Msg::OnPreferencesWindowClose(config),
+                    });
+                preferences_win.sender().emit(PreferencesWindowMsg::Present);
+                self.preferences_win = Some(preferences_win);
+            }
+            Msg::OnPreferencesWindowClose(config) => {
+                self.config = config;
+            }
             Msg::UpdateConfigPlugins(cp) => {
                 self.config.plugins = cp;
                 self.config.save();
@@ -1213,6 +1232,17 @@ impl AsyncComponent for App {
         );
         stateless_action!(
             actions,
+            PreferencesAction,
+            clone!(
+                #[strong]
+                sender,
+                move |_| {
+                    sender.input(Msg::OpenPreferences);
+                }
+            )
+        );
+        stateless_action!(
+            actions,
             ThemeManagerAction,
             clone!(
                 #[strong]
@@ -1318,6 +1348,7 @@ impl AsyncComponent for App {
             xrservice_ready: false,
             inhibit_fail_notif: None,
             pluginstore: None,
+            preferences_win: None,
             build_alerts: VecDeque::new(),
         };
 
@@ -1357,6 +1388,7 @@ impl AsyncComponent for App {
         {
             let app = &model.application;
             app.set_accelerators_for_action::<QuitAction>(&["<Control>q"]);
+            app.set_accelerators_for_action::<PreferencesAction>(&["<Control>comma"]);
             app.set_accelerators_for_action::<BuildProfileCleanAction>(&["<Control>F5"]);
             app.set_accelerators_for_action::<BuildProfileAction>(&["F5"]);
         }
@@ -1392,6 +1424,7 @@ new_stateless_action!(pub QuitAction, AppActionGroup, "quit");
 new_stateful_action!(pub DebugViewToggleAction, AppActionGroup, "debugviewtoggle", (), bool);
 new_stateless_action!(pub ConfigureWivrnAction, AppActionGroup, "configurewivrn");
 new_stateless_action!(pub PluginStoreAction, AppActionGroup, "store");
+new_stateless_action!(pub PreferencesAction, AppActionGroup, "preferences");
 new_stateless_action!(pub ThemeManagerAction, AppActionGroup, "thememanager");
 
 new_stateless_action!(pub DebugOpenDataAction, AppActionGroup, "debugopendata");

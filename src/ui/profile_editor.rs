@@ -118,7 +118,6 @@ impl SimpleComponent for ProfileEditor {
                             model.profile.borrow().pull_on_build,
                             clone!(#[strong] prof, move |_, state| {
                                 prof.borrow_mut().pull_on_build = state;
-                                gtk::glib::Propagation::Proceed
                             })
                         ),
                         add: &path_row(
@@ -135,7 +134,6 @@ impl SimpleComponent for ProfileEditor {
                             !model.profile.borrow().skip_dependency_check,
                             clone!(#[strong] prof, move |_, state| {
                                 prof.borrow_mut().skip_dependency_check = !state;
-                                gtk::glib::Propagation::Proceed
                             })
                         ),
                     },
@@ -257,7 +255,6 @@ impl SimpleComponent for ProfileEditor {
                             model.profile.borrow().features.libsurvive.enabled,
                             clone!(#[strong] prof, move |_, state| {
                                 prof.borrow_mut().features.libsurvive.enabled = state;
-                                gtk::glib::Propagation::Proceed
                             })
                         ),
                         add: &path_row(
@@ -293,7 +290,6 @@ impl SimpleComponent for ProfileEditor {
                             model.profile.borrow().features.openhmd.enabled,
                             clone!(#[strong] prof, move |_, state| {
                                 prof.borrow_mut().features.openhmd.enabled = state;
-                                gtk::glib::Propagation::Proceed
                             })
                         ),
                         add: &path_row(
@@ -329,7 +325,6 @@ impl SimpleComponent for ProfileEditor {
                             model.profile.borrow().features.basalt.enabled,
                             clone!(#[strong] prof, move |_, state| {
                                 prof.borrow_mut().features.basalt.enabled = state;
-                                gtk::glib::Propagation::Proceed
                             })
                         ),
                         add: &path_row(
@@ -365,7 +360,6 @@ impl SimpleComponent for ProfileEditor {
                             model.profile.borrow().features.mercury_enabled,
                             clone!(#[strong] prof, move |_, state| {
                                 prof.borrow_mut().features.mercury_enabled = state;
-                                gtk::glib::Propagation::Proceed
                             })
                         ),
                     },

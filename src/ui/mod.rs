@@ -15,6 +15,7 @@ mod main_view;
 mod openhmd_calibration_box;
 pub mod plugins;
 mod preference_rows;
+mod preferences_window;
 mod profile_editor;
 mod steam_launch_options_box;
 mod steamvr_calibration_box;

@@ -5,29 +5,25 @@ use gtk::{
 };
 use relm4::prelude::*;
 
-pub fn switch_row<F: Fn(&gtk::Switch, bool) -> glib::Propagation + 'static>(
+pub fn switch_row<F: Fn(&adw::SwitchRow, bool) + 'static>(
     title: &str,
     description: Option<&str>,
     value: bool,
     cb: F,
-) -> adw::ActionRow {
-    let row = adw::ActionRow::builder()
+) -> adw::SwitchRow {
+    let row = adw::SwitchRow::builder()
         .title(title)
         .subtitle_lines(0)
+        .active(value)
         .build();
 
     if let Some(d) = description {
         row.set_subtitle(d);
     }
 
-    let switch = gtk::Switch::builder()
-        .active(value)
-        .valign(gtk::Align::Center)
-        .build();
-    row.add_suffix(&switch);
-    row.set_activatable_widget(Some(&switch));
-
-    switch.connect_state_set(cb);
+    row.connect_active_notify(move |row| {
+        cb(row, row.is_active());
+    });
 
     row
 }

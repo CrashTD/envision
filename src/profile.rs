@@ -33,8 +33,9 @@ use std::{
 };
 use uuid::Uuid;
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub enum XRServiceType {
+    #[default]
     Monado,
     Wivrn,
 }
