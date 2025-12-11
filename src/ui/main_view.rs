@@ -1,6 +1,5 @@
 use super::{
     SENDER_IO_ERR_MSG,
-    alert::alert,
     app::{
         AboutAction, BuildProfileAction, BuildProfileCleanAction, ConfigureWivrnAction,
         DebugViewToggleAction, PluginStoreAction,
@@ -8,46 +7,33 @@ use super::{
     devices_box::{DevicesBox, DevicesBoxMsg},
     install_wivrn_box::{InstallWivrnBox, InstallWivrnBoxInit, InstallWivrnBoxMsg},
     openhmd_calibration_box::{OpenHmdCalibrationBox, OpenHmdCalibrationBoxMsg},
-    profile_editor::{ProfileEditor, ProfileEditorInit, ProfileEditorMsg, ProfileEditorOutMsg},
     steam_launch_options_box::{SteamLaunchOptionsBox, SteamLaunchOptionsBoxMsg},
     steamvr_calibration_box::{SteamVrCalibrationBox, SteamVrCalibrationBoxMsg},
-    util::limit_dropdown_width,
     wivrn_wired_start_box::{WivrnWiredStartBox, WivrnWiredStartBoxInit, WivrnWiredStartBoxMsg},
 };
 use crate::{
     config::Config,
     depcheck::common::dep_pkexec,
     gpu_profile::{GpuPowerProfile, get_amd_gpu_power_profile},
-    paths::{get_data_dir, get_home_dir},
     profile::{LighthouseDriver, Profile, XRServiceType},
-    stateless_action,
-    ui::{app::ThemeManagerAction, util::warn_card},
-    util::{
-        file_utils::{get_writer, mount_has_nosuid},
-        steam_library_folder::chaperone_info_exists,
+    ui::{
+        app::{PreferencesAction, ThemeManagerAction},
+        util::warn_card,
     },
+    util::{file_utils::mount_has_nosuid, steam_library_folder::chaperone_info_exists},
     wivrn_dbus,
     xr_devices::XRDevice,
 };
-use adw::{ResponseAppearance, prelude::*};
-use gtk::glib::clone;
-use relm4::{
-    actions::{ActionGroupName, RelmAction, RelmActionGroup},
-    new_action_group, new_stateless_action,
-    prelude::*,
-};
-use std::{fs::read_to_string, io::Write};
+use adw::prelude::*;
+use relm4::prelude::*;
 use tracing::{error, warn};
 
 #[tracker::track]
 pub struct MainView {
     xrservice_active: bool,
     enable_debug_view: bool,
-    profiles: Vec<Profile>,
     #[no_eq]
     selected_profile: Profile,
-    #[tracker::do_not_track]
-    profiles_dropdown: Option<gtk::DropDown>,
     #[tracker::do_not_track]
     install_wivrn_box: AsyncController<InstallWivrnBox>,
     #[tracker::do_not_track]
@@ -57,27 +43,14 @@ pub struct MainView {
     #[tracker::do_not_track]
     devices_box: Controller<DevicesBox>,
     #[tracker::do_not_track]
-    profile_not_editable_dialog: adw::AlertDialog,
-    #[tracker::do_not_track]
-    profile_delete_confirm_dialog: adw::AlertDialog,
-    #[tracker::do_not_track]
-    query_profile_rebuild_dialog: adw::AlertDialog,
-    #[tracker::do_not_track]
-    profile_editor: Option<Controller<ProfileEditor>>,
-    #[tracker::do_not_track]
     steamvr_calibration_box: Controller<SteamVrCalibrationBox>,
     #[tracker::do_not_track]
     openhmd_calibration_box: Controller<OpenHmdCalibrationBox>,
-    #[tracker::do_not_track]
-    root_win: gtk::Window,
-    #[tracker::do_not_track]
-    profile_delete_action: gtk::gio::SimpleAction,
-    #[tracker::do_not_track]
-    profile_export_action: gtk::gio::SimpleAction,
     xrservice_ready: bool,
     wivrn_pairing_mode: bool,
     wivrn_pin: Option<String>,
     wivrn_supports_pairing: bool,
+    show_amd_gpu_power_profile_warn: bool,
 }
 
 #[derive(Debug)]
@@ -87,38 +60,21 @@ pub enum MainViewMsg {
     RestartXRService,
     XRServiceActiveChanged(bool, Option<Profile>, bool),
     EnableDebugViewChanged(bool),
-    UpdateProfiles(Vec<Profile>, Config),
-    SetSelectedProfile(u32),
-    ProfileSelected(u32),
     UpdateSelectedProfile(Profile),
-    EditProfile,
-    CreateProfile,
-    DeleteProfile,
-    DuplicateProfile,
-    SaveProfile(Profile),
     UpdateDevices(Vec<XRDevice>),
     UpdateXrServiceReady(bool),
-    ExportProfile,
-    ImportProfile,
-    OpenProfileEditor(Profile),
     SetWivrnSupportsPairing(bool),
     SetWivrnPairingMode(bool),
     StopWivrnPairingMode,
     StartWivrnPairingMode,
-    QueryProfileRebuild,
+    CheckAmdGpuPowerProfile,
 }
 
 #[derive(Debug)]
 pub enum MainViewOutMsg {
     DoStartStopXRService,
     RestartXRService,
-    ProfileSelected(Profile),
-    /// bool param: delete files
-    DeleteProfile(bool),
-    SaveProfile(Profile),
     OpenLibsurviveSetup,
-    /// params: clean
-    BuildProfile(bool),
     LaunchMonadoGui,
 }
 
@@ -126,21 +82,6 @@ pub struct MainViewInit {
     pub config: Config,
     pub selected_profile: Profile,
     pub root_win: gtk::Window,
-}
-
-impl MainView {
-    fn create_profile_editor(&mut self, sender: AsyncComponentSender<Self>, prof: Profile) {
-        self.profile_editor = Some(
-            ProfileEditor::builder()
-                .launch(ProfileEditorInit {
-                    root_win: self.root_win.clone(),
-                    profile: prof,
-                })
-                .forward(sender.input_sender(), |message| match message {
-                    ProfileEditorOutMsg::SaveProfile(p) => MainViewMsg::SaveProfile(p),
-                }),
-        );
-    }
 }
 
 #[relm4::component(pub async)]
@@ -155,27 +96,15 @@ impl AsyncComponent for MainView {
             section! {
                 "Plugin_s" => PluginStoreAction,
                 // value inside action is ignored
-                "_Debug View" => DebugViewToggleAction,
-                "_Build Profile" => BuildProfileAction,
-                "C_lean Build Profile" => BuildProfileCleanAction,
                 "_Preferences" => PreferencesAction,
+                "_Developer mode" => DebugViewToggleAction,
+                "_Build profile" => BuildProfileAction,
+                "C_lean build profile" => BuildProfileCleanAction,
                 "Configure _WiVRn" => ConfigureWivrnAction,
             },
             section! {
-                "Change _Theme" => ThemeManagerAction,
+                "Change _theme" => ThemeManagerAction,
                 "_About" => AboutAction,
-            },
-        },
-        profile_actions_menu: {
-            section! {
-                "_New profile" => ProfileMenuNewAction,
-                "_Edit profile" => ProfileMenuEditAction,
-                "Du_plicate profile" => ProfileMenuDuplicateAction,
-                "_Delete profile" => ProfileMenuDeleteAction,
-            },
-            section! {
-                "_Import profile" => ProfileMenuImportAction,
-                "E_xport profile" => ProfileMenuExportAction,
             },
         }
     }
@@ -440,17 +369,13 @@ impl AsyncComponent for MainView {
                             "GPU overclocking utilities such as ",
                             "<a href=\"https://gitlab.com/corectrl/corectrl\">CoreCtrl</a>."
                         )) -> gtk::Box {
-                            #[track = "model.changed(Self::selected_profile())"]
-                            set_visible: match get_amd_gpu_power_profile() {
-                                None => false,
-                                Some(GpuPowerProfile::VR) => false,
-                                Some(_) => true,
-                            },
+                            #[track = "model.changed(Self::show_amd_gpu_power_profile_warn())"]
+                            set_visible: model.show_amd_gpu_power_profile_warn,
                             gtk::Button {
                                 set_halign: gtk::Align::Start,
                                 set_label: "Refresh",
-                                connect_clicked[sender, profiles_dropdown] => move |_| {
-                                    sender.input(Self::Input::SetSelectedProfile(profiles_dropdown.selected()));
+                                connect_clicked[sender] => move |_| {
+                                    sender.input(Self::Input::CheckAmdGpuPowerProfile);
                                 }
                             },
                         },
@@ -502,40 +427,6 @@ impl AsyncComponent for MainView {
                     }
                 }
             },
-            add_bottom_bar: bottom_bar = &gtk::Box {
-                set_orientation: gtk::Orientation::Horizontal,
-                set_spacing: 12,
-                set_margin_all: 12,
-                gtk::Box {
-                    set_orientation: gtk::Orientation::Horizontal,
-                    add_css_class: "linked",
-                    #[name(profiles_dropdown)]
-                    gtk::DropDown {
-                        set_hexpand: true,
-                        #[track = "model.changed(Self::selected_profile())"]
-                        set_tooltip_text: Some(format!("Profile: {}", model.selected_profile).as_str()),
-                        #[track = "model.changed(Self::profiles())"]
-                        set_model: Some(&{
-                            let names: Vec<_> = model.profiles.iter().map(|p| p.name.as_str()).collect();
-                            gtk::StringList::new(&names)
-                        }),
-                        connect_selected_item_notify[sender] => move |dd| {
-                            sender.input(MainViewMsg::ProfileSelected(dd.selected()));
-                        },
-                        connect_realize => move |dd| {
-                            limit_dropdown_width(
-                                dd,
-                            );
-                        },
-                    },
-                    gtk::MenuButton {
-                        set_icon_name: "view-more-symbolic",
-                        set_tooltip_text: Some("Menu"),
-                        set_menu_model: Some(&profile_actions_menu),
-                        set_direction: gtk::ArrowType::Up,
-                    },
-                },
-            }
         }
     }
 
@@ -620,8 +511,6 @@ impl AsyncComponent for MainView {
             }
             Self::Input::UpdateSelectedProfile(prof) => {
                 self.set_selected_profile(prof.clone());
-                self.profile_delete_action.set_enabled(prof.editable);
-                self.profile_export_action.set_enabled(prof.editable);
                 self.steamvr_calibration_box
                     .sender()
                     .emit(SteamVrCalibrationBoxMsg::SetVisible(
@@ -639,178 +528,6 @@ impl AsyncComponent for MainView {
                     .sender()
                     .emit(WivrnWiredStartBoxMsg::UpdateSelectedProfile(prof.clone()));
             }
-            Self::Input::UpdateProfiles(profiles, config) => {
-                self.set_profiles(profiles);
-                // why send another message to set the dropdown selection?
-                // set_* from tracker likely updates the view obj in the next
-                // draw, so selecting here will result in nothing cause the
-                // dropdown is effectively empty
-                sender.input(MainViewMsg::SetSelectedProfile({
-                    let pos = self
-                        .profiles
-                        .iter()
-                        .position(|p| p.uuid == config.selected_profile_uuid);
-                    match pos {
-                        Some(idx) => idx as u32,
-                        None => 0,
-                    }
-                }));
-            }
-            Self::Input::QueryProfileRebuild => {
-                self.query_profile_rebuild_dialog
-                    .present(Some(&self.root_win));
-            }
-            Self::Input::SetSelectedProfile(index) => {
-                self.profiles_dropdown
-                    .as_ref()
-                    .unwrap()
-                    .clone()
-                    .set_selected(index);
-                sender.input(Self::Input::UpdateSelectedProfile(
-                    self.profiles.get(index as usize).unwrap().clone(),
-                ));
-            }
-            Self::Input::ProfileSelected(position) => {
-                sender
-                    .output(MainViewOutMsg::ProfileSelected(
-                        self.profiles.get(position as usize).unwrap().clone(),
-                    ))
-                    .expect("Sender output failed");
-            }
-            Self::Input::EditProfile => {
-                if self.selected_profile.editable {
-                    sender.input(Self::Input::OpenProfileEditor(
-                        self.selected_profile.clone(),
-                    ));
-                } else {
-                    self.profile_not_editable_dialog
-                        .present(Some(&self.root_win));
-                }
-            }
-            Self::Input::CreateProfile => {
-                sender.input(Self::Input::OpenProfileEditor(Profile::default()));
-            }
-            Self::Input::DeleteProfile => {
-                self.profile_delete_confirm_dialog
-                    .present(Some(&self.root_win));
-            }
-            Self::Input::SaveProfile(prof) => {
-                sender
-                    .output(Self::Output::SaveProfile(prof))
-                    .expect(SENDER_IO_ERR_MSG);
-            }
-            Self::Input::DuplicateProfile => {
-                if self.selected_profile.can_be_built {
-                    sender.input(Self::Input::OpenProfileEditor(
-                        self.selected_profile.create_duplicate(),
-                    ));
-                } else {
-                    alert(
-                        "This profile cannot be duplicated",
-                        None,
-                        Some(&self.root_win),
-                    );
-                }
-            }
-            Self::Input::ExportProfile => {
-                let prof = self.selected_profile.clone();
-                if !prof.editable {
-                    return;
-                }
-                let chooser = gtk::FileDialog::builder()
-                    .modal(true)
-                    .title("Choose a location for the exported profile")
-                    .initial_name(format!("{}.json", &prof.name))
-                    .accept_label("Export")
-                    .build();
-                let root_win = self.root_win.clone();
-                chooser.save(
-                    Some(&self.root_win),
-                    gtk::gio::Cancellable::NONE,
-                    move |res| {
-                        if let Ok(file) = res {
-                            if let Some(path) = file.path()
-                                && let Ok(mut writer) = get_writer(&path)
-                                && let Ok(s) = serde_json::to_string_pretty(&prof)
-                            {
-                                let prof_id = prof.uuid;
-                                let s = s
-                                    .replace(get_data_dir().to_string_lossy().as_ref(), "@DATADIR@")
-                                    .replace(get_home_dir().to_string_lossy().as_ref(), "@HOMEDIR@")
-                                    .replace(&prof_id, "@UUID@");
-                                if writer.write_all(s.as_bytes()).is_ok() {
-                                    return;
-                                }
-                            }
-                            alert("Failed to export profile", None, Some(&root_win));
-                        }
-                    },
-                );
-            }
-            Self::Input::ImportProfile => {
-                let confirm_dialog = adw::AlertDialog::builder()
-                    .heading("Importing profiles is dangerous!")
-                    .body_use_markup(true)
-                    .body("Importing a profile from an <b>untrusted source</b> is dangerous and could lead to <b>arbitrary code execution</b>.\n\nInspect the profile JSON manually before importing it and make sure it doesn't contain anything suspicious, including references to untrusted forks.")
-                    .build();
-                confirm_dialog.add_response("no", "_Cancel");
-                confirm_dialog.add_response("yes", "I understand the risk, continue");
-                confirm_dialog.set_response_appearance("yes", ResponseAppearance::Destructive);
-
-                let root_win = self.root_win.clone();
-                let fd_sender = sender.clone();
-                confirm_dialog.connect_response(None, move |_, res| {
-                    if res != "yes" {
-                        return;
-                    }
-                    let root_win = root_win.clone();
-                    let fd_sender = fd_sender.clone();
-                    let chooser = gtk::FileDialog::builder()
-                        .modal(true)
-                        .title("Choose a profile to import")
-                        .accept_label("Import")
-                        .filters(&{
-                            let filter = gtk::gio::ListStore::builder()
-                                .item_type(gtk::FileFilter::static_type())
-                                .build();
-                            filter.append(&{
-                                let f = gtk::FileFilter::new();
-                                f.add_mime_type("application/json");
-                                f
-                            });
-                            filter
-                        })
-                        .build();
-                    chooser.open(
-                        Some(&root_win.clone()),
-                        gtk::gio::Cancellable::NONE,
-                        move |res| {
-                            if let Ok(file) = res {
-                                if let Some(path) = file.path()
-                                    && let Ok(s) = read_to_string(path)
-                                {
-                                    let s = s
-                                        .replace(
-                                            "@DATADIR@",
-                                            get_data_dir().to_string_lossy().as_ref(),
-                                        )
-                                        .replace(
-                                            "@HOMEDIR@",
-                                            get_home_dir().to_string_lossy().as_ref(),
-                                        )
-                                        .replace("@UUID@", &Profile::new_uuid());
-                                    if let Ok(nprof) = serde_json::from_str::<Profile>(&s) {
-                                        fd_sender.input(Self::Input::OpenProfileEditor(nprof));
-                                        return;
-                                    }
-                                }
-                                alert("Failed to import profile", None, Some(&root_win));
-                            }
-                        },
-                    );
-                });
-                confirm_dialog.present(Some(&self.root_win));
-            }
             Self::Input::UpdateDevices(devs) => {
                 self.devices_box
                     .sender()
@@ -819,13 +536,12 @@ impl AsyncComponent for MainView {
             Self::Input::UpdateXrServiceReady(ready) => {
                 self.set_xrservice_ready(ready);
             }
-            Self::Input::OpenProfileEditor(profile) => {
-                self.create_profile_editor(sender, profile);
-                self.profile_editor
-                    .as_ref()
-                    .unwrap()
-                    .sender()
-                    .emit(ProfileEditorMsg::Present);
+            Self::Input::CheckAmdGpuPowerProfile => {
+                self.show_amd_gpu_power_profile_warn = match get_amd_gpu_power_profile() {
+                    None => false,
+                    Some(GpuPowerProfile::VR) => false,
+                    Some(_) => true,
+                }
             }
         }
     }
@@ -835,92 +551,6 @@ impl AsyncComponent for MainView {
         root: Self::Root,
         sender: AsyncComponentSender<Self>,
     ) -> AsyncComponentParts<Self> {
-        let profile_not_editable_dialog = adw::AlertDialog::builder()
-            .heading("This profile is not editable")
-            .body(concat!(
-                "You can duplicate it and edit the new copy. ",
-                "Do you want to duplicate the current profile?"
-            ))
-            .build();
-        profile_not_editable_dialog.add_response("no", "_No");
-        profile_not_editable_dialog.add_response("yes", "_Yes");
-        profile_not_editable_dialog.set_response_appearance("yes", ResponseAppearance::Suggested);
-
-        profile_not_editable_dialog.connect_response(
-            None,
-            clone!(
-                #[strong]
-                sender,
-                move |_, res| {
-                    if res == "yes" {
-                        sender.input(Self::Input::DuplicateProfile);
-                    }
-                }
-            ),
-        );
-
-        let query_profile_rebuild_dialog = adw::AlertDialog::builder()
-            .heading("Do you want to build this profile now?")
-            .body("This will trigger a clean build")
-            .build();
-        query_profile_rebuild_dialog.add_response("no", "_No");
-        query_profile_rebuild_dialog.add_response("yes", "_Yes");
-        query_profile_rebuild_dialog.set_response_appearance("yes", ResponseAppearance::Suggested);
-
-        query_profile_rebuild_dialog.connect_response(
-            None,
-            clone!(
-                #[strong]
-                sender,
-                move |_, res| {
-                    if res == "yes" {
-                        sender
-                            .output(Self::Output::BuildProfile(true))
-                            .expect(SENDER_IO_ERR_MSG);
-                    }
-                }
-            ),
-        );
-
-        let profile_delete_confirm_dialog = adw::AlertDialog::builder()
-            .heading("Are you sure you want to delete this profile?")
-            .extra_child(
-                &gtk::CheckButton::builder()
-                    .label("Delete all files and folders associated with profile")
-                    .halign(gtk::Align::Center)
-                    .hexpand(true)
-                    .build(),
-            )
-            .build();
-        profile_delete_confirm_dialog.add_response("no", "_No");
-        profile_delete_confirm_dialog.add_response("yes", "_Yes");
-        profile_delete_confirm_dialog
-            .set_response_appearance("yes", ResponseAppearance::Destructive);
-
-        profile_delete_confirm_dialog.connect_response(
-            None,
-            clone!(
-                #[strong]
-                sender,
-                move |dialog, res| {
-                    let delete_files_checkbox = dialog
-                        .extra_child()
-                        .and_then(|child| child.downcast::<gtk::CheckButton>().ok());
-                    let delete_files = delete_files_checkbox
-                        .as_ref()
-                        .is_some_and(|c| c.is_active());
-                    if let Some(check) = delete_files_checkbox {
-                        check.set_active(false);
-                    }
-                    if res == "yes" {
-                        sender
-                            .output(Self::Output::DeleteProfile(delete_files))
-                            .expect("Sender output failed");
-                    }
-                }
-            ),
-        );
-
         let steamvr_calibration_box = SteamVrCalibrationBox::builder().launch(()).detach();
         steamvr_calibration_box
             .sender()
@@ -934,87 +564,9 @@ impl AsyncComponent for MainView {
                 init.selected_profile.features.openhmd.enabled,
             ));
 
-        let mut actions = RelmActionGroup::<ProfileActionGroup>::new();
-
-        let profile_delete_action = {
-            let action = RelmAction::<ProfileMenuDeleteAction>::new_stateless(clone!(
-                #[strong]
-                sender,
-                move |_| {
-                    sender.input(Self::Input::DeleteProfile);
-                }
-            ));
-            let ret = action.gio_action().clone();
-            actions.add_action(action);
-            ret.set_enabled(false);
-            ret
-        };
-        let profile_export_action = {
-            let action = RelmAction::<ProfileMenuExportAction>::new_stateless(clone!(
-                #[strong]
-                sender,
-                move |_| {
-                    sender.input(Self::Input::ExportProfile);
-                }
-            ));
-            let ret = action.gio_action().clone();
-            actions.add_action(action);
-            ret.set_enabled(false);
-            ret
-        };
-
-        stateless_action!(
-            actions,
-            ProfileMenuNewAction,
-            clone!(
-                #[strong]
-                sender,
-                move |_| {
-                    sender.input(Self::Input::CreateProfile);
-                }
-            )
-        );
-        stateless_action!(
-            actions,
-            ProfileMenuEditAction,
-            clone!(
-                #[strong]
-                sender,
-                move |_| {
-                    sender.input(Self::Input::EditProfile);
-                }
-            )
-        );
-        stateless_action!(
-            actions,
-            ProfileMenuDuplicateAction,
-            clone!(
-                #[strong]
-                sender,
-                move |_| {
-                    sender.input(Self::Input::DuplicateProfile);
-                }
-            )
-        );
-        stateless_action!(
-            actions,
-            ProfileMenuImportAction,
-            clone!(
-                #[strong]
-                sender,
-                move |_| {
-                    sender.input(Self::Input::ImportProfile);
-                }
-            )
-        );
-
-        root.insert_action_group(ProfileActionGroup::NAME, Some(&actions.into_action_group()));
-
-        let mut model = Self {
+        let model = Self {
             xrservice_active: false,
             enable_debug_view: init.config.debug_view_enabled,
-            profiles_dropdown: None,
-            profiles: vec![],
             steam_launch_options_box: SteamLaunchOptionsBox::builder().launch(()).detach(),
             install_wivrn_box: InstallWivrnBox::builder()
                 .launch(InstallWivrnBoxInit {
@@ -1030,57 +582,17 @@ impl AsyncComponent for MainView {
                 .detach(),
             devices_box: DevicesBox::builder().launch(()).detach(),
             selected_profile: init.selected_profile.clone(),
-            profile_not_editable_dialog,
-            profile_delete_confirm_dialog,
-            query_profile_rebuild_dialog,
-            root_win: init.root_win.clone(),
             steamvr_calibration_box,
             openhmd_calibration_box,
-            profile_editor: None,
             xrservice_ready: false,
-            profile_delete_action,
-            profile_export_action,
             wivrn_pairing_mode: false,
             wivrn_supports_pairing: false,
             wivrn_pin: None,
+            show_amd_gpu_power_profile_warn: false,
             tracker: 0,
         };
         let widgets = view_output!();
 
-        model.profiles_dropdown = Some(widgets.profiles_dropdown.clone());
-
         AsyncComponentParts { model, widgets }
     }
 }
-
-new_action_group!(ProfileActionGroup, "profile");
-new_stateless_action!(
-    ProfileMenuNewAction,
-    ProfileActionGroup,
-    "profilemenunewaction"
-);
-new_stateless_action!(
-    ProfileMenuEditAction,
-    ProfileActionGroup,
-    "profilemenueditaction"
-);
-new_stateless_action!(
-    ProfileMenuDuplicateAction,
-    ProfileActionGroup,
-    "profilemenuduplicateaction"
-);
-new_stateless_action!(
-    ProfileMenuDeleteAction,
-    ProfileActionGroup,
-    "profilemenudeleteaction"
-);
-new_stateless_action!(
-    ProfileMenuImportAction,
-    ProfileActionGroup,
-    "profilemenuimportaction"
-);
-new_stateless_action!(
-    ProfileMenuExportAction,
-    ProfileActionGroup,
-    "profilemenuexportaction"
-);

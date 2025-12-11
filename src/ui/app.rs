@@ -46,7 +46,12 @@ use crate::{
         set_soldier_runtime_entrypoint_launch_opts_from_profile,
     },
     termcolor::TermColor,
-    ui::{alert::{present_alert, yes_no_dialog}, preferences_window::{PreferencesWindow, PreferencesWindowInit, PreferencesWindowMsg, PreferencesWindowOutMsg}},
+    ui::{
+        alert::{present_alert, yes_no_dialog},
+        preferences_window::{
+            PreferencesWindow, PreferencesWindowInit, PreferencesWindowMsg, PreferencesWindowOutMsg,
+        },
+    },
     util::file_utils::{
         rm_rf, setcap_cap_sys_nice_eip, setcap_cap_sys_nice_eip_cmd, verify_cap_sys_nice_eip,
     },
@@ -76,7 +81,7 @@ pub struct App {
     inhibit_id: Option<u32>,
 
     main_view: AsyncController<MainView>,
-    debug_view: Controller<DebugView>,
+    debug_view: AsyncController<DebugView>,
     split_view: Option<adw::NavigationSplitView>,
     about_dialog: adw::AboutDialog,
     build_window: Controller<BuildWindow>,
@@ -150,6 +155,7 @@ pub enum Msg {
     SaveThemeConfig,
     LaunchMonadoGui,
     OnMonadoGuiExit,
+    ProfilesEnabledChanged(bool),
     NoOp,
 }
 
@@ -393,7 +399,7 @@ impl AsyncComponent for App {
                     set_hexpand: true,
                     set_vexpand: true,
                     set_sidebar: Some(&adw::NavigationPage::new(model.main_view.widget(), APP_NAME)),
-                    set_content: Some(&adw::NavigationPage::new(model.debug_view.widget(), "Debug View")),
+                    set_content: Some(&adw::NavigationPage::new(model.debug_view.widget(), "Developer Mode")),
                     set_show_content: false,
                     set_collapsed: !model.config.debug_view_enabled,
                 },
@@ -874,7 +880,7 @@ impl AsyncComponent for App {
                         .emit(MainViewMsg::UpdateSelectedProfile(
                             self.get_selected_profile(),
                         ));
-                    self.main_view.sender().emit(MainViewMsg::UpdateProfiles(
+                    self.debug_view.sender().emit(DebugViewMsg::UpdateProfiles(
                         self.profiles.clone(),
                         self.config.clone(),
                     ))
@@ -892,16 +898,16 @@ impl AsyncComponent for App {
                 self.config.set_profiles(&self.profiles);
                 self.config.selected_profile_uuid = prof.uuid.clone();
                 self.config.save();
-                self.main_view.sender().emit(MainViewMsg::UpdateProfiles(
+                self.debug_view.sender().emit(DebugViewMsg::UpdateProfiles(
                     self.profiles.clone(),
                     self.config.clone(),
                 ));
                 self.debug_view
                     .sender()
                     .emit(DebugViewMsg::UpdateSelectedProfile(prof.clone()));
-                self.main_view
+                self.debug_view
                     .sender()
-                    .emit(MainViewMsg::QueryProfileRebuild);
+                    .emit(DebugViewMsg::QueryProfileRebuild);
             }
             Msg::RunSetCap => {
                 if !dep_pkexec().check() {
@@ -1010,9 +1016,9 @@ impl AsyncComponent for App {
                 {
                     let target = self.profiles.get(index).unwrap();
                     sender.input(Msg::ProfileSelected(target.clone()));
-                    self.main_view
+                    self.debug_view
                         .sender()
-                        .emit(MainViewMsg::SetSelectedProfile(index as u32));
+                        .emit(DebugViewMsg::SetSelectedProfile(index as u32));
                 }
                 if opts.start {
                     sender.input(Msg::DoStartStopXRService)
@@ -1083,7 +1089,9 @@ impl AsyncComponent for App {
                         root_win: self.app_win.clone().upcast(),
                     })
                     .forward(sender.input_sender(), move |msg| match msg {
-                        PreferencesWindowOutMsg::OnClosed(config) => Msg::OnPreferencesWindowClose(config),
+                        PreferencesWindowOutMsg::OnClosed(config) => {
+                            Msg::OnPreferencesWindowClose(config)
+                        }
                     });
                 preferences_win.sender().emit(PreferencesWindowMsg::Present);
                 self.preferences_win = Some(preferences_win);
@@ -1117,6 +1125,10 @@ impl AsyncComponent for App {
             }
             Msg::OnMonadoGuiExit => {
                 self.monado_gui_worker = None;
+            }
+            Msg::ProfilesEnabledChanged(enabled) => {
+                self.config.profiles_enabled = enabled;
+                self.config.save();
             }
         }
     }
@@ -1292,20 +1304,27 @@ impl AsyncComponent for App {
                 .forward(sender.input_sender(), |message| match message {
                     MainViewOutMsg::DoStartStopXRService => Msg::DoStartStopXRService,
                     MainViewOutMsg::RestartXRService => Msg::RestartXRService,
-                    MainViewOutMsg::ProfileSelected(uuid) => Msg::ProfileSelected(uuid),
-                    MainViewOutMsg::DeleteProfile(delete_files) => Msg::DeleteProfile(delete_files),
-                    MainViewOutMsg::SaveProfile(p) => Msg::SaveProfile(p),
                     MainViewOutMsg::OpenLibsurviveSetup => Msg::OpenLibsurviveSetup,
-                    MainViewOutMsg::BuildProfile(clean) => Msg::BuildProfile(clean),
                     MainViewOutMsg::LaunchMonadoGui => Msg::LaunchMonadoGui,
                 }),
             vkinfo,
             debug_view: DebugView::builder()
                 .launch(DebugViewInit {
                     profile: selected_profile,
+                    root_win: root.clone().into(),
+                    profiles_enabled: config.profiles_enabled,
                 })
                 .forward(sender.input_sender(), |message| match message {
                     DebugViewOutMsg::StartWithDebug => Msg::StartWithDebug,
+                    DebugViewOutMsg::ProfileSelected(prof) => Msg::ProfileSelected(prof),
+                    DebugViewOutMsg::DeleteProfile(delete_files) => {
+                        Msg::DeleteProfile(delete_files)
+                    }
+                    DebugViewOutMsg::SaveProfile(p) => Msg::SaveProfile(p),
+                    DebugViewOutMsg::BuildProfile(clean) => Msg::BuildProfile(clean),
+                    DebugViewOutMsg::ProfilesEnabledChanged(enabled) => {
+                        Msg::ProfilesEnabledChanged(enabled)
+                    }
                 }),
             about_dialog: create_about_dialog(),
             build_window: BuildWindow::builder()
@@ -1393,7 +1412,7 @@ impl AsyncComponent for App {
             app.set_accelerators_for_action::<BuildProfileAction>(&["F5"]);
         }
 
-        model.main_view.sender().emit(MainViewMsg::UpdateProfiles(
+        model.debug_view.sender().emit(DebugViewMsg::UpdateProfiles(
             model.profiles.clone(),
             model.config.clone(),
         ));

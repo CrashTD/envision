@@ -123,6 +123,8 @@ pub struct Config {
     pub theme_name: String,
     #[serde(default)]
     pub global_preferences: GlobalPreferences,
+    #[serde(default)]
+    pub profiles_enabled: bool,
 }
 
 impl Default for Config {
@@ -136,6 +138,7 @@ impl Default for Config {
             plugins: HashMap::default(),
             theme_name: default_theme_name(),
             global_preferences: GlobalPreferences::default(),
+            profiles_enabled: false,
         }
     }
 }

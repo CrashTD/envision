@@ -1,14 +1,31 @@
+use std::{fs::read_to_string, io::Write};
+
 use super::{
     app::{DebugCopyEnvVarsAction, DebugOpenDataAction, DebugOpenPrefixAction},
     term_widget::TermWidget,
     util::copy_text,
 };
 use crate::{
+    config::Config,
     log_parser::{LogLevel, MonadoLog},
+    paths::{get_data_dir, get_home_dir},
     profile::Profile,
+    stateless_action,
+    ui::{
+        SENDER_IO_ERR_MSG,
+        alert::alert,
+        profile_editor::{ProfileEditor, ProfileEditorInit, ProfileEditorMsg, ProfileEditorOutMsg},
+        util::limit_dropdown_width,
+    },
+    util::file_utils::get_writer,
 };
-use gtk::{glib::clone, prelude::*};
-use relm4::{ComponentSender, SimpleComponent, prelude::*};
+use adw::{ResponseAppearance, prelude::*};
+use gtk::glib::clone;
+use relm4::{
+    actions::{ActionGroupName, RelmAction, RelmActionGroup},
+    new_action_group, new_stateless_action,
+    prelude::*,
+};
 
 #[derive(Debug)]
 pub enum SearchDirection {
@@ -28,11 +45,31 @@ pub enum DebugViewMsg {
     UpdateSelectedProfile(Profile),
     CopyProfileId,
     SetColorScheme,
+    ProfileSelected(u32),
+    UpdateProfiles(Vec<Profile>, Config),
+    SetSelectedProfile(u32),
+    EditProfile,
+    CreateProfile,
+    DeleteProfile,
+    SaveProfile(Profile),
+    DuplicateProfile,
+    ExportProfile,
+    ImportProfile,
+    OpenProfileEditor(Profile),
+    QueryProfileRebuild,
+    ProfilesEnabledChanged(bool),
 }
 
 #[derive(Debug)]
 pub enum DebugViewOutMsg {
     StartWithDebug,
+    ProfileSelected(Profile),
+    /// bool param: delete files
+    DeleteProfile(bool),
+    SaveProfile(Profile),
+    /// params: clean
+    BuildProfile(bool),
+    ProfilesEnabledChanged(bool),
 }
 
 #[tracker::track]
@@ -50,19 +87,57 @@ pub struct DebugView {
     term: TermWidget,
     #[tracker::do_not_track]
     profile_id_widget: gtk::Button,
+    #[tracker::do_not_track]
+    profiles_dropdown: Option<gtk::DropDown>,
+    #[tracker::do_not_track]
+    profile_delete_action: gtk::gio::SimpleAction,
+    #[tracker::do_not_track]
+    profile_export_action: gtk::gio::SimpleAction,
+    #[tracker::do_not_track]
+    profile_editor: Option<Controller<ProfileEditor>>,
+    #[tracker::do_not_track]
+    profile_not_editable_dialog: adw::AlertDialog,
+    #[tracker::do_not_track]
+    profile_delete_confirm_dialog: adw::AlertDialog,
+    #[tracker::do_not_track]
+    query_profile_rebuild_dialog: adw::AlertDialog,
     #[no_eq]
     profile: Profile,
+    profiles: Vec<Profile>,
+    #[tracker::do_not_track]
+    root_win: gtk::Window,
+
+    profiles_enabled: bool,
 }
 
 pub struct DebugViewInit {
     pub profile: Profile,
+    pub root_win: gtk::Window,
+    /// grab this from Config
+    pub profiles_enabled: bool,
 }
 
-#[relm4::component(pub)]
-impl SimpleComponent for DebugView {
+impl DebugView {
+    fn create_profile_editor(&mut self, sender: AsyncComponentSender<Self>, prof: Profile) {
+        self.profile_editor = Some(
+            ProfileEditor::builder()
+                .launch(ProfileEditorInit {
+                    root_win: self.root_win.clone(),
+                    profile: prof,
+                })
+                .forward(sender.input_sender(), |message| match message {
+                    ProfileEditorOutMsg::SaveProfile(p) => DebugViewMsg::SaveProfile(p),
+                }),
+        );
+    }
+}
+
+#[relm4::component(pub async)]
+impl AsyncComponent for DebugView {
     type Init = DebugViewInit;
     type Input = DebugViewMsg;
     type Output = DebugViewOutMsg;
+    type CommandOutput = ();
 
     menu! {
         debug_menu: {
@@ -73,6 +148,18 @@ impl SimpleComponent for DebugView {
                 "Open _Data Folder" => DebugOpenDataAction,
                 "Open _Prefix Folder" => DebugOpenPrefixAction,
                 "Copy Profile _Environment Variables" => DebugCopyEnvVarsAction,
+            },
+        },
+        profile_actions_menu: {
+            section! {
+                "_New profile" => ProfileMenuNewAction,
+                "_Edit profile" => ProfileMenuEditAction,
+                "Du_plicate profile" => ProfileMenuDuplicateAction,
+                "_Delete profile" => ProfileMenuDeleteAction,
+            },
+            section! {
+                "_Import profile" => ProfileMenuImportAction,
+                "E_xport profile" => ProfileMenuExportAction,
             },
         }
     }
@@ -100,7 +187,7 @@ impl SimpleComponent for DebugView {
                     set_tooltip_text: Some("Start with gdbserver"),
                     connect_clicked[sender] => move |_| {
                         sender.output(Self::Output::StartWithDebug)
-                            .expect("Sender output failed");
+                            .expect(SENDER_IO_ERR_MSG);
                     },
                     #[track = "model.changed(Self::xrservice_active())"]
                     set_sensitive: !model.xrservice_active
@@ -143,11 +230,62 @@ impl SimpleComponent for DebugView {
                 },
                 connect_entry: &search_entry,
             },
+            add_bottom_bar: prof_toggle_box = &gtk::ListBox{
+                set_selection_mode: gtk::SelectionMode::None,
+                add_css_class: "background",
+                adw::SwitchRow {
+                    set_title: "Use development profiles",
+                    set_active: init.profiles_enabled,
+
+                    connect_active_notify[sender] => move |row| {
+                        sender.input(Self::Input::ProfilesEnabledChanged(row.is_active()));
+                    }
+                }
+            },
+            add_bottom_bar: bottom_bar = &gtk::Revealer {
+                #[track = "model.changed(Self::profiles_enabled())"]
+                set_reveal_child: model.profiles_enabled,
+                gtk::Box {
+                    set_margin_all: 12,
+                    set_orientation: gtk::Orientation::Horizontal,
+                    add_css_class: "linked",
+                    #[name(profiles_dropdown)]
+                    gtk::DropDown {
+                        set_hexpand: true,
+                        #[track = "model.changed(Self::profile())"]
+                        set_tooltip_text: Some(format!("Profile: {}", model.profile).as_str()),
+                        #[track = "model.changed(Self::profiles())"]
+                        set_model: Some(&{
+                            let names: Vec<_> = model.profiles.iter().map(|p| p.name.as_str()).collect();
+                            gtk::StringList::new(&names)
+                        }),
+                        connect_selected_item_notify[sender] => move |dd| {
+                            sender.input(Self::Input::ProfileSelected(dd.selected()));
+                        },
+                        connect_realize => move |dd| {
+                            limit_dropdown_width(
+                                dd,
+                            );
+                        },
+                    },
+                    gtk::MenuButton {
+                        set_icon_name: "view-more-symbolic",
+                        set_tooltip_text: Some("Menu"),
+                        set_menu_model: Some(&profile_actions_menu),
+                        set_direction: gtk::ArrowType::Up,
+                    },
+                },
+            },
             set_content: Some(&model.term.container),
         }
     }
 
-    fn update(&mut self, message: Self::Input, _sender: ComponentSender<Self>) {
+    async fn update(
+        &mut self,
+        message: Self::Input,
+        sender: AsyncComponentSender<Self>,
+        _root: &Self::Root,
+    ) {
         self.reset();
 
         match message {
@@ -205,21 +343,291 @@ impl SimpleComponent for DebugView {
                 self.term.set_color_scheme();
             }
             Self::Input::UpdateSelectedProfile(prof) => {
-                self.set_profile(prof);
+                self.set_profile(prof.clone());
                 self.profile_id_widget
-                    .set_label(&format!("Profile id: {}", self.profile.uuid))
+                    .set_label(&format!("Profile id: {}", self.profile.uuid));
+                self.profile_delete_action.set_enabled(prof.editable);
+                self.profile_export_action.set_enabled(prof.editable);
             }
             Self::Input::CopyProfileId => {
                 copy_text(&self.profile.uuid);
             }
+            Self::Input::ProfileSelected(position) => {
+                sender
+                    .output(Self::Output::ProfileSelected(
+                        self.profiles.get(position as usize).unwrap().clone(),
+                    ))
+                    .expect("Sender output failed");
+            }
+            Self::Input::UpdateProfiles(profiles, config) => {
+                self.set_profiles(profiles);
+                // why send another message to set the dropdown selection?
+                // set_* from tracker likely updates the view obj in the next
+                // draw, so selecting here will result in nothing cause the
+                // dropdown is effectively empty
+                sender.input(Self::Input::SetSelectedProfile({
+                    match self
+                        .profiles
+                        .iter()
+                        .position(|p| p.uuid == config.selected_profile_uuid)
+                    {
+                        Some(idx) => idx as u32,
+                        None => 0,
+                    }
+                }));
+            }
+            Self::Input::SetSelectedProfile(index) => {
+                if let Some(dd) = self.profiles_dropdown.as_ref() {
+                    dd.set_selected(index);
+                    sender.input(Self::Input::UpdateSelectedProfile(
+                        self.profiles.get(index as usize).unwrap().clone(),
+                    ));
+                }
+            }
+            Self::Input::EditProfile => {
+                if self.profile.editable {
+                    sender.input(Self::Input::OpenProfileEditor(self.profile.clone()));
+                } else {
+                    self.profile_not_editable_dialog
+                        .present(Some(&self.root_win));
+                }
+            }
+            Self::Input::CreateProfile => {
+                sender.input(Self::Input::OpenProfileEditor(Profile::default()));
+            }
+            Self::Input::DeleteProfile => {
+                self.profile_delete_confirm_dialog
+                    .present(Some(&self.root_win));
+            }
+            Self::Input::SaveProfile(prof) => {
+                sender
+                    .output(Self::Output::SaveProfile(prof))
+                    .expect(SENDER_IO_ERR_MSG);
+            }
+            Self::Input::DuplicateProfile => {
+                if self.profile.can_be_built {
+                    sender.input(Self::Input::OpenProfileEditor(
+                        self.profile.create_duplicate(),
+                    ));
+                } else {
+                    alert(
+                        "This profile cannot be duplicated",
+                        None,
+                        Some(&self.root_win),
+                    );
+                }
+            }
+            Self::Input::ExportProfile => {
+                let prof = self.profile.clone();
+                if !prof.editable {
+                    return;
+                }
+                let chooser = gtk::FileDialog::builder()
+                    .modal(true)
+                    .title("Choose a location for the exported profile")
+                    .initial_name(format!("{}.json", &prof.name))
+                    .accept_label("Export")
+                    .build();
+                let root_win = self.root_win.clone();
+                chooser.save(
+                    Some(&self.root_win),
+                    gtk::gio::Cancellable::NONE,
+                    move |res| {
+                        if let Ok(file) = res {
+                            if let Some(path) = file.path()
+                                && let Ok(mut writer) = get_writer(&path)
+                                && let Ok(s) = serde_json::to_string_pretty(&prof)
+                            {
+                                let prof_id = prof.uuid;
+                                let s = s
+                                    .replace(get_data_dir().to_string_lossy().as_ref(), "@DATADIR@")
+                                    .replace(get_home_dir().to_string_lossy().as_ref(), "@HOMEDIR@")
+                                    .replace(&prof_id, "@UUID@");
+                                if writer.write_all(s.as_bytes()).is_ok() {
+                                    return;
+                                }
+                            }
+                            alert("Failed to export profile", None, Some(&root_win));
+                        }
+                    },
+                );
+            }
+            Self::Input::ImportProfile => {
+                let confirm_dialog = adw::AlertDialog::builder()
+                    .heading("Importing profiles is dangerous!")
+                    .body_use_markup(true)
+                    .body("Importing a profile from an <b>untrusted source</b> is dangerous and could lead to <b>arbitrary code execution</b>.\n\nInspect the profile JSON manually before importing it and make sure it doesn't contain anything suspicious, including references to untrusted forks.")
+                    .build();
+                confirm_dialog.add_response("no", "_Cancel");
+                confirm_dialog.add_response("yes", "I understand the risk, continue");
+                confirm_dialog.set_response_appearance("yes", ResponseAppearance::Destructive);
+
+                let root_win = self.root_win.clone();
+                let fd_sender = sender.clone();
+                confirm_dialog.connect_response(None, move |_, res| {
+                    if res != "yes" {
+                        return;
+                    }
+                    let root_win = root_win.clone();
+                    let fd_sender = fd_sender.clone();
+                    let chooser = gtk::FileDialog::builder()
+                        .modal(true)
+                        .title("Choose a profile to import")
+                        .accept_label("Import")
+                        .filters(&{
+                            let filter = gtk::gio::ListStore::builder()
+                                .item_type(gtk::FileFilter::static_type())
+                                .build();
+                            filter.append(&{
+                                let f = gtk::FileFilter::new();
+                                f.add_mime_type("application/json");
+                                f
+                            });
+                            filter
+                        })
+                        .build();
+                    chooser.open(
+                        Some(&root_win.clone()),
+                        gtk::gio::Cancellable::NONE,
+                        move |res| {
+                            if let Ok(file) = res {
+                                if let Some(path) = file.path()
+                                    && let Ok(s) = read_to_string(path)
+                                {
+                                    let s = s
+                                        .replace(
+                                            "@DATADIR@",
+                                            get_data_dir().to_string_lossy().as_ref(),
+                                        )
+                                        .replace(
+                                            "@HOMEDIR@",
+                                            get_home_dir().to_string_lossy().as_ref(),
+                                        )
+                                        .replace("@UUID@", &Profile::new_uuid());
+                                    if let Ok(nprof) = serde_json::from_str::<Profile>(&s) {
+                                        fd_sender.input(Self::Input::OpenProfileEditor(nprof));
+                                        return;
+                                    }
+                                }
+                                alert("Failed to import profile", None, Some(&root_win));
+                            }
+                        },
+                    );
+                });
+                confirm_dialog.present(Some(&self.root_win));
+            }
+            Self::Input::OpenProfileEditor(profile) => {
+                self.create_profile_editor(sender, profile);
+                self.profile_editor
+                    .as_ref()
+                    .unwrap()
+                    .sender()
+                    .emit(ProfileEditorMsg::Present);
+            }
+            Self::Input::QueryProfileRebuild => {
+                self.query_profile_rebuild_dialog
+                    .present(Some(&self.root_win));
+            }
+            Self::Input::ProfilesEnabledChanged(enabled) => {
+                self.set_profiles_enabled(enabled);
+                sender
+                    .output(Self::Output::ProfilesEnabledChanged(enabled))
+                    .expect(SENDER_IO_ERR_MSG);
+            }
         }
     }
 
-    fn init(
+    async fn init(
         init: Self::Init,
         root: Self::Root,
-        sender: ComponentSender<Self>,
-    ) -> ComponentParts<Self> {
+        sender: AsyncComponentSender<Self>,
+    ) -> AsyncComponentParts<Self> {
+        let profile_not_editable_dialog = adw::AlertDialog::builder()
+            .heading("This profile is not editable")
+            .body(concat!(
+                "You can duplicate it and edit the new copy. ",
+                "Do you want to duplicate the current profile?"
+            ))
+            .build();
+        profile_not_editable_dialog.add_response("no", "_No");
+        profile_not_editable_dialog.add_response("yes", "_Yes");
+        profile_not_editable_dialog.set_response_appearance("yes", ResponseAppearance::Suggested);
+
+        profile_not_editable_dialog.connect_response(
+            None,
+            clone!(
+                #[strong]
+                sender,
+                move |_, res| {
+                    if res == "yes" {
+                        sender.input(Self::Input::DuplicateProfile);
+                    }
+                }
+            ),
+        );
+
+        let query_profile_rebuild_dialog = adw::AlertDialog::builder()
+            .heading("Do you want to build this profile now?")
+            .body("This will trigger a clean build")
+            .build();
+        query_profile_rebuild_dialog.add_response("no", "_No");
+        query_profile_rebuild_dialog.add_response("yes", "_Yes");
+        query_profile_rebuild_dialog.set_response_appearance("yes", ResponseAppearance::Suggested);
+
+        query_profile_rebuild_dialog.connect_response(
+            None,
+            clone!(
+                #[strong]
+                sender,
+                move |_, res| {
+                    if res == "yes" {
+                        sender
+                            .output(Self::Output::BuildProfile(true))
+                            .expect(SENDER_IO_ERR_MSG);
+                    }
+                }
+            ),
+        );
+
+        let profile_delete_confirm_dialog = adw::AlertDialog::builder()
+            .heading("Are you sure you want to delete this profile?")
+            .extra_child(
+                &gtk::CheckButton::builder()
+                    .label("Delete all files and folders associated with profile")
+                    .halign(gtk::Align::Center)
+                    .hexpand(true)
+                    .build(),
+            )
+            .build();
+        profile_delete_confirm_dialog.add_response("no", "_No");
+        profile_delete_confirm_dialog.add_response("yes", "_Yes");
+        profile_delete_confirm_dialog
+            .set_response_appearance("yes", ResponseAppearance::Destructive);
+
+        profile_delete_confirm_dialog.connect_response(
+            None,
+            clone!(
+                #[strong]
+                sender,
+                move |dialog, res| {
+                    let delete_files_checkbox = dialog
+                        .extra_child()
+                        .and_then(|child| child.downcast::<gtk::CheckButton>().ok());
+                    let delete_files = delete_files_checkbox
+                        .as_ref()
+                        .is_some_and(|c| c.is_active());
+                    if let Some(check) = delete_files_checkbox {
+                        check.set_active(false);
+                    }
+                    if res == "yes" {
+                        sender
+                            .output(Self::Output::DeleteProfile(delete_files))
+                            .expect("Sender output failed");
+                    }
+                }
+            ),
+        );
+
         let log_level_dropdown = gtk::DropDown::from_strings(
             LogLevel::iter()
                 .map(|lvl| lvl.to_string())
@@ -253,6 +661,82 @@ impl SimpleComponent for DebugView {
             }
         ));
 
+        let mut actions = RelmActionGroup::<ProfileActionGroup>::new();
+
+        let profile_delete_action = {
+            let action = RelmAction::<ProfileMenuDeleteAction>::new_stateless(clone!(
+                #[strong]
+                sender,
+                move |_| {
+                    sender.input(Self::Input::DeleteProfile);
+                }
+            ));
+            let ret = action.gio_action().clone();
+            actions.add_action(action);
+            ret.set_enabled(false);
+            ret
+        };
+        let profile_export_action = {
+            let action = RelmAction::<ProfileMenuExportAction>::new_stateless(clone!(
+                #[strong]
+                sender,
+                move |_| {
+                    sender.input(Self::Input::ExportProfile);
+                }
+            ));
+            let ret = action.gio_action().clone();
+            actions.add_action(action);
+            ret.set_enabled(false);
+            ret
+        };
+
+        stateless_action!(
+            actions,
+            ProfileMenuNewAction,
+            clone!(
+                #[strong]
+                sender,
+                move |_| {
+                    sender.input(Self::Input::CreateProfile);
+                }
+            )
+        );
+        stateless_action!(
+            actions,
+            ProfileMenuEditAction,
+            clone!(
+                #[strong]
+                sender,
+                move |_| {
+                    sender.input(Self::Input::EditProfile);
+                }
+            )
+        );
+        stateless_action!(
+            actions,
+            ProfileMenuDuplicateAction,
+            clone!(
+                #[strong]
+                sender,
+                move |_| {
+                    sender.input(Self::Input::DuplicateProfile);
+                }
+            )
+        );
+        stateless_action!(
+            actions,
+            ProfileMenuImportAction,
+            clone!(
+                #[strong]
+                sender,
+                move |_| {
+                    sender.input(Self::Input::ImportProfile);
+                }
+            )
+        );
+
+        root.insert_action_group(ProfileActionGroup::NAME, Some(&actions.into_action_group()));
+
         let mut model = Self {
             xrservice_active: false,
             tracker: 0,
@@ -267,6 +751,16 @@ impl SimpleComponent for DebugView {
                 .tooltip_text("Copy")
                 .build(),
             profile: init.profile,
+            profiles: Vec::new(),
+            profiles_dropdown: None,
+            profile_delete_action,
+            profile_export_action,
+            profile_editor: None,
+            profile_not_editable_dialog,
+            profile_delete_confirm_dialog,
+            query_profile_rebuild_dialog,
+            root_win: init.root_win,
+            profiles_enabled: init.profiles_enabled,
         };
         model.term.set_color_scheme();
 
@@ -283,6 +777,8 @@ impl SimpleComponent for DebugView {
         model.search_entry = Some(widgets.search_entry.clone());
         model.dropdown = Some(log_level_dropdown.clone());
 
+        model.profiles_dropdown = Some(widgets.profiles_dropdown.clone());
+
         widgets
             .debug_menu_btn
             .popover()
@@ -292,6 +788,38 @@ impl SimpleComponent for DebugView {
             .unwrap()
             .add_child(&model.profile_id_widget, "profile_id_widget");
 
-        ComponentParts { model, widgets }
+        AsyncComponentParts { model, widgets }
     }
 }
+
+new_action_group!(ProfileActionGroup, "profile");
+new_stateless_action!(
+    ProfileMenuNewAction,
+    ProfileActionGroup,
+    "profilemenunewaction"
+);
+new_stateless_action!(
+    ProfileMenuEditAction,
+    ProfileActionGroup,
+    "profilemenueditaction"
+);
+new_stateless_action!(
+    ProfileMenuDuplicateAction,
+    ProfileActionGroup,
+    "profilemenuduplicateaction"
+);
+new_stateless_action!(
+    ProfileMenuDeleteAction,
+    ProfileActionGroup,
+    "profilemenudeleteaction"
+);
+new_stateless_action!(
+    ProfileMenuImportAction,
+    ProfileActionGroup,
+    "profilemenuimportaction"
+);
+new_stateless_action!(
+    ProfileMenuExportAction,
+    ProfileActionGroup,
+    "profilemenuexportaction"
+);
