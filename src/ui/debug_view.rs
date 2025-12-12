@@ -235,7 +235,8 @@ impl AsyncComponent for DebugView {
                 add_css_class: "background",
                 adw::SwitchRow {
                     set_title: "Use development profiles",
-                    set_active: init.profiles_enabled,
+                    #[track = "model.changed(Self::profiles_enabled())"]
+                    set_active: model.profiles_enabled,
 
                     connect_active_notify[sender] => move |row| {
                         sender.input(Self::Input::ProfilesEnabledChanged(row.is_active()));
@@ -353,11 +354,13 @@ impl AsyncComponent for DebugView {
                 copy_text(&self.profile.uuid);
             }
             Self::Input::ProfileSelected(position) => {
-                sender
-                    .output(Self::Output::ProfileSelected(
-                        self.profiles.get(position as usize).unwrap().clone(),
-                    ))
-                    .expect("Sender output failed");
+                if self.profiles_enabled {
+                    sender
+                        .output(Self::Output::ProfileSelected(
+                            self.profiles.get(position as usize).unwrap().clone(),
+                        ))
+                        .expect("Sender output failed");
+                }
             }
             Self::Input::UpdateProfiles(profiles, config) => {
                 self.set_profiles(profiles);
@@ -405,10 +408,10 @@ impl AsyncComponent for DebugView {
                     .expect(SENDER_IO_ERR_MSG);
             }
             Self::Input::DuplicateProfile => {
-                if self.profile.can_be_built {
-                    sender.input(Self::Input::OpenProfileEditor(
-                        self.profile.create_duplicate(),
-                    ));
+                if !self.profile.is_system_profile
+                    && let Some(dup) = self.profile.create_duplicate()
+                {
+                    sender.input(Self::Input::OpenProfileEditor(dup));
                 } else {
                     alert(
                         "This profile cannot be duplicated",

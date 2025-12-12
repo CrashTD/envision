@@ -139,11 +139,11 @@ impl AsyncComponent for MainView {
                         set_orientation: gtk::Orientation::Vertical,
                         gtk::Button {
                             #[track = "model.changed(Self::selected_profile())"]
-                            set_visible: !model.selected_profile.can_start(),
+                            set_visible: !model.selected_profile.is_system_profile && !model.selected_profile.can_start(None),
                             add_css_class: "pill",
                             add_css_class: "suggested-action",
                             set_hexpand: true,
-                            set_label: "Build Profile",
+                            set_label: "Build profile",
                             set_action_name: Some("win.buildprofileclean"),
                         },
                         gtk::Box {
@@ -155,7 +155,7 @@ impl AsyncComponent for MainView {
                                 add_css_class: "destructive-action",
                                 set_hexpand: true,
                                 #[track = "model.changed(Self::selected_profile())"]
-                                set_visible: model.selected_profile.can_start(),
+                                set_visible: model.selected_profile.is_system_profile || model.selected_profile.can_start(None),
                                 #[track = "model.changed(Self::xrservice_active())"]
                                 set_class_active: ("suggested-action", !model.xrservice_active),
                                 #[track = "model.changed(Self::xrservice_active())"]
@@ -337,7 +337,7 @@ impl AsyncComponent for MainView {
                             "applications."
                         )) -> gtk::Box {
                             #[track = "model.changed(Self::selected_profile())"]
-                            set_visible: match mount_has_nosuid(&model.selected_profile.prefix) {
+                            set_visible: !model.selected_profile.is_system_profile && match mount_has_nosuid(&model.selected_profile.prefix) {
                                 Ok(b) => b,
                                 Err(_) => {
                                     warn!(

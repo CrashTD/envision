@@ -9,7 +9,7 @@ pub mod wivrn_deps;
 pub mod xrizer_deps;
 
 use crate::linux_distro::LinuxDistro;
-use std::{collections::HashMap, env, fmt::Display, path::Path};
+use std::{collections::HashMap, env, fmt::Display, path::PathBuf};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum DepType {
@@ -41,7 +41,7 @@ impl PartialOrd for Dependency {
 }
 
 impl Dependency {
-    pub fn check(&self) -> bool {
+    pub fn find_path(&self) -> Option<PathBuf> {
         for dir in match self.dep_type {
             DepType::SharedObject => shared_obj_paths(),
             DepType::Executable => env::var("PATH")
@@ -53,13 +53,16 @@ impl Dependency {
             DepType::UdevRule => udev_rules_paths(),
             DepType::Share => share_paths(),
         } {
-            let path_s = &format!("{dir}/{fname}", dir = dir, fname = self.filename);
-            let path = Path::new(&path_s);
+            let path = PathBuf::from(&dir).join(&self.filename);
             if path.is_file() {
-                return true;
+                return Some(path);
             }
         }
-        false
+        None
+    }
+
+    pub fn check(&self) -> bool {
+        self.find_path().is_some()
     }
 
     pub fn check_many(deps: Vec<Self>) -> Vec<DependencyCheckResult> {

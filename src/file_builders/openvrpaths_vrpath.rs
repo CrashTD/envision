@@ -98,7 +98,7 @@ pub fn build_profile_openvrpaths(profile: &Profile) -> OpenVrPaths {
         external_drivers: None,
         jsonid: "vrpathreg".into(),
         log: vec![datadir.join("Steam/logs")],
-        runtime: vec![profile.ovr_comp.runtime_dir()],
+        runtime: vec![profile.ovr_comp_runtime_dir()],
         version: 1,
     }
 }

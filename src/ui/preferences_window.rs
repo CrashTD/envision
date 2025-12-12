@@ -134,7 +134,6 @@ impl AsyncComponent for PreferencesWindow {
                 }
             }
             Self::Input::OnClosed => {
-                self.config.borrow().save();
                 sender
                     .output(Self::Output::OnClosed(self.config.borrow().clone()))
                     .expect(SENDER_IO_ERR_MSG);

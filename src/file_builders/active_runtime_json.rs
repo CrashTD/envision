@@ -1,5 +1,4 @@
 use crate::{
-    paths::SYSTEM_PREFIX_PATH,
     profile::Profile,
     util::file_utils::{deserialize_file, get_writer, set_file_readonly},
     xdg::XDG,
@@ -78,21 +77,22 @@ pub fn build_profile_active_runtime(profile: &Profile) -> anyhow::Result<ActiveR
 }
 
 // for system installs
-fn relativize_active_runtime_lib_path(ar: &ActiveRuntime, path: &Path) -> ActiveRuntime {
-    let mut res = ar.clone();
-    let mut rel_chain = path
-        .components()
-        .map(|_| String::from(".."))
-        .collect::<Vec<String>>();
-    rel_chain.pop();
-    rel_chain.pop();
-    res.runtime.library_path = PathBuf::from(format!(
-        "{rels}{fullpath}",
-        rels = rel_chain.join("/"),
-        fullpath = ar.runtime.library_path.to_string_lossy()
-    ));
-    res
-}
+// #[deprecated]
+// fn relativize_active_runtime_lib_path(ar: &ActiveRuntime, path: &Path) -> ActiveRuntime {
+//     let mut res = ar.clone();
+//     let mut rel_chain = path
+//         .components()
+//         .map(|_| String::from(".."))
+//         .collect::<Vec<String>>();
+//     rel_chain.pop();
+//     rel_chain.pop();
+//     res.runtime.library_path = PathBuf::from(format!(
+//         "{rels}{fullpath}",
+//         rels = rel_chain.join("/"),
+//         fullpath = ar.runtime.library_path.to_string_lossy()
+//     ));
+//     res
+// }
 
 const ACTIVE_RUNTIME_BAK: &str = "active_runtime.json.envision.bak";
 
@@ -117,12 +117,12 @@ pub fn set_current_active_runtime_to_profile(profile: &Profile) -> anyhow::Resul
     } else {
         warn!("profile openxr json file doesn't exist");
         // fallback: build the file from scratch
-        let pfx = profile.clone().prefix;
-        let mut ar = build_profile_active_runtime(profile)?;
+        let ar = build_profile_active_runtime(profile)?;
+        // NOTE: maybe this isn't necessary anymore, disabling for now
         // hack: relativize libopenxr_monado.so path for system installs
-        if pfx == *SYSTEM_PREFIX_PATH {
-            ar = relativize_active_runtime_lib_path(&ar, &dest);
-        }
+        // if pfx == *SYSTEM_PREFIX_PATH {
+        //     ar = relativize_active_runtime_lib_path(&ar, &dest);
+        // }
         dump_current_active_runtime(&ar)?;
         set_file_readonly(&dest, true)?;
     }
@@ -160,12 +160,11 @@ pub fn restore_active_runtime_backup() -> anyhow::Result<()> {
 
 #[cfg(test)]
 mod tests {
-    use std::path::{Path, PathBuf};
-
     use super::{
         ActiveRuntime, ActiveRuntimeInnerRuntime, dump_active_runtime_to_path,
-        get_active_runtime_from_path, relativize_active_runtime_lib_path,
+        get_active_runtime_from_path,
     };
+    use std::path::{Path, PathBuf};
 
     #[test]
     fn can_read_active_runtime_json_steamvr() {
@@ -203,28 +202,28 @@ mod tests {
         .expect("could not dump active runtime to path");
     }
 
-    #[test]
-    fn can_relativize_path() {
-        let ar = ActiveRuntime {
-            file_format_version: "1.0.0".into(),
-            runtime: ActiveRuntimeInnerRuntime {
-                valve_runtime_is_steamvr: None,
-                library_path: "/usr/lib64/libopenxr_monado.so".into(),
-                libmonado_path: None,
-                name: None,
-            },
-        };
-        let relativized = relativize_active_runtime_lib_path(
-            &ar,
-            Path::new("/home/user/.config/openxr/1/active_runtime.json"),
-        );
-        assert_eq!(
-            relativized
-                .runtime
-                .library_path
-                .to_string_lossy()
-                .to_string(),
-            "../../../../../usr/lib64/libopenxr_monado.so"
-        );
-    }
+    // #[test]
+    // fn can_relativize_path() {
+    //     let ar = ActiveRuntime {
+    //         file_format_version: "1.0.0".into(),
+    //         runtime: ActiveRuntimeInnerRuntime {
+    //             valve_runtime_is_steamvr: None,
+    //             library_path: "/usr/lib64/libopenxr_monado.so".into(),
+    //             libmonado_path: None,
+    //             name: None,
+    //         },
+    //     };
+    //     let relativized = relativize_active_runtime_lib_path(
+    //         &ar,
+    //         Path::new("/home/user/.config/openxr/1/active_runtime.json"),
+    //     );
+    //     assert_eq!(
+    //         relativized
+    //             .runtime
+    //             .library_path
+    //             .to_string_lossy()
+    //             .to_string(),
+    //         "../../../../../usr/lib64/libopenxr_monado.so"
+    //     );
+    // }
 }

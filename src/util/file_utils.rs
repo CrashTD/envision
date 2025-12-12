@@ -1,4 +1,4 @@
-use crate::{async_process::async_process, depcheck::common::dep_getcap_setcap, profile::Profile};
+use crate::{async_process::async_process, depcheck::common::dep_getcap_setcap};
 use anyhow::bail;
 use nix::{
     errno::Errno,
@@ -99,20 +99,16 @@ pub fn getcap_executable() -> Option<String> {
     }
 }
 
-pub fn setcap_cap_sys_nice_eip_cmd(profile: &Profile) -> Vec<String> {
+pub fn setcap_cap_sys_nice_eip_cmd(xrservice_binary: &Path) -> Vec<String> {
     vec![
         setcap_executable().unwrap_or("setcap".into()),
         "CAP_SYS_NICE=eip".into(),
-        profile
-            .prefix
-            .join(profile.xrservice_binary())
-            .to_string_lossy()
-            .to_string(),
+        xrservice_binary.to_string_lossy().to_string(),
     ]
 }
 
-pub async fn verify_cap_sys_nice_eip(profile: &Profile) -> bool {
-    let xrservice_binary = profile.xrservice_binary().to_string_lossy().to_string();
+pub async fn verify_cap_sys_nice_eip(xrservice_binary: &Path) -> bool {
+    let xrservice_binary = xrservice_binary.to_string_lossy().to_string();
     if let Some(getcap_exec) = getcap_executable() {
         match async_process(&getcap_exec, Some(&[&xrservice_binary]), None).await {
             Err(e) => {
@@ -139,8 +135,13 @@ pub async fn verify_cap_sys_nice_eip(profile: &Profile) -> bool {
     }
 }
 
-pub async fn setcap_cap_sys_nice_eip(profile: &Profile) -> anyhow::Result<()> {
-    async_process("pkexec", Some(&setcap_cap_sys_nice_eip_cmd(profile)), None).await?;
+pub async fn setcap_cap_sys_nice_eip(xrservice_binary: &Path) -> anyhow::Result<()> {
+    async_process(
+        "pkexec",
+        Some(&setcap_cap_sys_nice_eip_cmd(xrservice_binary)),
+        None,
+    )
+    .await?;
     Ok(())
 }
 
@@ -171,6 +172,9 @@ pub fn copy_file(source: &Path, dest: &Path) {
 }
 
 pub fn mount_has_nosuid(path: &Path) -> Result<bool, Errno> {
+    if !path.exists() {
+        return Ok(false);
+    }
     match statvfs(path) {
         Ok(fstats) => Ok(fstats.flags().contains(FsFlags::ST_NOSUID)),
         Err(e) => Err(e),

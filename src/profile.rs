@@ -1,5 +1,6 @@
 use crate::{
     build_tools::git::Git,
+    config::Config,
     depcheck::{
         Dependency, basalt_deps::get_missing_basalt_deps,
         libsurvive_deps::get_missing_libsurvive_deps, mercury_deps::get_missing_mercury_deps,
@@ -8,6 +9,7 @@ use crate::{
     },
     file_builders::active_runtime_json::ActiveRuntime,
     paths::{BWRAP_SYSTEM_PREFIX, SYSTEM_PREFIX, get_data_dir},
+    profiles::system_profile::{monado_dep, wivrn_dep},
     util::{
         file_utils::{deserialize_file, get_writer},
         git_repos::{
@@ -33,7 +35,7 @@ use std::{
 };
 use uuid::Uuid;
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub enum XRServiceType {
     #[default]
     Monado,
@@ -43,6 +45,13 @@ pub enum XRServiceType {
 impl XRServiceType {
     pub fn iter() -> Iter<'static, Self> {
         [Self::Monado, Self::Wivrn].iter()
+    }
+
+    pub fn binary_name(&self) -> &'static str {
+        match self {
+            XRServiceType::Monado => "monado-service",
+            XRServiceType::Wivrn => "wivrn-server",
+        }
     }
 
     /// relative path from the prefix lib dir of the libopenxr shared object
@@ -349,8 +358,9 @@ impl ProfileOvrCompatibilityModule {
     }
 
     /// get the directory corresponding to the openvr runtime.
-    /// this should correspond to the build output directory
-    pub fn runtime_dir(&self) -> PathBuf {
+    /// this should correspond to the build output directory.
+    /// use this only in built non system profiles
+    pub fn built_runtime_dir(&self) -> PathBuf {
         match self.mod_type {
             OvrCompatibilityModuleType::Opencomposite => self.path.join("build"),
             OvrCompatibilityModuleType::Vapor => self.path.join("build/install_pfx/lib/VapoR"),
@@ -394,7 +404,8 @@ pub struct Profile {
     pub environment: HashMap<String, String>,
     /// Install prefix
     pub prefix: PathBuf,
-    pub can_be_built: bool,
+    #[serde(default)]
+    pub is_system_profile: bool,
     pub editable: bool,
     pub pull_on_build: bool,
     #[serde(default = "LighthouseDriver::default")]
@@ -450,7 +461,7 @@ impl Default for Profile {
             },
             environment: HashMap::new(),
             prefix: Self::default_prefix_path(&uuid),
-            can_be_built: true,
+            is_system_profile: false,
             pull_on_build: true,
             opencomposite_path: profile_dir.join("opencomposite"),
             opencomposite_repo: None,
@@ -523,12 +534,13 @@ impl Profile {
     }
 
     pub fn get_env_vars(&self) -> Vec<String> {
-        if self.can_be_built {
-            return vec![
-                "PRESSURE_VESSEL_FILESYSTEMS_RW=\"$XDG_RUNTIME_DIR/wivrn_comp_ipc:$XDG_RUNTIME_DIR/wivrn/comp_ipc:$XDG_RUNTIME_DIR/monado_comp_ipc\"".into(),
-            ];
+        if self.is_system_profile {
+            self.env_vars_full()
+        } else {
+            vec![
+            "PRESSURE_VESSEL_FILESYSTEMS_RW=\"$XDG_RUNTIME_DIR/wivrn_comp_ipc:$XDG_RUNTIME_DIR/wivrn/comp_ipc:$XDG_RUNTIME_DIR/monado_comp_ipc\"".into(),
+        ]
         }
-        self.env_vars_full()
     }
 
     pub fn get_steam_launch_options(&self) -> String {
@@ -560,20 +572,16 @@ impl Profile {
         Uuid::new_v4().to_string()
     }
 
-    pub fn create_duplicate(&self) -> Self {
-        if !self.can_be_built {
-            let mut dup = self.clone();
-            dup.uuid = Self::new_uuid();
-            dup.name = format!("Duplicate of {}", dup.name);
-            dup.editable = true;
-            return dup;
+    pub fn create_duplicate(&self) -> Option<Self> {
+        if self.is_system_profile {
+            return None;
         }
         let uuid = Self::new_uuid();
         let profile_dir = get_data_dir().join(&uuid);
         #[allow(deprecated)]
         let mut dup = Self {
             name: format!("Duplicate of {}", self.name),
-            xrservice_type: self.xrservice_type.clone(),
+            xrservice_type: self.xrservice_type,
             xrservice_repo: self.xrservice_repo.clone(),
             xrservice_branch: self.xrservice_branch.clone(),
             xrservice_cmake_flags: self.xrservice_cmake_flags.clone(),
@@ -617,7 +625,7 @@ impl Profile {
                 branch: self.ovr_comp.branch.clone(),
                 path: profile_dir.join(self.ovr_comp.mod_type.to_string()),
             },
-            can_be_built: self.can_be_built,
+            is_system_profile: false,
             editable: true,
             uuid,
         };
@@ -627,7 +635,7 @@ impl Profile {
                 prepare_ld_library_path(&dup.prefix),
             );
         }
-        dup
+        Some(dup)
     }
 
     pub fn validate(&self) -> Result<(), Vec<&str>> {
@@ -693,11 +701,23 @@ impl Profile {
         }
     }
 
-    pub fn xrservice_binary(&self) -> PathBuf {
-        self.prefix.join("bin").join(match self.xrservice_type {
-            XRServiceType::Monado => "monado-service",
-            XRServiceType::Wivrn => "wivrn-server",
-        })
+    /// pass config if system profile
+    pub fn xrservice_binary(&self, config: Option<&Config>) -> Option<PathBuf> {
+        if self.is_system_profile {
+            config.and_then(|config| {
+                match config.global_preferences.xrservice_type {
+                    XRServiceType::Monado => monado_dep(),
+                    XRServiceType::Wivrn => wivrn_dep(),
+                }
+                .find_path()
+            })
+        } else {
+            Some(
+                self.prefix
+                    .join("bin")
+                    .join(self.xrservice_type.binary_name()),
+            )
+        }
     }
 
     pub fn monado_gui_binary(&self) -> Option<PathBuf> {
@@ -713,8 +733,8 @@ impl Profile {
         }
     }
 
-    pub fn can_start(&self) -> bool {
-        self.xrservice_binary().is_file()
+    pub fn can_start(&self, config: Option<&Config>) -> bool {
+        self.xrservice_binary(config).is_some_and(|p| p.is_file())
     }
 
     /// absolute path to a given shared object in the profile prefix
@@ -753,7 +773,9 @@ impl Profile {
 
     pub fn missing_dependencies(&self) -> Vec<Dependency> {
         let mut missing_deps = Vec::new();
-        if self.can_be_built {
+        if self.is_system_profile {
+            // TODO:
+        } else {
             missing_deps.extend(match self.xrservice_type {
                 XRServiceType::Monado => get_missing_monado_deps(),
                 XRServiceType::Wivrn => get_missing_wivrn_deps(),
@@ -900,6 +922,44 @@ impl Profile {
                     .unwrap_or(DEFAULT_LIBSURVIVE_BRANCH)
                     .into(),
             })
+        }
+    }
+
+    pub fn ovr_comp_runtime_dir(&self) -> PathBuf {
+        const CANDIDATE_DIRS_OPENCOMPOSITE: [&str; 5] = [
+            "/opt/opencomposite",
+            "/usr/lib64/opencomposite/runtime",
+            "/usr/lib/opencomposite/runtime",
+            "/usr/lib64/opencomposite",
+            "/usr/lib/opencomposite",
+        ];
+        const CANDIDATE_DIRS_XRIZER: [&str; 5] = [
+            "/opt/xrizer",
+            "/usr/lib64/xrizer/runtime",
+            "/usr/lib/xrizer/runtime",
+            "/usr/lib64/xrizer",
+            "/usr/lib/xrizer",
+        ];
+        const CANDIDATE_DIRS_VAPOR: [&str; 5] = [
+            "/opt/vapor",
+            "/usr/lib64/vapor/runtime",
+            "/usr/lib/vapor/runtime",
+            "/usr/lib64/vapor",
+            "/usr/lib/vapor",
+        ];
+        if self.is_system_profile {
+            let candidates = match self.ovr_comp.mod_type {
+                OvrCompatibilityModuleType::Opencomposite => CANDIDATE_DIRS_OPENCOMPOSITE,
+                OvrCompatibilityModuleType::Xrizer => CANDIDATE_DIRS_XRIZER,
+                OvrCompatibilityModuleType::Vapor => CANDIDATE_DIRS_VAPOR,
+            };
+            candidates
+                .iter()
+                .find(|c| Path::new(c).join("bin/linux64/vrclient.so").is_file())
+                .unwrap_or(candidates.first().unwrap())
+                .into()
+        } else {
+            self.ovr_comp.built_runtime_dir()
         }
     }
 }

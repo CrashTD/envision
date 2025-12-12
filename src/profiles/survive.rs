@@ -42,7 +42,7 @@ pub fn survive_profile() -> Profile {
         },
         environment,
         prefix,
-        can_be_built: true,
+        is_system_profile: false,
         editable: false,
         lighthouse_driver: LighthouseDriver::Survive,
         ..Default::default()

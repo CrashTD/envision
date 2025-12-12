@@ -3,6 +3,7 @@ use super::{
     state::JobWorkerState,
 };
 use crate::{
+    config::Config,
     profile::{LighthouseDriver, Profile},
     ui::SENDER_IO_ERR_MSG,
 };
@@ -160,9 +161,10 @@ pub const LAUNCH_OPTS_CMD_PLACEHOLDER: &str = "%command%";
 impl InternalJobWorker {
     pub fn xrservice_worker_from_profile(
         prof: &Profile,
+        config: &Config,
         state: Arc<Mutex<JobWorkerState>>,
         debug: bool,
-    ) -> relm4::WorkerHandle<InternalJobWorker> {
+    ) -> Option<relm4::WorkerHandle<InternalJobWorker>> {
         let mut env = prof.environment.clone();
         if !env.contains_key("LH_DRIVER") {
             match prof.lighthouse_driver {
@@ -201,19 +203,23 @@ impl InternalJobWorker {
                     match launch_opts.contains(LAUNCH_OPTS_CMD_PLACEHOLDER) {
                         true => launch_opts.replacen(
                             LAUNCH_OPTS_CMD_PLACEHOLDER,
-                            prof.xrservice_binary().to_string_lossy().as_ref(),
+                            prof.xrservice_binary(Some(config))?
+                                .to_string_lossy()
+                                .as_ref(),
                             1,
                         ),
                         false => format!(
                             "{} {}",
-                            prof.xrservice_binary().to_string_lossy(),
+                            prof.xrservice_binary(Some(config))?.to_string_lossy(),
                             launch_opts
                         ),
                     },
                 ],
             ),
             true => (
-                prof.xrservice_binary().to_string_lossy().to_string(),
+                prof.xrservice_binary(Some(config))?
+                    .to_string_lossy()
+                    .to_string(),
                 vec![],
             ),
         };
@@ -224,6 +230,6 @@ impl InternalJobWorker {
         };
         let mut jobs = VecDeque::new();
         jobs.push_back(WorkerJob::Cmd(data));
-        Self::builder().detach_worker(JobWorkerInit { jobs, state })
+        Some(Self::builder().detach_worker(JobWorkerInit { jobs, state }))
     }
 }

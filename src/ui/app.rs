@@ -39,6 +39,7 @@ use crate::{
     openxr_prober::is_openxr_ready,
     paths::get_data_dir,
     profile::{OvrCompatibilityModuleType, Profile, XRServiceType},
+    profiles::system_profile::system_profile,
     stateless_action,
     steam_linux_runtime_injector::{
         restore_sniper_runtime_entrypoint, restore_soldier_runtime_entrypoint,
@@ -160,8 +161,12 @@ pub enum Msg {
 }
 
 impl App {
-    pub fn get_selected_profile(&self) -> Profile {
-        self.config.get_selected_profile(&self.profiles)
+    pub fn get_selected_profile(&mut self) -> Profile {
+        if self.config.profiles_enabled {
+            self.config.get_selected_profile(&self.profiles)
+        } else {
+            system_profile(&self.config)
+        }
     }
 
     pub fn set_inhibit_session(&mut self, state: bool) {
@@ -201,15 +206,28 @@ impl App {
     }
 
     pub fn start_xrservice(&mut self, sender: AsyncComponentSender<Self>, debug: bool) {
+        let prof = if self.config.profiles_enabled {
+            self.get_selected_profile()
+        } else {
+            system_profile(&self.config)
+        };
         self.xrservice_ready = false;
-        let prof = self.get_selected_profile();
-        if !prof.can_start() {
-            alert(
-                "Failed to start profile",
-                Some(concat!(
+        if !prof.can_start(Some(&self.config)) {
+            let desc = if prof.is_system_profile {
+                format!(
+                    "Executable for {} not found, you need to install it throught your package manager",
+                    prof.xrservice_type
+                )
+            } else {
+                concat!(
                     "You need to build the current profile before starting it.",
                     "\n\nYou can do this from the menu."
-                )),
+                )
+                .into()
+            };
+            alert(
+                "Failed to start profile",
+                Some(&desc),
                 Some(&self.app_win.clone().upcast::<gtk::Window>()),
             );
             return;
@@ -243,15 +261,23 @@ impl App {
                     .unwrap_or_else(|e| error!("failed to remove xrservice IPC file: {e}"));
             };
         }
-        let worker = JobWorker::xrservice_worker_wrap_from_profile(
+        let Some(worker) = JobWorker::xrservice_worker_wrap_from_profile(
             &prof,
+            &self.config,
             sender.input_sender(),
             |msg| match msg {
                 JobWorkerOut::Log(rows) => Msg::OnServiceLog(rows),
                 JobWorkerOut::Exit(code) => Msg::OnServiceExit(code),
             },
             debug,
-        );
+        ) else {
+            alert(
+                "Failed to start XR Service",
+                Some("Could not find XR Service executable."),
+                Some(&self.app_win.clone().upcast::<gtk::Window>()),
+            );
+            return;
+        };
         worker.start();
         self.xrservice_worker = Some(worker);
         let set_sniper_launch_opts_res =
@@ -262,7 +288,7 @@ impl App {
             .sender()
             .emit(MainViewMsg::XRServiceActiveChanged(
                 true,
-                Some(self.get_selected_profile()),
+                Some(prof),
                 // show launch opts only if setting the runtime entrypoint fails
                 set_sniper_launch_opts_res.is_err() || set_soldier_launch_opts_res.is_err(),
             ));
@@ -532,6 +558,13 @@ impl AsyncComponent for App {
                 self.config.debug_view_enabled = val;
                 self.config.save();
                 self.split_view.clone().unwrap().set_collapsed(!val);
+                // disabling debug view also disables profiles
+                if !val {
+                    sender.input(Msg::ProfilesEnabledChanged(false));
+                    self.debug_view
+                        .sender()
+                        .emit(DebugViewMsg::ProfilesEnabledChanged(false));
+                }
                 self.main_view
                     .sender()
                     .emit(MainViewMsg::EnableDebugViewChanged(val));
@@ -705,8 +738,8 @@ impl AsyncComponent for App {
             Msg::BuildProfilePostChecks(clean_build) => {
                 let profile = self.get_selected_profile();
                 let mut jobs = VecDeque::<WorkerJob>::new();
-                // profile per se can't be built, but we still need opencomp
-                if profile.can_be_built {
+                // system profile can't be built
+                if !profile.is_system_profile {
                     if profile.features.libsurvive.enabled {
                         jobs.extend(get_build_libsurvive_jobs(&profile, clean_build));
                     }
@@ -723,18 +756,18 @@ impl AsyncComponent for App {
                         XRServiceType::Monado => get_build_monado_jobs(&profile, clean_build),
                         XRServiceType::Wivrn => get_build_wivrn_jobs(&profile, clean_build),
                     });
+                    jobs.extend(match profile.ovr_comp.mod_type {
+                        OvrCompatibilityModuleType::Opencomposite => {
+                            get_build_opencomposite_jobs(&profile, clean_build)
+                        }
+                        OvrCompatibilityModuleType::Xrizer => {
+                            get_build_xrizer_jobs(&profile, clean_build)
+                        }
+                        OvrCompatibilityModuleType::Vapor => {
+                            get_build_vapor_jobs(&profile, clean_build)
+                        }
+                    });
                 }
-                jobs.extend(match profile.ovr_comp.mod_type {
-                    OvrCompatibilityModuleType::Opencomposite => {
-                        get_build_opencomposite_jobs(&profile, clean_build)
-                    }
-                    OvrCompatibilityModuleType::Xrizer => {
-                        get_build_xrizer_jobs(&profile, clean_build)
-                    }
-                    OvrCompatibilityModuleType::Vapor => {
-                        get_build_vapor_jobs(&profile, clean_build)
-                    }
-                });
                 let missing_deps = profile.missing_dependencies();
                 if !(self.skip_depcheck || profile.skip_dependency_check || missing_deps.is_empty())
                 {
@@ -829,17 +862,30 @@ impl AsyncComponent for App {
                                     TermColor::Red
                                         .colorize("pkexec not found, cannot set capabilities\n"),
                                 ]));
-                            alert_w_widget(
-                                "pkexec not found",
-                                Some(&format!(
-                                    "The build is complete, but we need to set certain capabilities (CAP_SYS_NICE=eip) on the OpenXR server executable.\n\n{APP_NAME} can do that using pkexec, but it doesn't seem to be installed on your system.\n\nYou can do this step on your own by running the following command:"
-                                )),
-                                Some(&copiable_code_snippet(&format!(
-                                    "sudo {}",
-                                    setcap_cap_sys_nice_eip_cmd(&profile).join(" ")
-                                ))),
-                                Some(&self.app_win.clone().upcast()),
-                            );
+                            if let Some(xrservice_binary) = profile.xrservice_binary(None) {
+                                alert_w_widget(
+                                    "pkexec not found",
+                                    Some(&format!(
+                                        "The build is complete, but we need to set certain capabilities (CAP_SYS_NICE=eip) on the OpenXR server executable.\n\n{APP_NAME} can do that using pkexec, but it doesn't seem to be installed on your system.\n\nYou can do this step on your own by running the following command:"
+                                    )),
+                                    Some(&copiable_code_snippet(&format!(
+                                        "sudo {}",
+                                        setcap_cap_sys_nice_eip_cmd(&xrservice_binary).join(" ")
+                                    ))),
+                                    Some(&self.app_win.clone().upcast()),
+                                );
+                            } else {
+                                alert(
+                                    "XR Service executable not found",
+                                    Some(concat!(
+                                        "The build seems to have completed successfully, ",
+                                        "but the XR Service binary hasn't been found.\n\n",
+                                        "Something likely went wrong and you might ",
+                                        "want to report this problem."
+                                    )),
+                                    Some(&self.app_win.clone().upcast()),
+                                )
+                            }
                         }
                         self.build_window
                             .sender()
@@ -875,11 +921,10 @@ impl AsyncComponent for App {
                     self.config.user_profiles.retain(|p| p.uuid != todel.uuid);
                     self.config.save();
                     self.profiles = self.config.profiles();
+                    let prof = self.get_selected_profile();
                     self.main_view
                         .sender()
-                        .emit(MainViewMsg::UpdateSelectedProfile(
-                            self.get_selected_profile(),
-                        ));
+                        .emit(MainViewMsg::UpdateSelectedProfile(prof));
                     self.debug_view.sender().emit(DebugViewMsg::UpdateProfiles(
                         self.profiles.clone(),
                         self.config.clone(),
@@ -915,6 +960,15 @@ impl AsyncComponent for App {
                     error!("pkexec not found, skipping setcap");
                 } else {
                     let profile = self.get_selected_profile();
+                    let Some(xrservice_binary) = profile.xrservice_binary(Some(&self.config))
+                    else {
+                        alert(
+                            "XR Service executable not found",
+                            Some("Cannot set executable capabilities"),
+                            Some(&self.app_win.clone().upcast()),
+                        );
+                        return;
+                    };
                     let setcap_failed_dialog = || {
                         alert_w_widget(
                             "Setcap failed to run",
@@ -923,12 +977,12 @@ impl AsyncComponent for App {
                             ),
                             Some(&copiable_code_snippet(&format!(
                                 "sudo {}",
-                                setcap_cap_sys_nice_eip_cmd(&profile).join(" ")
+                                setcap_cap_sys_nice_eip_cmd(&xrservice_binary).join(" ")
                             ))),
                             Some(&self.app_win.clone().upcast()),
                         );
                     };
-                    if let Err(e) = setcap_cap_sys_nice_eip(&profile).await {
+                    if let Err(e) = setcap_cap_sys_nice_eip(&xrservice_binary).await {
                         setcap_failed_dialog();
                         error!("failed running setcap: {e}");
                         self.build_window
@@ -936,7 +990,7 @@ impl AsyncComponent for App {
                             .emit(BuildWindowMsg::UpdateContent(vec![
                                 TermColor::Red.colorize("Setting capabilities failed\n"),
                             ]));
-                    } else if !verify_cap_sys_nice_eip(&profile).await {
+                    } else if !verify_cap_sys_nice_eip(&xrservice_binary).await {
                         setcap_failed_dialog();
                         error!("setcap succeeded but capabilities were reset");
                         self.build_window
@@ -957,25 +1011,22 @@ impl AsyncComponent for App {
             Msg::ProfileSelected(prof) => {
                 self.configure_wivrn_action
                     .set_enabled(prof.xrservice_type == XRServiceType::Wivrn);
-                if prof.uuid == self.config.selected_profile_uuid {
-                    return;
+                if !prof.is_system_profile {
+                    self.config.selected_profile_uuid = prof.uuid.clone();
+                    self.config.save();
                 }
-                self.config.selected_profile_uuid = prof.uuid;
-                self.config.save();
-                let profile = self.get_selected_profile();
                 self.main_view
                     .sender()
-                    .emit(MainViewMsg::UpdateSelectedProfile(profile.clone()));
+                    .emit(MainViewMsg::UpdateSelectedProfile(prof.clone()));
                 self.debug_view
                     .sender()
-                    .emit(DebugViewMsg::UpdateSelectedProfile(profile.clone()));
+                    .emit(DebugViewMsg::UpdateSelectedProfile(prof.clone()));
             }
             Msg::OpenLibsurviveSetup => {
+                let prof = self.get_selected_profile();
                 self.libsurvive_setup_window
                     .sender()
-                    .send(LibsurviveSetupMsg::Present(
-                        self.get_selected_profile().clone(),
-                    ))
+                    .send(LibsurviveSetupMsg::Present(prof))
                     .expect("Failed to present Libsurvive Setup Window");
             }
             Msg::SaveWinSize(w, h) => {
@@ -1098,6 +1149,8 @@ impl AsyncComponent for App {
             }
             Msg::OnPreferencesWindowClose(config) => {
                 self.config = config;
+                self.config.save();
+                sender.input(Msg::ProfileSelected(self.get_selected_profile()));
             }
             Msg::UpdateConfigPlugins(cp) => {
                 self.config.plugins = cp;
@@ -1129,6 +1182,7 @@ impl AsyncComponent for App {
             Msg::ProfilesEnabledChanged(enabled) => {
                 self.config.profiles_enabled = enabled;
                 self.config.save();
+                sender.input(Msg::ProfileSelected(self.get_selected_profile()));
             }
         }
     }
@@ -1279,7 +1333,11 @@ impl AsyncComponent for App {
             ret.set_enabled(false);
             ret
         };
-        let selected_profile = config.get_selected_profile(&profiles);
+        let selected_profile = if config.profiles_enabled {
+            config.get_selected_profile(&profiles)
+        } else {
+            system_profile(&config)
+        };
 
         let vkinfo = {
             match VulkanInfo::get() {

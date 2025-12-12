@@ -32,7 +32,7 @@ pub fn simulated_profile() -> Profile {
         features: ProfileFeatures::default(),
         environment,
         prefix,
-        can_be_built: true,
+        is_system_profile: false,
         editable: false,
         ..Default::default()
     }

@@ -31,7 +31,7 @@ pub fn lighthouse_profile() -> Profile {
         features: ProfileFeatures::default(),
         environment,
         prefix,
-        can_be_built: true,
+        is_system_profile: false,
         editable: false,
         lighthouse_driver: LighthouseDriver::SteamVR,
         ..Default::default()

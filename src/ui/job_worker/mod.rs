@@ -3,7 +3,7 @@ use self::{
     job::{FuncWorkerOut, WorkerJob},
     state::JobWorkerState,
 };
-use crate::profile::Profile;
+use crate::{config::Config, profile::Profile};
 use nix::sys::signal::{
     Signal::{SIGKILL, SIGTERM},
     kill,
@@ -73,16 +73,22 @@ impl JobWorker {
 
     pub fn xrservice_worker_wrap_from_profile<X: 'static, F: (Fn(JobWorkerOut) -> X) + 'static>(
         prof: &Profile,
+        config: &Config,
         sender: &Sender<X>,
         transform: F,
         debug: bool,
-    ) -> Self {
+    ) -> Option<Self> {
         let state = Arc::new(Mutex::new(JobWorkerState::default()));
-        Self {
-            worker: InternalJobWorker::xrservice_worker_from_profile(prof, state.clone(), debug)
-                .forward(sender, transform),
+        Some(Self {
+            worker: InternalJobWorker::xrservice_worker_from_profile(
+                prof,
+                config,
+                state.clone(),
+                debug,
+            )?
+            .forward(sender, transform),
             state,
-        }
+        })
     }
 
     pub fn start(&self) {
