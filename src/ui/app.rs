@@ -1188,6 +1188,17 @@ impl AsyncComponent for App {
                 self.clean_build_profile_action.set_enabled(enabled);
                 self.config.profiles_enabled = enabled;
                 self.config.save();
+                if enabled {
+                    self.debug_view
+                        .sender()
+                        .emit(DebugViewMsg::SetSelectedProfile(
+                            self.config
+                                .profiles()
+                                .iter()
+                                .position(|p| p.uuid == self.config.selected_profile_uuid)
+                                .unwrap_or_default() as u32,
+                        ));
+                }
                 sender.input(Msg::ProfileSelected(self.get_selected_profile()));
             }
         }
