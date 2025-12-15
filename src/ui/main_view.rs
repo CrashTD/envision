@@ -1,9 +1,6 @@
 use super::{
     SENDER_IO_ERR_MSG,
-    app::{
-        AboutAction, BuildProfileAction, BuildProfileCleanAction, ConfigureWivrnAction,
-        DebugViewToggleAction, PluginStoreAction,
-    },
+    app::{AboutAction, ConfigureWivrnAction, DebugViewToggleAction, PluginStoreAction},
     devices_box::{DevicesBox, DevicesBoxMsg},
     install_wivrn_box::{InstallWivrnBox, InstallWivrnBoxInit, InstallWivrnBoxMsg},
     openhmd_calibration_box::{OpenHmdCalibrationBox, OpenHmdCalibrationBoxMsg},
@@ -98,8 +95,6 @@ impl AsyncComponent for MainView {
                 // value inside action is ignored
                 "_Preferences" => PreferencesAction,
                 "_Developer mode" => DebugViewToggleAction,
-                "_Build profile" => BuildProfileAction,
-                "C_lean build profile" => BuildProfileCleanAction,
                 "Configure _WiVRn" => ConfigureWivrnAction,
             },
             section! {

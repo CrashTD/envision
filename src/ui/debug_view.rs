@@ -14,6 +14,7 @@ use crate::{
     ui::{
         SENDER_IO_ERR_MSG,
         alert::alert,
+        app::{BuildProfileAction, BuildProfileCleanAction},
         profile_editor::{ProfileEditor, ProfileEditorInit, ProfileEditorMsg, ProfileEditorOutMsg},
         util::limit_dropdown_width,
     },
@@ -143,6 +144,8 @@ impl AsyncComponent for DebugView {
         debug_menu: {
             section! {
                 custom: "profile_id_widget",
+                "_Build profile" => BuildProfileAction,
+                "C_lean build profile" => BuildProfileCleanAction,
             },
             section! {
                 "Open _Data Folder" => DebugOpenDataAction,
@@ -347,6 +350,7 @@ impl AsyncComponent for DebugView {
                 self.set_profile(prof.clone());
                 self.profile_id_widget
                     .set_label(&format!("Profile id: {}", self.profile.uuid));
+                self.profile_id_widget.set_visible(!prof.is_system_profile);
                 self.profile_delete_action.set_enabled(prof.editable);
                 self.profile_export_action.set_enabled(prof.editable);
             }
@@ -364,20 +368,22 @@ impl AsyncComponent for DebugView {
             }
             Self::Input::UpdateProfiles(profiles, config) => {
                 self.set_profiles(profiles);
-                // why send another message to set the dropdown selection?
-                // set_* from tracker likely updates the view obj in the next
-                // draw, so selecting here will result in nothing cause the
-                // dropdown is effectively empty
-                sender.input(Self::Input::SetSelectedProfile({
-                    match self
-                        .profiles
-                        .iter()
-                        .position(|p| p.uuid == config.selected_profile_uuid)
-                    {
-                        Some(idx) => idx as u32,
-                        None => 0,
-                    }
-                }));
+                if (config.profiles_enabled) {
+                    // why send another message to set the dropdown selection?
+                    // set_* from tracker likely updates the view obj in the next
+                    // draw, so selecting here will result in nothing cause the
+                    // dropdown is effectively empty
+                    sender.input(Self::Input::SetSelectedProfile({
+                        match self
+                            .profiles
+                            .iter()
+                            .position(|p| p.uuid == config.selected_profile_uuid)
+                        {
+                            Some(idx) => idx as u32,
+                            None => 0,
+                        }
+                    }));
+                }
             }
             Self::Input::SetSelectedProfile(index) => {
                 if let Some(dd) = self.profiles_dropdown.as_ref() {
@@ -533,6 +539,7 @@ impl AsyncComponent for DebugView {
             }
             Self::Input::ProfilesEnabledChanged(enabled) => {
                 self.set_profiles_enabled(enabled);
+                self.profile_id_widget.set_visible(enabled);
                 sender
                     .output(Self::Output::ProfilesEnabledChanged(enabled))
                     .expect(SENDER_IO_ERR_MSG);
@@ -752,6 +759,7 @@ impl AsyncComponent for DebugView {
                 .css_classes(["flat", "dim-label", "caption"])
                 .label(format!("Profile id: {}", init.profile.uuid))
                 .tooltip_text("Copy")
+                .visible(init.profiles_enabled)
                 .build(),
             profile: init.profile,
             profiles: Vec::new(),

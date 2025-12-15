@@ -102,6 +102,8 @@ pub struct App {
     wivrn_conf_editor: Option<Controller<WivrnConfEditor>>,
     skip_depcheck: bool,
     configure_wivrn_action: gtk::gio::SimpleAction,
+    build_profile_action: gtk::gio::SimpleAction,
+    clean_build_profile_action: gtk::gio::SimpleAction,
     openxr_prober_worker: Option<JobWorker>,
     xrservice_ready: bool,
     vkinfo: Option<VulkanInfo>,
@@ -1180,6 +1182,8 @@ impl AsyncComponent for App {
                 self.monado_gui_worker = None;
             }
             Msg::ProfilesEnabledChanged(enabled) => {
+                self.build_profile_action.set_enabled(enabled);
+                self.clean_build_profile_action.set_enabled(enabled);
                 self.config.profiles_enabled = enabled;
                 self.config.save();
                 sender.input(Msg::ProfileSelected(self.get_selected_profile()));
@@ -1219,28 +1223,6 @@ impl AsyncComponent for App {
 
         let mut actions = RelmActionGroup::<AppActionGroup>::new();
 
-        stateless_action!(
-            actions,
-            BuildProfileAction,
-            clone!(
-                #[strong]
-                sender,
-                move |_| {
-                    sender.input_sender().emit(Msg::BuildProfile(false));
-                }
-            )
-        );
-        stateless_action!(
-            actions,
-            BuildProfileCleanAction,
-            clone!(
-                #[strong]
-                sender,
-                move |_| {
-                    sender.input_sender().emit(Msg::BuildProfile(true));
-                }
-            )
-        );
         stateless_action!(
             actions,
             QuitAction,
@@ -1333,6 +1315,29 @@ impl AsyncComponent for App {
             ret.set_enabled(false);
             ret
         };
+        let build_profile_action = {
+            let action = RelmAction::<BuildProfileAction>::new_stateless(clone!(
+                #[strong]
+                sender,
+                move |_| { sender.input(Msg::BuildProfile(false)) }
+            ));
+            let ret = action.gio_action().clone();
+            actions.add_action(action);
+            ret.set_enabled(config.profiles_enabled);
+            ret
+        };
+        let clean_build_profile_action = {
+            let action = RelmAction::<BuildProfileCleanAction>::new_stateless(clone!(
+                #[strong]
+                sender,
+                move |_| { sender.input(Msg::BuildProfile(true)) }
+            ));
+            let ret = action.gio_action().clone();
+            actions.add_action(action);
+            ret.set_enabled(config.profiles_enabled);
+            ret
+        };
+
         let selected_profile = if config.profiles_enabled {
             config.get_selected_profile(&profiles)
         } else {
@@ -1421,6 +1426,8 @@ impl AsyncComponent for App {
             wivrn_conf_editor: None,
             skip_depcheck: false,
             configure_wivrn_action,
+            build_profile_action,
+            clean_build_profile_action,
             openxr_prober_worker: None,
             xrservice_ready: false,
             inhibit_fail_notif: None,
