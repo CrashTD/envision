@@ -241,6 +241,8 @@ impl AsyncComponent for DebugView {
                     set_title: "Use development profiles",
                     #[track = "model.changed(Self::profiles_enabled())"]
                     set_active: model.profiles_enabled,
+                    #[track = "model.changed(Self::xrservice_active())"]
+                    set_sensitive: !model.xrservice_active,
 
                     connect_active_notify[sender] => move |row| {
                         sender.input(Self::Input::ProfilesEnabledChanged(row.is_active()));
