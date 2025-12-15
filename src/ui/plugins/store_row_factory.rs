@@ -1,3 +1,5 @@
+#![allow(unused_assignments)] // vars named in view! macro are not correctly recognized as used
+
 use super::Plugin;
 use crate::{downloader::cache_file, ui::SENDER_IO_ERR_MSG};
 use gtk::prelude::*;

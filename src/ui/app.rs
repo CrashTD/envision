@@ -1,3 +1,5 @@
+#![allow(unused_assignments)] // vars named in view! macro are not correctly recognized as used
+
 use super::{
     about_dialog::{create_about_dialog, populate_debug_info},
     alert::{alert, alert_w_widget, notification},
@@ -1319,7 +1321,7 @@ impl AsyncComponent for App {
             let action = RelmAction::<BuildProfileAction>::new_stateless(clone!(
                 #[strong]
                 sender,
-                move |_| { sender.input(Msg::BuildProfile(false)) }
+                move |_| sender.input(Msg::BuildProfile(false))
             ));
             let ret = action.gio_action().clone();
             actions.add_action(action);
@@ -1330,7 +1332,7 @@ impl AsyncComponent for App {
             let action = RelmAction::<BuildProfileCleanAction>::new_stateless(clone!(
                 #[strong]
                 sender,
-                move |_| { sender.input(Msg::BuildProfile(true)) }
+                move |_| sender.input(Msg::BuildProfile(true))
             ));
             let ret = action.gio_action().clone();
             actions.add_action(action);

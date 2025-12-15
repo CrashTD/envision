@@ -1,5 +1,6 @@
-use std::path::PathBuf;
+#![allow(unused_assignments)] // vars named in view! macro are not correctly recognized as used
 
+use super::Plugin;
 use crate::{
     constants::APP_ID,
     ui::{
@@ -7,11 +8,10 @@ use crate::{
         preference_rows::{entry_row, file_row},
     },
 };
-
-use super::Plugin;
 use adw::prelude::*;
 use gtk::glib::clone;
 use relm4::prelude::*;
+use std::path::PathBuf;
 
 #[tracker::track]
 pub struct AddCustomPluginWin {

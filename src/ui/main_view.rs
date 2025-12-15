@@ -1,3 +1,5 @@
+#![allow(unused_assignments)] // vars named in view! macro are not correctly recognized as used
+
 use super::{
     SENDER_IO_ERR_MSG,
     app::{AboutAction, ConfigureWivrnAction, DebugViewToggleAction, PluginStoreAction},

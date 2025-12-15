@@ -1,4 +1,4 @@
-use std::{fs::read_to_string, io::Write};
+#![allow(unused_assignments)] // vars named in view! macro are not correctly recognized as used
 
 use super::{
     app::{DebugCopyEnvVarsAction, DebugOpenDataAction, DebugOpenPrefixAction},
@@ -27,6 +27,7 @@ use relm4::{
     new_action_group, new_stateless_action,
     prelude::*,
 };
+use std::{fs::read_to_string, io::Write};
 
 #[derive(Debug)]
 pub enum SearchDirection {
@@ -368,7 +369,7 @@ impl AsyncComponent for DebugView {
             }
             Self::Input::UpdateProfiles(profiles, config) => {
                 self.set_profiles(profiles);
-                if (config.profiles_enabled) {
+                if config.profiles_enabled {
                     // why send another message to set the dropdown selection?
                     // set_* from tracker likely updates the view obj in the next
                     // draw, so selecting here will result in nothing cause the

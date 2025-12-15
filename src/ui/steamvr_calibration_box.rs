@@ -1,3 +1,5 @@
+#![allow(unused_assignments)] // vars named in view! macro are not correctly recognized as used
+
 use super::job_worker::{
     JobWorker,
     internal_worker::JobWorkerOut,

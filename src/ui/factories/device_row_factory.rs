@@ -1,3 +1,5 @@
+#![allow(unused_assignments)] // vars named in view! macro are not correctly recognized as used
+
 use crate::{
     ui::battery_status::EnvisionBatteryStatus,
     xr_devices::{XRDevice, XRDeviceRole},

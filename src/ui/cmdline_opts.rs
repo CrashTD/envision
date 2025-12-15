@@ -7,7 +7,7 @@ use gtk::{
         Application, ApplicationCommandLine,
         prelude::{ApplicationCommandLineExt, ApplicationExt},
     },
-    glib::{self, prelude::IsA},
+    glib::{self, ExitCode, prelude::IsA},
 };
 use tracing::error;
 
@@ -81,10 +81,10 @@ impl CmdLineOpts {
     }
 
     /// returns an exit code if the application should quit immediately
-    pub fn handle_non_activating_opts(&self) -> Option<i32> {
+    pub fn handle_non_activating_opts(&self) -> Option<ExitCode> {
         if self.version {
             println!("{APP_NAME} {VERSION}");
-            return Some(0);
+            return Some(ExitCode::SUCCESS);
         }
         if self.list_profiles {
             println!("Available profiles\nUUID: \"name\"");
@@ -92,22 +92,22 @@ impl CmdLineOpts {
             profiles.iter().for_each(|p| {
                 println!("{}: \"{}\"", p.uuid, p.name);
             });
-            return Some(0);
+            return Some(ExitCode::SUCCESS);
         }
         if let Some(prof_id) = self.check_dependencies_for.as_ref() {
             let profiles = Config::get_config().profiles();
             if let Some(prof) = profiles.iter().find(|p| &p.uuid == prof_id) {
                 let deps = prof.missing_dependencies();
                 if deps.is_empty() {
-                    return Some(0);
+                    return Some(ExitCode::SUCCESS);
                 }
                 for dep in deps {
                     println!("{}", dep.name);
                 }
-                return Some(1);
+                return Some(ExitCode::FAILURE);
             } else {
                 error!("No profile found for uuid: `{prof_id}`");
-                return Some(404);
+                return Some(ExitCode::FAILURE);
             }
         }
         None

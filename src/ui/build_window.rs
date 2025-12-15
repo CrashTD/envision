@@ -1,6 +1,7 @@
-use crate::termcolor::TermColor;
+#![allow(unused_assignments)] // vars named in view! macro are not correctly recognized as used
 
 use super::{SENDER_IO_ERR_MSG, term_widget::TermWidget};
+use crate::termcolor::TermColor;
 use adw::prelude::*;
 use relm4::prelude::*;
 

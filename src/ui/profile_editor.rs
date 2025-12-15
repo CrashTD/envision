@@ -1,3 +1,5 @@
+#![allow(unused_assignments)] // vars named in view! macro are not correctly recognized as used
+
 use super::{
     ADW_DIALOG_WIDTH,
     alert::alert_w_widget,

@@ -1,3 +1,5 @@
+#![allow(unused_assignments)] // vars named in view! macro are not correctly recognized as used
+
 use adw::prelude::*;
 use relm4::{AsyncFactorySender, factory::AsyncFactoryComponent, prelude::*};
 

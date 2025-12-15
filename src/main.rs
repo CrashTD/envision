@@ -5,6 +5,7 @@ use file_builders::{
     openvrpaths_vrpath::{get_current_openvrpaths, set_current_openvrpaths_to_steam},
 };
 use gettextrs::LocaleCategory;
+use gtk::glib::ExitCode;
 use paths::get_logs_dir;
 use relm4::{
     MessageBroker, RelmApp, adw,
@@ -188,7 +189,7 @@ fn main() -> Result<()> {
         }
         this.activate();
         sender.emit(Msg::HandleCommandLine(opts));
-        0
+        ExitCode::SUCCESS
     });
     let app = RelmApp::from_app(main_app.clone()).with_broker(&BROKER);
     app.run_async::<App>(AppInit {

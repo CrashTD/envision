@@ -1,3 +1,5 @@
+#![allow(unused_assignments)] // vars named in view! macro are not correctly recognized as used
+
 use super::{
     factories::wivrn_encoder_group_factory::{
         WivrnEncoderModel, WivrnEncoderModelInit, WivrnEncoderModelOutMsg,

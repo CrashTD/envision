@@ -1,3 +1,5 @@
+#![allow(unused_assignments)] // vars named in view! macro are not correctly recognized as used
+
 use crate::{
     file_builders::wivrn_config::{Codec, Encoder, WivrnConfEncoder},
     ui::{
