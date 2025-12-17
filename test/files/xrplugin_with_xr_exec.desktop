@@ -1,0 +1,6 @@
+[Desktop Entry]
+Name=xr plugin
+Exec=foo -bar
+
+X-XR-Plugin=true
+X-XR-Plugin-Exec=foo -baz

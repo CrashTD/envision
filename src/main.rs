@@ -47,6 +47,7 @@ pub mod linux_distro;
 pub mod log_parser;
 pub mod openxr_prober;
 pub mod paths;
+pub mod plugins;
 pub mod profile;
 pub mod profiles;
 pub mod steam_linux_runtime_injector;

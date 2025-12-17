@@ -198,48 +198,48 @@ fn filedialog_row_base<F: Fn(Option<String>) + 'static + Clone>(
     (row, path_label)
 }
 
-pub fn file_row<F: Fn(Option<String>) + 'static + Clone>(
-    title: &str,
-    description: Option<&str>,
-    value: Option<String>,
-    root_win: Option<gtk::Window>,
-    cb: F,
-) -> adw::ActionRow {
-    let (row, path_label) = filedialog_row_base(title, description, value, cb.clone());
-
-    let filedialog = gtk::FileDialog::builder()
-        .modal(true)
-        .title(format!("Select {title}"))
-        .build();
-
-    row.connect_activated(clone!(
-        #[weak]
-        path_label,
-        move |_| {
-            filedialog.open(
-                root_win.as_ref(),
-                gio::Cancellable::NONE,
-                clone!(
-                    #[weak]
-                    path_label,
-                    #[strong]
-                    cb,
-                    move |res| {
-                        if let Ok(file) = res
-                            && let Some(path) = file.path()
-                        {
-                            let path_s = path.to_string_lossy().to_string();
-                            path_label.set_text(&path_s);
-                            cb(Some(path_s))
-                        }
-                    }
-                ),
-            )
-        }
-    ));
-
-    row
-}
+// pub fn file_row<F: Fn(Option<String>) + 'static + Clone>(
+//     title: &str,
+//     description: Option<&str>,
+//     value: Option<String>,
+//     root_win: Option<gtk::Window>,
+//     cb: F,
+// ) -> adw::ActionRow {
+//     let (row, path_label) = filedialog_row_base(title, description, value, cb.clone());
+//
+//     let filedialog = gtk::FileDialog::builder()
+//         .modal(true)
+//         .title(format!("Select {title}"))
+//         .build();
+//
+//     row.connect_activated(clone!(
+//         #[weak]
+//         path_label,
+//         move |_| {
+//             filedialog.open(
+//                 root_win.as_ref(),
+//                 gio::Cancellable::NONE,
+//                 clone!(
+//                     #[weak]
+//                     path_label,
+//                     #[strong]
+//                     cb,
+//                     move |res| {
+//                         if let Ok(file) = res
+//                             && let Some(path) = file.path()
+//                         {
+//                             let path_s = path.to_string_lossy().to_string();
+//                             path_label.set_text(&path_s);
+//                             cb(Some(path_s))
+//                         }
+//                     }
+//                 ),
+//             )
+//         }
+//     ));
+//
+//     row
+// }
 
 pub fn path_row<F: Fn(Option<String>) + 'static + Clone>(
     title: &str,

@@ -2,42 +2,21 @@ use crate::{
     constants::CMD_NAME,
     device_prober::PhysicalXRDevice,
     paths::get_config_dir,
+    plugins::XRPlugin,
     profile::{OvrCompatibilityModuleType, Profile, XRServiceType},
     profiles::{
         lighthouse::lighthouse_profile, openhmd::openhmd_profile, simulated::simulated_profile,
         survive::survive_profile, wivrn::wivrn_profile, wmr::wmr_profile,
     },
-    ui::plugins::Plugin,
     util::file_utils::get_writer,
 };
 use serde::{Deserialize, Serialize, de::Error};
 use std::{
-    collections::HashMap,
+    collections::{HashMap, HashSet},
     fs::File,
     io::BufReader,
     path::{Path, PathBuf},
 };
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct PluginConfig {
-    pub plugin: Plugin,
-    pub enabled: bool,
-}
-
-impl From<&Plugin> for PluginConfig {
-    fn from(p: &Plugin) -> Self {
-        Self {
-            plugin: p.clone(),
-            enabled: true,
-        }
-    }
-}
-
-impl From<&PluginConfig> for Plugin {
-    fn from(cp: &PluginConfig) -> Self {
-        cp.plugin.clone()
-    }
-}
 
 const DEFAULT_WIN_SIZE: [i32; 2] = [360, 400];
 
@@ -117,14 +96,16 @@ pub struct Config {
     pub user_profiles: Vec<Profile>,
     #[serde(default = "default_win_size")]
     pub win_size: [i32; 2],
-    #[serde(default)]
-    pub plugins: HashMap<String, PluginConfig>,
     #[serde(default = "default_theme_name")]
     pub theme_name: String,
     #[serde(default)]
     pub global_preferences: GlobalPreferences,
     #[serde(default)]
     pub profiles_enabled: bool,
+
+    /// each element is a path to a .desktop file with `X-XR-Plugin=true`
+    #[serde(default)]
+    pub xr_plugins: HashSet<String>,
 }
 
 impl Default for Config {
@@ -135,10 +116,10 @@ impl Default for Config {
             debug_view_enabled: false,
             user_profiles: Vec::default(),
             win_size: DEFAULT_WIN_SIZE,
-            plugins: HashMap::default(),
             theme_name: default_theme_name(),
             global_preferences: GlobalPreferences::default(),
             profiles_enabled: false,
+            xr_plugins: HashSet::default(),
         }
     }
 }
@@ -233,6 +214,24 @@ impl Config {
         profiles.extend(self.user_profiles.clone());
         profiles.sort_unstable_by(|a, b| a.name.cmp(&b.name));
         profiles
+    }
+
+    /// returns enabled and valid XR plugins
+    pub fn get_xr_plugins(&self) -> Vec<XRPlugin> {
+        self.xr_plugins
+            .iter()
+            .filter_map(|path| XRPlugin::from_desktop_file(&PathBuf::from(path)))
+            .collect()
+    }
+
+    /// gets rid of invalid plugins and saves to disk
+    pub fn prune_xr_plugins(&mut self) {
+        let n_plugins: HashSet<String> =
+            self.get_xr_plugins().into_iter().map(|p| p.path).collect();
+        if n_plugins != self.xr_plugins {
+            self.xr_plugins = n_plugins;
+            self.save();
+        }
     }
 }
 

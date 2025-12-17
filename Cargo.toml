@@ -45,3 +45,4 @@ tracing = "0.1.41"
 tracing-appender = "0.2.3"
 serde_yaml = "0.9.34"
 delicious-adwaita = { version = "0.3.2", features = ["all_themes"] }
+freedesktop-desktop-entry = "0.7.19"

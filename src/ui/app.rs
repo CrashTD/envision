@@ -13,7 +13,6 @@ use super::{
     },
     libsurvive_setup_window::{LibsurviveSetupMsg, LibsurviveSetupWindow},
     main_view::{MainView, MainViewInit, MainViewMsg, MainViewOutMsg},
-    plugins::store::{PluginStore, PluginStoreInit, PluginStoreMsg, PluginStoreOutMsg},
     util::{copiable_code_snippet, copy_text, open_with_default_handler},
     wivrn_conf_editor::{WivrnConfEditor, WivrnConfEditorInit, WivrnConfEditorMsg},
 };
@@ -25,7 +24,7 @@ use crate::{
         build_vapor::get_build_vapor_jobs, build_wivrn::get_build_wivrn_jobs,
         build_xrizer::get_build_xrizer_jobs,
     },
-    config::{Config, PluginConfig},
+    config::Config,
     constants::APP_NAME,
     depcheck::common::dep_pkexec,
     file_builders::{
@@ -71,11 +70,7 @@ use relm4::{
     new_action_group, new_stateful_action, new_stateless_action,
     prelude::*,
 };
-use std::{
-    collections::{HashMap, VecDeque},
-    fs::remove_file,
-    time::Duration,
-};
+use std::{collections::VecDeque, fs::remove_file, time::Duration};
 use tracing::error;
 
 pub struct App {
@@ -111,12 +106,10 @@ pub struct App {
     vkinfo: Option<VulkanInfo>,
 
     inhibit_fail_notif: Option<NotificationHandle>,
-    pluginstore: Option<AsyncController<PluginStore>>,
 
     preferences_win: Option<AsyncController<PreferencesWindow>>,
 
     theme_engine: ThemeEngine,
-
     build_alerts: VecDeque<adw::AlertDialog>,
 }
 
@@ -152,10 +145,8 @@ pub enum Msg {
     StartProber,
     OnProberExit(bool),
     WivrnCheckPairMode,
-    OpenPluginStore,
     OpenPreferences,
     OnPreferencesWindowClose(Config),
-    UpdateConfigPlugins(HashMap<String, PluginConfig>),
     ShowThemeManager,
     SaveThemeConfig,
     LaunchMonadoGui,
@@ -307,39 +298,9 @@ impl App {
         let prof = self.get_selected_profile();
         let plugins_cmd = self
             .config
-            .plugins
-            .values()
-            .filter_map(|cp| {
-                if cp.enabled && cp.plugin.validate() {
-                    if let Err(e) = cp.plugin.mark_as_executable() {
-                        error!(
-                            "failed to mark plugin {} as executable: {e}",
-                            cp.plugin.appid
-                        );
-                        None
-                    } else if !cp.plugin.plugin_type.launches_directly() {
-                        None
-                    } else {
-                        Some({
-                            let mut cmd_parts = vec![
-                                cp.plugin
-                                    .executable()
-                                    .unwrap()
-                                    .to_string_lossy()
-                                    .to_string(),
-                            ];
-                            cmd_parts.extend(cp.plugin.args.clone().unwrap_or_default());
-                            cmd_parts
-                                .iter()
-                                .map(|part| format!("'{part}'"))
-                                .collect::<Vec<String>>()
-                                .join(" ")
-                        })
-                    }
-                } else {
-                    None
-                }
-            })
+            .get_xr_plugins()
+            .into_iter()
+            .map(|plugin| plugin.exec)
             .collect::<Vec<String>>()
             .join(" & ");
         if !plugins_cmd.is_empty() {
@@ -1126,18 +1087,8 @@ impl AsyncComponent for App {
                     }
                 }
             }
-            Msg::OpenPluginStore => {
-                let pluginstore = PluginStore::builder()
-                    .launch(PluginStoreInit {
-                        config_plugins: self.config.plugins.clone(),
-                    })
-                    .forward(sender.input_sender(), move |msg| match msg {
-                        PluginStoreOutMsg::UpdateConfigPlugins(cp) => Msg::UpdateConfigPlugins(cp),
-                    });
-                pluginstore.sender().emit(PluginStoreMsg::Present);
-                self.pluginstore = Some(pluginstore);
-            }
             Msg::OpenPreferences => {
+                self.config.prune_xr_plugins();
                 let preferences_win = PreferencesWindow::builder()
                     .launch(PreferencesWindowInit {
                         config: self.config.clone(),
@@ -1155,10 +1106,6 @@ impl AsyncComponent for App {
                 self.config = config;
                 self.config.save();
                 sender.input(Msg::ProfileSelected(self.get_selected_profile()));
-            }
-            Msg::UpdateConfigPlugins(cp) => {
-                self.config.plugins = cp;
-                self.config.save();
             }
             Msg::LaunchMonadoGui => {
                 if self.monado_gui_worker.is_some() {
@@ -1277,17 +1224,6 @@ impl AsyncComponent for App {
                 sender,
                 move |_| {
                     sender.input(Msg::DebugCopyEnvVars);
-                }
-            )
-        );
-        stateless_action!(
-            actions,
-            PluginStoreAction,
-            clone!(
-                #[strong]
-                sender,
-                move |_| {
-                    sender.input(Msg::OpenPluginStore);
                 }
             )
         );
@@ -1444,7 +1380,6 @@ impl AsyncComponent for App {
             openxr_prober_worker: None,
             xrservice_ready: false,
             inhibit_fail_notif: None,
-            pluginstore: None,
             preferences_win: None,
             build_alerts: VecDeque::new(),
         };
@@ -1520,7 +1455,6 @@ new_stateless_action!(pub BuildProfileCleanAction, AppActionGroup, "buildprofile
 new_stateless_action!(pub QuitAction, AppActionGroup, "quit");
 new_stateful_action!(pub DebugViewToggleAction, AppActionGroup, "debugviewtoggle", (), bool);
 new_stateless_action!(pub ConfigureWivrnAction, AppActionGroup, "configurewivrn");
-new_stateless_action!(pub PluginStoreAction, AppActionGroup, "store");
 new_stateless_action!(pub PreferencesAction, AppActionGroup, "preferences");
 new_stateless_action!(pub ThemeManagerAction, AppActionGroup, "thememanager");
 

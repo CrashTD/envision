@@ -2,6 +2,7 @@
 
 use crate::{
     config::Config,
+    plugins::XRPlugin,
     profile::{OvrCompatibilityModuleType, XRServiceType},
     ui::{
         SENDER_IO_ERR_MSG,
@@ -11,21 +12,20 @@ use crate::{
 use adw::prelude::*;
 use gtk::glib::clone;
 use relm4::prelude::*;
-use std::{cell::RefCell, rc::Rc};
+use std::{cell::RefCell, path::PathBuf, rc::Rc};
 
-#[tracker::track]
 pub struct PreferencesWindow {
     config: Rc<RefCell<Config>>,
-    #[tracker::do_not_track]
     win: Option<adw::PreferencesDialog>,
-    #[tracker::do_not_track]
     parent: gtk::Window,
+    plugins_grp: Option<adw::PreferencesGroup>,
 }
 
 #[derive(Debug)]
 pub enum PreferencesWindowMsg {
     Present,
     OnClosed,
+    PopulatePlugins,
 }
 
 #[derive(Debug)]
@@ -52,10 +52,12 @@ impl AsyncComponent for PreferencesWindow {
             connect_closed[sender] => move |_| {
                 sender.input(Self::Input::OnClosed);
             },
-            add: page = &adw::PreferencesPage {
-                add: grp = &adw::PreferencesGroup {
+            add: general_page = &adw::PreferencesPage {
+                set_title: "General",
+                set_icon_name: Some("preferences-system-symbolic"),
+                add: general_grp = &adw::PreferencesGroup {
                     add: &combo_row(
-                        "XR Service",
+                        "XR service",
                         Some("Choose Monado for PCVR and WiVRn for standalone"),
                         model.config.borrow().global_preferences.xrservice_type.to_string().as_str(),
                         XRServiceType::iter().map(XRServiceType::to_string).collect(),
@@ -64,7 +66,7 @@ impl AsyncComponent for PreferencesWindow {
                         })
                     ),
                     add: &combo_row(
-                        "OpenVR Compatibility",
+                        "OpenVR compatibility",
                         None,
                         model.config.borrow().global_preferences.ovr_comp.to_string().as_str(),
                         OvrCompatibilityModuleType::iter().map(OvrCompatibilityModuleType::to_string).collect(),
@@ -118,6 +120,12 @@ impl AsyncComponent for PreferencesWindow {
                     ),
                 },
             },
+            add: plugins_page = &adw::PreferencesPage {
+                set_title: "Plugins",
+                set_icon_name: Some("applications-utilities-symbolic"),
+                add: plugins_grp = &adw::PreferencesGroup {
+                },
+            },
         }
     }
 
@@ -127,12 +135,50 @@ impl AsyncComponent for PreferencesWindow {
         sender: AsyncComponentSender<Self>,
         _root: &Self::Root,
     ) {
-        self.reset();
-
         match message {
             Self::Input::Present => {
                 if let Some(win) = self.win.as_ref() {
                     win.present(Some(&self.parent));
+                    sender.input(Self::Input::PopulatePlugins);
+                }
+            }
+            Self::Input::PopulatePlugins => {
+                if let Some(grp) = self.plugins_grp.as_ref() {
+                    for plugin in XRPlugin::find_plugins() {
+                        let row = switch_row(
+                            &plugin.name,
+                            plugin.description.as_deref(),
+                            self.config.borrow().xr_plugins.contains(&plugin.path),
+                            clone!(
+                                #[strong(rename_to=config)]
+                                self.config,
+                                move |_, v| {
+                                    if v {
+                                        config.borrow_mut().xr_plugins.insert(plugin.path.clone());
+                                    } else {
+                                        config
+                                            .borrow_mut()
+                                            .xr_plugins
+                                            .retain(|p| p != &plugin.path);
+                                    }
+                                }
+                            ),
+                        );
+                        let img = if let Some(icon) = plugin.icon.as_deref() {
+                            if let Ok(p) = PathBuf::from(icon).canonicalize()
+                                && p.is_file()
+                            {
+                                gtk::Image::from_file(p.to_string_lossy().to_string())
+                            } else {
+                                gtk::Image::from_icon_name(icon)
+                            }
+                        } else {
+                            gtk::Image::from_icon_name("application-x-executable-symbolic")
+                        };
+                        img.set_icon_size(gtk::IconSize::Large);
+                        row.add_prefix(&img);
+                        grp.add(&row);
+                    }
                 }
             }
             Self::Input::OnClosed => {
@@ -152,12 +198,13 @@ impl AsyncComponent for PreferencesWindow {
             win: None,
             config: Rc::new(RefCell::new(init.config)),
             parent: init.root_win,
-            tracker: 0,
+            plugins_grp: None,
         };
 
         let widgets = view_output!();
 
         model.win = Some(widgets.win.clone());
+        model.plugins_grp = Some(widgets.plugins_grp.clone());
 
         AsyncComponentParts { model, widgets }
     }
