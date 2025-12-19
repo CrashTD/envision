@@ -24,19 +24,19 @@ impl From<BatteryStatus> for EnvisionBatteryStatus {
 impl EnvisionBatteryStatus {
     pub fn icon(&self) -> String {
         format!(
-            "{}{}-symbolic",
+            "battery-level-{}{}-symbolic",
             match self.battery_status.charge {
-                n if n >= 1.0 => "battery-level-100",
-                n if n >= 0.9 => "battery-level-90",
-                n if n >= 0.8 => "battery-level-80",
-                n if n >= 0.7 => "battery-level-70",
-                n if n >= 0.6 => "battery-level-60",
-                n if n >= 0.5 => "battery-level-50",
-                n if n >= 0.4 => "battery-level-40",
-                n if n >= 0.3 => "battery-level-30",
-                n if n >= 0.2 => "battery-level-20",
-                n if n >= 0.1 => "battery-level-10",
-                _ => "battery-level-0",
+                n if n >= 1.0 => "100",
+                n if n >= 0.9 => "90",
+                n if n >= 0.8 => "80",
+                n if n >= 0.7 => "70",
+                n if n >= 0.6 => "60",
+                n if n >= 0.5 => "50",
+                n if n >= 0.4 => "40",
+                n if n >= 0.3 => "30",
+                n if n >= 0.2 => "20",
+                n if n >= 0.1 => "10",
+                _ => "0",
             },
             if self.battery_status.charging {
                 "-charging"
