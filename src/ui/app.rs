@@ -955,7 +955,10 @@ impl AsyncComponent for App {
                             .emit(BuildWindowMsg::UpdateContent(vec![
                                 TermColor::Red.colorize("Setting capabilities failed\n"),
                             ]));
-                    } else if !verify_cap_sys_nice_eip(&xrservice_binary).await {
+                    } else if !verify_cap_sys_nice_eip(&xrservice_binary)
+                        .await
+                        .unwrap_or(false)
+                    {
                         setcap_failed_dialog();
                         error!("setcap succeeded but capabilities were reset");
                         self.build_window

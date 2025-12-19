@@ -14,12 +14,20 @@ use crate::{
     config::Config,
     depcheck::common::dep_pkexec,
     gpu_profile::{GpuPowerProfile, get_amd_gpu_power_profile},
+    paths::get_logs_dir,
     profile::{LighthouseDriver, Profile, XRServiceType},
     ui::{
+        alert::alert_w_widget,
         app::{PreferencesAction, ThemeManagerAction},
-        util::warn_card,
+        util::{copiable_code_snippet, warn_card},
     },
-    util::{file_utils::mount_has_nosuid, steam_library_folder::chaperone_info_exists},
+    util::{
+        file_utils::{
+            mount_has_nosuid, setcap_cap_sys_nice_eip, setcap_cap_sys_nice_eip_cmd,
+            verify_cap_sys_nice_eip,
+        },
+        steam_library_folder::chaperone_info_exists,
+    },
     wivrn_dbus,
     xr_devices::XRDevice,
 };
@@ -50,6 +58,8 @@ pub struct MainView {
     wivrn_pin: Option<String>,
     wivrn_supports_pairing: bool,
     show_amd_gpu_power_profile_warn: bool,
+    show_setcap_warn: bool,
+    root_win: gtk::Window,
 }
 
 #[derive(Debug)]
@@ -67,6 +77,8 @@ pub enum MainViewMsg {
     StopWivrnPairingMode,
     StartWivrnPairingMode,
     CheckAmdGpuPowerProfile,
+    CheckSetcap,
+    DoSetcap,
 }
 
 #[derive(Debug)]
@@ -358,6 +370,33 @@ impl AsyncComponent for MainView {
                             set_visible: model.selected_profile.lighthouse_driver == LighthouseDriver::SteamVR && !chaperone_info_exists(),
                         },
                         warn_card(None, concat!(
+                            "Capabilities not set for XR service executable.\n\n",
+                            "This will cause noticeable stutter when running XR ",
+                            "applications.\n\n",
+                        )) -> gtk::Box {
+                            #[track = "model.changed(Self::show_setcap_warn())"]
+                            set_visible: model.show_setcap_warn,
+                            gtk::Box {
+                                set_orientation: gtk::Orientation::Horizontal,
+                                set_spacing: 6,
+                                gtk::Button {
+                                    set_halign: gtk::Align::Start,
+                                    set_label: "Set capabilities",
+                                    add_css_class: "suggested-action",
+                                    connect_clicked[sender] => move |_| {
+                                        sender.input(Self::Input::DoSetcap);
+                                    },
+                                },
+                                gtk::Button {
+                                    set_halign: gtk::Align::Start,
+                                    set_label: "Refresh",
+                                    connect_clicked[sender] => move |_| {
+                                        sender.input(Self::Input::CheckSetcap);
+                                    },
+                                },
+                            },
+                        },
+                        warn_card(None, concat!(
                             "Your AMD GPU Power Profile is not set to VR. ",
                             "This will cause noticeable stutter when running XR ",
                             "applications.\n\n",
@@ -372,7 +411,7 @@ impl AsyncComponent for MainView {
                                 set_label: "Refresh",
                                 connect_clicked[sender] => move |_| {
                                     sender.input(Self::Input::CheckAmdGpuPowerProfile);
-                                }
+                                },
                             },
                         },
 
@@ -539,6 +578,42 @@ impl AsyncComponent for MainView {
                     Some(_) => true,
                 }
             }
+            Self::Input::CheckSetcap => {
+                let config = Config::get_config();
+                self.set_show_setcap_warn(
+                    if self.selected_profile.xrservice_type == XRServiceType::Wivrn {
+                        false
+                    } else if let Some(executable) =
+                        self.selected_profile.xrservice_binary(Some(&config))
+                    {
+                        !verify_cap_sys_nice_eip(&executable).await.unwrap_or(true)
+                    } else {
+                        false
+                    },
+                );
+            }
+            Self::Input::DoSetcap => {
+                let config = Config::get_config();
+                if let Some(executable) = self.selected_profile.xrservice_binary(Some(&config)) {
+                    if let Err(e) = setcap_cap_sys_nice_eip(&executable).await {
+                        error!("failed running setcap: {e}");
+                        alert_w_widget(
+                            "Setcap failed to run",
+                            Some(&format!(
+                                "Check the latest application logs in {} for more details.\n\nYou can still try to run setcap manually using the command below.",
+                                get_logs_dir().to_string_lossy()
+                            )),
+                            Some(&copiable_code_snippet(&format!(
+                                "sudo {}",
+                                setcap_cap_sys_nice_eip_cmd(&executable).join(" ")
+                            ))),
+                            Some(&self.root_win),
+                        );
+                    } else {
+                        sender.input(Self::Input::CheckSetcap);
+                    }
+                }
+            }
         }
     }
 
@@ -585,9 +660,13 @@ impl AsyncComponent for MainView {
             wivrn_supports_pairing: false,
             wivrn_pin: None,
             show_amd_gpu_power_profile_warn: false,
+            show_setcap_warn: false,
+            root_win: init.root_win.clone(),
             tracker: 0,
         };
         let widgets = view_output!();
+
+        sender.input(Self::Input::CheckSetcap);
 
         AsyncComponentParts { model, widgets }
     }

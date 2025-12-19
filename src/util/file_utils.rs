@@ -107,13 +107,22 @@ pub fn setcap_cap_sys_nice_eip_cmd(xrservice_binary: &Path) -> Vec<String> {
     ]
 }
 
-pub async fn verify_cap_sys_nice_eip(xrservice_binary: &Path) -> bool {
+#[derive(Debug)]
+pub enum VerifyCapSysNiceEipErr {
+    NoBinary,
+    ExecError(anyhow::Error),
+    GetcapFailed(i32, String, String),
+}
+
+pub async fn verify_cap_sys_nice_eip(
+    xrservice_binary: &Path,
+) -> Result<bool, VerifyCapSysNiceEipErr> {
     let xrservice_binary = xrservice_binary.to_string_lossy().to_string();
     if let Some(getcap_exec) = getcap_executable() {
         match async_process(&getcap_exec, Some(&[&xrservice_binary]), None).await {
             Err(e) => {
                 error!("failed to run `getcap {xrservice_binary}`: {e:?}");
-                false
+                Err(VerifyCapSysNiceEipErr::ExecError(e))
             }
             Ok(out) => {
                 debug!("getcap {xrservice_binary} stdout: {}", out.stdout);
@@ -123,15 +132,19 @@ pub async fn verify_cap_sys_nice_eip(xrservice_binary: &Path) -> bool {
                         "command `getcap {xrservice_binary}` failed with status code {}",
                         out.exit_code
                     );
-                    false
+                    Err(VerifyCapSysNiceEipErr::GetcapFailed(
+                        out.exit_code,
+                        out.stdout,
+                        out.stderr,
+                    ))
                 } else {
-                    out.stdout.to_lowercase().contains("cap_sys_nice=eip")
+                    Ok(out.stdout.to_lowercase().contains("cap_sys_nice=eip"))
                 }
             }
         }
     } else {
         error!("getcap executable does not exist");
-        false
+        Err(VerifyCapSysNiceEipErr::NoBinary)
     }
 }
 
