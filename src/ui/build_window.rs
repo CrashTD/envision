@@ -21,8 +21,6 @@ pub struct BuildWindow {
     #[tracker::do_not_track]
     pub win: Option<adw::Dialog>,
     #[tracker::do_not_track]
-    build_status_label: Option<gtk::Label>,
-    #[tracker::do_not_track]
     term: TermWidget,
     #[tracker::do_not_track]
     parent: gtk::Widget,
@@ -87,7 +85,6 @@ impl SimpleComponent for BuildWindow {
                         set_hexpand: true,
                         set_halign: gtk::Align::Center,
                         set_spacing: 12,
-                        #[name(build_status_label)]
                         gtk::Label {
                             #[track = "model.changed(BuildWindow::build_status())"]
                             set_markup: match &model.build_status {
@@ -103,6 +100,18 @@ impl SimpleComponent for BuildWindow {
                                 BuildStatus::Done | BuildStatus::Error(_) => true,
                             },
                             add_css_class: "title-2",
+                            add_css_class: "success",
+                            add_css_class: "error",
+                            #[track = "model.changed(BuildWindow::build_status())"]
+                            set_class_active: (
+                                "success",
+                                model.build_status == BuildStatus::Done,
+                            ),
+                            #[track = "model.changed(BuildWindow::build_status())"]
+                            set_class_active: (
+                                "error",
+                                matches!(model.build_status, BuildStatus::Error(_)),
+                            ),
                             set_wrap: true,
                             set_wrap_mode: gtk::pango::WrapMode::Word,
                             set_justify: gtk::Justification::Center,
@@ -163,18 +172,13 @@ impl SimpleComponent for BuildWindow {
                 }
             }
             Self::Input::UpdateBuildStatus(status) => {
-                let label = self.build_status_label.as_ref().unwrap();
-                label.remove_css_class("success");
-                label.remove_css_class("error");
                 match status {
                     BuildStatus::Done => {
-                        label.add_css_class("success");
                         sender.input(BuildWindowMsg::UpdateContent(vec![
                             TermColor::Blue.colorize("Build completed!\n"),
                         ]));
                     }
                     BuildStatus::Error(_) => {
-                        label.add_css_class("error");
                         sender.input(BuildWindowMsg::UpdateContent(vec![
                             TermColor::Blue.colorize("Build failed!\n"),
                         ]));
@@ -203,7 +207,6 @@ impl SimpleComponent for BuildWindow {
             can_close: false,
             build_status: BuildStatus::Building,
             win: None,
-            build_status_label: None,
             parent: init.parent,
             term: {
                 let t = TermWidget::new();
@@ -215,7 +218,6 @@ impl SimpleComponent for BuildWindow {
         };
         let widgets = view_output!();
         model.win = Some(widgets.win.clone());
-        model.build_status_label = Some(widgets.build_status_label.clone());
         ComponentParts { model, widgets }
     }
 }

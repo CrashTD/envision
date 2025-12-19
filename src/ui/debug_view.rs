@@ -40,7 +40,7 @@ pub enum SearchDirection {
 pub enum DebugViewMsg {
     LogUpdated(Vec<String>),
     ClearLog,
-    DoSearch,
+    DoSearch(Option<String>),
     SearchFindMatch(SearchDirection),
     LogLevelChanged(LogLevel),
     XRServiceActiveChanged(bool),
@@ -78,10 +78,6 @@ pub enum DebugViewOutMsg {
 pub struct DebugView {
     xrservice_active: bool,
     #[tracker::do_not_track]
-    searchbar: Option<gtk::SearchBar>,
-    #[tracker::do_not_track]
-    search_entry: Option<gtk::SearchEntry>,
-    #[tracker::do_not_track]
     dropdown: Option<gtk::DropDown>,
     #[tracker::do_not_track]
     log_level: LogLevel,
@@ -97,12 +93,6 @@ pub struct DebugView {
     profile_export_action: gtk::gio::SimpleAction,
     #[tracker::do_not_track]
     profile_editor: Option<Controller<ProfileEditor>>,
-    #[tracker::do_not_track]
-    profile_not_editable_dialog: adw::AlertDialog,
-    #[tracker::do_not_track]
-    profile_delete_confirm_dialog: adw::AlertDialog,
-    #[tracker::do_not_track]
-    query_profile_rebuild_dialog: adw::AlertDialog,
     #[no_eq]
     profile: Profile,
     profiles: Vec<Profile>,
@@ -197,11 +187,16 @@ impl AsyncComponent for DebugView {
                     set_sensitive: !model.xrservice_active
                 },
             },
-            add_top_bar: searchbar = &gtk::SearchBar {
+            add_top_bar: _searchbar = &gtk::SearchBar {
                 set_margin_start: 1,
                 set_hexpand: true,
                 #[chain(flags(gtk::glib::BindingFlags::BIDIRECTIONAL).build())]
                 bind_property: ("search-mode-enabled", &search_toggle, "active"),
+                connect_search_mode_enabled_notify[sender] => move |searchbar| {
+                    if !searchbar.is_search_mode() {
+                        sender.input(Self::Input::DoSearch(None));
+                    }
+                },
                 #[wrap(Some)]
                 set_child: searchbox = &gtk::Box {
                     set_orientation: gtk::Orientation::Horizontal,
@@ -210,8 +205,11 @@ impl AsyncComponent for DebugView {
                     #[name(search_entry)]
                     gtk::SearchEntry {
                         set_hexpand: true,
-                        connect_changed[sender] => move |_| {
-                            sender.input(Self::Input::DoSearch);
+                        connect_changed[sender] => move |e| {
+                            let txt = e.text().to_string();
+                            sender.input(Self::Input::DoSearch(
+                                if txt.is_empty() { None } else { Some(txt) }
+                            ));
                         },
                         connect_activate[sender] => move |_| {
                             sender.input(Self::Input::SearchFindMatch(SearchDirection::Forward));
@@ -305,15 +303,8 @@ impl AsyncComponent for DebugView {
             Self::Input::LogLevelChanged(lvl) => {
                 self.log_level = lvl;
             }
-            Self::Input::DoSearch => {
-                let searchbar = self.searchbar.as_ref().unwrap().clone();
-                let search_entry = self.search_entry.as_ref().unwrap().clone();
-                let search_text = search_entry.text().to_string();
-                if searchbar.is_search_mode() && !search_text.is_empty() {
-                    self.term.set_search_term(Some(&search_text));
-                } else {
-                    self.term.set_search_term(None);
-                }
+            Self::Input::DoSearch(txt) => {
+                self.term.set_search_term(txt.as_deref());
             }
             Self::Input::SearchFindMatch(direction) => match direction {
                 SearchDirection::Forward => {
@@ -400,16 +391,75 @@ impl AsyncComponent for DebugView {
                 if self.profile.editable {
                     sender.input(Self::Input::OpenProfileEditor(self.profile.clone()));
                 } else {
-                    self.profile_not_editable_dialog
-                        .present(Some(&self.root_win));
+                    let dialog = adw::AlertDialog::builder()
+                        .heading("This profile is not editable")
+                        .body(concat!(
+                            "You can duplicate it and edit the new copy. ",
+                            "Do you want to duplicate the current profile?"
+                        ))
+                        .build();
+                    dialog.add_response("no", "_No");
+                    dialog.add_response("yes", "_Yes");
+                    dialog.set_response_appearance("yes", ResponseAppearance::Suggested);
+
+                    dialog.connect_response(
+                        None,
+                        clone!(
+                            #[strong]
+                            sender,
+                            move |_, res| {
+                                if res == "yes" {
+                                    sender.input(Self::Input::DuplicateProfile);
+                                }
+                            }
+                        ),
+                    );
+                    dialog.present(Some(&self.root_win));
                 }
             }
             Self::Input::CreateProfile => {
                 sender.input(Self::Input::OpenProfileEditor(Profile::default()));
             }
             Self::Input::DeleteProfile => {
-                self.profile_delete_confirm_dialog
-                    .present(Some(&self.root_win));
+                let delete_confirm_dialog = adw::AlertDialog::builder()
+                    .heading("Are you sure you want to delete this profile?")
+                    .extra_child(
+                        &gtk::CheckButton::builder()
+                            .label("Delete all files and folders associated with profile")
+                            .halign(gtk::Align::Center)
+                            .hexpand(true)
+                            .build(),
+                    )
+                    .build();
+                delete_confirm_dialog.add_response("no", "_No");
+                delete_confirm_dialog.add_response("yes", "_Yes");
+                delete_confirm_dialog
+                    .set_response_appearance("yes", ResponseAppearance::Destructive);
+
+                delete_confirm_dialog.connect_response(
+                    None,
+                    clone!(
+                        #[strong]
+                        sender,
+                        move |dialog, res| {
+                            let delete_files_checkbox = dialog
+                                .extra_child()
+                                .and_then(|child| child.downcast::<gtk::CheckButton>().ok());
+                            let delete_files = delete_files_checkbox
+                                .as_ref()
+                                .is_some_and(|c| c.is_active());
+                            if let Some(check) = delete_files_checkbox {
+                                check.set_active(false);
+                            }
+                            if res == "yes" {
+                                sender
+                                    .output(Self::Output::DeleteProfile(delete_files))
+                                    .expect("Sender output failed");
+                            }
+                        }
+                    ),
+                );
+                delete_confirm_dialog.present(Some(&self.root_win));
             }
             Self::Input::SaveProfile(prof) => {
                 sender
@@ -537,8 +587,29 @@ impl AsyncComponent for DebugView {
                     .emit(ProfileEditorMsg::Present);
             }
             Self::Input::QueryProfileRebuild => {
-                self.query_profile_rebuild_dialog
-                    .present(Some(&self.root_win));
+                let rebuild_dialog = adw::AlertDialog::builder()
+                    .heading("Do you want to build this profile now?")
+                    .body("This will trigger a clean build")
+                    .build();
+                rebuild_dialog.add_response("no", "_No");
+                rebuild_dialog.add_response("yes", "_Yes");
+                rebuild_dialog.set_response_appearance("yes", ResponseAppearance::Suggested);
+
+                rebuild_dialog.connect_response(
+                    None,
+                    clone!(
+                        #[strong]
+                        sender,
+                        move |_, res| {
+                            if res == "yes" {
+                                sender
+                                    .output(Self::Output::BuildProfile(true))
+                                    .expect(SENDER_IO_ERR_MSG);
+                            }
+                        }
+                    ),
+                );
+                rebuild_dialog.present(Some(&self.root_win));
             }
             Self::Input::ProfilesEnabledChanged(enabled) => {
                 self.set_profiles_enabled(enabled);
@@ -555,92 +626,6 @@ impl AsyncComponent for DebugView {
         root: Self::Root,
         sender: AsyncComponentSender<Self>,
     ) -> AsyncComponentParts<Self> {
-        let profile_not_editable_dialog = adw::AlertDialog::builder()
-            .heading("This profile is not editable")
-            .body(concat!(
-                "You can duplicate it and edit the new copy. ",
-                "Do you want to duplicate the current profile?"
-            ))
-            .build();
-        profile_not_editable_dialog.add_response("no", "_No");
-        profile_not_editable_dialog.add_response("yes", "_Yes");
-        profile_not_editable_dialog.set_response_appearance("yes", ResponseAppearance::Suggested);
-
-        profile_not_editable_dialog.connect_response(
-            None,
-            clone!(
-                #[strong]
-                sender,
-                move |_, res| {
-                    if res == "yes" {
-                        sender.input(Self::Input::DuplicateProfile);
-                    }
-                }
-            ),
-        );
-
-        let query_profile_rebuild_dialog = adw::AlertDialog::builder()
-            .heading("Do you want to build this profile now?")
-            .body("This will trigger a clean build")
-            .build();
-        query_profile_rebuild_dialog.add_response("no", "_No");
-        query_profile_rebuild_dialog.add_response("yes", "_Yes");
-        query_profile_rebuild_dialog.set_response_appearance("yes", ResponseAppearance::Suggested);
-
-        query_profile_rebuild_dialog.connect_response(
-            None,
-            clone!(
-                #[strong]
-                sender,
-                move |_, res| {
-                    if res == "yes" {
-                        sender
-                            .output(Self::Output::BuildProfile(true))
-                            .expect(SENDER_IO_ERR_MSG);
-                    }
-                }
-            ),
-        );
-
-        let profile_delete_confirm_dialog = adw::AlertDialog::builder()
-            .heading("Are you sure you want to delete this profile?")
-            .extra_child(
-                &gtk::CheckButton::builder()
-                    .label("Delete all files and folders associated with profile")
-                    .halign(gtk::Align::Center)
-                    .hexpand(true)
-                    .build(),
-            )
-            .build();
-        profile_delete_confirm_dialog.add_response("no", "_No");
-        profile_delete_confirm_dialog.add_response("yes", "_Yes");
-        profile_delete_confirm_dialog
-            .set_response_appearance("yes", ResponseAppearance::Destructive);
-
-        profile_delete_confirm_dialog.connect_response(
-            None,
-            clone!(
-                #[strong]
-                sender,
-                move |dialog, res| {
-                    let delete_files_checkbox = dialog
-                        .extra_child()
-                        .and_then(|child| child.downcast::<gtk::CheckButton>().ok());
-                    let delete_files = delete_files_checkbox
-                        .as_ref()
-                        .is_some_and(|c| c.is_active());
-                    if let Some(check) = delete_files_checkbox {
-                        check.set_active(false);
-                    }
-                    if res == "yes" {
-                        sender
-                            .output(Self::Output::DeleteProfile(delete_files))
-                            .expect("Sender output failed");
-                    }
-                }
-            ),
-        );
-
         let log_level_dropdown = gtk::DropDown::from_strings(
             LogLevel::iter()
                 .map(|lvl| lvl.to_string())
@@ -753,8 +738,6 @@ impl AsyncComponent for DebugView {
         let mut model = Self {
             xrservice_active: false,
             tracker: 0,
-            searchbar: None,
-            search_entry: None,
             dropdown: None,
             log_level: LogLevel::Trace,
             term: TermWidget::new(),
@@ -770,9 +753,6 @@ impl AsyncComponent for DebugView {
             profile_delete_action,
             profile_export_action,
             profile_editor: None,
-            profile_not_editable_dialog,
-            profile_delete_confirm_dialog,
-            query_profile_rebuild_dialog,
             root_win: init.root_win,
             profiles_enabled: init.profiles_enabled,
         };
@@ -787,8 +767,6 @@ impl AsyncComponent for DebugView {
         ));
 
         let widgets = view_output!();
-        model.searchbar = Some(widgets.searchbar.clone());
-        model.search_entry = Some(widgets.search_entry.clone());
         model.dropdown = Some(log_level_dropdown.clone());
 
         model.profiles_dropdown = Some(widgets.profiles_dropdown.clone());
