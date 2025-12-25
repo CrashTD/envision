@@ -39,7 +39,11 @@ impl EnvisionBatteryStatus {
                 _ => "0",
             },
             if self.battery_status.charging {
-                "-charging"
+                if self.battery_status.charge >= 1.0 {
+                    "-charged"
+                } else {
+                    "-charging"
+                }
             } else {
                 ""
             }
