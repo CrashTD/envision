@@ -572,11 +572,10 @@ impl AsyncComponent for MainView {
                 self.set_xrservice_ready(ready);
             }
             Self::Input::CheckAmdGpuPowerProfile => {
-                self.show_amd_gpu_power_profile_warn = match get_amd_gpu_power_profile() {
-                    None => false,
-                    Some(GpuPowerProfile::VR) => false,
+                self.set_show_amd_gpu_power_profile_warn(match get_amd_gpu_power_profile() {
+                    None | Some(GpuPowerProfile::VR) => false,
                     Some(_) => true,
-                }
+                })
             }
             Self::Input::CheckSetcap => {
                 let config = Config::get_config();
@@ -667,6 +666,7 @@ impl AsyncComponent for MainView {
         let widgets = view_output!();
 
         sender.input(Self::Input::CheckSetcap);
+        sender.input(Self::Input::CheckAmdGpuPowerProfile);
 
         AsyncComponentParts { model, widgets }
     }
