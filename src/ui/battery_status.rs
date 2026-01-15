@@ -6,6 +6,15 @@ pub struct EnvisionBatteryStatus {
     pub battery_status: BatteryStatus,
 }
 
+impl PartialEq for EnvisionBatteryStatus {
+    fn eq(&self, other: &Self) -> bool {
+        self.battery_status.present == other.battery_status.present
+            && self.battery_status.charging == other.battery_status.charging
+            && self.battery_status.charge == other.battery_status.charge
+    }
+}
+impl Eq for EnvisionBatteryStatus {}
+
 impl Display for EnvisionBatteryStatus {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(&format!(

@@ -6,6 +6,7 @@ use crate::{
 };
 use adw::prelude::*;
 use relm4::{AsyncFactorySender, factory::AsyncFactoryComponent, prelude::*};
+use tracing::error;
 
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DeviceRowState {
@@ -33,13 +34,18 @@ impl DeviceRowState {
     }
 }
 
+#[tracker::track]
 #[derive(Debug)]
 pub struct DeviceRowModel {
+    #[tracker::do_not_track]
     title: String,
+    #[tracker::do_not_track]
     subtitle: String,
     state: DeviceRowState,
-    suffix: Option<gtk::Widget>,
     battery_status: Option<EnvisionBatteryStatus>,
+    brightness: Option<f32>,
+    #[tracker::do_not_track]
+    pub device: Option<XRDevice>,
 }
 
 #[derive(Debug, Default, Clone)]
@@ -47,8 +53,9 @@ pub struct DeviceRowModelInit {
     pub title: Option<String>,
     pub subtitle: Option<String>,
     pub state: Option<DeviceRowState>,
-    pub suffix: Option<gtk::Widget>,
     pub battery_status: Option<EnvisionBatteryStatus>,
+    pub device: Option<XRDevice>,
+    pub brightness: Option<f32>,
     pub sort_index: u32,
 }
 
@@ -66,6 +73,7 @@ impl From<&XRDevice> for DeviceRowModelInit {
             }),
             subtitle: Some(d.name.clone()),
             battery_status: d.battery.map(EnvisionBatteryStatus::from),
+            brightness: d.brightness,
             sort_index: u32::from(
                 d.roles
                     .iter()
@@ -73,6 +81,7 @@ impl From<&XRDevice> for DeviceRowModelInit {
                     .unwrap_or(&XRDeviceRole::GenericTracker),
             ) * 1000
                 + d.index,
+            device: Some(d.clone()),
             ..Default::default()
         }
     }
@@ -89,10 +98,16 @@ impl DeviceRowModelInit {
     }
 }
 
+#[derive(Debug, Clone, Copy)]
+pub enum DeviceRowModelMsg {
+    Update,
+    BrightnessChanged(f32),
+}
+
 #[relm4::factory(async pub)]
 impl AsyncFactoryComponent for DeviceRowModel {
     type Init = DeviceRowModelInit;
-    type Input = ();
+    type Input = DeviceRowModelMsg;
     type Output = ();
     type CommandOutput = ();
     type ParentWidget = gtk::ListBox;
@@ -102,7 +117,43 @@ impl AsyncFactoryComponent for DeviceRowModel {
             add_prefix: icon = &gtk::Image {
                 set_icon_name: Some(self.state.icon()),
             },
+            add_suffix: brightness_btn = &gtk::MenuButton {
+                add_css_class: "circular",
+                add_css_class: "flat",
+                set_icon_name: "display-brightness-symbolic",
+                set_valign: gtk::Align::Center,
+                #[track = "self.changed(Self::brightness())"]
+                set_visible: self.brightness.is_some(),
+                set_tooltip_text: Some("Adjust brightness"),
+                #[wrap(Some)]
+                set_popover: brightness_popover = &gtk::Popover {
+                    gtk::Box {
+                        set_margin_all: 6,
+                        gtk::Scale {
+                            set_width_request: 250,
+                            set_digits: 3,
+                            set_draw_value: true,
+                            set_value_pos: gtk::PositionType::Right,
+                            set_format_value_func: move |_, v| {
+                                format!("{:.0}%", v*100.0)
+                            },
+                            set_adjustment: adj = &gtk::Adjustment {
+                                set_lower: 0.0,
+                                set_upper: 1.0,
+                                set_step_increment: 0.01,
+                                set_page_increment: 0.1,
+                                #[track = "self.changed(Self::brightness())"]
+                                set_value: self.brightness.unwrap_or(0.0).into(),
+                                connect_value_changed[sender] => move |adj| {
+                                    sender.input(Self::Input::BrightnessChanged(adj.value() as f32));
+                                }
+                            }
+                        },
+                    },
+                },
+            },
             add_suffix: batt_info = &gtk::Box {
+                #[track = "self.changed(Self::battery_status())"]
                 set_visible: self.battery_status.is_some(),
                 set_orientation: gtk::Orientation::Horizontal,
                 set_spacing: 6,
@@ -112,6 +163,7 @@ impl AsyncFactoryComponent for DeviceRowModel {
                         .map(|bs| bs.icon()).as_deref(),
                 },
                 gtk::Label {
+                    #[track = "self.changed(Self::battery_status())"]
                     set_text: &self.battery_status
                         .as_ref()
                         .map(|bs| bs.to_string())
@@ -123,18 +175,51 @@ impl AsyncFactoryComponent for DeviceRowModel {
         }
     }
 
+    async fn update(&mut self, message: Self::Input, _sender: AsyncFactorySender<Self>) -> () {
+        self.reset();
+
+        match message {
+            Self::Input::Update => {
+                if let Some(dev) = self.device.as_mut() {
+                    dev.update();
+                }
+                let mut data: Option<(Option<EnvisionBatteryStatus>, Option<f32>)> = None;
+                if let Some(dev) = self.device.as_ref() {
+                    data = Some((dev.battery.map(EnvisionBatteryStatus::from), dev.brightness));
+                }
+                if let Some((batt, brightness)) = data {
+                    self.set_battery_status(batt);
+                    self.set_brightness(brightness);
+                }
+            }
+            Self::Input::BrightnessChanged(v) => {
+                if self.device.is_none() {
+                    return;
+                }
+                if let Some(b) = self.brightness
+                    && b == v
+                {
+                    return;
+                }
+                self.set_brightness(Some(v));
+                if let Some(dev) = self.device.as_ref()
+                    && let Err(e) = dev.set_brightness(v)
+                {
+                    error!("Failed to set device brightness: {e:?}");
+                }
+            }
+        }
+    }
+
     fn init_widgets(
         &mut self,
         _index: &DynamicIndex,
         root: Self::Root,
         _returned_widget: &<Self::ParentWidget as relm4::factory::FactoryView>::ReturnedWidget,
-        _sender: AsyncFactorySender<Self>,
+        sender: AsyncFactorySender<Self>,
     ) -> Self::Widgets {
         let widgets = view_output!();
 
-        if let Some(suffix) = self.suffix.as_ref() {
-            widgets.root.add_suffix(suffix);
-        }
         if let Some(cls) = self.state.class_name() {
             widgets.root.add_css_class(cls);
             widgets.icon.add_css_class(cls);
@@ -153,7 +238,9 @@ impl AsyncFactoryComponent for DeviceRowModel {
             subtitle: init.subtitle.unwrap_or_default(),
             state: init.state.unwrap_or_default(),
             battery_status: init.battery_status,
-            suffix: init.suffix,
+            brightness: init.brightness,
+            device: init.device,
+            tracker: 0,
         }
     }
 }

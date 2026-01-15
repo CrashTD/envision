@@ -57,6 +57,7 @@ pub mod util;
 pub mod vulkaninfo;
 pub mod wivrn_dbus;
 pub mod xdg;
+pub mod xr_clients;
 pub mod xr_devices;
 
 fn restore_steam_xr_files() {

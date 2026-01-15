@@ -19,6 +19,7 @@ use crate::{
     ui::{
         alert::alert_w_widget,
         app::{PreferencesAction, ThemeManagerAction},
+        clients_box::{ClientsBox, ClientsBoxMsg},
         util::{copiable_code_snippet, warn_card},
     },
     util::{
@@ -29,6 +30,7 @@ use crate::{
         steam_library_folder::chaperone_info_exists,
     },
     wivrn_dbus,
+    xr_clients::XRClient,
     xr_devices::XRDevice,
 };
 use adw::prelude::*;
@@ -49,6 +51,8 @@ pub struct MainView {
     steam_launch_options_box: Controller<SteamLaunchOptionsBox>,
     #[tracker::do_not_track]
     devices_box: Controller<DevicesBox>,
+    #[tracker::do_not_track]
+    clients_box: Controller<ClientsBox>,
     #[tracker::do_not_track]
     steamvr_calibration_box: Controller<SteamVrCalibrationBox>,
     #[tracker::do_not_track]
@@ -71,6 +75,7 @@ pub enum MainViewMsg {
     EnableDebugViewChanged(bool),
     UpdateSelectedProfile(Profile),
     UpdateDevices(Vec<XRDevice>),
+    UpdateClients(Vec<XRClient>),
     UpdateXrServiceReady(bool),
     SetWivrnSupportsPairing(bool),
     SetWivrnPairingMode(bool),
@@ -229,6 +234,7 @@ impl AsyncComponent for MainView {
                             },
                         },
                         model.devices_box.widget(),
+                        model.clients_box.widget(),
                         gtk::Box {
                             set_orientation: gtk::Orientation::Vertical,
                             set_hexpand: true,
@@ -531,6 +537,7 @@ impl AsyncComponent for MainView {
                     .emit(OpenHmdCalibrationBoxMsg::XRServiceActiveChanged(active));
                 if !active {
                     sender.input(Self::Input::UpdateDevices(vec![]));
+                    sender.input(Self::Input::UpdateClients(vec![]));
                 }
                 self.steam_launch_options_box.sender().emit(
                     SteamLaunchOptionsBoxMsg::UpdateXRServiceActive(show_launch_opts),
@@ -567,6 +574,11 @@ impl AsyncComponent for MainView {
                 self.devices_box
                     .sender()
                     .emit(DevicesBoxMsg::UpdateDevices(devs));
+            }
+            Self::Input::UpdateClients(clients) => {
+                self.clients_box
+                    .sender()
+                    .emit(ClientsBoxMsg::UpdateClients(clients));
             }
             Self::Input::UpdateXrServiceReady(ready) => {
                 self.set_xrservice_ready(ready);
@@ -651,6 +663,7 @@ impl AsyncComponent for MainView {
                 })
                 .detach(),
             devices_box: DevicesBox::builder().launch(()).detach(),
+            clients_box: ClientsBox::builder().launch(()).detach(),
             selected_profile: init.selected_profile.clone(),
             steamvr_calibration_box,
             openhmd_calibration_box,

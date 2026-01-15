@@ -3,6 +3,7 @@ mod alert;
 pub mod app;
 mod battery_status;
 mod build_window;
+pub mod clients_box;
 pub mod cmdline_opts;
 mod debug_view;
 mod devices_box;

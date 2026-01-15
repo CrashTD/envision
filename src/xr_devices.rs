@@ -1,5 +1,5 @@
-use libmonado::{self, BatteryStatus, DeviceRole};
-use std::{collections::HashMap, fmt::Display, slice::Iter};
+use libmonado::{self, BatteryStatus, DeviceLogic, DeviceRole, MndProperty, MndResult};
+use std::{collections::HashMap, fmt::Display, rc::Rc, slice::Iter};
 use tracing::error;
 
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
@@ -231,7 +231,7 @@ impl From<DeviceRole> for XRDeviceRole {
     }
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Clone)]
 pub struct XRDevice {
     pub roles: Vec<XRDeviceRole>,
     pub name: String,
@@ -239,14 +239,44 @@ pub struct XRDevice {
     pub index: u32,
     pub serial: Option<String>,
     pub battery: Option<BatteryStatus>,
+    pub brightness: Option<f32>,
+    pub has_brightness_control: bool,
+    device: libmonado::DeviceRc,
 }
 
+impl std::fmt::Debug for XRDevice {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("XRDevice")
+            .field("roles", &self.roles)
+            .field("name", &self.name)
+            .field("id", &self.id)
+            .field("index", &self.index)
+            .field("serial", &self.serial)
+            .field("battery", &self.battery)
+            .field("has_brightness_control", &self.has_brightness_control)
+            .finish_non_exhaustive()
+    }
+}
+
+impl PartialEq for XRDevice {
+    fn eq(&self, other: &Self) -> bool {
+        self.id == other.id
+            && self.has_brightness_control == other.has_brightness_control
+            && self.name == other.name
+            && self.roles == other.roles
+    }
+}
+impl Eq for XRDevice {}
+
 impl XRDevice {
-    pub fn from_libmonado(monado: &libmonado::Monado) -> Vec<Self> {
-        if let Ok(monado_devs) = monado.devices() {
+    pub fn from_libmonado(monado: Rc<libmonado::Monado>) -> Vec<Self> {
+        if let Ok(monado_devs) = libmonado::Monado::devices_rc(&monado) {
             let mut devs: HashMap<u32, XRDevice> = monado_devs
                 .into_iter()
                 .map(|dev| {
+                    let has_brightness_control = dev
+                        .get_info_bool(MndProperty::PropertySupportsBrightnessBool)
+                        .unwrap_or(false);
                     (
                         dev.index,
                         Self {
@@ -257,8 +287,15 @@ impl XRDevice {
                                 .battery_status()
                                 .ok()
                                 .and_then(|bs| if bs.present { Some(bs) } else { None }),
-                            name: dev.name,
+                            has_brightness_control,
+                            brightness: if has_brightness_control {
+                                dev.brightness().ok()
+                            } else {
+                                None
+                            },
+                            name: dev.name.clone(),
                             roles: Vec::default(),
+                            device: dev.clone(),
                         },
                     )
                 })
@@ -289,5 +326,26 @@ impl XRDevice {
         } else {
             Vec::default()
         }
+    }
+
+    pub fn update(&mut self) {
+        self.battery = self
+            .device
+            .battery_status()
+            .ok()
+            .and_then(|bs| if bs.present { Some(bs) } else { None });
+        self.brightness = if self.has_brightness_control {
+            self.device.brightness().ok()
+        } else {
+            None
+        };
+    }
+
+    /// IMPORTANT: value must be between 0 and 1; values outside this range
+    /// will be clamped
+    pub fn set_brightness(&self, value: f32) -> Result<(), MndResult> {
+        // clamp the value for bonus correctness
+        let value = value.clamp(0.0, 1.0);
+        self.device.set_brightness(value, false)
     }
 }

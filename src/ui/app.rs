@@ -59,6 +59,7 @@ use crate::{
     },
     vulkaninfo::VulkanInfo,
     wivrn_dbus,
+    xr_clients::XRClient,
     xr_devices::XRDevice,
 };
 use adw::{ResponseAppearance, prelude::*};
@@ -70,7 +71,7 @@ use relm4::{
     new_action_group, new_stateful_action, new_stateless_action,
     prelude::*,
 };
-use std::{collections::VecDeque, fs::remove_file, time::Duration};
+use std::{collections::VecDeque, fs::remove_file, rc::Rc, time::Duration};
 use tracing::error;
 
 pub struct App {
@@ -93,8 +94,7 @@ pub struct App {
     build_worker: Option<JobWorker>,
     monado_gui_worker: Option<JobWorker>,
     profiles: Vec<Profile>,
-    xr_devices: Vec<XRDevice>,
-    libmonado: Option<libmonado::Monado>,
+    libmonado: Option<Rc<libmonado::Monado>>,
 
     wivrn_conf_editor: Option<Controller<WivrnConfEditor>>,
     skip_depcheck: bool,
@@ -248,7 +248,6 @@ impl App {
             return;
         };
         self.debug_view.sender().emit(DebugViewMsg::ClearLog);
-        self.xr_devices = vec![];
         {
             let ipc_file = prof.xrservice_type.ipc_file_path();
             if ipc_file.exists() {
@@ -456,7 +455,6 @@ impl AsyncComponent for App {
                     .sender()
                     .emit(DebugViewMsg::XRServiceActiveChanged(false));
                 self.libmonado = None;
-                self.xr_devices = vec![];
                 if code != 0 && code != 15 {
                     // 15 is SIGTERM
                     sender.input(Msg::OnServiceLog(vec![format!(
@@ -480,13 +478,15 @@ impl AsyncComponent for App {
                     .is_some_and(JobWorker::is_alive);
                 let should_poll_for_devices = self.xrservice_ready && xrservice_worker_is_alive;
                 if should_poll_for_devices {
-                    if let Some(monado) = self.libmonado.as_ref() {
-                        self.xr_devices = XRDevice::from_libmonado(monado);
+                    if let Some(monado) = self.libmonado.clone() {
+                        self.main_view.sender().emit(MainViewMsg::UpdateDevices(
+                            XRDevice::from_libmonado(monado.clone()),
+                        ));
                         self.main_view
                             .sender()
-                            .emit(MainViewMsg::UpdateDevices(self.xr_devices.clone()));
+                            .emit(MainViewMsg::UpdateClients(XRClient::from_libmonado(monado)));
                     } else if let Some(so) = self.get_selected_profile().libmonado_so() {
-                        self.libmonado = libmonado::Monado::create(so).ok();
+                        self.libmonado = libmonado::Monado::create(so).map(Rc::new).ok();
                         if self.libmonado.is_some() {
                             sender.input(Msg::ClockTicking);
                         }
@@ -1372,7 +1372,6 @@ impl AsyncComponent for App {
             plugins_worker: None,
             build_worker: None,
             monado_gui_worker: None,
-            xr_devices: vec![],
             restart_xrservice: false,
             libmonado: None,
             wivrn_conf_editor: None,
