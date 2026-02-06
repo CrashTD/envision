@@ -351,3 +351,19 @@ pub fn dep_libc() -> Dependency {
         ]),
     }
 }
+
+pub fn dep_xr_hardware() -> Dependency {
+    Dependency {
+        name: "xr-hardware".into(),
+        dep_type: DepType::UdevRule,
+        filename: "70-xrhardware.rules".into(),
+        packages: HashMap::from([
+            (LinuxDistro::Arch, "xr-hardware".into()),
+            (LinuxDistro::Debian, "xr-hardware".into()),
+            (LinuxDistro::Fedora, "xr-hardware".into()),
+            (LinuxDistro::Alpine, "xr-hardware".into()),
+            // (LinuxDistro::Gentoo, "".into()),
+            // (LinuxDistro::Suse, "".into()),
+        ]),
+    }
+}

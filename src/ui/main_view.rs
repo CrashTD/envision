@@ -12,7 +12,7 @@ use super::{
 };
 use crate::{
     config::Config,
-    depcheck::common::dep_pkexec,
+    depcheck::common::{dep_pkexec, dep_xr_hardware},
     gpu_profile::{GpuPowerProfile, get_amd_gpu_power_profile},
     paths::get_logs_dir,
     profile::{LighthouseDriver, Profile, XRServiceType},
@@ -419,6 +419,15 @@ impl AsyncComponent for MainView {
                                     sender.input(Self::Input::CheckAmdGpuPowerProfile);
                                 },
                             },
+                        },
+                        warn_card(None, concat!(
+                            "The xr-hardware udev rules are missing. ",
+                            "This might cause communication problems with your ",
+                            "headset, please install it to ensure the best ",
+                            "experience."
+                        )) -> gtk::Box {
+                            #[track = "model.changed(Self::selected_profile())"]
+                            set_visible: !dep_xr_hardware().check(),
                         },
 
                         model.steam_launch_options_box.widget(),
