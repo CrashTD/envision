@@ -10,7 +10,6 @@ pub fn simulated_profile() -> Profile {
     let prefix = data_dir.join("prefixes/simulated_default");
     let mut environment: HashMap<String, String> = HashMap::new();
     environment.insert("QWERTY_ENABLE".into(), "1".into());
-    environment.insert("XRT_JSON_LOG".into(), "1".into());
     environment.insert("XRT_COMPOSITOR_SCALE_PERCENTAGE".into(), "140".into());
     environment.insert("XRT_COMPOSITOR_COMPUTE".into(), "1".into());
     environment.insert("XRT_DEBUG_GUI".into(), "1".into());

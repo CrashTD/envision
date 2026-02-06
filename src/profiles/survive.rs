@@ -12,7 +12,6 @@ pub fn survive_profile() -> Profile {
     let data_dir = get_data_dir();
     let prefix = data_dir.join("prefixes/survive_default");
     let mut environment: HashMap<String, String> = HashMap::new();
-    environment.insert("XRT_JSON_LOG".into(), "1".into());
     environment.insert("XRT_COMPOSITOR_SCALE_PERCENTAGE".into(), "140".into());
     environment.insert("XRT_COMPOSITOR_COMPUTE".into(), "1".into());
     environment.insert("SURVIVE_GLOBALSCENESOLVER".into(), "0".into());
