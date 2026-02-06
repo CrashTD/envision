@@ -441,9 +441,8 @@ impl SimpleComponent for LibsurviveSetupWindow {
                 if !self.first_run_done
                     && self.calibration_seconds_elapsed >= CALIBRATION_RUN_TIME_SECONDS
                 {
-                    if self.calibration_runner.is_some() {
+                    if let Some(runner) = self.calibration_runner.as_mut() {
                         self.first_run_done = true;
-                        let runner = self.calibration_runner.as_mut().unwrap();
                         runner.terminate();
                         let mut n_runner = self.create_calibration_runner(
                             &self

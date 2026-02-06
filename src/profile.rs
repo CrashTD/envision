@@ -854,9 +854,9 @@ impl Profile {
     }
 
     pub fn basalt_git(&self) -> Option<Git> {
-        if !self.features.basalt.enabled || self.features.basalt.path.is_none() {
-            None
-        } else {
+        if self.features.basalt.enabled
+            && let Some(basalt_path) = self.features.basalt.path.as_ref()
+        {
             Some(Git {
                 repo: self
                     .features
@@ -865,7 +865,7 @@ impl Profile {
                     .as_deref()
                     .unwrap_or(DEFAULT_BASALT_REPO)
                     .into(),
-                dir: self.features.basalt.path.as_ref().unwrap().clone(),
+                dir: basalt_path.clone(),
                 branch: self
                     .features
                     .basalt
@@ -874,13 +874,15 @@ impl Profile {
                     .unwrap_or(DEFAULT_BASALT_BRANCH)
                     .into(),
             })
+        } else {
+            None
         }
     }
 
     pub fn openhmd_git(&self) -> Option<Git> {
-        if !self.features.openhmd.enabled || self.features.openhmd.path.is_none() {
-            None
-        } else {
+        if self.features.openhmd.enabled
+            && let Some(openhmd_path) = self.features.openhmd.path.as_ref()
+        {
             Some(Git {
                 repo: self
                     .features
@@ -889,7 +891,7 @@ impl Profile {
                     .as_deref()
                     .unwrap_or(DEFAULT_OPENHMD_REPO)
                     .into(),
-                dir: self.features.openhmd.path.as_ref().unwrap().clone(),
+                dir: openhmd_path.clone(),
                 branch: self
                     .features
                     .openhmd
@@ -898,13 +900,15 @@ impl Profile {
                     .unwrap_or(DEFAULT_OPENHMD_BRANCH)
                     .into(),
             })
+        } else {
+            None
         }
     }
 
     pub fn libsurvive_git(&self) -> Option<Git> {
-        if !self.features.libsurvive.enabled || self.features.libsurvive.path.is_none() {
-            None
-        } else {
+        if self.features.libsurvive.enabled
+            && let Some(libsurvive_path) = self.features.libsurvive.path.as_ref()
+        {
             Some(Git {
                 repo: self
                     .features
@@ -913,7 +917,7 @@ impl Profile {
                     .as_deref()
                     .unwrap_or(DEFAULT_LIBSURVIVE_REPO)
                     .into(),
-                dir: self.features.libsurvive.path.as_ref().unwrap().clone(),
+                dir: libsurvive_path.clone(),
                 branch: self
                     .features
                     .libsurvive
@@ -922,6 +926,8 @@ impl Profile {
                     .unwrap_or(DEFAULT_LIBSURVIVE_BRANCH)
                     .into(),
             })
+        } else {
+            None
         }
     }
 

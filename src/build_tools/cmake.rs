@@ -17,8 +17,8 @@ impl Cmake {
             "-G".into(),
             "Ninja".into(),
         ];
-        if self.vars.is_some() {
-            for (k, v) in self.vars.as_ref().unwrap() {
+        if let Some(vars) = self.vars.as_ref() {
+            for (k, v) in vars {
                 if k.contains(' ') {
                     panic!("Cmake vars cannot contain spaces!");
                 }
