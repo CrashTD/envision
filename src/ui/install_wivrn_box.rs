@@ -11,7 +11,7 @@ use std::fs::remove_file;
 use tracing::error;
 
 const WIVRN_LATEST_RELEASE_APK_URL: &str =
-    "https://github.com/WiVRn/WiVRn/releases/latest/download/WiVRn-standard-release.apk";
+    "https://github.com/WiVRn/WiVRn/releases/latest/download/WiVRn-release.apk";
 
 #[derive(Debug)]
 enum GetWivrnApkRefErr {
@@ -200,12 +200,12 @@ impl AsyncComponent for InstallWivrnBox {
                     }
                     Ok(WivrnApkRef::Tag(tag)) => {
                         sender.input(Self::Input::DoInstall(
-                            format!("https://github.com/WiVRn/WiVRn/releases/download/{tag}/WiVRn-standard-release.apk")
+                            format!("https://github.com/WiVRn/WiVRn/releases/download/{tag}/WiVRn-release.apk")
                         ));
                     }
                     Ok(WivrnApkRef::Commit(commit)) => {
                         sender.input(Self::Input::DoInstall(
-                            format!("https://github.com/WiVRn/WiVRn-APK/releases/download/apk-{commit}/org.meumeu.wivrn-standard-release.apk")
+                            format!("https://github.com/WiVRn/WiVRn-APK/releases/download/apk-{commit}/org.meumeu.wivrn-release.apk")
                         ));
                     }
                 };
