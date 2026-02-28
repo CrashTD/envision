@@ -274,9 +274,6 @@ impl XRDevice {
             let mut devs: HashMap<u32, XRDevice> = monado_devs
                 .into_iter()
                 .map(|dev| {
-                    let has_brightness_control = dev
-                        .get_info_bool(MndProperty::PropertySupportsBrightnessBool)
-                        .unwrap_or(false);
                     (
                         dev.index,
                         Self {
@@ -287,12 +284,8 @@ impl XRDevice {
                                 .battery_status()
                                 .ok()
                                 .and_then(|bs| if bs.present { Some(bs) } else { None }),
-                            has_brightness_control,
-                            brightness: if has_brightness_control {
-                                dev.brightness().ok()
-                            } else {
-                                None
-                            },
+                            has_brightness_control: false,
+                            brightness: None,
                             name: dev.name.clone(),
                             roles: Vec::default(),
                             device: dev.clone(),
@@ -322,7 +315,22 @@ impl XRDevice {
                     }
                 }
             });
-            devs.drain().map(|(_, d)| d).collect()
+            let mut res: Vec<XRDevice> = devs.drain().map(|(_, d)| d).collect();
+            for d in res.iter_mut() {
+                if d.roles.contains(&XRDeviceRole::Head) {
+                    let has_brightness_control = d
+                        .device
+                        .get_info_bool(MndProperty::PropertySupportsBrightnessBool)
+                        .unwrap_or(false);
+                    d.has_brightness_control = has_brightness_control;
+                    d.brightness = if has_brightness_control {
+                        d.device.brightness().ok()
+                    } else {
+                        None
+                    }
+                }
+            }
+            res
         } else {
             Vec::default()
         }
