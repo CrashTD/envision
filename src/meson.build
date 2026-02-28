@@ -53,8 +53,8 @@ test(
 test(
   'cargo-clippy',
   cargo,
-  env: ['RUSTFLAGS=-Dwarnings'],
-  args: ['clippy', '--all-targets', '--all-features'],
+  env: [],
+  args: ['clippy', '--all-targets', '--all-features', '--', '-Dwarnings'],
   timeout: 0,
 )
 
