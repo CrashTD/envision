@@ -1,6 +1,6 @@
 use crate::{
     util::file_utils::{deserialize_file, get_writer},
-    xdg::XDG,
+    xdg::XDG_CONFIG_HOME,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
@@ -169,7 +169,7 @@ impl Default for WivrnConfig {
 }
 
 fn get_wivrn_config_path() -> PathBuf {
-    XDG.get_config_home().join("wivrn/config.json")
+    XDG_CONFIG_HOME.join("wivrn/config.json")
 }
 
 fn get_wivrn_config_from_path(path: &Path) -> Option<WivrnConfig> {

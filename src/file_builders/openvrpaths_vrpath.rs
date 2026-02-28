@@ -2,7 +2,7 @@ use crate::{
     paths::get_backup_dir,
     profile::Profile,
     util::file_utils::{copy_file, deserialize_file, get_writer, set_file_readonly},
-    xdg::XDG,
+    xdg::{XDG_CONFIG_HOME, XDG_DATA_HOME},
 };
 use serde::{Deserialize, Serialize, ser::Error};
 use std::path::{Path, PathBuf};
@@ -18,7 +18,7 @@ pub struct OpenVrPaths {
 }
 
 pub fn get_openvr_conf_dir() -> PathBuf {
-    XDG.get_config_home().join("openvr")
+    XDG_CONFIG_HOME.join("openvr")
 }
 
 fn get_openvrpaths_vrpath_path() -> PathBuf {
@@ -73,13 +73,12 @@ fn build_steam_openvrpaths() -> OpenVrPaths {
     if let Some(backup) = get_backed_up_steam_openvrpaths() {
         return backup;
     }
-    let datadir = XDG.get_data_home();
     OpenVrPaths {
-        config: vec![datadir.join("Steam/config")],
+        config: vec![XDG_DATA_HOME.join("Steam/config")],
         external_drivers: None,
         jsonid: "vrpathreg".into(),
-        log: vec![datadir.join("Steam/logs")],
-        runtime: vec![datadir.join("Steam/steamapps/common/SteamVR")],
+        log: vec![XDG_DATA_HOME.join("Steam/logs")],
+        runtime: vec![XDG_DATA_HOME.join("Steam/steamapps/common/SteamVR")],
         version: 1,
     }
 }
@@ -92,12 +91,11 @@ pub fn set_current_openvrpaths_to_steam() -> anyhow::Result<()> {
 }
 
 pub fn build_profile_openvrpaths(profile: &Profile) -> OpenVrPaths {
-    let datadir = XDG.get_data_home();
     OpenVrPaths {
-        config: vec![datadir.join("Steam/config")],
+        config: vec![XDG_DATA_HOME.join("Steam/config")],
         external_drivers: None,
         jsonid: "vrpathreg".into(),
-        log: vec![datadir.join("Steam/logs")],
+        log: vec![XDG_DATA_HOME.join("Steam/logs")],
         runtime: vec![profile.ovr_comp_runtime_dir()],
         version: 1,
     }

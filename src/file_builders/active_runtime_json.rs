@@ -1,7 +1,7 @@
 use crate::{
     profile::Profile,
     util::file_utils::{deserialize_file, get_writer, set_file_readonly},
-    xdg::XDG,
+    xdg::XDG_CONFIG_HOME,
 };
 use anyhow::bail;
 use serde::{Deserialize, Serialize};
@@ -29,7 +29,7 @@ pub struct ActiveRuntime {
 }
 
 pub fn get_openxr_conf_dir() -> PathBuf {
-    XDG.get_config_home().join("openxr")
+    XDG_CONFIG_HOME.join("openxr")
 }
 
 fn get_active_runtime_json_path() -> PathBuf {

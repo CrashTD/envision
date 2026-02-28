@@ -1,7 +1,11 @@
 use anyhow::bail;
 use lazy_static::lazy_static;
 
-use crate::{constants::CMD_NAME, util::steam_library_folder::SteamLibraryFolder, xdg::XDG};
+use crate::{
+    constants::CMD_NAME,
+    util::steam_library_folder::SteamLibraryFolder,
+    xdg::{XDG_CACHE_HOME, XDG_CONFIG_HOME, XDG_DATA_HOME},
+};
 use std::{
     env,
     fs::create_dir_all,
@@ -50,15 +54,15 @@ pub fn get_home_dir() -> PathBuf {
 }
 
 pub fn get_config_dir() -> PathBuf {
-    XDG.get_config_home().join(CMD_NAME)
+    XDG_CONFIG_HOME.join(CMD_NAME)
 }
 
 pub fn get_data_dir() -> PathBuf {
-    XDG.get_data_home().join(CMD_NAME)
+    XDG_DATA_HOME.join(CMD_NAME)
 }
 
 pub fn get_cache_dir() -> PathBuf {
-    XDG.get_cache_home().join(CMD_NAME)
+    XDG_CACHE_HOME.join(CMD_NAME)
 }
 
 pub fn get_logs_dir() -> PathBuf {

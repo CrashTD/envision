@@ -6,7 +6,7 @@ use crate::{
     device_prober::PhysicalXRDevice,
     linux_distro::LinuxDistro,
     vulkaninfo::VulkanInfo,
-    xdg::XDG,
+    xdg::XDG_DATA_HOME,
 };
 use relm4::prelude::*;
 use std::{env, fs::read_to_string};
@@ -94,9 +94,7 @@ pub fn populate_debug_info(dialog: &adw::AboutDialog, vkinfo: Option<&VulkanInfo
             }),
             format!(
                 "Steam found: {}",
-                if XDG.get_data_home().join("Steam").is_dir()
-                    || XDG.get_data_home().join("steam").is_dir()
-                {
+                if XDG_DATA_HOME.join("Steam").is_dir() || XDG_DATA_HOME.join("steam").is_dir() {
                     "yes"
                 } else {
                     "no"

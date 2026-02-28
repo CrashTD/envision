@@ -2,7 +2,7 @@ use std::path::{Path, PathBuf};
 
 use crate::{
     util::file_utils::{deserialize_file, get_writer},
-    xdg::XDG,
+    xdg::XDG_CONFIG_HOME,
 };
 use serde::{Deserialize, Serialize};
 
@@ -31,7 +31,7 @@ impl Default for MonadoAutorunConfig {
 }
 
 fn get_monado_autorun_config_path() -> PathBuf {
-    XDG.get_config_home().join("monado/autorun_v0.json")
+    XDG_CONFIG_HOME.join("monado/autorun_v0.json")
 }
 
 fn get_monado_autorun_config_from_path(path: &Path) -> Option<MonadoAutorunConfig> {

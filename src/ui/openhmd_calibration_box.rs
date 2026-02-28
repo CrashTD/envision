@@ -1,4 +1,4 @@
-use crate::{constants::APP_NAME, xdg::XDG};
+use crate::{constants::APP_NAME, xdg::XDG_CONFIG_HOME};
 use relm4::{
     ComponentParts, ComponentSender, SimpleComponent,
     gtk::{self, prelude::*},
@@ -57,7 +57,7 @@ impl SimpleComponent for OpenHmdCalibrationBox {
                 #[track = "model.changed(Self::xrservice_active())"]
                 set_sensitive: !model.xrservice_active,
                 connect_clicked => move |_| {
-                    let target = XDG.get_config_home().join("openhmd/rift-room-config.json");
+                    let target = XDG_CONFIG_HOME.join("openhmd/rift-room-config.json");
                     if target.is_file() {
                         if let Err(e) = std::fs::remove_file(target) {
                             error!("Failed to remove openhmd config: {e}");

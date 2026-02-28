@@ -1,4 +1,4 @@
-use crate::{paths::get_home_dir, xdg::XDG};
+use crate::{paths::get_home_dir, xdg::XDG_DATA_HOME};
 use anyhow::bail;
 use serde::Deserialize;
 use std::{
@@ -16,8 +16,8 @@ pub struct SteamLibraryFolder {
 pub fn get_all_potential_steam_main_dir_paths() -> Vec<PathBuf> {
     vec![
         get_home_dir().join(".steam/root"),
-        XDG.get_data_home().join("Steam"),
-        XDG.get_data_home().join("steam"),
+        XDG_DATA_HOME.join("Steam"),
+        XDG_DATA_HOME.join("steam"),
     ]
 }
 
