@@ -137,9 +137,10 @@ impl AsyncFactoryComponent for DeviceRowModel {
                             set_format_value_func: move |_, v| {
                                 format!("{:.0}%", v*100.0)
                             },
+                            add_mark: (1.0, gtk::PositionType::Bottom, Some("100%")),
                             set_adjustment: adj = &gtk::Adjustment {
                                 set_lower: 0.0,
-                                set_upper: 1.0,
+                                set_upper: 1.4,
                                 set_step_increment: 0.01,
                                 set_page_increment: 0.1,
                                 #[track = "self.changed(Self::brightness())"]

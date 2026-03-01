@@ -353,7 +353,7 @@ impl XRDevice {
     /// will be clamped
     pub fn set_brightness(&self, value: f32) -> Result<(), MndResult> {
         // clamp the value for bonus correctness
-        let value = value.clamp(0.0, 1.0);
+        let value = value.clamp(0.0, 1.4);
         self.device.set_brightness(value, false)
     }
 }
