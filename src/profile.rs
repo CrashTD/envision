@@ -5,19 +5,19 @@ use crate::{
         Dependency, basalt_deps::get_missing_basalt_deps,
         libsurvive_deps::get_missing_libsurvive_deps, mercury_deps::get_missing_mercury_deps,
         monado_deps::get_missing_monado_deps, openhmd_deps::get_missing_openhmd_deps,
-        wivrn_deps::get_missing_wivrn_deps, xrizer_deps::get_missing_xrizer_deps,
+        xrizer_deps::get_missing_xrizer_deps,
     },
     file_builders::active_runtime_json::ActiveRuntime,
     paths::{BWRAP_SYSTEM_PREFIX, SYSTEM_PREFIX, get_data_dir},
-    profiles::system_profile::{monado_dep, wivrn_dep},
+    profiles::system_profile::monado_dep,
     util::{
         file_utils::{deserialize_file, get_writer},
         git_repos::{
             DEFAULT_BASALT_BRANCH, DEFAULT_BASALT_REPO, DEFAULT_LIBSURVIVE_BRANCH,
             DEFAULT_LIBSURVIVE_REPO, DEFAULT_MONADO_BRANCH, DEFAULT_MONADO_REPO,
             DEFAULT_OPENCOMPOSITE_BRANCH, DEFAULT_OPENCOMPOSITE_REPO, DEFAULT_OPENHMD_BRANCH,
-            DEFAULT_OPENHMD_REPO, DEFAULT_VAPOR_BRANCH, DEFAULT_VAPOR_REPO, DEFAULT_WIVRN_BRANCH,
-            DEFAULT_WIVRN_REPO, DEFAULT_XRIZER_BRANCH, DEFAULT_XRIZER_REPO,
+            DEFAULT_OPENHMD_REPO, DEFAULT_VAPOR_BRANCH, DEFAULT_VAPOR_REPO, DEFAULT_XRIZER_BRANCH,
+            DEFAULT_XRIZER_REPO,
         },
     },
     xdg::XDG,
@@ -39,18 +39,16 @@ use uuid::Uuid;
 pub enum XRServiceType {
     #[default]
     Monado,
-    Wivrn,
 }
 
 impl XRServiceType {
     pub fn iter() -> Iter<'static, Self> {
-        [Self::Monado, Self::Wivrn].iter()
+        [Self::Monado].iter()
     }
 
     pub fn binary_name(&self) -> &'static str {
         match self {
             XRServiceType::Monado => "monado-service",
-            XRServiceType::Wivrn => "wivrn-server",
         }
     }
 
@@ -58,7 +56,6 @@ impl XRServiceType {
     pub fn libopenxr_path(&self) -> &'static str {
         match self {
             Self::Monado => "libopenxr_monado.so",
-            Self::Wivrn => "wivrn/libopenxr_wivrn.so",
         }
     }
 
@@ -66,14 +63,12 @@ impl XRServiceType {
     pub fn libmonado_path(&self) -> &'static str {
         match self {
             Self::Monado => "libmonado.so",
-            Self::Wivrn => "wivrn/libmonado_wivrn.so",
         }
     }
 
     pub fn openxr_json_rel_path(&self) -> &'static str {
         match self {
             Self::Monado => "share/openxr/1/openxr_monado.json",
-            Self::Wivrn => "share/openxr/1/openxr_wivrn.json",
         }
     }
 
@@ -82,7 +77,6 @@ impl XRServiceType {
             .expect("XDG runtime directory is not available")
             .join(match self {
                 XRServiceType::Monado => "monado_comp_ipc",
-                XRServiceType::Wivrn => "wivrn/comp_ipc",
             })
     }
 }
@@ -91,7 +85,6 @@ impl From<&str> for XRServiceType {
     fn from(s: &str) -> Self {
         match s.trim().to_lowercase().as_str() {
             "monado" => Self::Monado,
-            "wivrn" => Self::Wivrn,
             _ => Self::Monado,
         }
     }
@@ -101,7 +94,6 @@ impl From<u32> for XRServiceType {
     fn from(i: u32) -> Self {
         match i {
             0 => Self::Monado,
-            1 => Self::Wivrn,
             _ => panic!("XRServiceType index out of bounds"),
         }
     }
@@ -111,7 +103,6 @@ impl From<&XRServiceType> for u32 {
     fn from(value: &XRServiceType) -> Self {
         match value {
             XRServiceType::Monado => 0,
-            XRServiceType::Wivrn => 1,
         }
     }
 }
@@ -120,7 +111,6 @@ impl Display for XRServiceType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(match self {
             Self::Monado => "Monado",
-            Self::Wivrn => "WiVRn",
         })
     }
 }
@@ -513,7 +503,6 @@ impl Profile {
             },
             runtime = match self.xrservice_type {
                 XRServiceType::Monado => "monado",
-                XRServiceType::Wivrn => "wivrn",
             }
         )
     }
@@ -537,9 +526,7 @@ impl Profile {
         if self.is_system_profile {
             self.env_vars_full()
         } else {
-            vec![
-            "PRESSURE_VESSEL_FILESYSTEMS_RW=\"$XDG_RUNTIME_DIR/wivrn_comp_ipc:$XDG_RUNTIME_DIR/wivrn/comp_ipc:$XDG_RUNTIME_DIR/monado_comp_ipc\"".into(),
-        ]
+            vec!["PRESSURE_VESSEL_FILESYSTEMS_RW=\"$XDG_RUNTIME_DIR/monado_comp_ipc\"".into()]
         }
     }
 
@@ -707,7 +694,6 @@ impl Profile {
             config.and_then(|config| {
                 match config.global_preferences.xrservice_type {
                     XRServiceType::Monado => monado_dep(),
-                    XRServiceType::Wivrn => wivrn_dep(),
                 }
                 .find_path()
             })
@@ -778,7 +764,6 @@ impl Profile {
         } else {
             missing_deps.extend(match self.xrservice_type {
                 XRServiceType::Monado => get_missing_monado_deps(),
-                XRServiceType::Wivrn => get_missing_wivrn_deps(),
             });
             if self.features.libsurvive.enabled {
                 missing_deps.extend(get_missing_libsurvive_deps());
@@ -812,7 +797,6 @@ impl Profile {
                 .as_deref()
                 .unwrap_or(match self.xrservice_type {
                     XRServiceType::Monado => DEFAULT_MONADO_REPO,
-                    XRServiceType::Wivrn => DEFAULT_WIVRN_REPO,
                 })
                 .into(),
             dir: self.xrservice_path.clone(),
@@ -821,7 +805,6 @@ impl Profile {
                 .as_deref()
                 .unwrap_or(match self.xrservice_type {
                     XRServiceType::Monado => DEFAULT_MONADO_BRANCH,
-                    XRServiceType::Wivrn => DEFAULT_WIVRN_BRANCH,
                 })
                 .into(),
         }

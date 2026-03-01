@@ -1,6 +1,6 @@
 use crate::{
     profile::Profile,
-    profiles::{lighthouse::lighthouse_profile, wivrn::wivrn_profile, wmr::wmr_profile},
+    profiles::{lighthouse::lighthouse_profile, wmr::wmr_profile},
 };
 use rusb::UsbContext;
 use std::fmt::Display;
@@ -105,16 +105,6 @@ impl PhysicalXRDevice {
             Self::VarjoVR2 => Some(lighthouse_profile()),
             Self::VarjoVR3 => Some(lighthouse_profile()),
             Self::BigscreenBeyond => Some(lighthouse_profile()),
-            Self::OculusQuest => Some(wivrn_profile()),
-            Self::OculusQuest2 => Some(wivrn_profile()),
-            Self::OculusQuestPro => Some(wivrn_profile()),
-            Self::PicoVRGoblin => Some(wivrn_profile()),
-            Self::PicoNeoCV => Some(wivrn_profile()),
-            Self::PicoG24K => Some(wivrn_profile()),
-            Self::PicoNeo3Pro => Some(wivrn_profile()),
-            Self::Pico4 => Some(wivrn_profile()),
-            Self::LynxR1 => Some(wivrn_profile()),
-            Self::ViveFocus3 => Some(wivrn_profile()),
             Self::DellVisor => Some(wmr_profile()),
             // Self::AcerAH101 => Some(wmr_profile()),
             Self::HPWMR => Some(wmr_profile()),

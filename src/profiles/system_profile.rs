@@ -18,15 +18,6 @@ pub fn monado_dep() -> Dependency {
     }
 }
 
-pub fn wivrn_dep() -> Dependency {
-    Dependency {
-        name: "wivrn".into(),
-        dep_type: DepType::Executable,
-        filename: XRServiceType::Wivrn.binary_name().into(),
-        packages: HashMap::default(),
-    }
-}
-
 /// will generate a system profile on the fly
 pub fn system_profile(config: &Config) -> Profile {
     Profile {

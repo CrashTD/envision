@@ -6,7 +6,7 @@ use crate::{
     profile::{OvrCompatibilityModuleType, Profile, XRServiceType},
     profiles::{
         lighthouse::lighthouse_profile, openhmd::openhmd_profile, simulated::simulated_profile,
-        survive::survive_profile, wivrn::wivrn_profile, wmr::wmr_profile,
+        survive::survive_profile, wmr::wmr_profile,
     },
     util::file_utils::get_writer,
 };
@@ -206,7 +206,6 @@ impl Config {
         let mut profiles = vec![
             lighthouse_profile(),
             survive_profile(),
-            wivrn_profile(),
             wmr_profile(),
             openhmd_profile(),
             simulated_profile(),

@@ -14,15 +14,13 @@ use super::{
     libsurvive_setup_window::{LibsurviveSetupMsg, LibsurviveSetupWindow},
     main_view::{MainView, MainViewInit, MainViewMsg, MainViewOutMsg},
     util::{copiable_code_snippet, copy_text, open_with_default_handler},
-    wivrn_conf_editor::{WivrnConfEditor, WivrnConfEditorInit, WivrnConfEditorMsg},
 };
 use crate::{
     builders::{
         build_basalt::get_build_basalt_jobs, build_libsurvive::get_build_libsurvive_jobs,
         build_mercury::get_build_mercury_jobs, build_monado::get_build_monado_jobs,
         build_opencomposite::get_build_opencomposite_jobs, build_openhmd::get_build_openhmd_jobs,
-        build_vapor::get_build_vapor_jobs, build_wivrn::get_build_wivrn_jobs,
-        build_xrizer::get_build_xrizer_jobs,
+        build_vapor::get_build_vapor_jobs, build_xrizer::get_build_xrizer_jobs,
     },
     config::Config,
     constants::APP_NAME,
@@ -58,7 +56,6 @@ use crate::{
         rm_rf, setcap_cap_sys_nice_eip, setcap_cap_sys_nice_eip_cmd, verify_cap_sys_nice_eip,
     },
     vulkaninfo::VulkanInfo,
-    wivrn_dbus,
     xr_clients::XRClient,
     xr_devices::XRDevice,
 };
@@ -96,9 +93,7 @@ pub struct App {
     profiles: Vec<Profile>,
     libmonado: Option<Rc<libmonado::Monado>>,
 
-    wivrn_conf_editor: Option<Controller<WivrnConfEditor>>,
     skip_depcheck: bool,
-    configure_wivrn_action: gtk::gio::SimpleAction,
     build_profile_action: gtk::gio::SimpleAction,
     clean_build_profile_action: gtk::gio::SimpleAction,
     openxr_prober_worker: Option<JobWorker>,
@@ -140,11 +135,9 @@ pub enum Msg {
     DebugOpenPrefix,
     DebugOpenData,
     DebugCopyEnvVars,
-    OpenWivrnConfig,
     HandleCommandLine(CmdLineOpts),
     StartProber,
     OnProberExit(bool),
-    WivrnCheckPairMode,
     OpenPreferences,
     OnPreferencesWindowClose(Config),
     ShowThemeManager,
@@ -492,32 +485,6 @@ impl AsyncComponent for App {
                         }
                     }
                 }
-                if xrservice_worker_is_alive
-                    && self.get_selected_profile().xrservice_type == XRServiceType::Wivrn
-                {
-                    // is in pairing mode?
-                    sender.input(Msg::WivrnCheckPairMode);
-                }
-            }
-            Msg::WivrnCheckPairMode => {
-                if self.get_selected_profile().xrservice_type == XRServiceType::Wivrn {
-                    match wivrn_dbus::is_pairing_mode().await {
-                        Ok(state) => {
-                            self.main_view
-                                .sender()
-                                .emit(MainViewMsg::SetWivrnPairingMode(state));
-                            self.main_view
-                                .sender()
-                                .emit(MainViewMsg::SetWivrnSupportsPairing(true));
-                        }
-                        Err(e) => {
-                            error!("failed to get wivrn pairing mode: {e:?}");
-                            self.main_view
-                                .sender()
-                                .emit(MainViewMsg::SetWivrnSupportsPairing(false));
-                        }
-                    };
-                }
             }
             Msg::EnableDebugViewChanged(val) => {
                 self.config.debug_view_enabled = val;
@@ -719,7 +686,6 @@ impl AsyncComponent for App {
                     }
                     jobs.extend(match profile.xrservice_type {
                         XRServiceType::Monado => get_build_monado_jobs(&profile, clean_build),
-                        XRServiceType::Wivrn => get_build_wivrn_jobs(&profile, clean_build),
                     });
                     jobs.extend(match profile.ovr_comp.mod_type {
                         OvrCompatibilityModuleType::Opencomposite => {
@@ -977,8 +943,6 @@ impl AsyncComponent for App {
                 }
             }
             Msg::ProfileSelected(prof) => {
-                self.configure_wivrn_action
-                    .set_enabled(prof.xrservice_type == XRServiceType::Wivrn);
                 if !prof.is_system_profile {
                     self.config.selected_profile_uuid = prof.uuid.clone();
                     self.config.save();
@@ -1019,15 +983,6 @@ impl AsyncComponent for App {
             }
             Msg::DebugCopyEnvVars => {
                 copy_text(&self.get_selected_profile().env_vars_full().join(" "));
-            }
-            Msg::OpenWivrnConfig => {
-                let editor = WivrnConfEditor::builder()
-                    .launch(WivrnConfEditorInit {
-                        root_win: self.app_win.clone().upcast::<gtk::Window>(),
-                    })
-                    .detach();
-                editor.emit(WivrnConfEditorMsg::Present);
-                self.wivrn_conf_editor = Some(editor);
             }
             Msg::HandleCommandLine(opts) => {
                 if let Some(prof_uuid) = opts.profile_uuid
@@ -1254,19 +1209,6 @@ impl AsyncComponent for App {
         );
         // this bypasses the macro because I need the underlying gio action
         // to enable/disable it in update()
-        let configure_wivrn_action = {
-            let action = RelmAction::<ConfigureWivrnAction>::new_stateless(clone!(
-                #[strong]
-                sender,
-                move |_| {
-                    sender.input(Msg::OpenWivrnConfig);
-                }
-            ));
-            let ret = action.gio_action().clone();
-            actions.add_action(action);
-            ret.set_enabled(false);
-            ret
-        };
         let build_profile_action = {
             let action = RelmAction::<BuildProfileAction>::new_stateless(clone!(
                 #[strong]
@@ -1374,9 +1316,7 @@ impl AsyncComponent for App {
             monado_gui_worker: None,
             restart_xrservice: false,
             libmonado: None,
-            wivrn_conf_editor: None,
             skip_depcheck: false,
-            configure_wivrn_action,
             build_profile_action,
             clean_build_profile_action,
             openxr_prober_worker: None,
@@ -1456,7 +1396,6 @@ new_stateless_action!(pub BuildProfileAction, AppActionGroup, "buildprofile");
 new_stateless_action!(pub BuildProfileCleanAction, AppActionGroup, "buildprofileclean");
 new_stateless_action!(pub QuitAction, AppActionGroup, "quit");
 new_stateful_action!(pub DebugViewToggleAction, AppActionGroup, "debugviewtoggle", (), bool);
-new_stateless_action!(pub ConfigureWivrnAction, AppActionGroup, "configurewivrn");
 new_stateless_action!(pub PreferencesAction, AppActionGroup, "preferences");
 new_stateless_action!(pub ThemeManagerAction, AppActionGroup, "thememanager");
 

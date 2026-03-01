@@ -3,7 +3,7 @@
 use crate::{
     config::Config,
     plugins::XRPlugin,
-    profile::{OvrCompatibilityModuleType, XRServiceType},
+    profile::OvrCompatibilityModuleType,
     ui::{
         SENDER_IO_ERR_MSG,
         preference_rows::{combo_row, spin_row, switch_row},
@@ -56,15 +56,15 @@ impl AsyncComponent for PreferencesWindow {
                 set_title: "General",
                 set_icon_name: Some("preferences-system-symbolic"),
                 add: general_grp = &adw::PreferencesGroup {
-                    add: &combo_row(
-                        "XR service",
-                        Some("Choose Monado for PCVR and WiVRn for standalone"),
-                        model.config.borrow().global_preferences.xrservice_type.to_string().as_str(),
-                        XRServiceType::iter().map(XRServiceType::to_string).collect(),
-                        clone!(#[strong(rename_to=config)] model.config, move |row| {
-                            config.borrow_mut().global_preferences.xrservice_type = XRServiceType::from(row.selected());
-                        })
-                    ),
+                    // add: &combo_row(
+                    //     "XR service",
+                    //     None,
+                    //     model.config.borrow().global_preferences.xrservice_type.to_string().as_str(),
+                    //     XRServiceType::iter().map(XRServiceType::to_string).collect(),
+                    //     clone!(#[strong(rename_to=config)] model.config, move |row| {
+                    //         config.borrow_mut().global_preferences.xrservice_type = XRServiceType::from(row.selected());
+                    //     })
+                    // ),
                     add: &combo_row(
                         "OpenVR compatibility",
                         None,

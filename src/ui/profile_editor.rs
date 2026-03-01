@@ -8,7 +8,7 @@ use super::{
 };
 use crate::{
     env_var_descriptions::ENV_VAR_DESCRIPTIONS_AS_PARAGRAPH,
-    profile::{LighthouseDriver, OvrCompatibilityModuleType, Profile, XRServiceType},
+    profile::{LighthouseDriver, OvrCompatibilityModuleType, Profile},
 };
 use adw::prelude::*;
 use gtk::glib::{self, clone};
@@ -146,18 +146,18 @@ impl SimpleComponent for ProfileEditor {
                             "a placeholder for the actual XR Service command, ",
                             "similarly to how Steam launch options work.",
                         )),
-                        add: &combo_row(
-                            "XR Service Type",
-                            Some("Monado is for PCVR headsets, while WiVRn is for Android standalone headsets"),
-                            model.profile.borrow().xrservice_type.to_string().as_str(),
-                            XRServiceType::iter()
-                                .map(XRServiceType::to_string)
-                                .collect::<Vec<String>>(),
-                            clone!(#[strong] prof, move |row| {
-                                prof.borrow_mut().xrservice_type =
-                                    XRServiceType::from(row.selected());
-                            }),
-                        ),
+                        // add: &combo_row(
+                        //     "XR Service Type",
+                        //     None,
+                        //     model.profile.borrow().xrservice_type.to_string().as_str(),
+                        //     XRServiceType::iter()
+                        //         .map(XRServiceType::to_string)
+                        //         .collect::<Vec<String>>(),
+                        //     clone!(#[strong] prof, move |row| {
+                        //         prof.borrow_mut().xrservice_type =
+                        //             XRServiceType::from(row.selected());
+                        //     }),
+                        // ),
                         add: &entry_row(
                             "XR Service Launch Options",
                             model.profile.borrow().xrservice_launch_options.as_str(),

@@ -26,6 +26,8 @@ depends=(
     polkit
     base-devel
     jq
+    monado
+    xrizer
 )
 makedepends=(
     meson
@@ -33,9 +35,6 @@ makedepends=(
 )
 optdepends=(
     'libudev0-shim: steamvr_lh lighthouse driver support'
-    'monado: monado support'
-    'wivrn-server: wivrn support'
-    'xrizer: xrizer support'
     'opencomposite: opencomposite support'
 )
 provides=(envision)

@@ -3,5 +3,4 @@ pub mod openhmd;
 pub mod simulated;
 pub mod survive;
 pub mod system_profile;
-pub mod wivrn;
 pub mod wmr;

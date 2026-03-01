@@ -6,6 +6,10 @@ This is still highly experimental software, while it's unlikely that anything ba
 
 Also consider that due to the unstable nature of the app, it's possible to encounter unexpected behavior that while in VR might cause motion sickness or physical injury. **Be very careful while in VR using this app!**
 
+## Do you have a standalone/android based headset?
+
+Envision is built for PCVR headsets only at this moment, the recommended tool for standalone headsets is [WiVRn](https://github.com/WiVRn/WiVRn/).
+
 ---
 
 ![](./data/icons/org.gabmus.envision.svg)

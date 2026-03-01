@@ -20,10 +20,6 @@ pub fn data_monado_path() -> PathBuf {
     get_data_dir().join("monado")
 }
 
-pub fn data_wivrn_path() -> PathBuf {
-    get_data_dir().join("wivrn")
-}
-
 pub fn data_libsurvive_path() -> PathBuf {
     get_data_dir().join("libsurvive")
 }
@@ -34,10 +30,6 @@ pub fn data_openhmd_path() -> PathBuf {
 
 pub fn data_basalt_path() -> PathBuf {
     get_data_dir().join("basalt")
-}
-
-pub fn wivrn_apk_download_path() -> PathBuf {
-    get_cache_dir().join("wivrn.apk")
 }
 
 pub const SYSTEM_PREFIX: &str = "/usr";

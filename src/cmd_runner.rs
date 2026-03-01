@@ -104,7 +104,6 @@ impl CmdRunner {
             Some(env),
             match profile.xrservice_type {
                 XRServiceType::Monado => profile.prefix.join("bin/monado-service"),
-                XRServiceType::Wivrn => profile.prefix.join("bin/wivrn-server"),
             }
             .to_string_lossy()
             .to_string(),

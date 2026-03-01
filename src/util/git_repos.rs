@@ -16,8 +16,5 @@ pub const DEFAULT_OPENHMD_BRANCH: &str = "rift-room-config";
 pub const DEFAULT_VAPOR_REPO: &str = "https://github.com/micheal65536/VapoR.git";
 pub const DEFAULT_VAPOR_BRANCH: &str = "master";
 
-pub const DEFAULT_WIVRN_REPO: &str = "https://github.com/WiVRn/WiVRn";
-pub const DEFAULT_WIVRN_BRANCH: &str = "release";
-
 pub const DEFAULT_XRIZER_REPO: &str = "https://github.com/Supreeeme/xrizer";
 pub const DEFAULT_XRIZER_BRANCH: &str = "main";

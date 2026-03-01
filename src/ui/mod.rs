@@ -8,7 +8,6 @@ pub mod cmdline_opts;
 mod debug_view;
 mod devices_box;
 mod factories;
-mod install_wivrn_box;
 pub mod job_worker;
 mod libsurvive_setup_window;
 mod macros;
@@ -21,9 +20,6 @@ mod steam_launch_options_box;
 mod steamvr_calibration_box;
 mod term_widget;
 mod util;
-mod wivrn_conf_editor;
-mod wivrn_encoder_presets_win;
-mod wivrn_wired_start_box;
 
 pub const SENDER_IO_ERR_MSG: &str = "relm4 sender i/o failed";
 pub const ADW_DIALOG_WIDTH: i32 = 600;
