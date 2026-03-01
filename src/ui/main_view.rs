@@ -408,7 +408,7 @@ impl AsyncComponent for MainView {
                             "applications.\n\n",
                             "You can activate the VR Power Profile using ",
                             "GPU overclocking utilities such as ",
-                            "<a href=\"https://gitlab.com/corectrl/corectrl\">CoreCtrl</a>."
+                            "<a href=\"https://github.com/ilya-zlobintsev/LACT\">LACT</a>."
                         )) -> gtk::Box {
                             #[track = "model.changed(Self::show_amd_gpu_power_profile_warn())"]
                             set_visible: model.show_amd_gpu_power_profile_warn,
