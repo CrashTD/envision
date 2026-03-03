@@ -11,7 +11,6 @@ use super::{
 use crate::{
     config::Config,
     depcheck::common::{dep_pkexec, dep_xr_hardware},
-    gpu_profile::{GpuPowerProfile, get_amd_gpu_power_profile},
     paths::get_logs_dir,
     profile::{LighthouseDriver, Profile, XRServiceType},
     ui::{
@@ -51,7 +50,6 @@ pub struct MainView {
     #[tracker::do_not_track]
     openhmd_calibration_box: Controller<OpenHmdCalibrationBox>,
     xrservice_ready: bool,
-    show_amd_gpu_power_profile_warn: bool,
     show_setcap_warn: bool,
     root_win: gtk::Window,
 }
@@ -67,7 +65,6 @@ pub enum MainViewMsg {
     UpdateDevices(Vec<XRDevice>),
     UpdateClients(Vec<XRClient>),
     UpdateXrServiceReady(bool),
-    CheckAmdGpuPowerProfile,
     CheckSetcap,
     DoSetcap,
 }
@@ -283,24 +280,6 @@ impl AsyncComponent for MainView {
                             },
                         },
                         warn_card(None, concat!(
-                            "Your AMD GPU Power Profile is not set to VR. ",
-                            "This will cause noticeable stutter when running XR ",
-                            "applications.\n\n",
-                            "You can activate the VR Power Profile using ",
-                            "GPU overclocking utilities such as ",
-                            "<a href=\"https://github.com/ilya-zlobintsev/LACT\">LACT</a>."
-                        )) -> gtk::Box {
-                            #[track = "model.changed(Self::show_amd_gpu_power_profile_warn())"]
-                            set_visible: model.show_amd_gpu_power_profile_warn,
-                            gtk::Button {
-                                set_halign: gtk::Align::Start,
-                                set_label: "Refresh",
-                                connect_clicked[sender] => move |_| {
-                                    sender.input(Self::Input::CheckAmdGpuPowerProfile);
-                                },
-                            },
-                        },
-                        warn_card(None, concat!(
                             "The xr-hardware udev rules are missing. ",
                             "This might cause communication problems with your ",
                             "headset, please install it to ensure the best ",
@@ -431,12 +410,6 @@ impl AsyncComponent for MainView {
             Self::Input::UpdateXrServiceReady(ready) => {
                 self.set_xrservice_ready(ready);
             }
-            Self::Input::CheckAmdGpuPowerProfile => {
-                self.set_show_amd_gpu_power_profile_warn(match get_amd_gpu_power_profile() {
-                    None | Some(GpuPowerProfile::VR) => false,
-                    Some(_) => true,
-                })
-            }
             Self::Input::CheckSetcap => {
                 let config = Config::get_config();
                 self.set_show_setcap_warn(
@@ -501,7 +474,6 @@ impl AsyncComponent for MainView {
             steamvr_calibration_box,
             openhmd_calibration_box,
             xrservice_ready: false,
-            show_amd_gpu_power_profile_warn: false,
             show_setcap_warn: false,
             root_win: init.root_win.clone(),
             tracker: 0,
@@ -509,7 +481,6 @@ impl AsyncComponent for MainView {
         let widgets = view_output!();
 
         sender.input(Self::Input::CheckSetcap);
-        sender.input(Self::Input::CheckAmdGpuPowerProfile);
 
         AsyncComponentParts { model, widgets }
     }
