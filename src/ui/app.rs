@@ -13,7 +13,7 @@ use super::{
     },
     libsurvive_setup_window::{LibsurviveSetupMsg, LibsurviveSetupWindow},
     main_view::{MainView, MainViewInit, MainViewMsg, MainViewOutMsg},
-    util::{copiable_code_snippet, copy_text, open_with_default_handler},
+    util::{copiable_code_snippet, open_with_default_handler},
 };
 use crate::{
     builders::{
@@ -134,7 +134,6 @@ pub enum Msg {
     Quit,
     DebugOpenPrefix,
     DebugOpenData,
-    DebugCopyEnvVars,
     HandleCommandLine(CmdLineOpts),
     StartProber,
     OnProberExit(bool),
@@ -981,9 +980,6 @@ impl AsyncComponent for App {
                     self.get_selected_profile().prefix.to_string_lossy()
                 ));
             }
-            Msg::DebugCopyEnvVars => {
-                copy_text(&self.get_selected_profile().env_vars_full().join(" "));
-            }
             Msg::HandleCommandLine(opts) => {
                 if let Some(prof_uuid) = opts.profile_uuid
                     && let Some(index) = self.profiles.iter().position(|p| p.uuid == prof_uuid)
@@ -1171,17 +1167,6 @@ impl AsyncComponent for App {
                 sender,
                 move |_| {
                     sender.input(Msg::DebugOpenPrefix);
-                }
-            )
-        );
-        stateless_action!(
-            actions,
-            DebugCopyEnvVarsAction,
-            clone!(
-                #[strong]
-                sender,
-                move |_| {
-                    sender.input(Msg::DebugCopyEnvVars);
                 }
             )
         );
@@ -1401,4 +1386,3 @@ new_stateless_action!(pub ThemeManagerAction, AppActionGroup, "thememanager");
 
 new_stateless_action!(pub DebugOpenDataAction, AppActionGroup, "debugopendata");
 new_stateless_action!(pub DebugOpenPrefixAction, AppActionGroup, "debugopenprefix");
-new_stateless_action!(pub DebugCopyEnvVarsAction, AppActionGroup, "debugcopyenvvars");

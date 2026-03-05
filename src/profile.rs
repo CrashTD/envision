@@ -8,7 +8,7 @@ use crate::{
         xrizer_deps::get_missing_xrizer_deps,
     },
     file_builders::active_runtime_json::ActiveRuntime,
-    paths::{BWRAP_SYSTEM_PREFIX, SYSTEM_PREFIX, get_data_dir},
+    paths::get_data_dir,
     profiles::system_profile::monado_dep,
     util::{
         file_utils::{deserialize_file, get_writer},
@@ -494,40 +494,8 @@ impl Profile {
         .collect()
     }
 
-    pub fn xr_runtime_json_env_var(&self) -> String {
-        format!(
-            "XR_RUNTIME_JSON=\"{prefix}/share/openxr/1/openxr_{runtime}.json\"",
-            prefix = match self.prefix.to_string_lossy().to_string().as_str() {
-                SYSTEM_PREFIX => BWRAP_SYSTEM_PREFIX,
-                other => other,
-            },
-            runtime = match self.xrservice_type {
-                XRServiceType::Monado => "monado",
-            }
-        )
-    }
-
-    /// always adds the xr runtime json var
-    pub fn env_vars_full(&self) -> Vec<String> {
-        vec![
-            // format!(
-            //     "VR_OVERRIDE={}",
-            //     self.ovr_comp.runtime_dir(),
-            // ),
-            self.xr_runtime_json_env_var(),
-            format!(
-                "PRESSURE_VESSEL_FILESYSTEMS_RW=\"{path}\"",
-                path = self.xrservice_type.ipc_file_path().to_string_lossy(),
-            ),
-        ]
-    }
-
     pub fn get_env_vars(&self) -> Vec<String> {
-        if self.is_system_profile {
-            self.env_vars_full()
-        } else {
-            vec!["PRESSURE_VESSEL_FILESYSTEMS_RW=\"$XDG_RUNTIME_DIR/monado_comp_ipc\"".into()]
-        }
+        vec!["PRESSURE_VESSEL_IMPORT_OPENXR_1_RUNTIMES=1".into()]
     }
 
     pub fn get_steam_launch_options(&self) -> String {

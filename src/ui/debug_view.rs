@@ -1,7 +1,7 @@
 #![allow(unused_assignments)] // vars named in view! macro are not correctly recognized as used
 
 use super::{
-    app::{DebugCopyEnvVarsAction, DebugOpenDataAction, DebugOpenPrefixAction},
+    app::{DebugOpenDataAction, DebugOpenPrefixAction},
     term_widget::TermWidget,
     util::copy_text,
 };
@@ -141,7 +141,6 @@ impl AsyncComponent for DebugView {
             section! {
                 "Open _Data Folder" => DebugOpenDataAction,
                 "Open _Prefix Folder" => DebugOpenPrefixAction,
-                "Copy Profile _Environment Variables" => DebugCopyEnvVarsAction,
             },
         },
         profile_actions_menu: {
