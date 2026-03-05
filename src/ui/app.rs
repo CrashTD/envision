@@ -30,9 +30,7 @@ use crate::{
             remove_current_active_runtime, restore_active_runtime_backup,
             set_current_active_runtime_to_profile,
         },
-        openvrpaths_vrpath::{
-            set_current_openvrpaths_to_profile, set_current_openvrpaths_to_steam,
-        },
+        openvrpaths_vrpath::{restore_openvrpaths_backup, set_current_openvrpaths_to_profile},
     },
     linux_distro::LinuxDistro,
     openxr_prober::is_openxr_ready,
@@ -327,9 +325,9 @@ impl App {
                 Some(&self.app_win.clone().upcast::<gtk::Window>()),
             );
         }
-        if let Err(e) = set_current_openvrpaths_to_steam() {
+        if let Err(e) = restore_openvrpaths_backup() {
             alert(
-                "Could not restore Steam openvrpaths",
+                "Could not restore openvrpaths",
                 Some(&format!("{e}")),
                 Some(&self.app_win.clone().upcast::<gtk::Window>()),
             );

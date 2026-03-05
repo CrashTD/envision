@@ -2,7 +2,7 @@ use anyhow::Result;
 use constants::{APP_ID, APP_NAME, GETTEXT_PACKAGE, LOCALE_DIR, RESOURCES_BASE_PATH, resources};
 use file_builders::{
     active_runtime_json::restore_active_runtime_backup,
-    openvrpaths_vrpath::{get_current_openvrpaths, set_current_openvrpaths_to_steam},
+    openvrpaths_vrpath::restore_openvrpaths_backup,
 };
 use gettextrs::LocaleCategory;
 use gtk::glib::ExitCode;
@@ -60,15 +60,11 @@ pub mod xr_clients;
 pub mod xr_devices;
 
 fn restore_steam_xr_files() {
-    let openvrpaths = get_current_openvrpaths();
     if let Err(e) = restore_active_runtime_backup() {
-        warn!("failed to restore active runtime to steam: {e}");
+        warn!("failed to restore active runtime: {e}");
     }
-    if let Some(ovrp) = openvrpaths
-        && !file_builders::openvrpaths_vrpath::is_steam(&ovrp)
-        && let Err(e) = set_current_openvrpaths_to_steam()
-    {
-        warn!("failed to restore openvrpaths to steam: {e}");
+    if let Err(e) = restore_openvrpaths_backup() {
+        warn!("failed to restore openvrpaths: {e}");
     }
     restore_sniper_runtime_entrypoint();
     restore_soldier_runtime_entrypoint();

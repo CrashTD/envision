@@ -1,10 +1,15 @@
 use crate::{
     paths::get_backup_dir,
     profile::Profile,
-    util::file_utils::{copy_file, deserialize_file, get_writer, set_file_readonly},
-    xdg::{XDG_CONFIG_HOME, XDG_DATA_HOME},
+    util::{
+        file_utils::{copy_file, deserialize_file, get_writer, set_file_readonly},
+        steam_library_folder::get_all_potential_steam_main_dir_paths,
+    },
+    xdg::XDG_CONFIG_HOME,
 };
+use anyhow::bail;
 use serde::{Deserialize, Serialize, ser::Error};
+use std::fs::{self, rename};
 use std::path::{Path, PathBuf};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -29,26 +34,18 @@ pub fn is_steam(ovr_paths: &OpenVrPaths) -> bool {
     ovr_paths.runtime.iter().any(|rt| {
         rt.to_string_lossy()
             .to_lowercase()
-            .ends_with("/steam/steamapps/common/steamvr")
+            .ends_with("/steamapps/common/steamvr")
     })
 }
 
 fn get_backup_steam_openvrpaths_path() -> PathBuf {
-    get_backup_dir().join("openvrpaths.vrpath.steam.bak")
+    get_backup_dir().join("openvrpaths.vrpath.bak")
 }
 
-fn get_backed_up_steam_openvrpaths() -> Option<OpenVrPaths> {
-    get_openvrpaths_from_path(&get_backup_steam_openvrpaths_path())
-}
-
-fn backup_steam_openvrpaths() {
-    if let Some(openvrpaths) = get_current_openvrpaths()
-        && is_steam(&openvrpaths)
-    {
-        copy_file(
-            &get_openvrpaths_vrpath_path(),
-            &get_backup_steam_openvrpaths_path(),
-        );
+fn backup_openvrpaths() {
+    let p = get_openvrpaths_vrpath_path();
+    if p.is_file() {
+        copy_file(&p, &get_backup_steam_openvrpaths_path());
     }
 }
 
@@ -69,44 +66,43 @@ pub fn dump_current_openvrpaths(ovr_paths: &OpenVrPaths) -> Result<(), serde_jso
     dump_openvrpaths_to_path(ovr_paths, &get_openvrpaths_vrpath_path())
 }
 
-fn build_steam_openvrpaths() -> OpenVrPaths {
-    if let Some(backup) = get_backed_up_steam_openvrpaths() {
-        return backup;
+pub fn restore_openvrpaths_backup() -> anyhow::Result<()> {
+    let dest = get_openvrpaths_vrpath_path();
+    let bak = get_backup_steam_openvrpaths_path();
+    if bak.is_file() || bak.is_symlink() {
+        if !dest.is_symlink() {
+            set_file_readonly(&dest, false)?;
+        }
+        rename(&bak, &dest)?;
     }
-    OpenVrPaths {
-        config: vec![XDG_DATA_HOME.join("Steam/config")],
-        external_drivers: None,
-        jsonid: "vrpathreg".into(),
-        log: vec![XDG_DATA_HOME.join("Steam/logs")],
-        runtime: vec![XDG_DATA_HOME.join("Steam/steamapps/common/SteamVR")],
-        version: 1,
-    }
-}
 
-pub fn set_current_openvrpaths_to_steam() -> anyhow::Result<()> {
-    // removing readonly flag just in case, remove this line in the future
-    set_file_readonly(&get_openvrpaths_vrpath_path(), false)?;
-    dump_current_openvrpaths(&build_steam_openvrpaths())?;
     Ok(())
 }
 
-pub fn build_profile_openvrpaths(profile: &Profile) -> OpenVrPaths {
-    OpenVrPaths {
-        config: vec![XDG_DATA_HOME.join("Steam/config")],
+pub fn build_profile_openvrpaths(profile: &Profile) -> anyhow::Result<OpenVrPaths> {
+    let Some(steam) = get_all_potential_steam_main_dir_paths()
+        .into_iter()
+        .filter_map(|p| fs::canonicalize(p).ok())
+        .next()
+    else {
+        bail!("Unable to find Steam")
+    };
+    Ok(OpenVrPaths {
+        config: vec![steam.join("config")],
         external_drivers: None,
         jsonid: "vrpathreg".into(),
-        log: vec![XDG_DATA_HOME.join("Steam/logs")],
+        log: vec![steam.join("logs")],
         runtime: vec![profile.ovr_comp_runtime_dir()],
         version: 1,
-    }
+    })
 }
 
 pub fn set_current_openvrpaths_to_profile(profile: &Profile) -> anyhow::Result<()> {
     let dest = get_openvrpaths_vrpath_path();
     // removing readonly flag just in case, remove this line in the future
     set_file_readonly(&dest, false)?;
-    backup_steam_openvrpaths();
-    dump_current_openvrpaths(&build_profile_openvrpaths(profile))?;
+    backup_openvrpaths();
+    dump_current_openvrpaths(&build_profile_openvrpaths(profile)?)?;
     Ok(())
 }
 
