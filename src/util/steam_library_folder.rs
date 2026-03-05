@@ -3,7 +3,7 @@ use anyhow::bail;
 use serde::Deserialize;
 use std::{
     collections::HashMap,
-    fs::read_to_string,
+    fs::{self, read_to_string},
     path::{Path, PathBuf},
 };
 
@@ -30,13 +30,16 @@ pub fn chaperone_info_exists() -> bool {
 }
 
 impl SteamLibraryFolder {
-    pub fn get_folders() -> anyhow::Result<HashMap<u32, Self>> {
+    pub fn get_folders() -> anyhow::Result<Vec<Self>> {
         if let Some(libraryfolders_path) = get_all_potential_steam_main_dir_paths()
             .into_iter()
             .filter_map(|p| p.join("steamapps/libraryfolders.vdf").canonicalize().ok())
             .find(|p| p.is_file())
         {
-            Self::get_folders_from_path(&libraryfolders_path)
+            Ok(Self::get_folders_from_path(&libraryfolders_path)?
+                .into_iter()
+                .filter(|f| matches!(fs::exists(f.path.clone()), Ok(true)))
+                .collect())
         } else {
             bail!("Steam libraryfolders.vdf does not exist in any of its canonical locations");
         }
@@ -45,8 +48,12 @@ impl SteamLibraryFolder {
     /// Do not use this: use get_folders() instead as it always uses Steam's
     /// canonical root path. This is intended to be directly used only for
     /// unit tests
-    pub fn get_folders_from_path(p: &Path) -> anyhow::Result<HashMap<u32, Self>> {
-        Ok(keyvalues_serde::from_str(read_to_string(p)?.as_str())?)
+    pub fn get_folders_from_path(p: &Path) -> anyhow::Result<Vec<Self>> {
+        Ok(
+            keyvalues_serde::from_str::<HashMap<u32, Self>>(read_to_string(p)?.as_str())?
+                .into_values()
+                .collect(),
+        )
     }
 }
 
@@ -62,7 +69,7 @@ mod tests {
         ))
         .unwrap();
         assert_eq!(lf.len(), 1);
-        let first = lf.get(&0).unwrap();
+        let first = lf.first().unwrap();
         assert_eq!(first.path, "/home/gabmus/.local/share/Steam");
         assert_eq!(first.apps.len(), 10);
         assert_eq!(first.apps.get(&228980).unwrap(), &29212173);

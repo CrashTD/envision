@@ -22,8 +22,8 @@ fn get_sniper_runtime_entrypoint_path() -> Option<PathBuf> {
     match SteamLibraryFolder::get_folders() {
         Ok(libraryfolders) => libraryfolders
             .iter()
-            .find(|(_, folder)| folder.apps.contains_key(&SNIPER_RUNTIME_STEAM_APPID))
-            .map(|(_, folder)| {
+            .find(|folder| folder.apps.contains_key(&SNIPER_RUNTIME_STEAM_APPID))
+            .map(|folder| {
                 PathBuf::from(&folder.path)
                     .join("steamapps/common/SteamLinuxRuntime_sniper/_v2-entry-point")
             }),
@@ -38,8 +38,8 @@ fn get_soldier_runtime_entrypoint_path() -> Option<PathBuf> {
     match SteamLibraryFolder::get_folders() {
         Ok(libraryfolders) => libraryfolders
             .iter()
-            .find(|(_, folder)| folder.apps.contains_key(&SOLDIER_RUNTIME_STEAM_APPID))
-            .map(|(_, folder)| {
+            .find(|folder| folder.apps.contains_key(&SOLDIER_RUNTIME_STEAM_APPID))
+            .map(|folder| {
                 PathBuf::from(&folder.path)
                     .join("steamapps/common/SteamLinuxRuntime_soldier/_v2-entry-point")
             }),
