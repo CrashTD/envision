@@ -35,7 +35,6 @@ pub fn boost_deps() -> Vec<Dependency> {
         ("libboost_regex.so", "libboost_regex-devel"),
         ("libboost_serialization.so", "libboost_serialization-devel"),
         // ("", "libboost_stacktrace-devel"),
-        ("libboost_system.so", "libboost_system-devel"),
         // ("", "libboost_test-devel"),
         // ("", "libboost_thread-devel"),
         // ("", "libboost_timer-devel"),
