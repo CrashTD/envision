@@ -52,6 +52,11 @@ pub struct MainView {
     xrservice_ready: bool,
     show_setcap_warn: bool,
     root_win: gtk::Window,
+
+    #[tracker::do_not_track]
+    has_nvidia: bool,
+
+    show_nvidia_warning: bool,
 }
 
 #[derive(Debug)]
@@ -67,6 +72,7 @@ pub enum MainViewMsg {
     UpdateXrServiceReady(bool),
     CheckSetcap,
     DoSetcap,
+    CheckNvidiaMitigation,
 }
 
 #[derive(Debug)]
@@ -81,6 +87,7 @@ pub struct MainViewInit {
     pub config: Config,
     pub selected_profile: Profile,
     pub root_win: gtk::Window,
+    pub has_nvidia: bool,
 }
 
 #[relm4::component(pub async)]
@@ -280,6 +287,25 @@ impl AsyncComponent for MainView {
                             },
                         },
                         warn_card(None, concat!(
+                            "Nvidia GPU detected.\n\n",
+                            "Please turn on \"Nvidia mitigation\" in the preferences.\n",
+                            "Without it you might experience degraded performance."
+                        )) -> gtk::Box {
+                            #[track = "model.changed(Self::show_nvidia_warning())"]
+                            set_visible: model.show_nvidia_warning,
+                            gtk::Box {
+                                set_orientation: gtk::Orientation::Horizontal,
+                                set_spacing: 6,
+                                gtk::Button {
+                                    set_halign: gtk::Align::Start,
+                                    set_label: "Refresh",
+                                    connect_clicked[sender] => move |_| {
+                                        sender.input(Self::Input::CheckNvidiaMitigation);
+                                    },
+                                },
+                            },
+                        },
+                        warn_card(None, concat!(
                             "The xr-hardware udev rules are missing. ",
                             "This might cause communication problems with your ",
                             "headset, please install it to ensure the best ",
@@ -421,6 +447,12 @@ impl AsyncComponent for MainView {
                     },
                 );
             }
+            Self::Input::CheckNvidiaMitigation => {
+                let config = Config::get_config();
+                self.set_show_nvidia_warning(
+                    self.has_nvidia && !config.global_preferences.nvidia_mitigation,
+                )
+            }
             Self::Input::DoSetcap => {
                 let config = Config::get_config();
                 if let Some(executable) = self.selected_profile.xrservice_binary(Some(&config)) {
@@ -476,6 +508,9 @@ impl AsyncComponent for MainView {
             xrservice_ready: false,
             show_setcap_warn: false,
             root_win: init.root_win.clone(),
+            has_nvidia: init.has_nvidia,
+            show_nvidia_warning: init.has_nvidia
+                && !init.config.global_preferences.nvidia_mitigation,
             tracker: 0,
         };
         let widgets = view_output!();

@@ -125,6 +125,14 @@ impl AsyncComponent for PreferencesWindow {
                             config.borrow_mut().global_preferences.monado_ui = v;
                         })
                     ),
+                    add: &switch_row(
+                        "Nvidia mitigation",
+                        Some("Performance mitigations for Nvidia GPUs"),
+                        model.config.borrow().global_preferences.nvidia_mitigation,
+                        clone!(#[strong(rename_to=config)] model.config, move |_, v| {
+                            config.borrow_mut().global_preferences.nvidia_mitigation = v;
+                        })
+                    ),
                 },
             },
             add: advanced_page = &adw::PreferencesPage {

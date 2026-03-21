@@ -41,6 +41,8 @@ pub struct GlobalPreferences {
     pub use_min_frame_period: bool,
     /// XRT_DEBUG_GUI (1, 0) + XRT_CURATED_GUI (1, 0)
     pub monado_ui: bool,
+    /// U_PACING_COMP_TIME_FRACTIONPERCENT=95 + XRT_COMPOSITOR_USE_PRESENT_WAIT=1
+    pub nvidia_mitigation: bool,
     #[serde(default)]
     pub env_vars: HashMap<String, String>,
 }
@@ -56,6 +58,7 @@ impl Default for GlobalPreferences {
             use_min_frame_period: false,
             monado_ui: false,
             env_vars: HashMap::default(),
+            nvidia_mitigation: false,
         }
     }
 }
@@ -89,6 +92,10 @@ impl GlobalPreferences {
                 (if self.monado_ui { 1 } else { 0 }).to_string(),
             ),
         ]);
+        if self.nvidia_mitigation {
+            res.insert("U_PACING_COMP_TIME_FRACTIONPERCENT".into(), "95".into());
+            res.insert("XRT_COMPOSITOR_USE_PRESENT_WAIT".into(), "1".into());
+        }
         res.extend(self.env_vars.clone());
         res
     }

@@ -1240,6 +1240,7 @@ impl AsyncComponent for App {
                     config: config.clone(),
                     selected_profile: selected_profile.clone(),
                     root_win: root.clone().into(),
+                    has_nvidia: vkinfo.as_ref().is_some_and(|i| i.has_nvidia),
                 })
                 .forward(sender.input_sender(), |message| match message {
                     MainViewOutMsg::DoStartStopXRService => Msg::DoStartStopXRService,
