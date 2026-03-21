@@ -1,3 +1,4 @@
+pub mod env_var;
 pub mod file_utils;
 pub mod git_repos;
 pub mod hash;

@@ -41,6 +41,8 @@ pub struct GlobalPreferences {
     pub use_min_frame_period: bool,
     /// XRT_DEBUG_GUI (1, 0) + XRT_CURATED_GUI (1, 0)
     pub monado_ui: bool,
+    #[serde(default)]
+    pub env_vars: HashMap<String, String>,
 }
 
 impl Default for GlobalPreferences {
@@ -53,13 +55,14 @@ impl Default for GlobalPreferences {
             use_compositor_gpu_compute: true,
             use_min_frame_period: false,
             monado_ui: false,
+            env_vars: HashMap::default(),
         }
     }
 }
 
 impl GlobalPreferences {
     pub fn get_env_vars(&self) -> HashMap<String, String> {
-        HashMap::from([
+        let mut res = HashMap::from([
             (
                 "XRT_COMPOSITOR_SCALE_PERCENTAGE".into(),
                 self.scale_percentage.to_string(),
@@ -85,7 +88,9 @@ impl GlobalPreferences {
                 "XRT_CURATED_GUI".into(),
                 (if self.monado_ui { 1 } else { 0 }).to_string(),
             ),
-        ])
+        ]);
+        res.extend(self.env_vars.clone());
+        res
     }
 }
 
