@@ -1,7 +1,7 @@
 # Maintainer: Gabriele Musco <gabmus@disroot.org>
 
 pkgname=envision-xr-git
-pkgver=r633.4fad4f3
+pkgver=3.2.0.r52.g9800488
 pkgrel=1
 pkgdesc='GUI for Monado'
 arch=(x86_64 aarch64)
@@ -15,6 +15,7 @@ depends=(
     libdrm
     vulkan-icd-loader
     wayland
+    wayland-protocols
     xr-hardware
     cmake
     eigen
@@ -26,16 +27,17 @@ depends=(
     polkit
     base-devel
     jq
-    monado
-    xrizer
+    libx11
+    libxcb
+    monado-git
+    xrizer-git
 )
 makedepends=(
     meson
     rust
 )
 optdepends=(
-    'libudev0-shim: steamvr_lh lighthouse driver support'
-    'opencomposite: opencomposite support'
+    'opencomposite: legacy alternative to xrizer for openvr compatibility'
 )
 provides=(envision)
 conflicts=(envision)
