@@ -42,6 +42,7 @@ pub struct GlobalPreferences {
     /// XRT_DEBUG_GUI (1, 0) + XRT_CURATED_GUI (1, 0)
     pub monado_ui: bool,
     /// U_PACING_COMP_TIME_FRACTIONPERCENT=95 + XRT_COMPOSITOR_USE_PRESENT_WAIT=1
+    #[serde(default)]
     pub nvidia_mitigation: bool,
     #[serde(default)]
     pub env_vars: HashMap<String, String>,
@@ -255,5 +256,16 @@ mod tests {
     #[test]
     fn will_load_default_if_config_does_not_exist() {
         assert!(!Config::from_path(Path::new("/non/existing/file.json")).debug_view_enabled,)
+    }
+
+    #[test]
+    fn will_not_wipe_config_if_nvidia_mitigation_is_missing() {
+        assert!(
+            Config::from_path(Path::new(
+                "test/files/config_without_nvidia_mitigation.json"
+            ))
+            .global_preferences
+            .monado_ui,
+        )
     }
 }
