@@ -454,6 +454,10 @@ impl AsyncComponent for App {
                     )]));
                 }
                 self.xrservice_worker = None;
+
+                // cleanup any part of the session that's still running
+                self.shutdown_xrservice();
+
                 if self.restart_xrservice {
                     self.restart_xrservice = false;
                     self.start_xrservice(sender, false);
