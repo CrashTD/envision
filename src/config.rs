@@ -10,7 +10,7 @@ use crate::{
     },
     util::file_utils::get_writer,
 };
-use serde::{Deserialize, Serialize, de::Error};
+use serde::{Deserialize, Deserializer, Serialize, de::Error};
 use std::{
     collections::{HashMap, HashSet},
     fs::File,
@@ -28,8 +28,20 @@ fn default_theme_name() -> String {
     "Follow system".into()
 }
 
+fn xrservicetype_deserializer_with_fallback<'de, D>(
+    deserializer: D,
+) -> Result<XRServiceType, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let s: &str = Deserialize::deserialize(deserializer).unwrap_or_default();
+    Ok(serde_json::from_str(s).unwrap_or_default())
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct GlobalPreferences {
+    #[serde(default)]
+    #[serde(deserialize_with = "xrservicetype_deserializer_with_fallback")]
     pub xrservice_type: XRServiceType,
     pub ovr_comp: OvrCompatibilityModuleType,
 
@@ -249,9 +261,8 @@ impl Config {
 
 #[cfg(test)]
 mod tests {
+    use crate::{config::Config, profile::XRServiceType};
     use std::path::Path;
-
-    use crate::config::Config;
 
     #[test]
     fn will_load_default_if_config_does_not_exist() {
@@ -267,5 +278,16 @@ mod tests {
             .global_preferences
             .monado_ui,
         )
+    }
+
+    #[test]
+    fn will_not_wipe_config_if_xr_service_type_is_set_to_wivrn() {
+        // config should fall back to monado
+        let config = Config::from_path(Path::new("test/files/config_with_wivrn.json"));
+        assert!(config.global_preferences.monado_ui,);
+        assert_eq!(
+            config.global_preferences.xrservice_type,
+            XRServiceType::Monado
+        );
     }
 }

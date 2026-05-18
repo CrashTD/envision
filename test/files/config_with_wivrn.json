@@ -1,0 +1,22 @@
+{
+  "selected_profile_uuid": "",
+  "debug_view_enabled": false,
+  "user_profiles": [],
+  "win_size": [
+    544,
+    902
+  ],
+  "theme_name": "Follow system",
+  "global_preferences": {
+    "xrservice_type": "Wivrn",
+    "ovr_comp": "Xrizer",
+    "scale_percentage": 140,
+    "use_compositor_gpu_compute": true,
+    "use_min_frame_period": false,
+    "monado_ui": true,
+    "env_vars": {}
+  },
+  "profiles_enabled": false,
+  "nvidia_mitigation": false,
+  "xr_plugins": []
+}
