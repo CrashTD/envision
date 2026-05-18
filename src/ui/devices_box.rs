@@ -118,7 +118,7 @@ impl SimpleComponent for DevicesBox {
                     models.push(DeviceRowModelInit::new_missing(XRDeviceRole::Left));
                 }
 
-                models.sort_by(|m1, m2| m1.sort_index.cmp(&m2.sort_index));
+                models.sort_by_key(|m1| m1.sort_index);
 
                 for model in models {
                     guard.push_back(model);
