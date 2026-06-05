@@ -2,7 +2,7 @@
 
 use crate::{
     config::Config,
-    plugins::XRPlugin,
+    plugins::{XRPlugin, XRPluginExecutionTime},
     profile::OvrCompatibilityModuleType,
     ui::{
         SENDER_IO_ERR_MSG,
@@ -165,9 +165,16 @@ impl AsyncComponent for PreferencesWindow {
             Self::Input::PopulatePlugins => {
                 if let Some(grp) = self.plugins_grp.as_ref() {
                     for plugin in XRPlugin::find_plugins() {
+                        let mut desc = plugin.description.clone().unwrap_or_default();
+                        if plugin.execution_time == XRPluginExecutionTime::AfterStop {
+                            if !desc.is_empty() {
+                                desc.push('\n');
+                            }
+                            desc.push_str("Runs on service stop");
+                        }
                         let row = switch_row(
                             &plugin.name,
-                            plugin.description.as_deref(),
+                            if desc.is_empty() { None } else { Some(&desc) },
                             self.config.borrow().xr_plugins.contains(&plugin.path),
                             clone!(
                                 #[strong(rename_to=config)]

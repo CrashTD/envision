@@ -35,6 +35,7 @@ use crate::{
     linux_distro::LinuxDistro,
     openxr_prober::is_openxr_ready,
     paths::get_data_dir,
+    plugins::XRPluginExecutionTime,
     profile::{OvrCompatibilityModuleType, Profile, XRServiceType},
     profiles::system_profile::system_profile,
     stateless_action,
@@ -142,6 +143,7 @@ pub enum Msg {
     LaunchMonadoGui,
     OnMonadoGuiExit,
     ProfilesEnabledChanged(bool),
+    RunAfterStopPlugins,
     NoOp,
 }
 
@@ -289,7 +291,13 @@ impl App {
             .config
             .get_xr_plugins()
             .into_iter()
-            .map(|plugin| plugin.exec)
+            .filter_map(|plugin| {
+                if plugin.execution_time == XRPluginExecutionTime::AfterStart {
+                    Some(plugin.exec)
+                } else {
+                    None
+                }
+            })
             .collect::<Vec<String>>()
             .join(" & ");
         if !plugins_cmd.is_empty() {
@@ -461,6 +469,40 @@ impl AsyncComponent for App {
                 if self.restart_xrservice {
                     self.restart_xrservice = false;
                     self.start_xrservice(sender, false);
+                } else {
+                    // run AfterStop plugins
+                    sender.input(Msg::RunAfterStopPlugins);
+                }
+            }
+            Msg::RunAfterStopPlugins => {
+                let prof = self.get_selected_profile();
+                let plugins_cmd = self
+                    .config
+                    .get_xr_plugins()
+                    .into_iter()
+                    .filter_map(|plugin| {
+                        if plugin.execution_time == XRPluginExecutionTime::AfterStop {
+                            Some(plugin.exec)
+                        } else {
+                            None
+                        }
+                    })
+                    .collect::<Vec<String>>()
+                    .join(" & ");
+                if !plugins_cmd.is_empty() {
+                    let mut jobs = VecDeque::new();
+                    jobs.push_back(WorkerJob::new_cmd(
+                        Some(prof.environment.clone()),
+                        "sh".into(),
+                        Some(vec!["-c".into(), plugins_cmd]),
+                    ));
+                    let plugins_worker =
+                        JobWorker::new(jobs, sender.input_sender(), |msg| match msg {
+                            JobWorkerOut::Log(rows) => Msg::OnServiceLog(rows),
+                            JobWorkerOut::Exit(code) => Msg::OnPluginsExit(code),
+                        });
+                    plugins_worker.start();
+                    plugins_worker.detach();
                 }
             }
             Msg::OnPluginsExit(_) => self.plugins_worker = None,

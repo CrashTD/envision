@@ -2,6 +2,13 @@ use freedesktop_desktop_entry::DesktopEntry;
 use std::path::Path;
 use tracing::warn;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum XRPluginExecutionTime {
+    #[default]
+    AfterStart,
+    AfterStop,
+}
+
 #[derive(Debug, Clone)]
 pub struct XRPlugin {
     pub name: String,
@@ -11,6 +18,7 @@ pub struct XRPlugin {
     pub exec: String,
     /// the path to the .desktop file
     pub path: String,
+    pub execution_time: XRPluginExecutionTime,
 }
 
 impl XRPlugin {
@@ -44,6 +52,14 @@ impl XRPlugin {
                     icon: entry.icon().map(String::from),
                     description: entry.comment(&[] as &[&str]).map(String::from),
                     path: p.to_string_lossy().to_string(),
+                    execution_time: dg
+                        .entry("X-XR-Plugin-Execution-Time")
+                        .map(|s| match s {
+                            "after-start" => XRPluginExecutionTime::AfterStart,
+                            "after-stop" => XRPluginExecutionTime::AfterStop,
+                            _ => XRPluginExecutionTime::default(),
+                        })
+                        .unwrap_or_default(),
                 })
             }
         }
