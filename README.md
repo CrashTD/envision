@@ -64,6 +64,18 @@ cd envision
 
 </details>
 
+# XR Plugin Spec
+
+Envision supports running other applications as so called plugins. These plugins will be auto discovered via desktop files with specific properties.
+
+This section describes these properties.
+
+| Property | Description | Type | Possible values | Default |
+|----------|-------------|------|-----------------|---------|
+| `X-XR-Plugin` | Marks the desktop file as an XR plugin, making it discoverable by Envision | boolean | `true`, `false` | `false` |
+| `X-XR-Plugin-Exec` | Will be used instead of `Exec` if present when launched by Envision. If neither `Exec` or `X-XR-Plugin-Exec` are set, the plugin will be skipped | string | A valid command | The value of `Exec` if present |
+| `X-XR-Plugin-Execution-Time` | Defines when the plugin will be executed | string | `after-start` will start the plugin after the XR service starts; `after-stop` will start and detach the plugin after the XR service stops (useful for cleanup operations like turning off lighthouses) | `after-start` |
+
 # Debugging
 
 To view all the logs you need to run envision with the env var `RUST_LOG=trace`.
