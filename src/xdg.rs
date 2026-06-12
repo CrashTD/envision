@@ -1,6 +1,5 @@
-use std::path::PathBuf;
-
 use lazy_static::lazy_static;
+use std::path::PathBuf;
 use xdg::BaseDirectories;
 
 lazy_static! {

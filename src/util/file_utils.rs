@@ -1,12 +1,16 @@
-use crate::{async_process::async_process, depcheck::common::dep_getcap_setcap};
+use crate::{
+    async_process::async_process, constants::APP_ID, depcheck::common::dep_getcap_setcap,
+    xdg::XDG_CONFIG_HOME,
+};
 use anyhow::bail;
 use nix::{
     errno::Errno,
     sys::statvfs::{FsFlags, statvfs},
 };
 use std::{
+    env,
     fs::{self, File, OpenOptions, copy, create_dir_all, remove_dir_all},
-    io::{BufReader, BufWriter},
+    io::{BufReader, BufWriter, Write},
     os::unix::fs::PermissionsExt,
     path::Path,
 };
@@ -203,6 +207,23 @@ pub fn mark_as_executable(path: &Path) -> anyhow::Result<()> {
         fs::set_permissions(path, perms)?;
         Ok(())
     }
+}
+
+pub fn has_pressure_vessel_import_openxr_runtimes_env_var() -> bool {
+    env::var("PRESSURE_VESSEL_IMPORT_OPENXR_1_RUNTIMES").is_ok_and(|v| v == "1")
+}
+
+pub const IMPORT_OPENXR_RUNTIMES_ENV_VAR: &str = "PRESSURE_VESSEL_IMPORT_OPENXR_1_RUNTIMES";
+pub const IMPORT_OPENXR_RUNTIMES_ENV_VAR_W_VALUE: &str =
+    "PRESSURE_VESSEL_IMPORT_OPENXR_1_RUNTIMES=1";
+
+pub fn create_pressure_vessel_import_openxr_runtimes_env_file() -> anyhow::Result<()> {
+    let dest = XDG_CONFIG_HOME.join(format!(
+        "environment.d/{APP_ID}.pressure_vessel_import_openxr_runtimes.conf"
+    ));
+    let mut writer = get_writer(&dest)?;
+    writer.write_all(IMPORT_OPENXR_RUNTIMES_ENV_VAR_W_VALUE.as_bytes())?;
+    Ok(())
 }
 
 #[cfg(test)]

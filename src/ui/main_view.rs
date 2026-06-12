@@ -10,22 +10,26 @@ use super::{
 };
 use crate::{
     config::Config,
+    constants::APP_NAME,
     depcheck::common::{dep_pkexec, dep_xr_hardware},
     paths::get_logs_dir,
     profile::{LighthouseDriver, Profile, XRServiceType},
     ui::{
-        alert::alert_w_widget,
+        alert::{alert, alert_w_widget},
         app::{PreferencesAction, ThemeManagerAction},
         clients_box::{ClientsBox, ClientsBoxMsg},
         util::{copiable_code_snippet, warn_card},
     },
     util::{
         file_utils::{
-            mount_has_nosuid, setcap_cap_sys_nice_eip, setcap_cap_sys_nice_eip_cmd,
-            verify_cap_sys_nice_eip,
+            IMPORT_OPENXR_RUNTIMES_ENV_VAR, IMPORT_OPENXR_RUNTIMES_ENV_VAR_W_VALUE,
+            create_pressure_vessel_import_openxr_runtimes_env_file,
+            has_pressure_vessel_import_openxr_runtimes_env_var, mount_has_nosuid,
+            setcap_cap_sys_nice_eip, setcap_cap_sys_nice_eip_cmd, verify_cap_sys_nice_eip,
         },
         steam_library_folder::chaperone_info_exists,
     },
+    xdg::XDG_CONFIG_HOME,
     xr_clients::XRClient,
     xr_devices::XRDevice,
 };
@@ -73,6 +77,7 @@ pub enum MainViewMsg {
     CheckSetcap,
     DoSetcap,
     CheckNvidiaMitigation,
+    CreatePressureVesselImportOpenXrRuntimesEnvFile,
 }
 
 #[derive(Debug)]
@@ -242,6 +247,24 @@ impl AsyncComponent for MainView {
                                         "nosuid detection: could not get stat on path {}",
                                         model.selected_profile.prefix.to_string_lossy());
                                     false
+                                },
+                            },
+                        },
+                        warn_card(None, &format!(
+                            "Environment variable {IMPORT_OPENXR_RUNTIMES_ENV_VAR} not set. Applications running through Proton 11 or Steam Linux Runtime 4.0 will fail to launch in VR.\n\nYou can fix this by having {APP_NAME} create a configuration file in <tt>{config_dir}</tt> setting this variable, then rebooting your system.\n\nAlternatively you can add the following in your Steam game launch options:",
+                            config_dir = XDG_CONFIG_HOME.join("environment.d").to_string_lossy()
+                        )) -> gtk::Box {
+                            #[track = "model.changed(Self::selected_profile())"]
+                            set_visible: !has_pressure_vessel_import_openxr_runtimes_env_var(),
+                            append: &copiable_code_snippet(
+                                &format!("{IMPORT_OPENXR_RUNTIMES_ENV_VAR_W_VALUE} %command%")
+                            ),
+                            gtk::Button {
+                                set_halign: gtk::Align::Start,
+                                set_label: "Add configuration file",
+                                add_css_class: "suggested-action",
+                                connect_clicked[sender] => move |_| {
+                                    sender.input(Self::Input::CreatePressureVesselImportOpenXrRuntimesEnvFile);
                                 },
                             },
                         },
@@ -452,6 +475,25 @@ impl AsyncComponent for MainView {
                 self.set_show_nvidia_warning(
                     self.has_nvidia && !config.global_preferences.nvidia_mitigation,
                 )
+            }
+            Self::Input::CreatePressureVesselImportOpenXrRuntimesEnvFile => {
+                match create_pressure_vessel_import_openxr_runtimes_env_file() {
+                    Ok(()) => {
+                        alert(
+                            "File created successfully",
+                            Some("Please reboot your system to have this change take effect"),
+                            Some(&self.root_win),
+                        );
+                    }
+                    Err(e) => {
+                        error!("Failed to create env config file: {e:?}");
+                        alert(
+                            "Failed to create configuration file",
+                            Some("{e:?}"),
+                            Some(&self.root_win),
+                        );
+                    }
+                }
             }
             Self::Input::DoSetcap => {
                 let config = Config::get_config();
