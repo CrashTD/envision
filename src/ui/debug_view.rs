@@ -16,7 +16,7 @@ use crate::{
         alert::alert,
         app::{BuildProfileAction, BuildProfileCleanAction},
         profile_editor::{ProfileEditor, ProfileEditorInit, ProfileEditorMsg, ProfileEditorOutMsg},
-        util::limit_dropdown_width,
+        util::ELLIPSIZED_LABEL_LIST_ITEM,
     },
     util::file_utils::get_writer,
 };
@@ -263,13 +263,14 @@ impl AsyncComponent for DebugView {
                             let names: Vec<_> = model.profiles.iter().map(|p| p.name.as_str()).collect();
                             gtk::StringList::new(&names)
                         }),
+                        set_factory: Some(
+                            &gtk::BuilderListItemFactory::from_bytes(
+                                Option::<&gtk::BuilderScope>::None,
+                                &gtk::glib::Bytes::from_static(ELLIPSIZED_LABEL_LIST_ITEM.as_bytes())
+                            )
+                        ),
                         connect_selected_item_notify[sender] => move |dd| {
                             sender.input(Self::Input::ProfileSelected(dd.selected()));
-                        },
-                        connect_realize => move |dd| {
-                            limit_dropdown_width(
-                                dd,
-                            );
                         },
                     },
                     gtk::MenuButton {

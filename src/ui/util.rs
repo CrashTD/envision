@@ -1,27 +1,6 @@
 use gtk::{gdk, gio, glib::clone, prelude::*};
 use tracing::{error, warn};
 
-pub fn limit_dropdown_width(dd: &gtk::DropDown) {
-    let mut dd_child = dd
-        .first_child()
-        .unwrap()
-        .first_child()
-        .unwrap()
-        .first_child()
-        .unwrap()
-        .last_child();
-    loop {
-        if dd_child.is_none() {
-            break;
-        }
-        if let Ok(label) = dd_child.clone().unwrap().downcast::<gtk::Label>() {
-            label.set_ellipsize(gtk::pango::EllipsizeMode::End);
-        }
-        let nc = dd_child.unwrap().first_child().clone();
-        dd_child = nc;
-    }
-}
-
 pub fn open_with_default_handler(uri: &str) {
     if let Err(e) = gio::AppInfo::launch_default_for_uri(uri, gio::AppLaunchContext::NONE) {
         error!("opening uri {uri}: {e}")
@@ -180,3 +159,23 @@ pub fn info_card(level: InfoCardLevel, title: Option<&str>, text: &str) -> gtk::
 pub fn warn_card(title: Option<&str>, text: &str) -> gtk::Box {
     info_card(InfoCardLevel::Warn, title, text)
 }
+
+pub const ELLIPSIZED_LABEL_LIST_ITEM: &str = r#"
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <template class="GtkListItem">
+    <property name="child">
+      <object class="GtkLabel">
+        <property name="xalign">0</property>
+        <property name="single-line-mode">true</property>
+        <property name="ellipsize">end</property>
+        <binding name="label">
+          <lookup name="string" type="GtkStringObject">
+            <lookup name="item">GtkListItem</lookup>
+          </lookup>
+        </binding>
+      </object>
+    </property>
+  </template>
+</interface>
+"#;
