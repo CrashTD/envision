@@ -884,26 +884,29 @@ impl Profile {
     }
 
     pub fn ovr_comp_runtime_dir(&self) -> PathBuf {
-        const CANDIDATE_DIRS_OPENCOMPOSITE: [&str; 5] = [
+        const CANDIDATE_DIRS_OPENCOMPOSITE: [&str; 6] = [
             "/opt/opencomposite",
             "/usr/lib64/opencomposite/runtime",
             "/usr/lib/opencomposite/runtime",
             "/usr/lib64/opencomposite",
             "/usr/lib/opencomposite",
+            "/home/linuxbrew/.linuxbrew/opt/opencomposite",
         ];
-        const CANDIDATE_DIRS_XRIZER: [&str; 5] = [
+        const CANDIDATE_DIRS_XRIZER: [&str; 6] = [
             "/opt/xrizer",
             "/usr/lib64/xrizer/runtime",
             "/usr/lib/xrizer/runtime",
             "/usr/lib64/xrizer",
             "/usr/lib/xrizer",
+            "/home/linuxbrew/.linuxbrew/opt/xrizer",
         ];
-        const CANDIDATE_DIRS_VAPOR: [&str; 5] = [
+        const CANDIDATE_DIRS_VAPOR: [&str; 6] = [
             "/opt/vapor",
             "/usr/lib64/vapor/runtime",
             "/usr/lib/vapor/runtime",
             "/usr/lib64/vapor",
             "/usr/lib/vapor",
+            "/home/linuxbrew/.linuxbrew/opt/vapor",
         ];
         if self.is_system_profile {
             let candidates = match self.ovr_comp.mod_type {
