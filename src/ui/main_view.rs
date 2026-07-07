@@ -445,6 +445,7 @@ impl AsyncComponent for MainView {
                     .emit(OpenHmdCalibrationBoxMsg::SetVisible(
                         prof.features.openhmd.enabled,
                     ));
+                sender.input(Self::Input::CheckSetcap);
             }
             Self::Input::UpdateDevices(devs) => {
                 self.devices_box
@@ -463,6 +464,7 @@ impl AsyncComponent for MainView {
                 let config = Config::get_config();
                 self.set_show_setcap_warn(
                     if let Some(executable) = self.selected_profile.xrservice_binary(Some(&config))
+                        && executable.exists()
                     {
                         !verify_cap_sys_nice_eip(&executable).await.unwrap_or(true)
                     } else {
