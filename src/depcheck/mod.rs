@@ -187,7 +187,7 @@ fn include_paths() -> Vec<String> {
 }
 
 fn udev_rules_paths() -> Vec<String> {
-    vec!["/usr/lib/udev/rules.d".into()]
+    vec!["/usr/lib/udev/rules.d".into(), "/etc/udev/rules.d".into()]
 }
 
 fn share_paths() -> Vec<String> {
