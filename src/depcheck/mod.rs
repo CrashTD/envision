@@ -173,6 +173,7 @@ fn include_paths() -> Vec<String> {
         "/usr/include/x86_64-linux-gnu".into(),
         "/usr/include/aarch64-linux-gnu".into(),
         "/usr/include/opencv4".into(),
+        "/usr/include/opencv5".into(),
         "/usr/local/include/opencv4".into(),
         "/usr/include/ffmpeg/libavcodec".into(),
         "/usr/include/ffmpeg/libavfilter".into(),
