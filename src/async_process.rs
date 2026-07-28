@@ -26,7 +26,7 @@ pub async fn async_process<S: AsRef<OsStr>, T: AsRef<OsStr>>(
         exit_code: out
             .status
             .code()
-            .unwrap_or_else(|| out.status.signal().unwrap_or(-1337)),
+            .unwrap_or_else(|| out.status.signal().map(|sig| sig + 128).unwrap_or(-1337)),
         stdout: String::from_utf8(out.stdout)?,
         stderr: String::from_utf8(out.stderr)?,
     })

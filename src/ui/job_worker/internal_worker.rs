@@ -112,15 +112,18 @@ impl Worker for InternalJobWorker {
                                 let stderr_logger = logger_thread!(stderr, stderr_sender);
                                 let status = cmd.wait().expect("Failed to wait for process");
                                 if !status.success() {
-                                    self.state.lock().unwrap().exit_status = Some(
-                                        status
-                                            .code()
-                                            .unwrap_or_else(|| status.signal().unwrap_or(-1337)),
-                                    );
+                                    self.state.lock().unwrap().exit_status =
+                                        Some(status.code().unwrap_or_else(|| {
+                                            status.signal().map(|sig| sig + 128).unwrap_or(-1337)
+                                        }));
                                     break;
                                 }
-                                stdout_logger.join().expect("Failed to join reader thread");
-                                stderr_logger.join().expect("Failed to join reader thread");
+                                stdout_logger
+                                    .join()
+                                    .expect("Failed to join stdout reader thread");
+                                stderr_logger
+                                    .join()
+                                    .expect("Failed to join stderr reader thread");
                             } else {
                                 let msg = "Failed to run command".to_string();
                                 sender
