@@ -46,7 +46,7 @@ pub fn get_build_vapor_jobs(profile: &Profile, clean_build: bool) -> VecDeque<Wo
             let mut cmake_vars: HashMap<String, String> = HashMap::new();
             for (k, v) in [
                 ("VAPOR_LOG_SILENT", "ON"),
-                ("USE_SYSTEM_OPENXR", "OFF"),
+                ("USE_SYSTEM_OPENXR", "ON"),
                 ("CMAKE_BUILD_TYPE", "RelWithDebInfo"),
             ] {
                 cmake_vars.insert(k.to_string(), v.to_string());
