@@ -5,7 +5,7 @@ use crate::{
         Dependency, basalt_deps::get_missing_basalt_deps,
         libsurvive_deps::get_missing_libsurvive_deps, mercury_deps::get_missing_mercury_deps,
         monado_deps::get_missing_monado_deps, openhmd_deps::get_missing_openhmd_deps,
-        xrizer_deps::get_missing_xrizer_deps,
+        vapor_deps::get_missing_vapor_deps, xrizer_deps::get_missing_xrizer_deps,
     },
     file_builders::active_runtime_json::ActiveRuntime,
     paths::get_data_dir,
@@ -297,9 +297,8 @@ impl OvrCompatibilityModuleType {
     pub fn get_missing_deps(&self) -> Vec<Dependency> {
         match self {
             OvrCompatibilityModuleType::Xrizer => get_missing_xrizer_deps(),
-            OvrCompatibilityModuleType::Opencomposite | OvrCompatibilityModuleType::Vapor => {
-                Vec::default()
-            }
+            OvrCompatibilityModuleType::Opencomposite => Vec::default(),
+            OvrCompatibilityModuleType::Vapor => get_missing_vapor_deps(),
         }
     }
 }
