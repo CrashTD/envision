@@ -487,7 +487,7 @@ impl AsyncComponent for DebugView {
                 let chooser = gtk::FileDialog::builder()
                     .modal(true)
                     .title("Choose a location for the exported profile")
-                    .initial_name(format!("{}.json", &prof.name))
+                    .initial_name(format!("{}.json", prof.name))
                     .accept_label("Export")
                     .build();
                 let root_win = self.root_win.clone();

@@ -280,10 +280,7 @@ impl XRDevice {
                             id: dev.name_id,
                             index: dev.index,
                             serial: dev.serial().ok(),
-                            battery: dev
-                                .battery_status()
-                                .ok()
-                                .and_then(|bs| if bs.present { Some(bs) } else { None }),
+                            battery: dev.battery_status().ok().filter(|bs| bs.present),
                             has_brightness_control: false,
                             brightness: None,
                             name: dev.name.clone(),
@@ -337,11 +334,7 @@ impl XRDevice {
     }
 
     pub fn update(&mut self) {
-        self.battery = self
-            .device
-            .battery_status()
-            .ok()
-            .and_then(|bs| if bs.present { Some(bs) } else { None });
+        self.battery = self.device.battery_status().ok().filter(|bs| bs.present);
         self.brightness = if self.has_brightness_control {
             self.device.brightness().ok()
         } else {
