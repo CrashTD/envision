@@ -107,7 +107,11 @@ pub fn setcap_cap_sys_nice_eip_cmd(xrservice_binary: &Path) -> Vec<String> {
     vec![
         setcap_executable().unwrap_or("setcap".into()),
         "CAP_SYS_NICE=eip".into(),
-        xrservice_binary.to_string_lossy().to_string(),
+        xrservice_binary
+            .canonicalize()
+            .unwrap_or_else(|_| xrservice_binary.to_path_buf())
+            .to_string_lossy()
+            .to_string(),
     ]
 }
 
@@ -121,7 +125,12 @@ pub enum VerifyCapSysNiceEipErr {
 pub async fn verify_cap_sys_nice_eip(
     xrservice_binary: &Path,
 ) -> Result<bool, VerifyCapSysNiceEipErr> {
-    let xrservice_binary = xrservice_binary.to_string_lossy().to_string();
+    let xrservice_binary = xrservice_binary
+        .canonicalize()
+        .unwrap_or_else(|_| xrservice_binary.to_path_buf())
+        .to_string_lossy()
+        .to_string();
+
     if let Some(getcap_exec) = getcap_executable() {
         match async_process(&getcap_exec, Some(&[&xrservice_binary]), None).await {
             Err(e) => {
