@@ -104,6 +104,7 @@ impl GlobalPreferences {
                 "XRT_CURATED_GUI".into(),
                 (if self.monado_ui { 1 } else { 0 }).to_string(),
             ),
+            ("ORT_DISABLE_TELEMETRY".into(), 1.to_string()),
         ]);
         if self.nvidia_mitigation {
             res.insert("U_PACING_COMP_TIME_FRACTION_PERCENT".into(), "95".into());

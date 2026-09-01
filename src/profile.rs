@@ -417,6 +417,8 @@ impl Default for Profile {
     fn default() -> Self {
         let uuid = Self::new_uuid();
         let profile_dir = get_data_dir().join(&uuid);
+        let mut environment = HashMap::new();
+        environment.insert("ORT_DISABLE_TELEMETRY".into(), "1".into());
         Self {
             name: "Default profile name".into(),
             xrservice_path: profile_dir.join("xrservice"),
@@ -448,7 +450,7 @@ impl Default for Profile {
                 },
                 mercury_enabled: false,
             },
-            environment: HashMap::new(),
+            environment,
             prefix: Self::default_prefix_path(&uuid),
             is_system_profile: false,
             pull_on_build: true,

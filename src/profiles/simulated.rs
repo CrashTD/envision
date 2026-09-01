@@ -15,6 +15,7 @@ pub fn simulated_profile() -> Profile {
     environment.insert("XRT_DEBUG_GUI".into(), "1".into());
     environment.insert("XRT_CURATED_GUI".into(), "1".into());
     environment.insert("U_PACING_APP_USE_MIN_FRAME_PERIOD".into(), "1".into());
+    environment.insert("ORT_DISABLE_TELEMETRY".into(), "1".into());
     environment.insert(
         "LD_LIBRARY_PATH".into(),
         format!("{pfx}/lib:{pfx}/lib64", pfx = prefix.to_string_lossy()),
