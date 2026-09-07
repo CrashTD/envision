@@ -34,7 +34,7 @@ fn env_var_descriptions() -> Vec<(&'static str, &'static str)> {
         ),
         (
             "QWERTY_ENABLE",
-            "Set to 1 to enable QWERTY Simulation driver. This enables simulated driver that allows you to use Monado without HMD and controllers. It's also possible to mix and match different profiles with this.",
+            "Set to 1 to enable the QWERTY Simulation driver. This allows you to use Monado without an HMD or controllers. It's also possible to mix and match real hardware devices with simulated ones.",
         ),
         (
             "LH_DRIVER",
@@ -54,7 +54,7 @@ fn env_var_descriptions() -> Vec<(&'static str, &'static str)> {
         ),
         (
             "WMR_HANDTRACKING",
-            "Controls whether to enable hand tracking for WMR contorllers. Valid options are:\n\"0\" (off) to disable hand tracking;\n\"1\" (on) to enable hand tracking.",
+            "Controls whether to enable hand tracking for WMR controllers. Valid options are:\n\"0\" (off) to disable hand tracking;\n\"1\" (on) to enable hand tracking.",
         ),
     ]
 }
