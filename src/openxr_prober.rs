@@ -5,7 +5,9 @@ use openxr as xr;
 use crate::constants::CMD_NAME;
 
 pub fn is_openxr_ready() -> bool {
-    let entry = xr::Entry::linked();
+    let Ok(entry) = xr::Entry::linked(&()) else {
+        return false;
+    };
 
     if entry.enumerate_extensions().is_err() {
         return false;
@@ -25,6 +27,7 @@ pub fn is_openxr_ready() -> bool {
         },
         &enabled_extensions,
         &layers,
+        &(),
     ) else {
         return false;
     };
