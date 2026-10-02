@@ -229,7 +229,13 @@ impl App {
             );
             return;
         }
-        if let Err(e) = set_current_openvrpaths_to_profile(&prof) {
+        // Disabled: leave openvrpaths.vrpath exactly as it is, so an
+        // externally-installed OpenVR client (not built/managed by
+        // Envision) keeps its own registration and can be tested against
+        // this profile's XR service.
+        if prof.ovr_comp.mod_type != OvrCompatibilityModuleType::Disabled
+            && let Err(e) = set_current_openvrpaths_to_profile(&prof)
+        {
             alert(
                 "Failed to start XR Service",
                 Some(&format!(
@@ -595,27 +601,31 @@ impl AsyncComponent for App {
                         ));
                     }
                 }
-                match profile.ovr_comp_git().check_remote_diverges() {
-                    Err(e) => {
-                        error!(e);
-                    }
-                    Ok(false) => {}
-                    Ok(true) => {
-                        let sender = sender.clone();
-                        let path = profile.ovr_comp.path.clone();
-                        self.build_alerts.push_back(yes_no_dialog(
-                            &format!("{} remote repository diverged", profile.ovr_comp.mod_type),
-                            Some(&format!(
-                                "It is recommended to delete your local repository so that it will be cloned from scratch. Do you want to delete your local repository in `{}`?",
-                                path.to_string_lossy()
-                            )),
-                            move || {
-                                rm_rf(&path);
-                            },
-                            move || {
-                                sender.input(Msg::BuildProfileDequeueAlerts(clean_build));
-                            }
-                        ));
+                // Disabled: no repository to check (or build) for the OVR
+                // compatibility module at all.
+                if profile.ovr_comp.mod_type != OvrCompatibilityModuleType::Disabled {
+                    match profile.ovr_comp_git().check_remote_diverges() {
+                        Err(e) => {
+                            error!(e);
+                        }
+                        Ok(false) => {}
+                        Ok(true) => {
+                            let sender = sender.clone();
+                            let path = profile.ovr_comp.path.clone();
+                            self.build_alerts.push_back(yes_no_dialog(
+                                &format!("{} remote repository diverged", profile.ovr_comp.mod_type),
+                                Some(&format!(
+                                    "It is recommended to delete your local repository so that it will be cloned from scratch. Do you want to delete your local repository in `{}`?",
+                                    path.to_string_lossy()
+                                )),
+                                move || {
+                                    rm_rf(&path);
+                                },
+                                move || {
+                                    sender.input(Msg::BuildProfileDequeueAlerts(clean_build));
+                                }
+                            ));
+                        }
                     }
                 }
                 if let Some(basalt_git) = profile.basalt_git() {
@@ -740,6 +750,7 @@ impl AsyncComponent for App {
                         OvrCompatibilityModuleType::Vapor => {
                             get_build_vapor_jobs(&profile, clean_build)
                         }
+                        OvrCompatibilityModuleType::Disabled => VecDeque::new(),
                     });
                 }
                 let missing_deps = profile.missing_dependencies();

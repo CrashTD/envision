@@ -277,6 +277,12 @@ pub enum OvrCompatibilityModuleType {
     #[default]
     Xrizer,
     Vapor,
+    /// Don't build or manage an OpenVR compatibility module at all, and
+    /// don't touch openvrpaths.vrpath — lets an externally-installed
+    /// OpenVR client (e.g. OpenComposite Unleashed) keep its own
+    /// registration so it can be tested against this profile's XR
+    /// service (e.g. the Simulated Device profile) instead.
+    Disabled,
 }
 
 impl Display for OvrCompatibilityModuleType {
@@ -285,13 +291,14 @@ impl Display for OvrCompatibilityModuleType {
             Self::Opencomposite => "OpenComposite",
             Self::Xrizer => "xrizer",
             Self::Vapor => "VapoR",
+            Self::Disabled => "Disabled",
         })
     }
 }
 
 impl OvrCompatibilityModuleType {
     pub fn iter() -> Iter<'static, Self> {
-        [Self::Opencomposite, Self::Xrizer, Self::Vapor].iter()
+        [Self::Opencomposite, Self::Xrizer, Self::Vapor, Self::Disabled].iter()
     }
 
     pub fn get_missing_deps(&self) -> Vec<Dependency> {
@@ -299,6 +306,7 @@ impl OvrCompatibilityModuleType {
             OvrCompatibilityModuleType::Xrizer => get_missing_xrizer_deps(),
             OvrCompatibilityModuleType::Opencomposite => Vec::default(),
             OvrCompatibilityModuleType::Vapor => get_missing_vapor_deps(),
+            OvrCompatibilityModuleType::Disabled => Vec::default(),
         }
     }
 }
@@ -311,6 +319,7 @@ impl FromStr for OvrCompatibilityModuleType {
             "opencomposite" => Ok(Self::Opencomposite),
             "xrizer" => Ok(Self::Xrizer),
             "vapor" => Ok(Self::Vapor),
+            "disabled" | "none" => Ok(Self::Disabled),
             _ => Err(format!("no match for ovr compatibility module `{s}`")),
         }
     }
@@ -322,6 +331,7 @@ impl From<u32> for OvrCompatibilityModuleType {
             0 => Self::Opencomposite,
             1 => Self::Xrizer,
             2 => Self::Vapor,
+            3 => Self::Disabled,
             _ => panic!("OvrCompatibilityModuleType index out of bounds"),
         }
     }
@@ -354,6 +364,10 @@ impl ProfileOvrCompatibilityModule {
             OvrCompatibilityModuleType::Opencomposite => self.path.join("build"),
             OvrCompatibilityModuleType::Vapor => self.path.join("build/install_pfx/lib/VapoR"),
             OvrCompatibilityModuleType::Xrizer => self.path.join("target/release"),
+            // unused: openvrpaths.vrpath is never rebuilt for a Disabled module
+            // (see set_current_openvrpaths_to_profile's call site), so this
+            // path is never actually read.
+            OvrCompatibilityModuleType::Disabled => self.path.clone(),
         }
     }
 }
@@ -789,6 +803,8 @@ impl Profile {
                     OvrCompatibilityModuleType::Opencomposite => DEFAULT_OPENCOMPOSITE_REPO,
                     OvrCompatibilityModuleType::Xrizer => DEFAULT_XRIZER_REPO,
                     OvrCompatibilityModuleType::Vapor => DEFAULT_VAPOR_REPO,
+                    // unused: callers skip ovr_comp_git() entirely for Disabled
+                    OvrCompatibilityModuleType::Disabled => "",
                 })
                 .into(),
             dir: self.ovr_comp.path.clone(),
@@ -800,6 +816,7 @@ impl Profile {
                     OvrCompatibilityModuleType::Opencomposite => DEFAULT_OPENCOMPOSITE_BRANCH,
                     OvrCompatibilityModuleType::Xrizer => DEFAULT_XRIZER_BRANCH,
                     OvrCompatibilityModuleType::Vapor => DEFAULT_VAPOR_BRANCH,
+                    OvrCompatibilityModuleType::Disabled => "",
                 })
                 .into(),
         }
@@ -908,11 +925,18 @@ impl Profile {
             "/usr/lib/vapor",
             "/home/linuxbrew/.linuxbrew/opt/vapor",
         ];
+        // unused: ovr_comp_runtime_dir() is never read for Disabled, since
+        // set_current_openvrpaths_to_profile() is skipped entirely for it.
+        // Non-empty only so `.first().unwrap()` below can't panic.
+        const CANDIDATE_DIRS_DISABLED: [&str; 1] = [""];
         if self.is_system_profile {
-            let candidates = match self.ovr_comp.mod_type {
-                OvrCompatibilityModuleType::Opencomposite => CANDIDATE_DIRS_OPENCOMPOSITE,
-                OvrCompatibilityModuleType::Xrizer => CANDIDATE_DIRS_XRIZER,
-                OvrCompatibilityModuleType::Vapor => CANDIDATE_DIRS_VAPOR,
+            // slices, not arrays: the candidate lists have different
+            // lengths, and match arms must all produce the same type
+            let candidates: &[&str] = match self.ovr_comp.mod_type {
+                OvrCompatibilityModuleType::Opencomposite => &CANDIDATE_DIRS_OPENCOMPOSITE,
+                OvrCompatibilityModuleType::Xrizer => &CANDIDATE_DIRS_XRIZER,
+                OvrCompatibilityModuleType::Vapor => &CANDIDATE_DIRS_VAPOR,
+                OvrCompatibilityModuleType::Disabled => &CANDIDATE_DIRS_DISABLED,
             };
             candidates
                 .iter()

@@ -1,5 +1,15 @@
 # Envision
 
+> **Fork note (CrashTD, 2026-10-02):** This is a modified copy of
+> [Envision](https://gitlab.com/gabmus/envision) (AGPL-3.0-or-later). Branch
+> `openvr-compat-disabled` adds an OpenVR compatibility option **"Disabled"**: Envision then
+> neither builds nor manages an OpenVR compatibility module and leaves
+> `openvrpaths.vrpath` alone, so an externally installed OpenVR client (e.g. OpenComposite
+> Unleashed or a custom xrizer build) keeps working. Changes: `src/profile.rs`,
+> `src/ui/app.rs`. Everything else is upstream.
+>
+> Not a coder – Claude wrote most of the patch, I tested it on my setup. Use at your own risk.
+
 # IMPORTANT NOTES!
 
 This is still highly experimental software, while it's unlikely that anything bad will happen, it's still unstable and there is no guarantee that it will work on your system, with your particular hardware. If you encounter any problems while using the app, make sure to open an issue.
